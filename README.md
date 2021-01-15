@@ -5,8 +5,11 @@ If you want to install it separately.
 **Usage:**
 
 ```bash
-git clone https://github.com/elephantrobotics/myCobot.git <your-path>
-cd <your-path>/myCobot/API/Python
+git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
+cd <your-path>/pymycobot
+# Install
+python2 setup install
+# or
 python3 setup install
 ```
 
