@@ -217,7 +217,7 @@ class MyCobot():
         speed = self._complement_zero(speed, digit=2)
         command += '{}{}{}fa'.format(joint_id, direction, speed)
         self._write(command)
-
+        
     def jog_coord(self, coord, direction, speed):
         '''Coord control 
 
@@ -260,7 +260,7 @@ class MyCobot():
         # print(data)
         if not data:
             return True
-        flag = int(data.hex(), 16)
+        flag = int(data.encode('hex'), 16)
         if flag:
             return True
         else:
@@ -268,7 +268,7 @@ class MyCobot():
 
     def pause(self):
         self._write('fefe0226fa')
-
+    
     def resume(self):
         self._write('fefe0228fa')
 
@@ -278,9 +278,9 @@ class MyCobot():
     def is_paused(self):
         self._write('fefe0227fa')
         data = self._read()
-        flag = int(data.hex(), 16)
+        flag = int(data.encode('hex'), 16)
         return False if flag else True
-
+    
     def is_in_position(self, coords):
         if len(coords) != 6:
             print('The lenght of coords is not right')
@@ -292,17 +292,17 @@ class MyCobot():
             command += (_hex)
 
         command += 'fa'
-        print(command)
+        # print(command)
         self._write(command)
         data = self._read()
-        flag = int(data.hex(), 16)
+        flag = int(data.encode('hex'), 16)
         return False if flag else True
 
     def get_speed(self):
         self._write('fefe0240fa')
         data = self._read()
         if data:
-            return int(data.hex(), 16)
+            return int(data.encode('hex'), 16)
 
     def set_speed(self, speed):
         '''Set speed value
@@ -320,7 +320,7 @@ class MyCobot():
         data_list = []
         data = data.encode('hex')
         data = data[-28:]
-        print(data)
+        # print(data)
         if not (data.startswith('20') and data.endswith('fa')):
             return []
         if name == 'get_angles':
@@ -349,7 +349,7 @@ class MyCobot():
     def _hex_to_degree(self, _hex):
         _int = self._hex_to_int(_hex)
         return  _int * 18 / 314
-
+    
     def _hex_to_int(self, _hex):
         _int = int(_hex, 16)
         if _int > 0x8000:
@@ -377,7 +377,7 @@ class MyCobot():
         s = str(hex(int(coord)))[2:]
         s = self._complement_zero(s)
         return s
-
+    
     def _complement_zero(self, s, digit=4):
         s_len = len(s)
         if s_len == digit:
@@ -395,4 +395,3 @@ class MyCobot():
     def _read(self, size=1024):
         data = self.serial_port.read(size)
         return data
-
