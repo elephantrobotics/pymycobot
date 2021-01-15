@@ -1,0 +1,12 @@
+README.md
+setup.py
+pymycobot/__init__.py
+pymycobot/common.py
+pymycobot/mycobot.py
+pymycobot/mycobot3.py
+pymycobot.egg-info/PKG-INFO
+pymycobot.egg-info/SOURCES.txt
+pymycobot.egg-info/dependency_links.txt
+pymycobot.egg-info/requires.txt
+pymycobot.egg-info/top_level.txt
+test/test.py
