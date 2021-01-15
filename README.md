@@ -8,9 +8,9 @@ If you want to install it separately.
 git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
 cd <your-path>/pymycobot
 # Install
-python2 setup install
+python2 setup.py install
 # or
-python3 setup install
+python3 setup.py install
 ```
 
 **_`example/test.py` is a test file, you can find out which interfaces pymycobot provides in `pymycobot/README.md`._**
