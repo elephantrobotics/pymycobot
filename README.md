@@ -2,13 +2,15 @@
 
 If you want to install it separately.
 
-**Usage:**
+## Installation
+
+### Pip
 
 ```bash
 pip install pymycobot --upgrade
 ```
 
-or
+### Source code
 
 ```bash
 git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
@@ -19,7 +21,11 @@ python2 setup.py install
 python3 setup.py install
 ```
 
-**_`example/test.py` is a test file, you can find out which interfaces pymycobot provides in `pymycobot/README.md`._**
+**_`test/test.py` is a test file, you can find out which interfaces pymycobot provides in `pymycobot/README.md`._**
+
+## Usage:
+
+Please go to [here](./pymycobot/README.md).
 
 **Notes**:
 
