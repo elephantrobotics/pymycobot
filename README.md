@@ -5,6 +5,12 @@ If you want to install it separately.
 **Usage:**
 
 ```bash
+pip install pymycobot --upgrade
+```
+
+or
+
+```bash
 git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
 cd <your-path>/pymycobot
 # Install
@@ -23,5 +29,3 @@ python3 setup.py install
 > The firmware `Atom2.3` and `Transponder` download address: [https://github.com/elephantrobotics/myCobot/tree/main/Software](https://github.com/elephantrobotics/myCobot/tree/main/Software)<br>
 > Python 2: use mycobot.py <br>
 > Python 3: use mycobot3.py
-
--

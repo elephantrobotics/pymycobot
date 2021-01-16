@@ -2,6 +2,8 @@ from __future__ import absolute_import
 import platform
 
 
+name = 'pymycobot'
+
 version = (platform.python_version())
 
 if version.startswith('2.7'):

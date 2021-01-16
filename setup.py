@@ -6,7 +6,9 @@ if (2, 7) != sys.version_info[:2] < (3, 5):
 
 import setuptools
 
-long_description = '''
+long_description = open("./pymycobot/README.md", encoding='utf8').read()
+
+change_log = '''
 # 2021.1.9
 
 Fix the API problem that `is_moving()` and other methods of mycobot cannot be used.
@@ -33,13 +35,13 @@ Modify the serial port to manual setting, support the use of window.
 
 setuptools.setup(
     name="pymycobot",
-    version="0.0.1",
+    version="1.0.1",
     author="Zachary Zhang",
     author_email="lijun.zhang@elephantrobotics.com",
-    description="Python API for myCobot",
+    description="Python API for serial communication of MyCobot.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/elephantrobotics/myCobot/tree/main/API/Python",
+    url="https://github.com/elephantrobotics/pymycobot",
     packages=setuptools.find_packages(),
     classifiers=[
         'Programming Language :: Python :: 2.7',
