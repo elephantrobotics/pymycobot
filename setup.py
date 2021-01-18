@@ -6,7 +6,12 @@ if (2, 7) != sys.version_info[:2] < (3, 5):
 
 import setuptools
 
-long_description = open("./pymycobot/README.md", encoding='utf8').read()
+version  = "1.0.4"
+
+if sys.version_info[:2] == (2, 7):
+    long_description = ""
+else:
+    long_description = open("pymycobot/README.md").read()
 
 change_log = '''
 # 2021.1.9
@@ -35,7 +40,7 @@ Modify the serial port to manual setting, support the use of window.
 
 setuptools.setup(
     name="pymycobot",
-    version="1.0.1",
+    version=version,
     author="Zachary Zhang",
     author_email="lijun.zhang@elephantrobotics.com",
     description="Python API for serial communication of MyCobot.",
