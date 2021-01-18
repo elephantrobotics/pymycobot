@@ -176,6 +176,7 @@ class MyCobot():
         command += id
         command += self._coord_to_hex(coord)
         command += self._complement_zero(hex(int(speed))[2:], digit=2)
+        command += 'fa'
         # print(command)
         self._write(command)
 

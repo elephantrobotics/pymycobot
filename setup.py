@@ -6,7 +6,7 @@ if (2, 7) != sys.version_info[:2] < (3, 5):
 
 import setuptools
 
-version  = "1.0.4"
+version  = "1.0.5"
 
 if sys.version_info[:2] == (2, 7):
     long_description = ""
@@ -14,6 +14,10 @@ else:
     long_description = open("pymycobot/README.md").read()
 
 change_log = '''
+# 2021.1.16
+
+Upload to server, can use `pip` to installation now.
+
 # 2021.1.9
 
 Fix the API problem that `is_moving()` and other methods of mycobot cannot be used.
