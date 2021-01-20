@@ -2,11 +2,7 @@ import time, random, subprocess
 from pymycobot.mycobot import MyCobot
 from pymycobot.common import Angle, Coord
 
-if __name__ == '__main__':
-    port = subprocess.check_output(['echo -n /dev/ttyUSB*'], 
-                                    shell=True)
-    mycobot = MyCobot(port)
-
+def test(mycobot):
     print('Start check api\n')
     # print()
 
@@ -59,3 +55,15 @@ if __name__ == '__main__':
     mycobot.set_free_mode()
     print('==> into free moving mode.')
     print('=== check end <==\n')
+
+
+if __name__ == '__main__':
+    port = subprocess.check_output(['echo -n /dev/ttyUSB*'], 
+                                    shell=True)
+    mycobot = MyCobot(port)
+    # test(mycobot)
+
+    while True:
+        print(mycobot.get_coords())
+        time.sleep(1)
+

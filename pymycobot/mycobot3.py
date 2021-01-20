@@ -251,12 +251,12 @@ class MyCobot():
             rgs (str): example 'ff0000'
 
         '''
-        command = 'fe fe 05 6a {} fa'.format(rgb)
+        command = 'fefe056a{}fa'.format(rgb)
         # print(command)
         self._write(command)
 
     def is_moving(self):
-        command = 'fe fe 02 2b fa'
+        command = 'fefe022bfa'
         self._write(command)
         data = self._read(2)
         # print(data)
@@ -269,25 +269,25 @@ class MyCobot():
             return False
 
     def pause(self):
-        self._write('fe fe 02 26 fa')
-    
+        self._write('fefe0226fa')
+
     def resume(self):
-        self._write('fe fe 02 28 fa')
+        self._write('fefe0228fa')
 
     def stop(self):
-        self._write('fe fe 02 29 fa')
+        self._write('fefe0229fa')
 
     def is_paused(self):
-        self._write('fe fe 02 27 fa')
+        self._write('fefe0227fa')
         data = self._read()
         flag = int(data.hex(), 16)
         return False if flag else True
-    
+
     def is_in_position(self, coords):
         if len(coords) != 6:
             print('The lenght of coords is not right')
             return
-        command = 'fe fe 0d 2a '
+        command = 'fefe0d2a '
         for coord in coords:
             _hex = self._coord_to_hex(coord)
 
@@ -301,7 +301,7 @@ class MyCobot():
         return False if flag else True
 
     def get_speed(self):
-        self._write('fe fe 02 40 fa')
+        self._write('fefe0240fa')
         data = self._read()
         if data:
             return int(data.hex(), 16)
@@ -316,15 +316,15 @@ class MyCobot():
         if not 0 <= speed <= 100:
             raise Exception('speed value out of range (0 ~ 100)')
         _hex = str(hex(speed))[2:]
-        self._write('fe fe 03 41 {} fa'.format(_hex))
+        self._write('fefe0341{}fa'.format(_hex))
 
     def _parse_data(self, data, name):
         data_list = []
         data = data.hex()
         data = data[-28:]
-        if not (data.startswith('20') and data.endswith('fa')):
-            return []
         if name == 'get_angles':
+            if not (data.startswith('20') and data.endswith('fa')):
+                return []
             data = data[-26:-2]
             for i in range(6):
                 _hex = data[i * 4: (i * 4) + 4]
@@ -332,13 +332,21 @@ class MyCobot():
                 data_list.append(degree)
 
         elif name == 'get_coords':
+            if not (data.startswith('23') and data.endswith('fa')):
+                return []
             data = data[-26:-2]
-            for i in range(6):
+            for i in range(3):
                 _hex = data[i * 4: (i * 4) + 4]
                 _coord = self._hex_to_int(_hex) / 10.0
                 data_list.append(_coord)
+            for i in range(3, 6):
+                _hex = data[i * 4: (i * 4) + 4]
+                _coord = self._hex_to_int(_hex) / 1000.0
+                data_list.append(_coord)
 
         elif name == 'get_angles_of_radian':
+            if not (data.startswith('20') and data.endswith('fa')):
+                return []
             data = data[-26:-2]
             for i in range(6):
                 _hex = data[i * 4: (i * 4) + 4]
@@ -350,7 +358,7 @@ class MyCobot():
     def _hex_to_degree(self, _hex: str):
         _int = self._hex_to_int(_hex)
         return  _int * 18 / 314
-    
+
     def _hex_to_int(self, _hex: str):
         _int = int(_hex, 16)
         if _int > 0x8000:
@@ -378,7 +386,7 @@ class MyCobot():
         s = str(hex(coord))[2:]
         s = self._complement_zero(s)
         return s
-    
+
     def _complement_zero(self, s, digit=4):
         s_len = len(s)
         if s_len == digit:
