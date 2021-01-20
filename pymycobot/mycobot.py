@@ -218,7 +218,7 @@ class MyCobot():
         speed = self._complement_zero(speed, digit=2)
         command += '{}{}{}fa'.format(joint_id, direction, speed)
         self._write(command)
-        
+
     def jog_coord(self, coord, direction, speed):
         '''Coord control 
 
@@ -269,7 +269,7 @@ class MyCobot():
 
     def pause(self):
         self._write('fefe0226fa')
-    
+
     def resume(self):
         self._write('fefe0228fa')
 
@@ -281,7 +281,7 @@ class MyCobot():
         data = self._read()
         flag = int(data.encode('hex'), 16)
         return False if flag else True
-    
+
     def is_in_position(self, coords):
         if len(coords) != 6:
             print('The lenght of coords is not right')
@@ -322,9 +322,9 @@ class MyCobot():
         data = data.encode('hex')
         data = data[-28:]
         # print(data)
-        if not (data.startswith('20') and data.endswith('fa')):
-            return []
         if name == 'get_angles':
+            if not (data.startswith('20') and data.endswith('fa')):
+                return []
             data = data[-26:-2]
             for i in range(6):
                 _hex = data[i * 4: (i * 4) + 4]
@@ -332,13 +332,21 @@ class MyCobot():
                 data_list.append(degree)
 
         elif name == 'get_coords':
+            if not (data.startswith('23') and data.endswith('fa')):
+                return []
             data = data[-26:-2]
-            for i in range(6):
+            for i in range(3):
                 _hex = data[i * 4: (i * 4) + 4]
                 _coord = self._hex_to_int(_hex) / 10.0
                 data_list.append(_coord)
+            for i in range(3, 6):
+                _hex = data[i * 4: (i * 4) + 4]
+                _coord = self._hex_to_int(_hex) / 1000.0
+                data_list.append(_coord)
 
         elif name == 'get_angles_of_radian':
+            if not (data.startswith('20') and data.endswith('fa')):
+                return []
             data = data[-26:-2]
             for i in range(6):
                 _hex = data[i * 4: (i * 4) + 4]
@@ -350,7 +358,7 @@ class MyCobot():
     def _hex_to_degree(self, _hex):
         _int = self._hex_to_int(_hex)
         return  _int * 18 / 314
-    
+
     def _hex_to_int(self, _hex):
         _int = int(_hex, 16)
         if _int > 0x8000:
@@ -378,7 +386,7 @@ class MyCobot():
         s = str(hex(int(coord)))[2:]
         s = self._complement_zero(s)
         return s
-    
+
     def _complement_zero(self, s, digit=4):
         s_len = len(s)
         if s_len == digit:
