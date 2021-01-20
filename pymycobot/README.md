@@ -1,14 +1,16 @@
-# ros-python-api
+# pymycobot
 
 **This is python API for mycobot.**
 
-We support Python2, Python3.5 or later. If you want to use the api, make sure `pyserial` is installed.
+We support Python2, Python3.5 or later.
 
-```bash
-pip2 install pyserial
-# or
-pip3 install pyserial
-```
+<!--If you want to use the api, make sure `pyserial` is installed.-->
+
+<!--```bash-->
+<!--pip2 install pyserial-->
+<!--# or-->
+<!--pip3 install pyserial-->
+<!--```-->
 
 **Class**:
 

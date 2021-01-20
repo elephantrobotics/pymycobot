@@ -6,7 +6,7 @@ if (2, 7) != sys.version_info[:2] < (3, 5):
 
 import setuptools
 
-version  = "1.0.5"
+version  = "2.0.0"
 
 if sys.version_info[:2] == (2, 7):
     long_description = ""
@@ -14,6 +14,12 @@ else:
     long_description = open("pymycobot/README.md").read()
 
 change_log = '''
+# 2021.1.20
+
+`v1.0.6` fix get_coords() error.
+
+relase v2.0.0
+
 # 2021.1.16
 
 Upload to server, can use `pip` to installation now.

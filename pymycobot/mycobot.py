@@ -100,7 +100,6 @@ class MyCobot():
         _hex = self._angle_to_hex(degree)
         speed = self._complement_zero(hex(speed)[2:], digit=2)
         command = 'fefe0621{}{}{}fa'.format(id, _hex, speed)
-        # print(command)  
         self._write(command)
 
     def send_angles(self, degrees, speed):
@@ -138,12 +137,9 @@ class MyCobot():
         command = 'fefe0f22'
         speed = self._complement_zero(hex(speed)[2:], digit=2)
         for radian in radians:
-            # print(radian)
             _hex = self._angle_to_hex(radian, is_degree=False)
-            # print(_hex)
             command += _hex
         command += '{}fa'.format(speed)
-        # print(command)
         self._write(command)
 
     def get_coords(self):
@@ -167,7 +163,7 @@ class MyCobot():
 
         Args:
             id(common.Coord):
-            coord(fload):
+            coord(fload): mm
             speed(int):
 
         '''
@@ -183,7 +179,7 @@ class MyCobot():
         '''Send all coords
 
         Args:
-            coords: [x, y, z, rx, ry, rz]
+            coords: [x(mm), y, z, rx(angle), ry, rz]
             speed(int);
             mode(int): 0 - angluar, 1 - linear
 
@@ -195,9 +191,11 @@ class MyCobot():
         speed = hex(speed)[2:]
         speed = self._complement_zero(speed, digit=2)
         mode = self._complement_zero(hex(mode)[2:], digit=2)
-        for coord in coords:
-            _hex = self._coord_to_hex(coord)
-
+        for i in range(3):
+            _hex = self._coord_to_hex(coords[i])
+            command += (_hex)
+        for i in range(3, 6):
+            _hex = self._angle_to_hex(coords[i])
             command += (_hex)
 
         command += '{}{}fa'.format(speed, mode)
@@ -328,8 +326,9 @@ class MyCobot():
             data = data[-26:-2]
             for i in range(6):
                 _hex = data[i * 4: (i * 4) + 4]
-                degree = self._hex_to_degree(_hex)
-                data_list.append(degree)
+                _degree = self._hex_to_int(_hex) / 100.0
+                # degree = self._hex_to_degree(_hex)
+                data_list.append(_degree)
 
         elif name == 'get_coords':
             if not (data.startswith('23') and data.endswith('fa')):
@@ -341,7 +340,7 @@ class MyCobot():
                 data_list.append(_coord)
             for i in range(3, 6):
                 _hex = data[i * 4: (i * 4) + 4]
-                _coord = self._hex_to_int(_hex) / 1000.0
+                _coord = self._hex_to_int(_hex) / 100.0
                 data_list.append(_coord)
 
         elif name == 'get_angles_of_radian':
@@ -350,8 +349,9 @@ class MyCobot():
             data = data[-26:-2]
             for i in range(6):
                 _hex = data[i * 4: (i * 4) + 4]
-                _radian = self._hex_to_int(_hex) / 1000.0
-                data_list.append(_radian)
+                _degree = self._hex_to_int(_hex) / 100.0
+                _radian = _degree * (3.14 / 180)
+                data_list.append(round(_radian, 2))
 
         return (data_list)
 
@@ -367,14 +367,14 @@ class MyCobot():
 
     def _angle_to_hex(self, _degree, is_degree=True):
         if is_degree:
-            radian = (_degree * (3140 / 180))
+            da = (_degree * 100)
         else:
-            radian = _degree * 1000
-        radian = int(radian)
-        if radian < 0:
-            radian += 0x10000
-        radian = round(radian)
-        s = str(hex(int(radian)))[2:] 
+            da = _degree * (180 / 3.14) * 100
+        da = int(da)
+        if da < 0:
+            da += 0x10000
+        da = round(da)
+        s = str(hex(int(da)))[2:]
         s = self._complement_zero(s)
         return  s
 
