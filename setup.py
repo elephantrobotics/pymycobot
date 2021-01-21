@@ -6,7 +6,7 @@ if (2, 7) != sys.version_info[:2] < (3, 5):
 
 import setuptools
 
-version  = "1.0.6"
+version  = "1.0.7"
 
 if sys.version_info[:2] == (2, 7):
     long_description = ""
@@ -14,6 +14,10 @@ else:
     long_description = open("pymycobot/README.md").read()
 
 change_log = '''
+# 2021.1.21
+
+Add set_claw()
+
 # 2021.1.16
 
 Upload to server, can use `pip` to installation now.

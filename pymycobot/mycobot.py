@@ -26,6 +26,7 @@ class MyCobot():
         is_paused()             :
         get_speed()             :
         set_speed()             :
+        set_claw()
     '''
 
     def __init__(self, port):
@@ -237,12 +238,6 @@ class MyCobot():
     def jog_stop(self):
         self._write('fefe0234fa')
 
-    def is_servo_enable(self):
-        pass
-
-    def is_all_servo_enable(self):
-        pass
-
     def set_color(self, rgb):
         '''Set the light color
 
@@ -316,6 +311,18 @@ class MyCobot():
             raise Exception('speed value out of range (0 ~ 100)')
         _hex = str(hex(speed))[2:]
         self._write('fefe0341{}fa'.format(_hex))
+
+    def set_claw(self, flag):
+        '''Set claw status
+
+        Args:
+            flag(int): 0 - open, 1 - close
+
+        '''
+        if not flag in [0,  1]:
+            raise Exception("error input data, please set 0 or 1")
+        self._write('fefe03660{}fa'.format(flag))
+        pass
 
     def _parse_data(self, data, name):
         data_list = []

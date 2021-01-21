@@ -1,14 +1,8 @@
-# ros-python-api
+# Mycobot python-api
 
 **This is python API for mycobot.**
 
-We support Python2, Python3.5 or later. If you want to use the api, make sure `pyserial` is installed.
-
-```bash
-pip2 install pyserial
-# or
-pip3 install pyserial
-```
+We support Python2, Python3.5 or later.
 
 **Class**:
 
@@ -348,6 +342,20 @@ pip3 install pyserial
 - **Parameters**
 
   speed: (int)
+
+- **Returns**
+
+  None
+
+### MyCobot.set_claw()
+
+- **Description**
+
+  Set claw status
+
+- **Parameters**
+
+  flag: (int) 0 - open, 1 - close
 
 - **Returns**
 
