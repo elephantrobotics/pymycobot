@@ -8,7 +8,7 @@ If you want to install it separately.
 
 <!-- This is the mycobot Python API package designed by Zhang Lijun([lijun.zhang@elephantrobotics.com]()) -->
 
-> Make sure that `Atom` is flashed into the top Atom <br> > `Transponder` is flashed into the base Basic <br>
+> Make sure that `Atom` is flashed into the top Atom, `Transponder` is flashed into the base Basic <br>
 > The firmware `Atom` and `Transponder` download address: [https://github.com/elephantrobotics/myCobot/tree/main/Software](https://github.com/elephantrobotics/myCobot/tree/main/Software)<br>
 
 ### Pip
@@ -19,10 +19,10 @@ pip install pymycobot --upgrade
 
 **Notes:**
 
-> Now only the version after `Atom2.4` is supported. If you use an earlier version, please install `pymycobot 1.0.6`.
+> Now only the version after `Atom2.4` is supported. If you use an earlier version, please install `pymycobot 1.0.7`.
 
 ```bash
-pip install pymycobot==1.0.6
+pip install pymycobot==1.0.7
 ```
 
 ### Source code

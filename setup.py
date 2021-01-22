@@ -6,7 +6,7 @@ if (2, 7) != sys.version_info[:2] < (3, 5):
 
 import setuptools
 
-version  = "2.1.0"
+version  = "2.1.1"
 
 if sys.version_info[:2] == (2, 7):
     long_description = ""
