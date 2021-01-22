@@ -1,21 +1,21 @@
 import enum
 
+
 class Angle(enum.Enum):
 
-    J1 = '01'
-    J2 = '02'
-    J3 = '03'
-    J4 = '04'
-    J5 = '05'
-    J6 = '06'
+    J1 = 1
+    J2 = 2
+    J3 = 3
+    J4 = 4
+    J5 = 5
+    J6 = 6
 
 
 class Coord(enum.Enum):
 
-    X  = '01'
-    Y  = '02'
-    Z  = '03'
-    Rx = '04'
-    Ry = '05'
-    Rz = '06'
-
+    X  = 1
+    Y  = 2
+    Z  = 3
+    Rx = 4
+    Ry = 5
+    Rz = 6

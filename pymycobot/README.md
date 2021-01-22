@@ -14,83 +14,63 @@ We support Python2, Python3.5 or later.
 
 **Class**:
 
-- [MyCobot](##MyCobot)
-- [Angle](##Angle)
-- [Coord](##Coord)
+- [MyCobot](#MyCobot)
+  - [Overall status](#Overall-status)
+  - [MDI mode and operation](#MDI-mode-and-operation)
+  - [JOG mode and operation](#JOG-mode-and-operation)
+  - [Running status and Settings](#Running-status-and-Settings)
+  - [Servo control](#Servo-control)
+  - [Atom IO](#Atom-IO)
+- [Angle](#Angle)
+- [Coord](#Coord)
 
-## MyCobot
+# MyCobot
 
-### MyCobot.power_on()
+## Overall status
+
+### power_on()
 
 - **Description**
 
   Robot arm power up.
 
-- **Parameters**
-
-  None
-
-- **Returns**
-
-  None
-
-### MyCobot.power_off()
+### power_off()
 
 - **Description**
 
   Robot arm power down.
 
-- **Parameters**
+### is_power_on()
 
-  None
+- **Description**
+
+  Adjust robot arm wether power on.
 
 - **Returns**
 
-  None
+  - 1: power on
+  - 0: power off
+  - -1: error
 
-### MyCobot.set_free_mode()
+### set_free_mode()
 
 - **Description**
 
   Robot arm into free moving mode.
 
-- **Parameters**
+## MDI mode and operation
 
-  None
-
-- **Returns**
-
-  None
-
-### MyCobot.get_angles()
+### get_angles()
 
 - **Description**
 
   Get the degree of all joints.
 
-- **Parameters**
-
-  None
-
 - **Returns**
 
-  A float list of degree.
+  `list`: A float list of degree.
 
-### MyCobot.get_angles_by_radian()
-
-- **Description**
-
-  Get the radians of all joints.
-
-- **Parameters**
-
-  None
-
-- **Returns**
-
-  A float list of radian.
-
-### MyCobot.send_angle()
+### send_angle()
 
 - **Description**
 
@@ -104,10 +84,6 @@ We support Python2, Python3.5 or later.
 
   speed: (int)
 
-- **Returns**
-
-  None
-
 - **Example**
 
   ```python
@@ -119,7 +95,7 @@ We support Python2, Python3.5 or later.
   mycobot.send_angle(Angle.J2.value, 10, 50)
   ```
 
-### MyCobot.send_angles()
+### send_angles()
 
 - **Description**
 
@@ -130,10 +106,6 @@ We support Python2, Python3.5 or later.
   degrees: a list of degree value(List[float])
 
   speed: (int)
-
-- **Returns**
-
-  None
 
 - **Example**
 
@@ -146,7 +118,17 @@ We support Python2, Python3.5 or later.
   mycobot.send_angles([0,0,0,0,0,0], 80)
   ```
 
-### MyCobot.send_angles_by_radian()
+### get_radians()
+
+- **Description**
+
+  Get the radians of all joints.
+
+- **Returns**
+
+  `list`: A float list of radian.
+
+### send_radians()
 
 - **Description**
 
@@ -157,10 +139,6 @@ We support Python2, Python3.5 or later.
   degrees: a list of radian value(List[float])
 
   speed: (int)
-
-- **Returns**
-
-  None
 
 - **Example**
 
@@ -173,21 +151,17 @@ We support Python2, Python3.5 or later.
   mycobot.send_angles_by_radian([1,1,1,1,1,1], 70)
   ```
 
-### MyCobot.get_coords()
+### get_coords()
 
 - **Description**
 
   Get the Coords from robot arm.
 
-- **Parameters**
-
-  None
-
 - **Returns**
 
-  A float list of coord.
+  `list`: A float list of coord.
 
-### MyCobot.send_coord()
+### send_coord()
 
 - **Description**
 
@@ -201,10 +175,6 @@ We support Python2, Python3.5 or later.
 
   speed: (int)
 
-- **Returns**
-
-  None
-
 - **Example**
 
   ```python
@@ -216,7 +186,7 @@ We support Python2, Python3.5 or later.
   mycobot.send_coord(Coord.X.value, -40, 70)
   ```
 
-### MyCobot.send_coords()
+### send_coords()
 
 - **Description**
 
@@ -227,10 +197,6 @@ We support Python2, Python3.5 or later.
   coords: a list of coords value(List[float])
 
   speed: (int)
-
-- **Returns**
-
-  None
 
 - **Example**
 
@@ -243,105 +209,103 @@ We support Python2, Python3.5 or later.
   mycobot.send_coords([160, 160, 160, 0, 0, 0], 70, 0)
   ```
 
-### MyCobot.set_color()
-
-- **Description**
-
-  Set the color of the light on the top of the robot arm.
-
-- **Parameters**
-
-  rgb: (string) like: "FF0000"
-
-- **Returns**
-
-  None
-
-### MyCobot.is_moving()
-
-- **Description**
-
-  Judge whether the manipulator is moving or not.
-
-- **Parameters**
-
-  None
-
-- **Returns**
-
-  bool: `True` - moving, `False` - not moving.
-
-### MyCobot.pause()
+### pause()
 
 - **Description**
 
   Pause movement.
 
-- **Parameters**
-
-  None
-
-- **Returns**
-
-  None
-
-### MyCobot.resume()
+### resume()
 
 - **Description**
 
   Recovery movement.
 
-- **Parameters**
-
-  None
-
-- **Returns**
-
-  None
-
-### MyCobot.stop()
+### stop()
 
 - **Description**
 
   Stop moving.
 
-- **Parameters**
-
-  None
-
-- **Returns**
-
-  None
-
-### MyCobot.is_pause()
+### is_paused()
 
 - **Description**
 
   Judge whether the manipulator pauses or not.
 
-- **Parameters**
+- **Returns**
 
-  None
+  bool:
+
+  - `1` - paused
+  - `0` - not paused
+  - `-1` - error
+
+### is_in_position()
+
+- **Description**
+
+  Judge whether in the position.
 
 - **Returns**
 
-  bool: `True` - pause, `False` - not pause.
+  bool:
 
-### MyCobot.get_speed()
+  - `1` - true
+  - `0` - false
+  - `-1` - error
+
+### is_moving()
+
+- **Description**
+
+  Judge whether the manipulator is moving or not.
+
+- **Returns**
+
+  bool: `True` - moving, `False` - not moving.
+
+## JOG mode and operation
+
+### jog_angle()
+
+- **Description**
+
+  Jog control angle
+
+- **Parameters**
+
+  joint id: (`int`) 1 ~ 6
+
+### jog_coord()
+
+- **Description**
+
+  Jog control coord.
+
+- **Parameters**
+
+  coord id: (`int`) 1 ~ 6
+
+### jog_stop()
+
+- **Description**
+
+  Stop jog move.
+
+## Running status and Settings
+
+### get_speed()
 
 - **Description**
 
   Get speed.
 
-- **Parameters**
-
-  None
-
 - **Returns**
 
   speed: (int)
 
-### MyCobot.set_speed()
+### set_speed()
 
 - **Description**
 
@@ -349,19 +313,99 @@ We support Python2, Python3.5 or later.
 
 - **Parameters**
 
-  speed: (int)
+  speed: (`int`) 0 ~ 100
+
+### get_joint_min_angle()
+
+- **Description**
+
+  Gets the minimum movement angle of the specified joint
+
+- **Parameters**
+
+  joint id: (`int`)
 
 - **Returns**
 
-  None
+  angle: (int)
 
-## Angle
+### get_joint_max_angle()
+
+- **Description**
+
+  Gets the maximum movement angle of the specified joint
+
+- **Parameters**
+
+  joint id: (`int`)
+
+- **Returns**
+
+  angle: (int)
+
+## Servo control
+
+### is_servo_enable()
+
+- **Description**
+
+  Determine whether all steering gears are connected
+
+- **Parameters**
+
+  servo id: (`int`)
+
+- **Returns**
+
+  speed: (int)
+
+  - `0`: disable
+  - `1`: enbale
+  - `-1`: error
+
+### is_all_servo_enable()
+
+- **Description**
+
+  Determine whether the specified steering gear is connected
+
+- **Returns**
+
+  flag: (int)
+
+  - `0`: disable
+  - `1`: enbale
+  - `-1`: error
+
+## Atom IO
+
+### set_led_color()
+
+- **Description**
+
+  Set the color of the light on the top of the robot arm.
+
+- **Parameters**
+
+  rgb: (`string`) like: "FF0000"
+
+### set_claw()
+
+- **Description**
+
+  Set the color of the light on the top of the robot arm.
+
+- **Parameters**
+
+  flag: (`int`) 0 - open, 1 - close
+
+# Angle
 
 **Description**
 
 Instance class of joint. It's recommended to use this class to select joint.
 
-## Coord
+# Coord
 
 **Description**
 
