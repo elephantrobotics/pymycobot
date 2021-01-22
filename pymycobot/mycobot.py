@@ -1,6 +1,6 @@
 import sys
 sys.path.append('.')
-import time, serial, struct, math
+import time, serial, struct, math, functools
 
 
 class Command():
@@ -46,6 +46,10 @@ class Command():
     # ATOM IO
     SET_COLOR = 0x6a
     SET_CLAW = 0x66
+
+
+class MyCobotDataException(Exception):
+    pass
 
 
 class DataProcesser():
@@ -94,17 +98,14 @@ class DataProcesser():
             return _data_list
 
         elif genre in [Command.SEND_ANGLE, Command.SEND_COORD]:
-            return self._flatten([
-                data[0],
-                self._flatten(self._encode_int16(data[1])),
-                data[2]
-            ])
+            return self._flatten(
+                [data[0],
+                 self._flatten(self._encode_int16(data[1])), data[2]])
 
-        elif genre in [Command.JOG_ANGLE, Command.JOG_COORD]:
-            return self._flatten([
-                data[0], data[1],
-                data[2]
-            ])
+        elif genre in [
+                Command.JOG_ANGLE, Command.JOG_COORD, Command.SET_COLOR
+        ]:
+            return self._flatten([data[0], data[1], data[2]])
 
         else:
             return [data[0]]
@@ -144,6 +145,18 @@ class DataProcesser():
 
     def _process_bool(self, data):
         return data[0] if data else -1
+
+    @staticmethod
+    def check_id(func):
+
+        @functools.wraps(func)
+        def _wapper(*args, **kwargs):
+            if not 0 <= args[0] <= 6:
+                raise MyCobotDataException('id not right, should be 1 ~ 6')
+
+            func(args, kwargs)
+
+        return _wapper
 
 
 class MyCobot(DataProcesser):
@@ -250,8 +263,8 @@ class MyCobot(DataProcesser):
             -1: error data
 
         '''
-        received = self.__mesg(Command.IS_POWER_ON, has_reply=True)
-        return self._process_bool(received)
+        return self._process_bool(
+            self.__mesg(Command.IS_POWER_ON, has_reply=True))
 
     def set_free_mode(self):
         # self._write('fefe0213fa')
@@ -360,7 +373,7 @@ class MyCobot(DataProcesser):
 
         '''
         if len(coords) != 6:
-            raise Exception('The leght of coords should be 6.')
+            raise MyCobotDataException('The leght of coords should be 6.')
 
         coord_list = []
         for idx in range(3):
@@ -395,7 +408,7 @@ class MyCobot(DataProcesser):
             -1: error data
         '''
         if len(data) != 6:
-            raise Exception('The lenght of coords is not right')
+            raise MyCobotDataException('The lenght of coords is not right')
 
         if id == 1:
             data_list = []
@@ -406,7 +419,7 @@ class MyCobot(DataProcesser):
         elif id == 0:
             data_list = [self._coord_to_int(i) for i in data]
         else:
-            raise Exception("id is not right, please input 0 or 1")
+            raise MyCobotDataException("id is not right, please input 0 or 1")
 
         received = self.__mesg(Command.IS_IN_POSITION,
                               data=data_list,
@@ -428,6 +441,7 @@ class MyCobot(DataProcesser):
     def jog_angle(self, joint_id, direction, speed):
         '''Joint control
 
+        Args:
             joint_id: string
             direction: int [0, 1]
             speed: int (0 - 100)
@@ -437,6 +451,7 @@ class MyCobot(DataProcesser):
     def jog_coord(self, coord_id, direction, speed):
         '''Coord control 
 
+        Args:
             coord: string
             direction: int [0, 1]
             speed: int (0 - 100)
@@ -458,7 +473,8 @@ class MyCobot(DataProcesser):
             speed (int): 0 - 100
         '''
         if not 0 <= speed <= 100:
-            raise Exception('speed value not right, should be 0 ~ 100 ')
+            raise MyCobotDataException(
+                'speed value not right, should be 0 ~ 100 ')
 
         self.__mesg(Command.SET_SPEED, data=[speed])
 
@@ -491,15 +507,11 @@ class MyCobot(DataProcesser):
             rgs (str): example 'ff0000'
 
         '''
-        # rgb = struct.pack('bbb', rgb)
-        command = 'fefe056a{}fa'.format(rgb)
-        if self._version == 2:
-            command = command.decode('hex')
-        elif self._version == 3:
-            command = bytes.fromhex(command)
-        self._serial_port.write(command)
-        self._serial_port.flush()
-        time.sleep(0.05)
+        if len(rgb) != 6:
+            raise MyCobotDataException('rgb format should be like: "FF0000"')
+
+        data = list(bytearray(rgb))
+        self.__mesg(Command.SET_COLOR, data=data)
 
     def set_claw(self, flag):
         '''Set claw switch
@@ -509,6 +521,6 @@ class MyCobot(DataProcesser):
 
         '''
         if not flag in [0, 1]:
-            raise Exception('eror flag, please input 0 or 1')
+            raise MyCobotDataException('eror flag, please input 0 or 1')
 
         self.__mesg(Command.SET_CLAW, data=[flag])
