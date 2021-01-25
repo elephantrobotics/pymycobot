@@ -26,6 +26,10 @@ We support Python2, Python3.5 or later.
 
 # MyCobot
 
+```python
+from pymycobot.mycobot import MyCobot
+```
+
 ## Overall status
 
 ### power_on()
@@ -88,7 +92,7 @@ We support Python2, Python3.5 or later.
 
   ```python
   from pymycobot.mycobot import MyCobot
-  from pymycobot.common import Angle
+  from pymycobot.genre import Angle
 
 
   mycobot = MyCobot('/dev/ttyUSB0')
@@ -111,7 +115,7 @@ We support Python2, Python3.5 or later.
 
   ```python
   from pymycobot.mycobot import MyCobot
-  from pymycobot.common import Angle
+  from pymycobot.genre import Angle
 
 
   mycobot = MyCobot('/dev/ttyUSB0')
@@ -144,7 +148,7 @@ We support Python2, Python3.5 or later.
 
   ```python
   from pymycobot.mycobot import MyCobot
-  from pymycobot.common import Angle
+  from pymycobot.genre import Angle
 
 
   mycobot = MyCobot('/dev/ttyUSB0')
@@ -179,7 +183,7 @@ We support Python2, Python3.5 or later.
 
   ```python
   from pymycobot.mycobot import MyCobot
-  from pymycobot.common import Coord
+  from pymycobot.genre import Coord
 
 
   mycobot = MyCobot('/dev/ttyUSB0')
@@ -202,7 +206,7 @@ We support Python2, Python3.5 or later.
 
   ```python
   from pymycobot.mycobot import MyCobot
-  from pymycobot.common import Coord
+  from pymycobot.genre import Coord
 
 
   mycobot = MyCobot('/dev/ttyUSB0')
@@ -401,11 +405,19 @@ We support Python2, Python3.5 or later.
 
 # Angle
 
+```python
+from pymycobot.genre import Angle
+```
+
 **Description**
 
 Instance class of joint. It's recommended to use this class to select joint.
 
 # Coord
+
+```python
+from pymycobot.genre import Coord
+```
 
 **Description**
 

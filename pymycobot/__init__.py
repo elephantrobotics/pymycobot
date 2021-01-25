@@ -1,10 +1,8 @@
 from __future__ import absolute_import
-import platform
 
 
 name = 'pymycobot'
 
-version = (platform.python_version())
+__version__ = '2.1.2'
 
-__all__ = ['mycobot', 'common']
-
+__all__ = ['mycobot', 'genre']

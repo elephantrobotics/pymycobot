@@ -1,6 +1,6 @@
 import time, random, subprocess
 from pymycobot.mycobot import MyCobot
-from pymycobot.common import Angle, Coord
+from pymycobot.genre import Angle, Coord
 
 def test(mycobot):
     print('Start check api\n')
@@ -33,6 +33,18 @@ def test(mycobot):
     print('==> degrees: {}\n'.format(mycobot.get_angles()))
     time.sleep(5)
 
+    print('::send_angle()')
+    mycobot.send_angle(Angle.J2.value, 60, 50)
+    print('==> angle: joint2, degree: 10, speed: 50\n')
+    time.sleep(2)
+
+    coords = mycobot.get_radians()
+    time.sleep(1)
+    print(coords)
+    mycobot.send_radians(coords, 50)
+    time.sleep(1)
+
+
     print(':: send power off')
     mycobot.power_off()
     print('power status: {}'.format(mycobot.is_power_on()))
@@ -40,7 +52,7 @@ def test(mycobot):
     print('::send_radians (should not move)')
     radians = [1,1,1,1,1,1]
     mycobot.send_radians(radians, 70)
-    print('==> set raidans {}, speed 70\n'.format(radians))
+    print('==> set radians {}, speed 70\n'.format(radians))
     time.sleep(5)
 
     print(':: send power on')
@@ -50,18 +62,13 @@ def test(mycobot):
     radians = [1,1,1,1,1,1]
     mycobot.send_radians(radians, 70)
     print('movement status: {}'.format(mycobot.is_moving()))
-    print('==> set raidans {}, speed 70\n'.format(radians))
+    print('==> set radians {}, speed 70\n'.format(radians))
     time.sleep(5)
     print('movement status: {}'.format(mycobot.is_moving()))
 
     print('::get_radians()')
     print('==> radians: {}\n'.format(mycobot.get_radians()))
     time.sleep(5)
-
-    print('::send_angle()')
-    mycobot.send_angle(Angle.J2.value, 10, 50)
-    print('==> angle: joint2, degree: 10, speed: 50\n')
-    time.sleep(2)
 
     print('::get_coords()')
     print('==> coords {}\n'.format(mycobot.get_coords()))
