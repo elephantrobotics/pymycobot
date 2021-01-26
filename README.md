@@ -14,7 +14,7 @@ If you want to install it separately.
 ### Pip
 
 ```bash
-pip install pymycobot --upgrade
+pip install pymycobot --upgrade --user
 ```
 
 **Notes:**
@@ -22,7 +22,7 @@ pip install pymycobot --upgrade
 > Now only the version is `Atom2.4` or later is supported. If you use an earlier version, please install `pymycobot 1.0.7`.
 
 ```bash
-pip install pymycobot==1.0.7
+pip install pymycobot==1.0.7 --user
 ```
 
 ### Source code
