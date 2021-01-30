@@ -48,13 +48,13 @@ from pymycobot.mycobot import MyCobot
 
 - **Description**
 
-  Adjust robot arm wether power on.
+  Adjust robot arm whether power on.
 
 - **Returns**
 
-  - 1: power on
-  - 0: power off
-  - -1: error
+  - `1`: power on
+  - `0`: power off
+  - `-1`: error
 
 ### set_free_mode()
 
@@ -82,11 +82,11 @@ from pymycobot.mycobot import MyCobot
 
 - **Parameters**
 
-  id: Joint id(common.Angle)
+  id: Joint id(`genre.Angle`)
 
-  degree: degree value(float)
+  degree: degree value(`float`)
 
-  speed: (int)
+  speed: (`int`)
 
 - **Example**
 
@@ -107,9 +107,9 @@ from pymycobot.mycobot import MyCobot
 
 - **Parameters**
 
-  degrees: a list of degree value(List[float])
+  degrees: a list of degree value(`List[float]`)
 
-  speed: (int)
+  speed: (`int`)
 
 - **Example**
 
@@ -140,9 +140,9 @@ from pymycobot.mycobot import MyCobot
 
 - **Parameters**
 
-  degrees: a list of radian value(List[float])
+  degrees: a list of radian value(`List[float]`)
 
-  speed: (int)
+  speed: (`int`)
 
 - **Example**
 
@@ -173,11 +173,11 @@ from pymycobot.mycobot import MyCobot
 
 - **Parameters**
 
-  id: coord name(common.Coord)
+  id: coord id(`genre.Coord`)
 
-  coord: coord value(float)
+  coord: coord value(`float`)
 
-  speed: (int)
+  speed: (`int`)
 
 - **Example**
 
@@ -198,9 +198,9 @@ from pymycobot.mycobot import MyCobot
 
 - **Parameters**
 
-  coords: a list of coords value(List[float])
+  coords: a list of coords value(`List[float]`)
 
-  speed: (int)
+  speed: (`int`)
 
 - **Example**
 
@@ -239,7 +239,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  bool:
+  `bool`:
 
   - `1` - paused
   - `0` - not paused
@@ -253,7 +253,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  bool:
+  `bool`:
 
   - `1` - true
   - `0` - false
@@ -267,7 +267,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  bool: `True` - moving, `False` - not moving.
+  `bool`: `True` - moving, `False` - not moving.
 
 ## JOG mode and operation
 
@@ -307,7 +307,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  speed: (int)
+  speed: (`int`)
 
 ### set_speed()
 
@@ -331,7 +331,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  angle: (int)
+  angle: (`float`)
 
 ### get_joint_max_angle()
 
@@ -345,7 +345,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  angle: (int)
+  angle: (`float`)
 
 ## Servo control
 
@@ -361,7 +361,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  speed: (int)
+  flag: (`int`)
 
   - `0`: disable
   - `1`: enbale
@@ -375,7 +375,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Returns**
 
-  flag: (int)
+  flag: (`int`)
 
   - `0`: disable
   - `1`: enbale

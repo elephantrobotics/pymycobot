@@ -110,7 +110,7 @@ class MyCobot(DataProcesser):
             -1: error data
 
         '''
-        return self._process_bool(
+        return self._process_single(
             self.__mesg(Command.IS_POWER_ON, has_reply=True))
 
     def set_free_mode(self):
@@ -236,7 +236,7 @@ class MyCobot(DataProcesser):
         self.__mesg(Command.PAUSE)
 
     def is_paused(self):
-        return self._process_bool(self.__mesg(Command.IS_PAUSED,
+        return self._process_single(self.__mesg(Command.IS_PAUSED,
                                              has_reply=True))
 
     def resume(self):
@@ -273,7 +273,7 @@ class MyCobot(DataProcesser):
         received = self.__mesg(Command.IS_IN_POSITION,
                               data=data_list,
                               has_reply=True)
-        return self._process_bool(received)
+        return self._process_single(received)
 
     def is_moving(self):
         '''
@@ -283,7 +283,7 @@ class MyCobot(DataProcesser):
             1 : is moving
             -1: error data
         '''
-        return self._process_bool(self.__mesg(Command.IS_MOVING,
+        return self._process_single(self.__mesg(Command.IS_MOVING,
                                              has_reply=True))
 
     # JOG mode and operation
@@ -314,7 +314,7 @@ class MyCobot(DataProcesser):
 
     # Running status and Settings
     def get_speed(self):
-        return self._process_bool(self.__mesg(Command.GET_SPEED,
+        return self._process_single(self.__mesg(Command.GET_SPEED,
                                              has_reply=True))
 
     def set_speed(self, speed):
@@ -346,11 +346,11 @@ class MyCobot(DataProcesser):
     # Servo control
     @check_id
     def is_servo_enable(self, servo_id):
-        return self._process_bool(
+        return self._process_single(
             self.__mesg(Command.IS_SERVO_ENABLE, data=[servo_id]))
 
     def is_all_servo_enable(self):
-        return self._process_bool(
+        return self._process_single(
             self.__mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True))
 
     # Atom IO

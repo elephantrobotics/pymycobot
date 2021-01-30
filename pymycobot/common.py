@@ -126,20 +126,20 @@ class DataProcesser():
         if cmd_id != genre:
             return []
         data_pos = idx + 4
-        avild_data = (data[data_pos:data_pos + data_len])
+        valid_data = (data[data_pos:data_pos + data_len])
 
         res = []
         if data_len == 12:
-            for idx in range(0, len(avild_data), 2):
-                a = avild_data[idx:idx + 2]
-                res.append(self._decode_int16(a))
+            for idx in range(0, len(valid_data), 2):
+                one = valid_data[idx:idx + 2]
+                res.append(self._decode_int16(one))
         elif data_len == 2:
-            res.append(self._decode_int16(avild_data))
+            res.append(self._decode_int16(valid_data))
         else:
-            res.append(self._decode_int8(avild_data))
+            res.append(self._decode_int8(valid_data))
         return res
 
-    def _process_bool(self, data):
+    def _process_single(self, data):
         return data[0] if data else -1
 
 
