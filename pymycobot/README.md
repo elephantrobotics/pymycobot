@@ -201,6 +201,8 @@ from pymycobot.mycobot import MyCobot
   coords: a list of coords value(`List[float]`)
 
   speed: (`int`)
+  
+  mode: (`int`): `0` - angluar, `1` - linear
 
 - **Example**
 
