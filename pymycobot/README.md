@@ -159,11 +159,11 @@ from pymycobot.mycobot import MyCobot
 
 - **Description**
 
-  Get the Coords from robot arm.
+  Get the Coords from robot arm, coordinate system based on base.
 
 - **Returns**
 
-  `list`: A float list of coord.
+  `list`: A float list of coord - `[x, y, z, rx, ry, rz]`
 
 ### send_coord()
 
@@ -201,7 +201,7 @@ from pymycobot.mycobot import MyCobot
   coords: a list of coords value(`List[float]`)
 
   speed: (`int`)
-  
+
   mode: (`int`): `0` - angluar, `1` - linear
 
 - **Example**
