@@ -3,10 +3,10 @@ sys.path.append('.')
 import time, serial, math
 
 from pymycobot.error import MyCobotDataException, check_id
-from pymycobot.common import Command, DataProcesser
+from pymycobot.common import Command, MyCobotData
 
 
-class MyCobot(DataProcesser):
+class MyCobot(MyCobotData):
     '''MyCobot Python API
 
     Possessed function:
@@ -46,10 +46,22 @@ class MyCobot(DataProcesser):
         # Servo control
             is_servo_enable()
             is_all_servo_enable()
+            release_servo()
+            focus_servo()
 
         # Atom IO
             set_led_color()
             set_claw()
+            set_pin_mode()
+            set_digital_output()
+            get_digital_input()
+            set_pwm_mode()
+            set_pwm_output()
+            get_gripper_value()
+            set_gripper_state()
+            set_gripper_value()
+            set_gripper_ini()
+            is_gripper_moving()
     '''
 
     def __init__(self, port, boudrate='115200', timeout=0.1):
@@ -353,6 +365,24 @@ class MyCobot(DataProcesser):
         return self._process_single(
             self.__mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True))
 
+    def release_servo(self, servo_id):
+        '''Power on designated servo
+
+        Args:
+            servo_id: 1 ~ 6
+
+        '''
+        self.__mesg(Command.RELEASE_SERVO, servo_id)
+
+    def focus_servo(self, servo_id):
+        '''Power off designated servo
+
+        Args:
+            servo_id: 1 ~ 6
+
+        '''
+        self.__mesg(Command.RELEASE_SERVO, servo_id)
+
     # Atom IO
     def set_led_color(self, rgb):
         '''Set the light color
@@ -375,14 +405,81 @@ class MyCobot(DataProcesser):
         self._serial_port.flush()
         time.sleep(0.05)
 
-    def set_claw(self, flag):
-        '''Set claw switch
+    def set_pin_mode(self, pin_no, pin_mode):
+        '''
 
         Args:
-            flag (int): 0 - open, 1 - close
+            pin_no   (int):
+            pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
+
+        '''
+        self.__mesg(Command.SET_PIN_MODE, data=[pin_no, pin_mode])
+
+    def set_digital_output(self, pin_no, pin_signal):
+        '''
+
+        Args:
+            pin_no     (int):
+            pin_signal (int): 0 / 1
+
+        '''
+        self.__mesg(Command.SET_DIGITAL_OUTPUT, data=[pin_no, pin_signal])
+
+    def get_digital_input(self, pin_no):
+        return self._process_single(
+            self.__mesg(Command.GET_DIGITAL_INPUT,
+                        data=[pin_no],
+                        has_reply=True))
+
+    def set_pwm_mode(self, pin_no, channel):
+        self.__mesg(Command.SET_PWM_MODE, data=[pin_no, channel])
+
+    def set_pwm_output(self, channel, pin_val):
+        self.__mesg(Command.SET_PWM_OUTPUT, data=[channel, pin_val])
+
+    def get_gripper_value(self):
+        return self._process_single(
+            self.__mesg(Command.GET_GRIPPER_VALUE, has_reply=True))
+
+    def set_gripper_state(self, flag, speed):
+        '''Set gripper switch
+
+        Args:
+            flag  (int): 0 - open, 1 - close
+            speed (int): 0 ~ 100
 
         '''
         if not flag in [0, 1]:
             raise MyCobotDataException('eror flag, please input 0 or 1')
 
-        self.__mesg(Command.SET_CLAW, data=[flag])
+        self.__mesg(Command.SET_GRIPPER_STATE, data=[flag, speed])
+
+    def set_gripper_value(self, value, speed):
+        '''Set gripper value
+
+        Args:
+            value (int): 0 ~ 496
+            speed (int): 0 ~ 100
+
+        '''
+        self.__mesg(Command.SET_GRIPPER_VALUE, data=[value, speed])
+
+    def set_gripper_ini(self):
+        '''Set the current position to zero
+
+        Current position value is `248`.
+
+        '''
+        self.__mesg(Command.SET_GRIPPER_INI)
+
+    def is_gripper_moving(self):
+        '''Judge whether the gripper is moving or not
+
+        Returns:
+            0 : not moving
+            1 : is moving
+            -1: error data
+
+        '''
+        return self._process_single(
+            self.__mesg(Command.IS_GRIPPER_MOVING, has_reply=True))

@@ -42,13 +42,24 @@ class Command():
     # SERVO CONTROL
     IS_SERVO_ENABLE = 0x50
     IS_ALL_SERVO_ENABLE = 0x51
+    RELEASE_SERVO = 0x56
+    FOCUS_SERVO = 0x57
 
     # ATOM IO
+    SET_PIN_MODE = 0x60
+    SET_DIGITAL_OUTPUT = 0x61
+    GET_DIGITAL_INPUT = 0x62
+    SET_PWM_MODE = 0x63
+    SET_PWM_OUTPUT = 0x64
+    GET_GRIPPER_VALUE = 0x65
+    SET_GRIPPER_STATE = 0x66
+    SET_GRIPPER_VALUE = 0x67
+    SET_GRIPPER_INI = 0x68
+    IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6a
-    SET_CLAW = 0x66
 
 
-class DataProcesser():
+class MyCobotData():
     # Functional approach
     def _encode_int8(self, data):
         return struct.pack('b', data)
@@ -79,12 +90,15 @@ class DataProcesser():
                     for x in _list), [])
 
     def _process_data_command(self, data, genre):
+        # lenght = 0
         if not data:
             return []
 
+        # lenght >= 6
         if genre in [
-                Command.SEND_ANGLES, Command.SEND_COORDS,
-                Command.IS_IN_POSITION
+                Command.SEND_ANGLES,
+                Command.SEND_COORDS,
+                Command.IS_IN_POSITION,
         ]:
             _data_list = []
             for value in data[:6]:
@@ -93,16 +107,30 @@ class DataProcesser():
                 _data_list.append((value))
             return _data_list
 
+        # lenght = 3
         elif genre in [Command.SEND_ANGLE, Command.SEND_COORD]:
             return self._flatten(
                 [data[0],
                  self._flatten(self._encode_int16(data[1])), data[2]])
 
+        # lenght = 2
         elif genre in [
-                Command.JOG_ANGLE, Command.JOG_COORD, Command.SET_COLOR
+                Command.JOG_ANGLE,
+                Command.JOG_COORD,
+                Command.SET_PIN_MODE,
+                Command.SET_DIGITAL_OUTPUT,
+                Command.SET_PWM_MODE,
+                Command.SET_PWM_OUTPUT,
+                Command.SET_GRIPPER_STATE,
+                Command.SET_COLOR,
         ]:
             return data
 
+        elif genre in [Command.SET_GRIPPER_VALUE]:
+            return self._flatten(
+                [self._flatten(self._encode_int16(data[0])), data[1]])
+
+        # lenght = 1
         else:
             return [data[0]]
 
@@ -127,6 +155,8 @@ class DataProcesser():
             return []
         data_pos = idx + 4
         valid_data = (data[data_pos:data_pos + data_len])
+        print(data_len)
+        print(valid_data)
 
         res = []
         if data_len == 12:
@@ -141,6 +171,3 @@ class DataProcesser():
 
     def _process_single(self, data):
         return data[0] if data else -1
-
-
-

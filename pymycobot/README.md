@@ -381,6 +381,26 @@ from pymycobot.mycobot import MyCobot
   - `1`: enbale
   - `-1`: error
 
+### release_servo()
+
+- **Description**
+
+  Power on designated servo
+
+- **Parameters**
+
+  servo_id: 1 ~ 6
+
+### focus_servo()
+
+- **Description**
+
+  Power off designated servo
+
+- **Parameters**
+
+  servo_id: 1 ~ 6
+
 ## Atom IO
 
 ### set_led_color()
@@ -393,15 +413,88 @@ from pymycobot.mycobot import MyCobot
 
   rgb: (`string`) like: "FF0000"
 
-### set_claw()
-
-- **Description**
-
-  Set the color of the light on the top of the robot arm.
+### set_pin_mode()
 
 - **Parameters**
 
-  flag: (`int`) 0 - open, 1 - close
+  pin_no (int):
+  pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
+
+### set_digital_output()
+
+- **Parameters**
+
+  pin_no (int):
+
+  pin_signal (int): 0 / 1
+
+### get_digital_input()
+
+- **Description**
+
+- **Parameters**
+
+### set_pwm_mode()
+
+- **Description**
+
+- **Parameters**
+
+### set_pwm_output()
+
+- **Description**
+
+- **Parameters**
+
+### get_gripper_value()
+
+- **Description**
+
+  Get gripper value
+
+### set_gripper_state()
+
+- **Description**
+
+  Set gripper switch
+
+- **Parameters**
+
+  flag (`int`): 0 - open, 1 - close
+
+  speed (`int`): 0 ~ 100
+
+### set_gripper_value()
+
+- **Description**
+
+  Set gripper value
+
+- **Parameters**
+
+  value (int): 0 ~ 496
+
+  speed (int): 0 ~ 100
+
+### set_gripper_ini()
+
+- **Description**
+
+  Set the current position to zero
+
+  Current position value is `248`.
+
+### is_gripper_moving()
+
+- **Description**
+
+  Judge whether the gripper is moving or not
+
+- Returns
+
+  - `0` : not moving
+  - `1` : is moving
+  - `-1`: error data
 
 # Angle
 
