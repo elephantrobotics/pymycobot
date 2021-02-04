@@ -7,12 +7,12 @@ def test(mycobot):
     # print()
 
     print('all servo status: {}'.format(mycobot.is_all_servo_enable()))
-    time.sleep(1)
+    time.sleep(2)
     servo = 2
     print('servo {} status: {}'.format(servo, mycobot.is_servo_enable(servo)))
-    time.sleep(1)
+    time.sleep(2)
     print('power status: {}'.format(mycobot.is_power_on()))
-    time.sleep(1)
+    time.sleep(2)
 
     color_name = ['red', 'green', 'blue']
     color_code = ['ff0000', '00ff00', '0000ff']
@@ -105,6 +105,7 @@ def test(mycobot):
     print('=== check end <==\n')
 
     print(mycobot.get_joint_min_angle(1))
+    time.sleep(2)
     print(mycobot.get_joint_max_angle(1))
 
 

@@ -2,7 +2,7 @@ import sys
 
 
 PYTHON_VERSION = sys.version_info[:2]
-VERSION  = "2.1.2"
+VERSION  = "2.2.0"
 
 if (2, 7) != PYTHON_VERSION < (3, 5):
     print("This mycobot version requires Python2.7, 3.5 or later.")
@@ -41,6 +41,11 @@ setuptools.setup(
 )
 
 change_log = '''
+# 2021.2.5
+
+relase v2.2.0
+    - add new method for girpper and IO.
+
 # 2021.1.25
 
 release v2.1.2
