@@ -155,8 +155,8 @@ class MyCobotData():
             return []
         data_pos = idx + 4
         valid_data = (data[data_pos:data_pos + data_len])
-        print(data_len)
-        print(valid_data)
+        # print(data_len)
+        # print(valid_data)
 
         res = []
         if data_len == 12:

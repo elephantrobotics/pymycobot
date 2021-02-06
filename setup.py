@@ -2,7 +2,7 @@ import sys
 
 
 PYTHON_VERSION = sys.version_info[:2]
-VERSION  = "2.2.0"
+VERSION  = "2.2.1"
 
 if (2, 7) != PYTHON_VERSION < (3, 5):
     print("This mycobot version requires Python2.7, 3.5 or later.")
