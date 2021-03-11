@@ -1,6 +1,5 @@
-import time, random, subprocess
+import time, subprocess
 from pymycobot.mycobot import MyCobot
-from pymycobot.genre import Angle, Coord
 
 def gripper_test(mc):
     print('Start check IO part of api\n')

@@ -5,3 +5,5 @@ pymycobot.egg-info/
 log
 .vscode/
 pymycobot/__pycache__/
+
+test.py
