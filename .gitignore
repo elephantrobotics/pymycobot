@@ -7,3 +7,6 @@ log
 pymycobot/__pycache__/
 
 test.py
+port.txt
+record.txt
+test_test.py

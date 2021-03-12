@@ -1,12 +1,11 @@
-import time, subprocess
+import time
 from pymycobot.mycobot import MyCobot
 
 
 if __name__ == '__main__':
-    # port = subprocess.check_output(['echo -n /dev/ttyUSB*'], 
-                                    # shell=True).decode()
-    # port = "/dev/cu.usbserial-0203B030"
-    port = "/dev/cu.usbserial-0213245D"
+    with open('./port.txt') as f:
+        port = f.read().strip().replace('\n', '')
+        print(port)
     cobot = MyCobot(port)
     cobot.send_angles([0,0,0,0,0,0],100)
     time.sleep(10)

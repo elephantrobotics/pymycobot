@@ -56,7 +56,7 @@ def test(mycobot):
 
 if __name__ == '__main__':
     print('''
-————————————————————————————————————————————
+--------------------------------------------
 | This file will test basic option method: |
 |     set_led_color()                      |
 |     send_angles()                        |
@@ -68,12 +68,14 @@ if __name__ == '__main__':
 |     get_coords()                         |
 |     send_coord()                         |
 |     set_free_mode()                      |
-————————————————————————————————————————————
+--------------------------------------------
           ''')
     time.sleep(3)
     # port = subprocess.check_output(['echo -n /dev/ttyUSB*'], 
                                     # shell=True).decode()
-    port = "/dev/cu.usbserial-0203B030"
+    with open('./port.txt') as f:
+        port = f.read().strip().replace('\n', '')
+        print(port)
     # mycobot = MyCobot(port, debug=True)
     mycobot = MyCobot(port)
     test(mycobot)
