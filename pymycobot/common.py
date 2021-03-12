@@ -9,6 +9,7 @@ class Command():
     FOOTER = 0xfa
 
     # Overall status
+    VERSION = 0x00
     POWER_ON = 0x10
     POWER_OFF = 0x11
     IS_POWER_ON = 0x12
@@ -89,6 +90,56 @@ class MyCobotData():
         return sum(([x] if not isinstance(x, list) else self._flatten(x)
                     for x in _list), [])
 
+    def _process_data_command(self, args):
+        if not args:
+            return []
+
+        return self._flatten([
+                [self._encode_int16(i) for i in x]
+                if isinstance(x, list) else x
+                    for x in args])
+
+    def _is_frame_header(self, data, pos):
+        return data[pos] == Command.HEADER and data[pos + 1] == Command.HEADER
+
+    def _process_recived(self, data, genre):
+        if not data:
+            return []
+
+        data = bytearray(data)
+        data_len = len(data)
+        # Get valid header: 0xfe0xfe
+        for idx in range(data_len - 1):
+            if self._is_frame_header(data, idx):
+                break
+        else:
+            return []
+
+        data_len = data[idx + 2] - 2
+
+        # compare send header and received header
+        cmd_id = data[idx + 3]
+        if cmd_id != genre:
+            return []
+        data_pos = idx + 4
+        valid_data = (data[data_pos:data_pos + data_len])
+
+        # process valid data
+        res = []
+        if data_len == 12:
+            for idx in range(0, len(valid_data), 2):
+                one = valid_data[idx:idx + 2]
+                res.append(self._decode_int16(one))
+        elif data_len == 2:
+            res.append(self._decode_int16(valid_data))
+        else:
+            res.append(self._decode_int8(valid_data))
+        return res
+
+    def _process_single(self, data):
+        return data[0] if data else -1
+
+'''
     def _process_data_command(self, data, genre):
         # lenght = 0
         if not data:
@@ -133,41 +184,4 @@ class MyCobotData():
         # lenght = 1
         else:
             return [data[0]]
-
-    def _is_frame_header(self, data, pos):
-        return data[pos] == Command.HEADER and data[pos + 1] == Command.HEADER
-
-    def _process_recived(self, data, genre):
-        if not data:
-            return []
-
-        data = bytearray(data)
-        data_len = len(data)
-        for idx in range(data_len - 1):
-            if self._is_frame_header(data, idx):
-                break
-        else:
-            return []
-
-        data_len = data[idx + 2] - 2
-        cmd_id = data[idx + 3]
-        if cmd_id != genre:
-            return []
-        data_pos = idx + 4
-        valid_data = (data[data_pos:data_pos + data_len])
-        # print(data_len)
-        # print(valid_data)
-
-        res = []
-        if data_len == 12:
-            for idx in range(0, len(valid_data), 2):
-                one = valid_data[idx:idx + 2]
-                res.append(self._decode_int16(one))
-        elif data_len == 2:
-            res.append(self._decode_int16(valid_data))
-        else:
-            res.append(self._decode_int8(valid_data))
-        return res
-
-    def _process_single(self, data):
-        return data[0] if data else -1
+'''
