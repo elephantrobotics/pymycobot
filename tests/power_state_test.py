@@ -1,6 +1,5 @@
-import time, random, subprocess
+import time
 from pymycobot.mycobot import MyCobot
-from pymycobot.genre import Angle, Coord
 
 
 reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
@@ -41,20 +40,19 @@ def test(mc):
     print('=== check end ===\n')
 
 
-
-
-
 if __name__ == '__main__':
     print('''
-————————————————————————————————————————————
+--------------------------------------------
 | This file will test power state method:  |
 |     power_off()                          |
 |     power_on()                           |
 |     is_power_on()                        |
-————————————————————————————————————————————
+--------------------------------------------
           ''')
     time.sleep(3)
-    port = "/dev/cu.usbserial-0203B030"
+    with open('./port.txt') as f:
+        port = f.read().strip().replace('\n', '')
+        print(port)
     mc = MyCobot(port)
     test(mc)
 
