@@ -8,10 +8,9 @@ if __name__ == '__main__':
     # port = "/dev/cu.usbserial-0203B030"
     port = "/dev/cu.usbserial-0213245D"
     cobot = MyCobot(port)
-    # test(cobot)
     cobot.send_angles([0,0,0,0,0,0],100)
     time.sleep(10)
-    print('over')
+    print('start')
     for count in range(50):
         time.sleep(0.05)
         cobot.send_angle(1, (-30), 100)
