@@ -18,7 +18,7 @@ if __name__ == "__main__":
         idx += 1
 
     _in = input('\nPlease input 1 - {} to choice:'.format(idx - 1))
-    port = str(plist[int(_in) - 1]).split('-')[0].strip()
+    port = str(plist[int(_in) - 1]).split(' - ')[0].strip()
     print(port)
     with open('./port.txt', 'w') as f:
         f.write(port + '\n')
