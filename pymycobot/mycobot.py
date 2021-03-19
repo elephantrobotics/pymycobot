@@ -2,7 +2,7 @@ import sys
 sys.path.append('.')
 import time, serial, math
 
-from pymycobot.error import MyCobotDataException, check_parameters
+from pymycobot.error import check_parameters
 from pymycobot.common import Command, MyCobotData
 
 
@@ -22,10 +22,12 @@ class MyCobot(MyCobotData):
             get_angles()
             send_angle()
             send_angles()
+            sync_send_angles() *
             get_radians()
             send_radians()
             get_coords()
             send_coords()
+            sync_send_coords() *
             pause()
             resume()
             stop()
@@ -64,6 +66,11 @@ class MyCobot(MyCobotData):
             set_gripper_ini()
             is_gripper_moving()
 
+        # Basic
+            set_basic_output() *
+
+
+        # Other
             wait() *
     '''
 
@@ -120,8 +127,8 @@ class MyCobot(MyCobotData):
         Args:
             genre: command type (Command)
             *args: other data.
-                   It is converted to octal by default. 
-                   If the data needs to be encapsulated into hexadecimal, 
+                   It is converted to octal by default.
+                   If the data needs to be encapsulated into hexadecimal,
                    the array is used to include them. (Data cannot be nested)
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
@@ -343,7 +350,7 @@ class MyCobot(MyCobotData):
         elif id == 0:
             data_list = [self._angle_to_int(i) for i in data]
         else:
-            raise MyCobotDataException("id is not right, please input 0 or 1")
+            raise Exception("id is not right, please input 0 or 1")
 
         received = self.__mesg(Command.IS_IN_POSITION,
                                data_list,
@@ -462,27 +469,6 @@ class MyCobot(MyCobotData):
         self.__mesg(Command.SET_COLOR, r, g, b)
         return self
 
-    def set_led_color(self, rgb):
-        '''Set the light color
-
-        Args:
-            rgs (str): example 'ff0000'
-
-        '''
-        if len(rgb) != 6:
-            raise MyCobotDataException('rgb format should be like: "FF0000"')
-
-        # data = list(bytearray(rgb))
-        # self.__mesg(Command.SET_COLOR, data=data)
-        command = 'fefe056a{}fa'.format(rgb)
-        if self._version == 2:
-            command = command.decode('hex')
-        elif self._version == 3:
-            command = bytes.fromhex(command)
-        self._serial_port.write(command)
-        self._serial_port.flush()
-        time.sleep(0.05)
-
     def set_pin_mode(self, pin_no, pin_mode):
         '''
 
@@ -533,11 +519,11 @@ class MyCobot(MyCobotData):
         '''Set gripper value
 
         Args:
-            value (int): 0 ~ 496
+            value (int): 0 ~ 4096
             speed (int): 0 ~ 100
 
         '''
-        self.__mesg(Command.SET_GRIPPER_VALUE, value, speed)
+        self.__mesg(Command.SET_GRIPPER_VALUE, [value], speed)
 
     def set_gripper_ini(self):
         '''Set the current position to zero
@@ -559,6 +545,18 @@ class MyCobot(MyCobotData):
         return self._process_single(
             self.__mesg(Command.IS_GRIPPER_MOVING, has_reply=True))
 
+    # Baisc
+    def set_basic_output(self, pin_no, pin_signal):
+        '''
+
+        Args:
+            pin_signal: 0 / 1
+
+        '''
+        self.__mesg(Command.SET_BASIC_OUTPUT, pin_no, pin_signal)
+        return self
+
+    # Other
     def wait(self, t):
         time.sleep(t)
         return self

@@ -59,6 +59,9 @@ class Command():
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6a
 
+    # Baisc
+    SET_BASIC_OUTPUT = 0xa0
+
 
 class MyCobotData():
     # Functional approach
