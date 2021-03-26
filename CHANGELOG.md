@@ -1,3 +1,12 @@
+# 2021.3.26
+
+- release **v2.3**
+- fix `is_in_position()`
+- refactor process method
+- some methods can be chained
+- add new methods to control pump
+- change `set_led_color(rgb:str)` -> `set_color(r:int, g:int, b:in)`
+
 # 2021.3.12
 
 added more test file.

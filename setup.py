@@ -1,15 +1,13 @@
 import sys
 
+VERSION = "2.3"
 
 PYTHON_VERSION = sys.version_info[:2]
-VERSION  = "2.2.1"
-
 if (2, 7) != PYTHON_VERSION < (3, 5):
     print("This mycobot version requires Python2.7, 3.5 or later.")
     sys.exit(1)
 
 import setuptools
-
 
 if PYTHON_VERSION == (2, 7):
     long_description = ""
@@ -37,6 +35,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=['pyserial'],
-    python_requires= '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*',
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*',
 )
-
