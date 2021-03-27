@@ -65,7 +65,8 @@ def check_boolean(b):
 
 
 def check_range(v, ra):
-    if ra[0] <= v <= ra[1]:
+    min, max = ra
+    if min <= v <= max:
         return True
     else:
         return False
