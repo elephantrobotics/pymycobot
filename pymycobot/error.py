@@ -117,5 +117,5 @@ def check_coords(vs):
 
 def check_rgb(args):
     for i in args:
-        if not check_range(id, [0, 255]):
+        if not check_range(i, [0, 255]):
             raise MyCobotDataException('The RGB value needs be 0 ~ 255')

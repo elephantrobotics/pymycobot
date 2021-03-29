@@ -1,6 +1,6 @@
 import sys
 
-VERSION = "2.3.2"
+VERSION = "2.3.3"
 
 PYTHON_VERSION = sys.version_info[:2]
 if (2, 7) != PYTHON_VERSION < (3, 5):
