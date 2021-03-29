@@ -35,9 +35,9 @@ pip install pymycobot==1.0.7 --user
 git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
 cd <your-path>/pymycobot
 # Install
-python2 setup.py install
+[sudo] python2 setup.py install
 # or
-python3 setup.py install
+[sudo] python3 setup.py install
 ```
 
 ## Usage:
