@@ -33,6 +33,9 @@ class Command():
     JOG_ANGLE = 0x30
     JOG_COORD = 0x32
     JOG_STOP = 0x34
+    SET_ENCODER = 0x3a
+    GET_ENCODER = 0x3b
+    SET_ENCODERS = 0x3c
 
     # RUNNING STATUS AND SETTINGS
     GET_SPEED = 0x40
@@ -98,7 +101,7 @@ class MyCobotData():
             return []
 
         return self._flatten([
-                [self._encode_int16(i) for i in x]
+                [self._encode_int16(int(i)) for i in x]
                 if isinstance(x, list) else x
                     for x in args])
 

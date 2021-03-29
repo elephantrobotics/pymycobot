@@ -39,6 +39,9 @@ class MyCobot(MyCobotData):
             jog_angle()
             jog_coord()
             jog_stop()
+            set_encoder()
+            get_encoder()
+            set_encoders()
 
         # Running status and Settings
             get_speed()
@@ -394,6 +397,15 @@ class MyCobot(MyCobotData):
 
     def jog_stop(self):
         self.__mesg(Command.JOG_STOP)
+
+    def set_encoder(self, joint_id, encoder):
+        self.__mesg(Command.SET_ENCODER, joint_id, [encoder])
+
+    def get_encoder(self, joint_id):
+        return self.__mesg(Command.GET_ENCODER, joint_id, has_reply=True)
+
+    def set_encoders(self, encoders, sp):
+        self.__mesg(Command.SET_ENCODERS, encoders, sp)
 
     # Running status and Settings
     def get_speed(self):

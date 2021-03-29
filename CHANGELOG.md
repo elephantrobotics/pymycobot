@@ -1,3 +1,9 @@
+# 2021.3.29
+
+- release v2.3.1
+- fix error bug
+- add new method `set_encoder`, `get_encoder`, `set_encoders`
+
 # 2021.3.26
 
 - release **v2.3**
