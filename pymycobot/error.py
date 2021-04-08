@@ -88,7 +88,7 @@ def check_id(id):
 
 
 def check_angle(v):
-    if not check_range(v, [-180, 180]):
+    if not check_range(v, [-190, 190]):
         raise MyCobotDataException(
             'angle value not right, should be -180 ~ 180')
 

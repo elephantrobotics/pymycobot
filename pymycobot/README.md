@@ -4,14 +4,6 @@
 
 We support Python2, Python3.5 or later.
 
-<!--If you want to use the api, make sure `pyserial` is installed.-->
-
-<!--```bash-->
-<!--pip2 install pyserial-->
-<!--# or-->
-<!--pip3 install pyserial-->
-<!--```-->
-
 **Class**:
 
 - [MyCobot](#MyCobot)
@@ -30,25 +22,21 @@ We support Python2, Python3.5 or later.
 from pymycobot.mycobot import MyCobot
 ```
 
+> Note: If no parameter is given, there is no parameter; if no return value is given, there is no return value
+
 ## Overall status
 
 ### power_on()
 
-- **Description**
-
-  Robot arm power up.
+- **Description**: Robot arm power up.
 
 ### power_off()
 
-- **Description**
-
-  Robot arm power down.
+- **Description**: Robot arm power down.
 
 ### is_power_on()
 
-- **Description**
-
-  Adjust robot arm whether power on.
+- **Description**: Adjust robot arm whether power on.
 
 - **Returns**
 
@@ -58,35 +46,25 @@ from pymycobot.mycobot import MyCobot
 
 ### set_free_mode()
 
-- **Description**
-
-  Robot arm into free moving mode.
+- **Description**: Set robot arm into free moving mode.
 
 ## MDI mode and operation
 
 ### get_angles()
 
-- **Description**
+- **Description**: Get the degree of all joints.
 
-  Get the degree of all joints.
-
-- **Returns**
-
-  `list`: A float list of degree.
+- **Returns**: `list`: A float list of all degree.
 
 ### send_angle()
 
-- **Description**
-
-  Send one degree of joint to robot arm.
+- **Description**: Send one degree of joint to robot arm.
 
 - **Parameters**
 
-  id: Joint id(`genre.Angle`)
-
-  degree: degree value(`float`)
-
-  speed: (`int`)
+  - `id`: Joint id(`genre.Angle`)
+  - `degree`: degree value(`float`)
+  - `speed`: (`int`) 0 ~ 100
 
 - **Example**
 
@@ -101,15 +79,13 @@ from pymycobot.mycobot import MyCobot
 
 ### send_angles()
 
-- **Description**
-
-  Send the degrees of all joints to robot arm.
+- **Description**: Send the degrees of all joints to robot arm.
 
 - **Parameters**
 
-  degrees: a list of degree value(`List[float]`)
+  `degrees`: a list of degree value(`List[float]`)
 
-  speed: (`int`)
+  `speed`: (`int`)
 
 - **Example**
 
@@ -124,25 +100,18 @@ from pymycobot.mycobot import MyCobot
 
 ### get_radians()
 
-- **Description**
+- **Description**: Get the radians of all joints.
 
-  Get the radians of all joints.
-
-- **Returns**
-
-  `list`: A float list of radian.
+- **Returns**: `list`: A float list of radian.
 
 ### send_radians()
 
-- **Description**
+- **Description**: Send the radians of all joint to robot arm.
 
-  Send the radians of all joint to robot arm.
+- **Parameters**:
 
-- **Parameters**
-
-  degrees: a list of radian value(`List[float]`)
-
-  speed: (`int`)
+  - `degrees`: a list of radian value(`List[float]`)
+  - `speed`: (`int`) 0 ~ 100
 
 - **Example**
 
@@ -157,27 +126,19 @@ from pymycobot.mycobot import MyCobot
 
 ### get_coords()
 
-- **Description**
+- **Description**: Get the Coords from robot arm, coordinate system based on base.
 
-  Get the Coords from robot arm, coordinate system based on base.
-
-- **Returns**
-
-  `list`: A float list of coord - `[x, y, z, rx, ry, rz]`
+- **Returns**: `list`: A float list of coord - `[x, y, z, rx, ry, rz]`
 
 ### send_coord()
 
-- **Description**
-
-  Send one coord to robot arm.
+- **Description**: Send one coord to robot arm.
 
 - **Parameters**
 
-  id: coord id(`genre.Coord`)
-
-  coord: coord value(`float`)
-
-  speed: (`int`)
+  - `id`: coord id(`genre.Coord`)
+  - `coord`: coord value(`float`)
+  - `speed`: (`int`) 0 ~ 100
 
 - **Example**
 
@@ -192,17 +153,13 @@ from pymycobot.mycobot import MyCobot
 
 ### send_coords()
 
-- **Description**
-
-  Send all coords to robot arm.
+- **Description**: Send all coords to robot arm.
 
 - **Parameters**
 
-  coords: a list of coords value(`List[float]`)
-
-  speed: (`int`)
-
-  mode: (`int`): `0` - angluar, `1` - linear
+  - `coords`: a list of coords value(`List[float]`)
+  - `speed`: (`int`) 0 ~ 100
+  - `mode`: (`int`): `0` - angluar, `1` - linear
 
 - **Example**
 
@@ -215,33 +172,43 @@ from pymycobot.mycobot import MyCobot
   mycobot.send_coords([160, 160, 160, 0, 0, 0], 70, 0)
   ```
 
+### sync_send_angles()
+
+- **Description**: Send the angle in synchronous state and return when the target point is reached
+
+- **Parameters**
+
+  - `id`: Joint id(`genre.Angle`)
+  - `degree`: degree value(`float`)
+  - `speed`: (`int`) 0 ~ 100
+
+### sync_send_coords()
+
+- **Description**: Send the coord in synchronous state and return when the target point is reached
+
+- **Parameters**
+
+  - `coords`: a list of coords value(`List[float]`)
+  - `speed`: (`int`) 0 ~ 100
+  - `mode`: (`int`): `0` - angluar, `1` - linear
+
 ### pause()
 
-- **Description**
-
-  Pause movement.
+- **Description**: Pause movement.
 
 ### resume()
 
-- **Description**
-
-  Recovery movement.
+- **Description**: Recovery movement.
 
 ### stop()
 
-- **Description**
-
-  Stop moving.
+- **Description**: Stop moving.
 
 ### is_paused()
 
-- **Description**
+- **Description**: Judge whether the manipulator pauses or not.
 
-  Judge whether the manipulator pauses or not.
-
-- **Returns**
-
-  `bool`:
+- **Returns** :
 
   - `1` - paused
   - `0` - not paused
@@ -249,121 +216,84 @@ from pymycobot.mycobot import MyCobot
 
 ### is_in_position()
 
-- **Description**
+- **Description**: Judge whether in the position.
 
-  Judge whether in the position.
+- **Parameters**
+
+  - `data`: A data list, angles or coords.
+  - `flag`: Tag the data type, `0` - angles, `1` - coords.
 
 - **Returns**
-
-  `bool`:
 
   - `1` - true
   - `0` - false
   - `-1` - error
 
-### is_moving()
-
-- **Description**
-
-  Judge whether the manipulator is moving or not.
-
-- **Returns**
-
-  `bool`: `True` - moving, `False` - not moving.
-
 ## JOG mode and operation
 
 ### jog_angle()
 
-- **Description**
-
-  Jog control angle
+- **Description**: Jog control angle
 
 - **Parameters**
 
-  joint id: (`int`) 1 ~ 6
+  - `joint_id`: (`int`) 1 ~ 6
+  - `direction`: `0` - decrease, `1` - increase
+  - `speed`: 0 ~ 100
 
 ### jog_coord()
 
-- **Description**
-
-  Jog control coord.
+- **Description**: Jog control coord.
 
 - **Parameters**
 
-  coord id: (`int`) 1 ~ 6
+  - `coord_id`: (`int`) 1 ~ 6
+  - `direction`: `0` - decrease, `1` - increase
+  - `speed`: 0 ~ 100
 
 ### jog_stop()
 
-- **Description**
-
-  Stop jog move.
+- **Description**: Stop jog moving.
 
 ## Running status and Settings
 
 ### get_speed()
 
-- **Description**
+- **Description**: Get speed.
 
-  Get speed.
-
-- **Returns**
-
-  speed: (`int`)
+- **Returns**: speed: (`int`)
 
 ### set_speed()
 
-- **Description**
+- **Description**: Set speed.
 
-  Set speed.
-
-- **Parameters**
-
-  speed: (`int`) 0 ~ 100
+- **Parameters**: speed: (`int`) 0 ~ 100
 
 ### get_joint_min_angle()
 
-- **Description**
+- **Description**: Gets the minimum movement angle of the specified joint
 
-  Gets the minimum movement angle of the specified joint
+- **Parameters**: `joint_id`: (`int`)
 
-- **Parameters**
-
-  joint id: (`int`)
-
-- **Returns**
-
-  angle: (`float`)
+- **Returns**: angle value (`float`)
 
 ### get_joint_max_angle()
 
-- **Description**
+- **Description**: Gets the maximum movement angle of the specified joint
 
-  Gets the maximum movement angle of the specified joint
+- **Parameters**: `joint_id`: (`int`)
 
-- **Parameters**
-
-  joint id: (`int`)
-
-- **Returns**
-
-  angle: (`float`)
+- **Returns**: angle value (`float`)
 
 ## Servo control
 
 ### is_servo_enable()
 
-- **Description**
+- **Description**: Determine whether all steering gears are connected
 
-  Determine whether all steering gears are connected
-
-- **Parameters**
-
-  servo id: (`int`)
+- **Parameters**: `servo_id` (`int`) 1 ~ 6
 
 - **Returns**
-
-  flag: (`int`)
 
   - `0`: disable
   - `1`: enbale
@@ -371,13 +301,9 @@ from pymycobot.mycobot import MyCobot
 
 ### is_all_servo_enable()
 
-- **Description**
-
-  Determine whether the specified steering gear is connected
+- **Description**: Determine whether the specified steering gear is connected
 
 - **Returns**
-
-  flag: (`int`)
 
   - `0`: disable
   - `1`: enbale
@@ -385,114 +311,91 @@ from pymycobot.mycobot import MyCobot
 
 ### release_servo()
 
-- **Description**
+- **Description**: Power off designated servo
 
-  Power on designated servo
-
-- **Parameters**
-
-  servo_id: 1 ~ 6
+- **Parameters**: `servo_id`: 1 ~ 6
 
 ### focus_servo()
 
-- **Description**
+- **Description**: Power on designated servo
 
-  Power off designated servo
-
-- **Parameters**
-
-  servo_id: 1 ~ 6
+- **Parameters**: `servo_id`: 1 ~ 6
 
 ## Atom IO
 
-### set_led_color()
+### set_color()
 
-- **Description**
-
-  Set the color of the light on the top of the robot arm.
+- **Description**: Set the color of the light on the top of the robot arm.
 
 - **Parameters**
 
-  rgb: (`string`) like: "FF0000"
+  - `r`: 0 ~ 255
+  - `g`: 0 ~ 255
+  - `b`: 0 ~ 255
 
 ### set_pin_mode()
 
 - **Parameters**
 
-  pin_no (int):
-  pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
+  - `pin_no` (int):
+  - `pin_mode` (int): 0 - input, 1 - output, 2 - input_pullup
 
 ### set_digital_output()
 
 - **Parameters**
 
-  pin_no (int):
-
-  pin_signal (int): 0 / 1
+  - `pin_no` (int):
+  - `pin_signal` (int): 0 / 1
 
 ### get_digital_input()
 
+- **Parameters**: `pin_no` (int)
+
+- **Return**: signal value
+
+<!-- ### set_pwm_mode()
+
 - **Description**
-
-- **Parameters**
-
-### set_pwm_mode()
-
-- **Description**
-
 - **Parameters**
 
 ### set_pwm_output()
 
 - **Description**
-
-- **Parameters**
+- **Parameters** -->
 
 ### get_gripper_value()
 
-- **Description**
+- **Description**: Get gripper value
 
-  Get gripper value
+- **Return**: gripper value (int)
 
 ### set_gripper_state()
 
-- **Description**
-
-  Set gripper switch
+- **Description**: Set gripper switch state
 
 - **Parameters**
 
-  flag (`int`): 0 - open, 1 - close
-
-  speed (`int`): 0 ~ 100
+  - `flag` (`int`): 0 - open, 1 - close
+  - `speed` (`int`): 0 ~ 100
 
 ### set_gripper_value()
 
-- **Description**
-
-  Set gripper value
+- **Description**: Set gripper value
 
 - **Parameters**
 
-  value (int): 0 ~ 496
-
-  speed (int): 0 ~ 100
+  - `value` (int): 0 ~ 4096
+  - `speed` (int): 0 ~ 100
 
 ### set_gripper_ini()
 
-- **Description**
-
-  Set the current position to zero
-
-  Current position value is `248`.
+- **Description**: Set the current position to zero, set current position value is `2048`.
 
 ### is_gripper_moving()
 
-- **Description**
+- **Description**: Judge whether the gripper is moving or not
 
-  Judge whether the gripper is moving or not
-
-- Returns
+- **Returns**
 
   - `0` : not moving
   - `1` : is moving

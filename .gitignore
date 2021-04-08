@@ -9,3 +9,5 @@ pymycobot/__pycache__/
 test.py
 record.txt
 test_test.py
+
+.DS_Store

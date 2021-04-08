@@ -212,7 +212,7 @@ class MyCobot(MyCobotData):
         self.__mesg(Command.SEND_ANGLE, id - 1, [self._angle_to_int(degree)],
                     speed)
 
-    @check_parameters(Command.SEND_ANGLES)
+    # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, degrees, speed):
         '''Send all angles
 
@@ -448,7 +448,7 @@ class MyCobot(MyCobotData):
 
     @check_parameters(Command.RELEASE_SERVO)
     def release_servo(self, servo_id):
-        '''Power on designated servo
+        '''Power off designated servo
 
         Args:
             servo_id: 1 ~ 6
@@ -458,7 +458,7 @@ class MyCobot(MyCobotData):
 
     @check_parameters(Command.FOCUS_SERVO)
     def focus_servo(self, servo_id):
-        '''Power off designated servo
+        '''Power on designated servo
 
         Args:
             servo_id: 1 ~ 6
@@ -472,7 +472,6 @@ class MyCobot(MyCobotData):
         '''Set the light color
 
         Args:
-            rgs (str): example 'ff0000'
             r (int): 0 ~ 255
             g (int): 0 ~ 255
             b (int): 0 ~ 255
@@ -540,7 +539,7 @@ class MyCobot(MyCobotData):
     def set_gripper_ini(self):
         '''Set the current position to zero
 
-        Current position value is `248`.
+        Current position value is `2048`.
 
         '''
         self.__mesg(Command.SET_GRIPPER_INI)
