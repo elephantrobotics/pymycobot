@@ -1,10 +1,12 @@
 import time
+import os
 from pymycobot.mycobot import MyCobot
 
 
 reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
-zero = [0,0,0,0,0,0]
+zero = [0, 0, 0, 0, 0, 0]
 sp = 100
+
 
 def test(mc):
     print('Start check limit api\n')
@@ -17,7 +19,6 @@ def test(mc):
     print(mc.get_joint_min_angle(5))
     print(mc.get_joint_min_angle(6))
 
-
     print('get joint max angle value:')
     print(mc.get_joint_max_angle(1))
     print(mc.get_joint_max_angle(2))
@@ -25,7 +26,6 @@ def test(mc):
     print(mc.get_joint_max_angle(4))
     print(mc.get_joint_max_angle(5))
     print(mc.get_joint_max_angle(6))
-
 
     mc.send_angles(reset, 100)
     time.sleep(5)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
 --------------------------------------------
           ''')
     time.sleep(3)
-    with open('./port.txt') as f:
+    with open(os.path.dirname(__file__) + '/port.txt') as f:
         port = f.read().strip().replace('\n', '')
         print(port)
     mc = MyCobot(port)

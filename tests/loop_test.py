@@ -1,13 +1,14 @@
 import time
+import os
 from pymycobot.mycobot import MyCobot
 
 
 if __name__ == '__main__':
-    with open('./port.txt') as f:
+    with open(os.path.dirname(__file__) + '/port.txt') as f:
         port = f.read().strip().replace('\n', '')
         print(port)
     cobot = MyCobot(port)
-    cobot.send_angles([0,0,0,0,0,0],100)
+    cobot.send_angles([0, 0, 0, 0, 0, 0], 100)
     time.sleep(10)
     print('start')
     for count in range(50):

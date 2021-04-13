@@ -1,8 +1,11 @@
-import time, random, subprocess
+import time
+import random
+import os
 from pymycobot.mycobot import MyCobot
 from pymycobot.genre import Angle, Coord
 
 reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
+
 
 def test(mycobot):
     print('\nStart check basic options\n')
@@ -14,7 +17,7 @@ def test(mycobot):
     print('::set_led_color() ==> color {}\n'.format(color_name[i]))
     time.sleep(3)
 
-    angles = [0,0,0,0,0,0]
+    angles = [0, 0, 0, 0, 0, 0]
     mycobot.send_angles(angles, 100)
     print('::send_angles() ==> angles {}, speed 100\n'.format(angles))
     time.sleep(3)
@@ -26,7 +29,7 @@ def test(mycobot):
     print('::send_angle() ==> angle: joint1, degree: 90, speed: 50\n')
     time.sleep(4)
 
-    radians = [1,1,1,1,1,1]
+    radians = [1, 1, 1, 1, 1, 1]
     mycobot.send_radians(radians, 100)
     print('::send_radians() ==> set radians {}, speed 100\n'.format(radians))
     time.sleep(3)
@@ -71,12 +74,11 @@ if __name__ == '__main__':
 --------------------------------------------
           ''')
     time.sleep(3)
-    # port = subprocess.check_output(['echo -n /dev/ttyUSB*'], 
-                                    # shell=True).decode()
-    with open('./port.txt') as f:
+    # port = subprocess.check_output(['echo -n /dev/ttyUSB*'],
+    # shell=True).decode()
+    with open(os.path.dirname(__file__) + '/port.txt') as f:
         port = f.read().strip().replace('\n', '')
         print(port)
     # mycobot = MyCobot(port, debug=True)
     mycobot = MyCobot(port)
     test(mycobot)
-

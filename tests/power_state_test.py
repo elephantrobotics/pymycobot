@@ -1,10 +1,12 @@
 import time
+import os
 from pymycobot.mycobot import MyCobot
 
 
 reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
-zero = [0,0,0,0,0,0]
+zero = [0, 0, 0, 0, 0, 0]
 sp = 100
+
 
 def test(mc):
     print('Start check power state api\n')
@@ -13,7 +15,7 @@ def test(mc):
     time.sleep(.5)
     f = mc.is_power_on()
     print('is power on: {}'.format(f))
-    assert  f == 1, 'should be 1'
+    assert f == 1, 'should be 1'
     mc.send_angles(zero, sp)
     time.sleep(3)
 
@@ -22,7 +24,7 @@ def test(mc):
         time.sleep(.5)
         f = mc.is_power_on()
         print('is power on: {}'.format(f))
-        assert  f == 0, 'should be 0'
+        assert f == 0, 'should be 0'
 
         mc.send_angles(reset, sp)
         time.sleep(1)
@@ -31,7 +33,7 @@ def test(mc):
         time.sleep(.5)
         f = mc.is_power_on()
         print('is power on: {}'.format(f))
-        assert  f == 1, 'should be 1'
+        assert f == 1, 'should be 1'
 
     mc.send_angles(reset, 100)
     time.sleep(5)
@@ -50,11 +52,8 @@ if __name__ == '__main__':
 --------------------------------------------
           ''')
     time.sleep(3)
-    with open('./port.txt') as f:
+    with open(os.path.dirname(__file__) + '/port.txt') as f:
         port = f.read().strip().replace('\n', '')
         print(port)
     mc = MyCobot(port)
     test(mc)
-
-
-

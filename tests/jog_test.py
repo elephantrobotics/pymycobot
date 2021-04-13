@@ -1,4 +1,5 @@
 import time
+import os
 from pymycobot.mycobot import MyCobot
 from pymycobot.genre import Angle, Coord
 
@@ -52,7 +53,7 @@ if __name__ == '__main__':
 --------------------------------------------
           ''')
     time.sleep(3)
-    with open('./port.txt') as f:
+    with open(os.path.dirname(__file__) + '/port.txt') as f:
         port = f.read().strip().replace('\n', '')
         print(port)
     mc = MyCobot(port)

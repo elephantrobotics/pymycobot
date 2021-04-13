@@ -1,11 +1,13 @@
 import time
+import os
 from pymycobot.mycobot import MyCobot
 
 
 reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
-zero = [0,0,0,0,0,0]
+zero = [0, 0, 0, 0, 0, 0]
 coords = [160, 160, 160, 0, 0, 0]
 sp = 100
+
 
 def test(mc):
     print('Start check state api\n')
@@ -30,7 +32,6 @@ def test(mc):
         print(mc.is_in_position(coords, 1), ' ', end='')
         time.sleep(.5)
 
-
     mc.send_angles(zero, 100)
     time.sleep(4)
     print('is moving: 1 - true, 0 - false')
@@ -48,7 +49,6 @@ def test(mc):
         time.sleep(.5)
 
 
-
 if __name__ == '__main__':
     print('''
 --------------------------------------------
@@ -58,9 +58,8 @@ if __name__ == '__main__':
 --------------------------------------------
           ''')
     time.sleep(3)
-    with open('./port.txt') as f:
+    with open(os.path.dirname(__file__) + '/port.txt') as f:
         port = f.read().strip().replace('\n', '')
         print(port)
     mc = MyCobot(port)
     test(mc)
-
