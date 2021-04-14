@@ -12,6 +12,10 @@ del:
 	@if [ -d ./build ]; then rm -r ./build; fi
 	@if [ -d ./pymycobot.egg-info ]; then rm -r ./pymycobot.egg-info; fi
 
+.PHONY: install
+install: del
+	$(PY) setup.py install
+
 .PHONY: release
 release: del
 	$(PY) setup.py sdist bdist_wheel 

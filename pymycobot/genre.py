@@ -1,5 +1,3 @@
-import sys
-sys.path.append('.')
 import enum
 
 
@@ -15,9 +13,9 @@ class Angle(enum.Enum):
 
 class Coord(enum.Enum):
 
-    X  = 1
-    Y  = 2
-    Z  = 3
+    X = 1
+    Y = 2
+    Z = 3
     Rx = 4
     Ry = 5
     Rz = 6
