@@ -1,9 +1,9 @@
-import time, random, subprocess
+import time, subprocess
 from pymycobot.mycobot import MyCobot
-from pymycobot.genre import Angle, Coord
+
 
 def io_test(mc):
-    print('Start check IO part of api\n')
+    print("Start check IO part of api\n")
     # print()
 
     mc.set_pin_mode(19, 1)
@@ -13,8 +13,7 @@ def io_test(mc):
     mc.set_digital_output(19, 0)
 
 
-if __name__ == '__main__':
-    port = subprocess.check_output(['echo -n /dev/ttyUSB*'], 
-                                    shell=True).decode()
+if __name__ == "__main__":
+    port = subprocess.check_output(["echo -n /dev/ttyUSB*"], shell=True).decode()
     mycobot = MyCobot(port)
     io_test(mycobot)

@@ -9,9 +9,9 @@ sp = 100
 
 
 def test(mc):
-    print('Start check limit api\n')
+    print("Start check limit api\n")
 
-    print('get joint min angle value:')
+    print("get joint min angle value:")
     print(mc.get_joint_min_angle(1))
     print(mc.get_joint_min_angle(2))
     print(mc.get_joint_min_angle(3))
@@ -19,7 +19,7 @@ def test(mc):
     print(mc.get_joint_min_angle(5))
     print(mc.get_joint_min_angle(6))
 
-    print('get joint max angle value:')
+    print("get joint max angle value:")
     print(mc.get_joint_max_angle(1))
     print(mc.get_joint_max_angle(2))
     print(mc.get_joint_max_angle(3))
@@ -31,20 +31,22 @@ def test(mc):
     time.sleep(5)
     mc.set_free_mode()
 
-    print('=== check end ===\n')
+    print("=== check end ===\n")
 
 
-if __name__ == '__main__':
-    print('''
+if __name__ == "__main__":
+    print(
+        """
 --------------------------------------------
 | This file will test limit method:        |
 |     get_joint_min_angle()                |
 |     get_joint_max_angle()                |
 --------------------------------------------
-          ''')
+          """
+    )
     time.sleep(3)
-    with open(os.path.dirname(__file__) + '/port.txt') as f:
-        port = f.read().strip().replace('\n', '')
+    with open(os.path.dirname(__file__) + "/port.txt") as f:
+        port = f.read().strip().replace("\n", "")
         print(port)
     mc = MyCobot(port)
 

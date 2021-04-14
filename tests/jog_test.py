@@ -9,22 +9,22 @@ sp = 100
 
 
 def test(mc):
-    print('Start check jog api\n')
+    print("Start check jog api\n")
 
     mc.send_angles(zero, sp)
     time.sleep(5)
 
-    print('jog_angle() -> control joint1')
+    print("jog_angle() -> control joint1")
     mc.jog_angle(Angle.J1.value, 1, 10)
     time.sleep(3)
-    print('pause 10 s')
+    print("pause 10 s")
     mc.pause()
     time.sleep(3)
-    print('speed get', mc.get_speed())
+    print("speed get", mc.get_speed())
     mc.set_speed(20)
-    print('speed set', mc.get_speed())
+    print("speed set", mc.get_speed())
     time.sleep(7)
-    print('resume')
+    print("resume")
     mc.resume()
     time.sleep(10)
 
@@ -34,13 +34,14 @@ def test(mc):
 
     mc.jog_coord(Coord.Z.value, 1, 10)
     time.sleep(3)
-    print('stop')
+    print("stop")
 
-    print('=== check end ===\n')
+    print("=== check end ===\n")
 
 
-if __name__ == '__main__':
-    print('''
+if __name__ == "__main__":
+    print(
+        """
 --------------------------------------------
 | This file will test jog method:          |
 |     jog_angle()                          |
@@ -51,10 +52,11 @@ if __name__ == '__main__':
 |     get_speed()                          |
 |     set_speed()                          |
 --------------------------------------------
-          ''')
+          """
+    )
     time.sleep(3)
-    with open(os.path.dirname(__file__) + '/port.txt') as f:
-        port = f.read().strip().replace('\n', '')
+    with open(os.path.dirname(__file__) + "/port.txt") as f:
+        port = f.read().strip().replace("\n", "")
         print(port)
     mc = MyCobot(port)
 

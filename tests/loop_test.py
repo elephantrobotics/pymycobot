@@ -3,14 +3,14 @@ import os
 from pymycobot.mycobot import MyCobot
 
 
-if __name__ == '__main__':
-    with open(os.path.dirname(__file__) + '/port.txt') as f:
-        port = f.read().strip().replace('\n', '')
+if __name__ == "__main__":
+    with open(os.path.dirname(__file__) + "/port.txt") as f:
+        port = f.read().strip().replace("\n", "")
         print(port)
     cobot = MyCobot(port)
     cobot.send_angles([0, 0, 0, 0, 0, 0], 100)
     time.sleep(10)
-    print('start')
+    print("start")
     for count in range(50):
         time.sleep(0.05)
         cobot.send_angle(1, (-30), 100)
@@ -61,4 +61,4 @@ if __name__ == '__main__':
         time.sleep(0.05)
         cobot.send_angle(1, 0, 100)
         time.sleep(1)
-        print('time')
+        print("time")
