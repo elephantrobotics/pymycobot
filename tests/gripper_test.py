@@ -15,11 +15,11 @@ def gripper_test(mc):
     time.sleep(2)
 
     print("")
-    mc.set_gripper_value(248 - 15, 50)
+    mc.set_gripper_value(2048, 50)
     time.sleep(2)
 
     print("")
-    mc.set_gripper_value(248 + 15, 50)
+    mc.set_gripper_value(1500, 50)
     time.sleep(2)
 
     print("")
