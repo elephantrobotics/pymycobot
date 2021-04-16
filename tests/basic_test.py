@@ -1,5 +1,4 @@
 import time
-import random
 import os
 from pymycobot.mycobot import MyCobot
 from pymycobot.genre import Angle, Coord
@@ -10,11 +9,8 @@ reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
 def test(mycobot):
     print("\nStart check basic options\n")
 
-    color_name = ["red", "green", "blue"]
-    color_code = ["ff0000", "00ff00", "0000ff"]
-    i = random.randint(0, len(color_code) - 1)
-    mycobot.set_led_color(color_code[i])
-    print("::set_led_color() ==> color {}\n".format(color_name[i]))
+    mycobot.set_color(255, 255, 0)
+    print("::set_color() ==> color {}\n".format("255 255 0"))
     time.sleep(3)
 
     angles = [0, 0, 0, 0, 0, 0]
@@ -39,7 +35,8 @@ def test(mycobot):
 
     coords = [160, 160, 160, 0, 0, 0]
     mycobot.send_coords(coords, 70, 0)
-    print("::send_coords() ==> send coords {}, speed 70, mode 0\n".format(coords))
+    print("::send_coords() ==> send coords {}, speed 70, mode 0\n".format(
+        coords))
     time.sleep(3)
 
     print("::get_coords() ==> coords {}\n".format(mycobot.get_coords()))
@@ -58,8 +55,7 @@ def test(mycobot):
 
 
 if __name__ == "__main__":
-    print(
-        """
+    print("""
 --------------------------------------------
 | This file will test basic option method: |
 |     set_led_color()                      |
@@ -73,8 +69,7 @@ if __name__ == "__main__":
 |     send_coord()                         |
 |     set_free_mode()                      |
 --------------------------------------------
-          """
-    )
+          """)
     time.sleep(3)
     # port = subprocess.check_output(['echo -n /dev/ttyUSB*'],
     # shell=True).decode()

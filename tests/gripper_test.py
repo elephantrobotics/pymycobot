@@ -1,4 +1,5 @@
-import time, subprocess
+import os
+import time
 from pymycobot.mycobot import MyCobot
 
 
@@ -10,9 +11,11 @@ def gripper_test(mc):
     print("Is gripper moving: {}".format(flag))
     time.sleep(1)
 
-    print("Set the current position to zero")
-    mc.set_gripper_ini()
-    time.sleep(2)
+    # Set the current position to (2048).
+    # Use it when you are sure you need it.
+    # Gripper has been initialized for a long time. Generally, there
+    # is no need to change the method.
+    # mc.set_gripper_ini()
 
     print("")
     mc.set_gripper_value(2048, 50)
@@ -35,6 +38,8 @@ def gripper_test(mc):
 
 
 if __name__ == "__main__":
-    port = subprocess.check_output(["echo -n /dev/ttyUSB*"], shell=True).decode()
+    with open(os.path.dirname(__file__) + "/port.txt") as f:
+        port = f.read().strip().replace("\n", "")
+        print(port)
     mycobot = MyCobot(port)
     gripper_test(mycobot)

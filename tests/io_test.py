@@ -1,4 +1,5 @@
-import time, subprocess
+import os
+import time
 from pymycobot.mycobot import MyCobot
 
 
@@ -14,6 +15,8 @@ def io_test(mc):
 
 
 if __name__ == "__main__":
-    port = subprocess.check_output(["echo -n /dev/ttyUSB*"], shell=True).decode()
+    with open(os.path.dirname(__file__) + "/port.txt") as f:
+        port = f.read().strip().replace("\n", "")
+        print(port)
     mycobot = MyCobot(port)
     io_test(mycobot)
