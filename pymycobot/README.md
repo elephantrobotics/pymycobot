@@ -384,7 +384,7 @@ from pymycobot.mycobot import MyCobot
 
 - **Parameters**
 
-  - `value` (int): 0 ~ 4096
+  - `value` (int): 1400 ~ 2048
   - `speed` (int): 0 ~ 100
 
 ### set_gripper_ini()
