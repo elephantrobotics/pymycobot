@@ -4,17 +4,63 @@
 
 We support Python2, Python3.5 or later.
 
-**Class**:
+<details>
+<summary>Class:</summary>
 
-- [MyCobot](#MyCobot)
-  - [Overall status](#Overall-status)
-  - [MDI mode and operation](#MDI-mode-and-operation)
-  - [JOG mode and operation](#JOG-mode-and-operation)
-  - [Running status and Settings](#Running-status-and-Settings)
-  - [Servo control](#Servo-control)
-  - [Atom IO](#Atom-IO)
-- [Angle](#Angle)
-- [Coord](#Coord)
+<!-- vim-markdown-toc GFM -->
+
+* [MyCobot](#mycobot)
+    * [Overall status](#overall-status)
+        * [power_on()](#power_on)
+        * [power_off()](#power_off)
+        * [is_power_on()](#is_power_on)
+        * [set_free_mode()](#set_free_mode)
+    * [MDI mode and operation](#mdi-mode-and-operation)
+        * [get_angles()](#get_angles)
+        * [send_angle()](#send_angle)
+        * [send_angles()](#send_angles)
+        * [get_radians()](#get_radians)
+        * [send_radians()](#send_radians)
+        * [get_coords()](#get_coords)
+        * [send_coord()](#send_coord)
+        * [send_coords()](#send_coords)
+        * [sync_send_angles()](#sync_send_angles)
+        * [sync_send_coords()](#sync_send_coords)
+        * [pause()](#pause)
+        * [resume()](#resume)
+        * [stop()](#stop)
+        * [is_paused()](#is_paused)
+        * [is_in_position()](#is_in_position)
+    * [JOG mode and operation](#jog-mode-and-operation)
+        * [jog_angle()](#jog_angle)
+        * [jog_coord()](#jog_coord)
+        * [jog_stop()](#jog_stop)
+    * [Running status and Settings](#running-status-and-settings)
+        * [get_speed()](#get_speed)
+        * [set_speed()](#set_speed)
+        * [get_joint_min_angle()](#get_joint_min_angle)
+        * [get_joint_max_angle()](#get_joint_max_angle)
+    * [Servo control](#servo-control)
+        * [is_servo_enable()](#is_servo_enable)
+        * [is_all_servo_enable()](#is_all_servo_enable)
+        * [release_servo()](#release_servo)
+        * [focus_servo()](#focus_servo)
+    * [Atom IO](#atom-io)
+        * [set_color()](#set_color)
+        * [set_pin_mode()](#set_pin_mode)
+        * [set_digital_output()](#set_digital_output)
+        * [get_digital_input()](#get_digital_input)
+        * [set_pwm_output()](#set_pwm_output)
+        * [get_gripper_value()](#get_gripper_value)
+        * [set_gripper_state()](#set_gripper_state)
+        * [set_gripper_value()](#set_gripper_value)
+        * [set_gripper_ini()](#set_gripper_ini)
+        * [is_gripper_moving()](#is_gripper_moving)
+* [Angle](#angle)
+* [Coord](#coord)
+
+<!-- vim-markdown-toc -->
+</details>
 
 # MyCobot
 
@@ -41,6 +87,7 @@ from pymycobot.mycobot import MyCobot
 - **Returns**
 
   - `1`: power on
+
   - `0`: power off
   - `-1`: error
 
