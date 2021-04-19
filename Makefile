@@ -6,6 +6,11 @@ lint:
 	@if [ ! -f flake8 ]; then $(PY) -m pip install flake8; fi
 	flake8
 
+.PHONY: test
+test:
+	@if [ ! -f pytest ]; then $(PY) -m pip install pytest; fi
+	pytest -s ./tests/test_api.py
+
 .PHONY: del
 del:
 	@if [ -d ./dist ]; then rm -r ./dist/; fi
@@ -18,7 +23,7 @@ install: del
 
 .PHONY: release
 release: del
-	$(PY) setup.py sdist bdist_wheel 
+	$(PY) setup.py sdist bdist_wheel
 	twine upload dist/*
 
 .PHONY: clean
