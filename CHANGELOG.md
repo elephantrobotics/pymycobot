@@ -1,5 +1,10 @@
 # 2021
 
+## 4.19
+
+- release **v2.3.4**
+- update debug mode
+
 ## 4.2
 
 - relase **v2.3.3**
