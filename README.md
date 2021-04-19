@@ -42,7 +42,7 @@ cd <your-path>/pymycobot
 
 ## Usage:
 
-The `tests` directory stores some test case files.
+The [`demo`](./demo) directory stores some test case files.
 
 You can find out which interfaces pymycobot provides in `pymycobot/README.md`.
 

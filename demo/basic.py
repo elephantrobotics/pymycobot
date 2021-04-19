@@ -35,8 +35,7 @@ def test(mycobot):
 
     coords = [160, 160, 160, 0, 0, 0]
     mycobot.send_coords(coords, 70, 0)
-    print("::send_coords() ==> send coords {}, speed 70, mode 0\n".format(
-        coords))
+    print("::send_coords() ==> send coords {}, speed 70, mode 0\n".format(coords))
     time.sleep(3)
 
     print("::get_coords() ==> coords {}\n".format(mycobot.get_coords()))
@@ -55,7 +54,8 @@ def test(mycobot):
 
 
 if __name__ == "__main__":
-    print("""
+    print(
+        """
 --------------------------------------------
 | This file will test basic option method: |
 |     set_led_color()                      |
@@ -69,7 +69,8 @@ if __name__ == "__main__":
 |     send_coord()                         |
 |     set_free_mode()                      |
 --------------------------------------------
-          """)
+          """
+    )
     time.sleep(3)
     # port = subprocess.check_output(['echo -n /dev/ttyUSB*'],
     # shell=True).decode()

@@ -109,7 +109,7 @@ class MyCobotData:
     def _is_frame_header(self, data, pos):
         return data[pos] == Command.HEADER and data[pos + 1] == Command.HEADER
 
-    def _process_recived(self, data, genre):
+    def _process_received(self, data, genre):
         if not data:
             return []
 

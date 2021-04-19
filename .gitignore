@@ -5,6 +5,7 @@ pymycobot.egg-info/
 log
 .vscode/
 pymycobot/__pycache__/
+tests/__pycache__/
 
 test.py
 record.txt

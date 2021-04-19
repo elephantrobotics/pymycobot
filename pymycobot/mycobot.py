@@ -1,8 +1,10 @@
 import time
 import serial
 import math
+import logging
 import sys
 
+from pymycobot.log import setup_logging
 from pymycobot.error import check_parameters
 from pymycobot.common import Command, MyCobotData
 
@@ -89,24 +91,12 @@ class MyCobot(MyCobotData):
         """
         self._version = sys.version_info[:2][0]
         self.debug = debug
-        for _ in range(5):
-            try:
-                self._serial_port = serial.Serial(port, boudrate, timeout=timeout)
-                break
-            except Exception as e:
-                print(e)
-                time.sleep(5)
-                continue
-        else:
-            print("Connect prot failed, eixt.")
-            exit(0)
-
-    def _debug_log(self, info, _type=None):
-        print("[debug] {}: {}".format(_type, info))
+        setup_logging(self.debug)
+        self.log = logging.getLogger(__name__)
+        self._serial_port = serial.Serial(port, boudrate, timeout=timeout)
 
     def _write(self, command):
-        if self.debug:
-            self._debug_log(command, "serial will write")
+        self.log.debug("_write: {}".format(command))
 
         self._serial_port.write(command)
         self._serial_port.flush()
@@ -116,9 +106,7 @@ class MyCobot(MyCobotData):
         if self._serial_port.inWaiting() > 0:
             data = self._serial_port.read(self._serial_port.inWaiting())
         else:
-
-            if self.debug:
-                self._debug_log("no data can be read", "warn")
+            self.log.debug("_read: no data can be read")
 
             data = None
         return data
@@ -138,9 +126,6 @@ class MyCobot(MyCobotData):
         """
         command_data = self._process_data_command(args)
 
-        if self.debug:
-            self._debug_log(command_data, "processed data")
-
         LEN = len(command_data) + 2
         command = [
             Command.HEADER,
@@ -154,12 +139,12 @@ class MyCobot(MyCobotData):
 
         if "has_reply" in kwargs and kwargs["has_reply"]:
             data = self._read()
-            res = self._process_recived(data, genre)
+            res = self._process_received(data, genre)
             return res
 
     # Overall status
     def version(self):  # TODO: test method <11-03-21, yourname> #
-        """Get cobot verion
+        """Get cobot version
 
         Return:
             mycobot   : 1
@@ -356,7 +341,7 @@ class MyCobot(MyCobotData):
         received = self.__mesg(Command.IS_IN_POSITION, data_list, id, has_reply=True)
         return self._process_single(received)
 
-    def is_moving(self):
+    def is_moving(self):  # TODO: wait atom finish.
         """
 
         Return:
