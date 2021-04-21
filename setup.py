@@ -22,7 +22,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url=pymycobot.__git_url__,
-    packages=setuptools.find_packages("pymycobot"),
+    packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.5",

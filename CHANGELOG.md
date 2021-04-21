@@ -1,5 +1,10 @@
 # 2021
 
+## 4.20
+
+- release v2.3.5
+- fix v2.3.4 install error
+
 ## 4.19
 
 - release **v2.3.4**

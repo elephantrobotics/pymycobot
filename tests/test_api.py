@@ -30,8 +30,13 @@ def setup():
     port = str(plist[int(_in) - 1]).split(" - ")[0].strip()
     print(port)
     print("")
+
+    DEBUG = False
+    f = input("Wether DEBUG mode[Y/n]:")
+    if f in ['y', 'Y', 'yes', 'Yes']:
+        DEBUG = True
     # mc = MyCobot(port, debug=True)
-    mc = MyCobot(port)
+    mc = MyCobot(port, debug=DEBUG)
 
 
 def test_basic_api(setup):
@@ -207,6 +212,28 @@ def test_gripper(setup):
     time.sleep(2)
 
     print(mc.get_gripper_value())
+
+
+def test_servo(setup):
+    print("==========================================================")
+    print("Start servo test...")
+    time.sleep(2)
+    print(mc.is_all_servo_enable())
+    time.sleep(.1)
+    print(mc.is_servo_enable(1))
+    time.sleep(.1)
+    mc.focus_servo(1)
+    time.sleep(.1)
+    mc.focus_servo(2)
+    time.sleep(.1)
+    mc.focus_servo(3)
+    time.sleep(.1)
+    mc.focus_servo(4)
+    time.sleep(.1)
+    mc.focus_servo(5)
+    time.sleep(.1)
+    mc.focus_servo(6)
+    time.sleep(.1)
 
 
 def test_io(setup):
