@@ -1,5 +1,10 @@
 # 2021
 
+## 4.25
+
+- release v2.3.6
+- fix focus_servo error
+
 ## 4.20
 
 - release v2.3.5

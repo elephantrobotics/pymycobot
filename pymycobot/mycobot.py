@@ -438,7 +438,7 @@ class MyCobot(MyCobotData):
             servo_id: 1 ~ 6
 
         """
-        self.__mesg(Command.RELEASE_SERVO, servo_id)
+        self.__mesg(Command.FOCUS_SERVO, servo_id)
 
     # Atom IO
     @check_parameters(Command.SET_COLOR)
