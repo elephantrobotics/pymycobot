@@ -17,21 +17,21 @@ def gripper_test(mc):
     # is no need to change the method.
     # mc.set_gripper_ini()
 
-    print("")
-    mc.set_gripper_value(2048, 50)
-    time.sleep(2)
+    mc.set_encoder(7, 2048)
+    time.sleep(3)
+    mc.set_encoder(7, 1300)
+    time.sleep(3)
 
-    print("")
-    mc.set_gripper_value(1500, 50)
-    time.sleep(2)
+    # set_gripper_value has some bug, just can close.
+    mc.set_gripper_value(2048, 70)
+    time.sleep(5)
+    mc.set_gripper_value(1500, 70)
+    time.sleep(5)
 
-    print("")
     mc.set_gripper_state(0, 70)
-    time.sleep(2)
-
-    print("")
+    time.sleep(5)
     mc.set_gripper_state(1, 70)
-    time.sleep(2)
+    time.sleep(5)
 
     print("")
     print(mc.get_gripper_value())
