@@ -12,7 +12,7 @@ test:
 	pytest -s ./tests/test_api.py
 
 .PHONY: del
-del:
+del: clean
 	@if [ -d ./dist ]; then rm -r ./dist/; fi
 	@if [ -d ./build ]; then rm -r ./build; fi
 	@if [ -d ./pymycobot.egg-info ]; then rm -r ./pymycobot.egg-info; fi

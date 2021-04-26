@@ -22,7 +22,6 @@ pip install pymycobot --upgrade --user
 
 **Notes:**
 
-> If you want to use Gripper and IO, you should update your Atom to 2.5<br>
 > Now only the version is `Atom2.4` or later is supported. If you use an earlier version, please install `pymycobot 1.0.7`.
 
 ```bash

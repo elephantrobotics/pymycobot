@@ -91,7 +91,7 @@ from pymycobot.mycobot import MyCobot
   - `0`: power off
   - `-1`: error
 
-### set_free_mode()
+### release_all_servos()
 
 - **Description**: Set robot arm into free moving mode.
 
