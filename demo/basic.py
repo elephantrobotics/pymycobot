@@ -48,7 +48,7 @@ def test(mycobot):
     print("::set_free_mode()\n")
     mycobot.send_angles(reset, 100)
     time.sleep(5)
-    mycobot.set_free_mode()
+    mycobot.release_all_servos()
 
     print("=== check end ===\n")
 
@@ -67,7 +67,6 @@ if __name__ == "__main__":
 |     send_coords()                        |
 |     get_coords()                         |
 |     send_coord()                         |
-|     set_free_mode()                      |
 --------------------------------------------
           """
     )

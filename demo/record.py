@@ -14,7 +14,7 @@ def free(cobot):
     global recording, playing
 
     if not recording and not playing:
-        cobot.set_free_mode()
+        cobot.release_all_servos()
     else:
         if recording:
             print("Please stop recording frist.")
@@ -115,7 +115,7 @@ def quit_program():
 def print_menu():
     print(
         """\
-0: set free mode 
+0: set free mode
 1: record
 2: play
 s: save data to local
