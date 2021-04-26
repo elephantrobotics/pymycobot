@@ -6,12 +6,18 @@ class Command:
     HEADER = 0xFE
     FOOTER = 0xFA
 
-    # Overall status
+    # System status
     VERSION = 0x00
+
+    # Overall status
     POWER_ON = 0x10
     POWER_OFF = 0x11
     IS_POWER_ON = 0x12
-    SET_FREE_MODE = 0x13
+    RELEASE_ALL_SERVOS = 0x13
+    IS_CONTROLLER_CONNECTED = 0x14
+    READ_NEXT_ERROR = 0x15
+    SET_FREE_MODE = 0x1A
+    IS_FREE_MODE = 0x1B
 
     # MDI MODE AND OPERATION
     GET_ANGLES = 0x20
@@ -38,12 +44,17 @@ class Command:
     # RUNNING STATUS AND SETTINGS
     GET_SPEED = 0x40
     SET_SPEED = 0x41
+    GET_FEED_OVERRIDE = 0x42
+    GET_ACCELERATION = 0x44
     GET_JOINT_MIN_ANGLE = 0x4A
     GET_JOINT_MAX_ANGLE = 0x4B
 
     # SERVO CONTROL
     IS_SERVO_ENABLE = 0x50
     IS_ALL_SERVO_ENABLE = 0x51
+    SET_SERVO_DATA = 0x52
+    GET_SERVO_DATA = 0x53
+    SET_SERVO_CALIBRATION = 0x54
     RELEASE_SERVO = 0x56
     FOCUS_SERVO = 0x57
 
@@ -60,7 +71,7 @@ class Command:
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
 
-    # Baisc
+    # Basic
     SET_BASIC_OUTPUT = 0xA0
 
 

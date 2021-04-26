@@ -19,6 +19,8 @@ class MyCobot(MyCobotData):
             power_on()
             power_off()
             is_power_on()
+            release_all_servos()
+            is_controller_connected()
             set_free_mode()
 
         # MDI mode and operation
@@ -55,6 +57,9 @@ class MyCobot(MyCobotData):
         # Servo control
             is_servo_enable()
             is_all_servo_enable()
+            set_servo_data()
+            get_servo_data()
+            set_servo_calibration()
             release_servo()
             focus_servo()
 
@@ -80,20 +85,19 @@ class MyCobot(MyCobotData):
             wait() *
     """
 
-    def __init__(self, port, boudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
         """
         Args:
             port     : port string
-            boudrate : baud rate string, default '115200'
+            baudrate : baud rate string, default '115200'
             timeout  : default 0.1
             debug    : whether show debug info
-
         """
         self._version = sys.version_info[:2][0]
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
-        self._serial_port = serial.Serial(port, boudrate, timeout=timeout)
+        self._serial_port = serial.Serial(port, baudrate, timeout=timeout)
 
     def _write(self, command):
         self.log.debug("_write: {}".format(command))
@@ -122,7 +126,6 @@ class MyCobot(MyCobotData):
                    the array is used to include them. (Data cannot be nested)
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
-
         """
         command_data = self._process_data_command(args)
 
@@ -142,18 +145,18 @@ class MyCobot(MyCobotData):
             res = self._process_received(data, genre)
             return res
 
-    # Overall status
-    def version(self):   # TODO: test method <11-03-21, yourname> #
+    # System status
+    def version(self):  # TODO: test method <11-03-21, yourname> #
         """Get cobot version
 
         Return:
             mycobot   : 1
             mycobotPro: 101
-
         """
         recv = self.__mesg(Command.VERSION, has_reply=True)
         return recv
 
+    # Overall status
     def power_on(self):
         self.__mesg(Command.POWER_ON)
 
@@ -167,14 +170,25 @@ class MyCobot(MyCobotData):
             1 : power on
             0 : power off
             -1: error data
-
         """
-        return self._process_single(
-            self.__mesg(Command.IS_POWER_ON, has_reply=True))
+        return self._process_single(self.__mesg(Command.IS_POWER_ON, has_reply=True))
 
-    def set_free_mode(self):
-        # self._write('fefe0213fa')
-        self.__mesg(Command.SET_FREE_MODE)
+    def release_all_servos(self):
+        self.__mesg(Command.RELEASE_ALL_SERVOS)
+
+    def is_controller_connected(self):
+        return self._process_single(
+            self.__mesg(Command.IS_CONTROLLER_CONNECTED, has_reply=True)
+        )
+
+    def set_free_mode(self, flag):  # TODO:no finish
+        if flag:
+            self.__mesg(Command.SET_FREE_MODE, 1)
+        else:
+            self.__mesg(Command.SET_FREE_MODE, 0)
+
+    def is_free_mode(self):  # TODO: no finish
+        return self._process_single(self.__mesg(Command.IS_FREE_MODE, has_reply=True))
 
     # MDI mode and operation
     def get_angles(self):
@@ -182,7 +196,6 @@ class MyCobot(MyCobotData):
 
         Return:
             data_list (list[angle...]):
-
         """
         angles = self.__mesg(Command.GET_ANGLES, has_reply=True)
         return [self._int_to_angle(angle) for angle in angles]
@@ -195,10 +208,8 @@ class MyCobot(MyCobotData):
             id (common.Angle):
             degree (float):
             speed (int): 0 ~100
-
         """
-        self.__mesg(Command.SEND_ANGLE, id - 1, [self._angle_to_int(degree)],
-                    speed)
+        self.__mesg(Command.SEND_ANGLE, id - 1, [self._angle_to_int(degree)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, degrees, speed):
@@ -207,7 +218,6 @@ class MyCobot(MyCobotData):
         Args:
             degrees (list): example [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             speed (int): 0 ~ 100
-
         """
         degrees = [self._angle_to_int(degree) for degree in degrees]
         # data = [degrees, speed]
@@ -228,12 +238,10 @@ class MyCobot(MyCobotData):
 
         Return:
             data_list (list[radian...]):
-
         """
         angles = self.__mesg(Command.GET_ANGLES, has_reply=True)
         return [
-            round(self._int_to_angle(angle) * (math.pi / 180), 3)
-            for angle in angles
+            round(self._int_to_angle(angle) * (math.pi / 180), 3) for angle in angles
         ]
 
     def send_radians(self, radians, speed):
@@ -242,11 +250,8 @@ class MyCobot(MyCobotData):
         Args:
             radians (list): example [0, 0, 0, 0, 0, 0]
             speed (int): 0 ~ 100
-
         """
-        degrees = [
-            self._angle_to_int(radian * (180 / math.pi)) for radian in radians
-        ]
+        degrees = [self._angle_to_int(radian * (180 / math.pi)) for radian in radians]
         return self.__mesg(Command.SEND_ANGLES, degrees, speed)
 
     def get_coords(self):
@@ -254,7 +259,6 @@ class MyCobot(MyCobotData):
 
         Return:
             data_list (list): [x, y, z, rx, ry, rz]
-
         """
         received = self.__mesg(Command.GET_COORDS, has_reply=True)
         if not received:
@@ -273,12 +277,12 @@ class MyCobot(MyCobotData):
 
         Args:
             id(common.Coord):
-            coord(fload): mm
+            coord(float): mm
             speed(int):
-
         """
-        return self.__mesg(Command.SEND_COORD, id - 1,
-                           [self._coord_to_int(coord)], speed)
+        return self.__mesg(
+            Command.SEND_COORD, id - 1, [self._coord_to_int(coord)], speed
+        )
 
     @check_parameters(Command.SEND_COORDS)
     def send_coords(self, coords, speed, mode):
@@ -288,7 +292,6 @@ class MyCobot(MyCobotData):
             coords: [x(mm), y, z, rx(angle), ry, rz]
             speed(int);
             mode(int): 0 - angluar, 1 - linear
-
         """
         coord_list = []
         for idx in range(3):
@@ -310,8 +313,7 @@ class MyCobot(MyCobotData):
         self.__mesg(Command.PAUSE)
 
     def is_paused(self):
-        return self._process_single(
-            self.__mesg(Command.IS_PAUSED, has_reply=True))
+        return self._process_single(self.__mesg(Command.IS_PAUSED, has_reply=True))
 
     def resume(self):
         self.__mesg(Command.RESUME)
@@ -343,13 +345,11 @@ class MyCobot(MyCobotData):
         else:
             raise Exception("id is not right, please input 0 or 1")
 
-        received = self.__mesg(Command.IS_IN_POSITION,
-                               data_list,
-                               id,
-                               has_reply=True)
+        received = self.__mesg(Command.IS_IN_POSITION, data_list, id, has_reply=True)
         return self._process_single(received)
 
-    def is_moving(self):   # TODO: wait atom finish.
+    '''
+    def is_moving(self):
         """
 
         Return:
@@ -357,8 +357,8 @@ class MyCobot(MyCobotData):
             1 : is moving
             -1: error data
         """
-        return self._process_single(
-            self.__mesg(Command.IS_MOVING, has_reply=True))
+        return self._process_single(self.__mesg(Command.IS_MOVING, has_reply=True))
+    '''
 
     # JOG mode and operation
     @check_parameters(Command.JOG_ANGLE)
@@ -387,13 +387,12 @@ class MyCobot(MyCobotData):
         self.__mesg(Command.JOG_STOP)
 
     def set_encoder(self, joint_id, encoder):
-        '''Set joint encoder value.
+        """Set joint encoder value.
 
         Args:
             joint_id: Joint id 1 - 7
             encoder: The value of the set encoder.
-
-        '''
+        """
         self.__mesg(Command.SET_ENCODER, joint_id - 1, [encoder])
 
     def get_encoder(self, joint_id):
@@ -404,8 +403,7 @@ class MyCobot(MyCobotData):
 
     # Running status and Settings
     def get_speed(self):
-        return self._process_single(
-            self.__mesg(Command.GET_SPEED, has_reply=True))
+        return self._process_single(self.__mesg(Command.GET_SPEED, has_reply=True))
 
     @check_parameters(Command.SET_SPEED)
     def set_speed(self, speed):
@@ -417,29 +415,48 @@ class MyCobot(MyCobotData):
         self.__mesg(Command.SET_SPEED, speed)
         return self
 
+    """
+    def get_feed_override(self):
+        return self._process_single(
+            self.__mesg(Command.GET_FEED_OVERRIDE, has_reply=True)
+        )
+
+    def get_acceleration(self):
+        return self._process_single(
+            self.__mesg(Command.GET_ACCELERATION, has_reply=True)
+        )
+    """
+
     @check_parameters(Command.GET_JOINT_MIN_ANGLE)
     def get_joint_min_angle(self, joint_id):
-        angle = self.__mesg(Command.GET_JOINT_MIN_ANGLE,
-                            joint_id,
-                            has_reply=True)
+        angle = self.__mesg(Command.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
         return self._int_to_angle(angle[0]) if angle else 0
 
     @check_parameters(Command.GET_JOINT_MAX_ANGLE)
     def get_joint_max_angle(self, joint_id):
-        angle = self.__mesg(Command.GET_JOINT_MAX_ANGLE,
-                            joint_id,
-                            has_reply=True)
+        angle = self.__mesg(Command.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
         return self._int_to_angle(angle[0]) if angle else 0
 
     # Servo control
     @check_parameters(Command.IS_SERVO_ENABLE)
     def is_servo_enable(self, servo_id):
-        return self._process_single(
-            self.__mesg(Command.IS_SERVO_ENABLE, servo_id))
+        return self._process_single(self.__mesg(Command.IS_SERVO_ENABLE, servo_id - 1))
 
     def is_all_servo_enable(self):
         return self._process_single(
-            self.__mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True))
+            self.__mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True)
+        )
+
+    def set_servo_data(self, servo_no, data_id, value):
+        self.__mesg(Command.SET_SERVO_DATA, servo_no - 1, data_id, value)
+
+    def get_servo_data(self, servo_no, data_id):
+        return self._process_single(
+            self.__mesg(Command.GET_SERVO_DATA, servo_no - 1, data_id, has_reply=True)
+        )
+
+    def set_servo_calibration(self, servo_no):
+        self.__mesg(Command.SET_SERVO_CALIBRATION, servo_no - 1)
 
     @check_parameters(Command.RELEASE_SERVO)
     def release_servo(self, servo_id):
@@ -497,7 +514,8 @@ class MyCobot(MyCobotData):
 
     def get_digital_input(self, pin_no):
         return self._process_single(
-            self.__mesg(Command.GET_DIGITAL_INPUT, pin_no, has_reply=True))
+            self.__mesg(Command.GET_DIGITAL_INPUT, pin_no, has_reply=True)
+        )
 
     def set_pwm_mode(self, pin_no, channel):
         self.__mesg(Command.SET_PWM_MODE, pin_no, channel)
@@ -507,7 +525,8 @@ class MyCobot(MyCobotData):
 
     def get_gripper_value(self):
         return self._process_single(
-            self.__mesg(Command.GET_GRIPPER_VALUE, has_reply=True))
+            self.__mesg(Command.GET_GRIPPER_VALUE, has_reply=True)
+        )
 
     @check_parameters(Command.SET_GRIPPER_STATE)
     def set_gripper_state(self, flag, speed):
@@ -549,15 +568,15 @@ class MyCobot(MyCobotData):
 
         """
         return self._process_single(
-            self.__mesg(Command.IS_GRIPPER_MOVING, has_reply=True))
+            self.__mesg(Command.IS_GRIPPER_MOVING, has_reply=True)
+        )
 
-    # Baisc
+    # Basic
     def set_basic_output(self, pin_no, pin_signal):
         """
 
         Args:
             pin_signal: 0 / 1
-
         """
         self.__mesg(Command.SET_BASIC_OUTPUT, pin_no, pin_signal)
         return self

@@ -3,7 +3,6 @@ dist/
 pymycobot.egg-info/
 
 log
-.vscode/
 pymycobot/__pycache__/
 tests/__pycache__/
 
@@ -12,3 +11,6 @@ record.txt
 test_test.py
 
 .DS_Store
+
+.vscode/.ropeproject/config.py
+.vscode/.ropeproject/objectdb
