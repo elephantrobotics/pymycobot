@@ -103,7 +103,7 @@ def test_jog(setup):
     mc.pause()
 
     time.sleep(3)
-    print(mc.is_paused())  # FIXME:
+    print(mc.is_paused())   # FIXME:
     print("speed get", mc.get_speed())
     mc.set_speed(20)
     print("speed set", mc.get_speed())
@@ -111,7 +111,7 @@ def test_jog(setup):
     time.sleep(6)
 
     print("resume")
-    mc.resume()  # FIXME:
+    mc.resume()   # FIXME:
     time.sleep(10)
 
     coords = [160, 140, 160, 0, 0, 0]
@@ -136,7 +136,7 @@ def test_state_control(setup):
     time.sleep(4)
 
     print("is moving: 1 - true, 0 - false")
-    print(mc.is_moving())  # FIXME:
+    print(mc.is_moving())   # FIXME:
     time.sleep(1)
     mc.jog_angle(1, 1, 10)
     time.sleep(1)
@@ -245,6 +245,26 @@ def test_io(setup):
     mc.set_digital_output(19, 1)
     time.sleep(5)
     mc.set_digital_output(19, 0)
+
+
+def test_pump(setup):
+    print("==========================================================")
+    print("Start Pump test...")
+
+    def pump_on():
+        mc.set_basic_output(2, 0)
+        mc.set_basic_output(5, 0)
+
+    def pump_off():
+        mc.set_basic_output(2, 1)
+        mc.set_basic_output(5, 1)
+
+    pump_off()
+    time.sleep(3)
+    pump_on()
+    time.sleep(3)
+    pump_off()
+    time.sleep(3)
 
 
 if __name__ == "__main__":

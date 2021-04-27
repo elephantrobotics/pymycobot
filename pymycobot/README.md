@@ -63,6 +63,8 @@ We support Python2, Python3.5 or later.
         * [set_gripper_value](#set_gripper_value)
         * [set_gripper_ini](#set_gripper_ini)
         * [is_gripper_moving](#is_gripper_moving)
+    * [Basic](#basic)
+        * [set_basic_output](#set_basic_output)
 * [Angle](#angle)
 * [Coord](#coord)
 
@@ -604,6 +606,19 @@ from pymycobot.mycobot import MyCobot
   - `0` : not moving
   - `1` : is moving
   - `-1`: error data
+
+## Basic
+
+### set_basic_output
+
+- **Prototype**: `set_basic_output(pin_no, pin_signal)`
+
+- **Description**: Set bottom pin.
+
+- **Parameters**
+
+  - `pin_no` (`int`) Pin number.
+  - `pin_signal` (`int`): 0 / 1
 
 # Angle
 
