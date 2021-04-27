@@ -8,8 +8,6 @@ This is a python API for serial communication with mycobot and controlling it.
 
 **Notes**:
 
-<!-- This is the mycobot Python API package designed by Zhang Lijun([lijun.zhang@elephantrobotics.com]()) -->
-
 > Make sure that `Atom` is flashed into the top Atom, `Transponder` is flashed into the base Basic. <br>
 > The firmware `Atom` and `Transponder` download address: [https://github.com/elephantrobotics/myCobot/tree/main/Software](https://github.com/elephantrobotics/myCobot/tree/main/Software)<br>
 > You also can use myStudio to flash them, myStudio address: [https://github.com/elephantrobotics/myStudio/releases](https://github.com/elephantrobotics/myStudio/releases)
@@ -40,6 +38,12 @@ cd <your-path>/pymycobot
 ```
 
 ## Usage:
+
+```python
+from pymycobot.mycobot import mycobot
+from pymycobot.mycobot import Angle, Coord
+from pymycobot import PI_PORT, PI_BAUD # For raspberry pi version of mycobot.
+```
 
 The [`demo`](./demo) directory stores some test case files.
 

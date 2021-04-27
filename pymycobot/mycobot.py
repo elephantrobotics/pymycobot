@@ -181,6 +181,7 @@ class MyCobot(MyCobotData):
             self.__mesg(Command.IS_CONTROLLER_CONNECTED, has_reply=True)
         )
 
+    """
     def set_free_mode(self, flag):  # TODO:no finish
         if flag:
             self.__mesg(Command.SET_FREE_MODE, 1)
@@ -189,6 +190,7 @@ class MyCobot(MyCobotData):
 
     def is_free_mode(self):  # TODO: no finish
         return self._process_single(self.__mesg(Command.IS_FREE_MODE, has_reply=True))
+    """
 
     # MDI mode and operation
     def get_angles(self):
@@ -493,12 +495,11 @@ class MyCobot(MyCobotData):
         return self
 
     def set_pin_mode(self, pin_no, pin_mode):
-        """
+        """Set the state mode of the specified pin in atom.
 
         Args:
             pin_no   (int):
             pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
-
         """
         self.__mesg(Command.SET_PIN_MODE, pin_no, pin_mode)
 
@@ -508,7 +509,6 @@ class MyCobot(MyCobotData):
         Args:
             pin_no     (int):
             pin_signal (int): 0 / 1
-
         """
         self.__mesg(Command.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
@@ -535,7 +535,6 @@ class MyCobot(MyCobotData):
         Args:
             flag  (int): 0 - open, 1 - close
             speed (int): 0 ~ 100
-
         """
         self.__mesg(Command.SET_GRIPPER_STATE, flag, speed)
         return self
@@ -546,7 +545,6 @@ class MyCobot(MyCobotData):
         Args:
             value (int): 0 ~ 4096
             speed (int): 0 ~ 100
-
         """
         self.__mesg(Command.SET_GRIPPER_VALUE, [value], speed)
 
@@ -554,7 +552,6 @@ class MyCobot(MyCobotData):
         """Set the current position to zero
 
         Current position value is `2048`.
-
         """
         self.__mesg(Command.SET_GRIPPER_INI)
 
@@ -565,7 +562,6 @@ class MyCobot(MyCobotData):
             0 : not moving
             1 : is moving
             -1: error data
-
         """
         return self._process_single(
             self.__mesg(Command.IS_GRIPPER_MOVING, has_reply=True)
