@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 __all__ = ["mycobot", "genre"]
 
-__version__ = "2.4.0"
+__version__ = "2.4.1"
 __author__ = "Zachary zhang"
 __email__ = "lijun.zhang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

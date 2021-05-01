@@ -350,7 +350,6 @@ class MyCobot(MyCobotData):
         received = self.__mesg(Command.IS_IN_POSITION, data_list, id, has_reply=True)
         return self._process_single(received)
 
-    '''
     def is_moving(self):
         """
 
@@ -360,7 +359,6 @@ class MyCobot(MyCobotData):
             -1: error data
         """
         return self._process_single(self.__mesg(Command.IS_MOVING, has_reply=True))
-    '''
 
     # JOG mode and operation
     @check_parameters(Command.JOG_ANGLE)
