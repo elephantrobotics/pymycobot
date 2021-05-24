@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(__file__))
-from port import setup
+from port_setup import setup
 
 if __name__ == "__main__":
     mc = setup()

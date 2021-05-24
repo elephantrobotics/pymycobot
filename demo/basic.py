@@ -1,7 +1,11 @@
 import time
 import os
+import sys
 from pymycobot.mycobot import MyCobot
 from pymycobot.genre import Angle, Coord
+
+sys.path.append(os.path.dirname(__file__))
+from port_setup import setup
 
 reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
 
@@ -73,9 +77,8 @@ if __name__ == "__main__":
     time.sleep(3)
     # port = subprocess.check_output(['echo -n /dev/ttyUSB*'],
     # shell=True).decode()
-    with open(os.path.dirname(__file__) + "/port.txt") as f:
-        port = f.read().strip().replace("\n", "")
-        print(port)
-    # mycobot = MyCobot(port, debug=True)
-    mycobot = MyCobot(port)
+    # with open(os.path.dirname(__file__) + "/port.txt") as f:
+        # port = f.read().strip().replace("\n", "")
+        # print(port)
+    mycobot = setup()
     test(mycobot)

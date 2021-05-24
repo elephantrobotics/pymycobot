@@ -1,6 +1,10 @@
 import os
 import time
+import sys
 from pymycobot.mycobot import MyCobot
+
+sys.path.append(os.path.dirname(__file__))
+from port_setup import setup
 
 
 def gripper_test(mc):
@@ -38,8 +42,5 @@ def gripper_test(mc):
 
 
 if __name__ == "__main__":
-    with open(os.path.dirname(__file__) + "/port.txt") as f:
-        port = f.read().strip().replace("\n", "")
-        print(port)
-    mycobot = MyCobot(port)
+    mycobot = setup()
     gripper_test(mycobot)

@@ -1,14 +1,19 @@
 # 2021
 
+## 5.24
+
+- update demo.
+
 ## 4.27
+
 - release v2.4.0
 - set_free_mode -> release_all_servos
 - Add new port:
-    - is_controller_connected
-    - set_servo_data
-    - get_servo_data
-    - set_servo_calibration
-    - set_basic_output
+  - is_controller_connected
+  - set_servo_data
+  - get_servo_data
+  - set_servo_calibration
+  - set_basic_output
 - Update API document.
 
 ## 4.25

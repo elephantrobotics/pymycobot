@@ -1,6 +1,10 @@
 import time
 import os
+import sys
 from pymycobot.mycobot import MyCobot
+
+sys.path.append(os.path.dirname(__file__))
+from port_setup import setup
 
 reset = [153.19, 137.81, -153.54, 156.79, 87.27, 13.62]
 
@@ -32,9 +36,6 @@ if __name__ == "__main__":
           """
     )
     time.sleep(3)
-    with open(os.path.dirname(__file__) + "/port.txt") as f:
-        port = f.read().strip().replace("\n", "")
-        print(port)
-    mycobot = MyCobot(port)
+    mycobot = setup()
     test(mycobot)
     # print(mycobot.get_angles())

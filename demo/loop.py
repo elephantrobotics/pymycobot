@@ -1,13 +1,14 @@
 import time
 import os
+import sys
 from pymycobot.mycobot import MyCobot
+
+sys.path.append(os.path.dirname(__file__))
+from port_setup import setup
 
 
 if __name__ == "__main__":
-    with open(os.path.dirname(__file__) + "/port.txt") as f:
-        port = f.read().strip().replace("\n", "")
-        print(port)
-    cobot = MyCobot(port)
+    cobot = setup()
     cobot.send_angles([0, 0, 0, 0, 0, 0], 100)
     time.sleep(10)
     print("start")
