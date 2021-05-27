@@ -1,5 +1,10 @@
 # 2021
 
+## 5.27
+
+- release v2.4.2
+- fixed `set_pwm_output()`
+
 ## 5.24
 
 - update demo.

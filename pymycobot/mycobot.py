@@ -69,7 +69,7 @@ class MyCobot(MyCobotData):
             set_pin_mode()
             set_digital_output()
             get_digital_input()
-            set_pwm_mode()
+            set_pwm_mode() x
             set_pwm_output()
             get_gripper_value()
             set_gripper_state() *
@@ -515,11 +515,13 @@ class MyCobot(MyCobotData):
             self.__mesg(Command.GET_DIGITAL_INPUT, pin_no, has_reply=True)
         )
 
+    '''
     def set_pwm_mode(self, pin_no, channel):
         self.__mesg(Command.SET_PWM_MODE, pin_no, channel)
+    '''
 
-    def set_pwm_output(self, channel, pin_val):
-        self.__mesg(Command.SET_PWM_OUTPUT, channel, pin_val)
+    def set_pwm_output(self, channel, frequency, pin_val):
+        self.__mesg(Command.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
     def get_gripper_value(self):
         return self._process_single(

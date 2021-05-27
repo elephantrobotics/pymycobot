@@ -552,12 +552,19 @@ from pymycobot.mycobot import MyCobot
 <!-- ### set_pwm_mode()
 
 - **Description**
-- **Parameters**
+- **Parameters**-->
 
 ### set_pwm_output()
 
-- **Description**
-- **Parameters** -->
+- **Prototype**: `set_pwm_output(channel, frequency, pin_val)`
+
+- **Description**: PWM control.
+
+- **Parameters**
+
+  - `channel` (`int`): IO number.
+  - `frequency` (`int`): clock frequency
+  - `pin_val` (`int`): Duty cycle 0 ~ 256; 128 means 50%
 
 ### get_gripper_value
 
