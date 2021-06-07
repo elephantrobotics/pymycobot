@@ -2,7 +2,7 @@
 
 This is a python API for serial communication with mycobot and controlling it.
 
-<!--![](./f3-min2.jpg)-->
+[![home](./f3-min2.jpg)](https://www.elephantrobotics.com/en/myCobot-en/)
 
 ## Installation
 
