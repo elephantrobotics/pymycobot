@@ -1,4 +1,3 @@
-import time
 import math
 import logging
 import sys
@@ -138,10 +137,10 @@ class MycobotCommandGenerater(DataProcessor):
 
     # Overall status
     def power_on(self):
-        self._mesg(Command.POWER_ON)
+        return self._mesg(Command.POWER_ON)
 
     def power_off(self):
-        self._mesg(Command.POWER_OFF)
+        return self._mesg(Command.POWER_OFF)
 
     def is_power_on(self):
         """Adjust robot arm status
@@ -151,15 +150,13 @@ class MycobotCommandGenerater(DataProcessor):
             0 : power off
             -1: error data
         """
-        return self._process_single(self._mesg(Command.IS_POWER_ON, has_reply=True))
+        return self._mesg(Command.IS_POWER_ON, has_reply=True)
 
     def release_all_servos(self):
-        self._mesg(Command.RELEASE_ALL_SERVOS)
+        return self._mesg(Command.RELEASE_ALL_SERVOS)
 
     def is_controller_connected(self):
-        return self._process_single(
-            self._mesg(Command.IS_CONTROLLER_CONNECTED, has_reply=True)
-        )
+        return self._mesg(Command.IS_CONTROLLER_CONNECTED, has_reply=True)
 
     """
     def set_free_mode(self, flag):  # TODO:no finish
@@ -179,8 +176,7 @@ class MycobotCommandGenerater(DataProcessor):
         Return:
             data_list (list[angle...]):
         """
-        angles = self._mesg(Command.GET_ANGLES, has_reply=True)
-        return [self._int_to_angle(angle) for angle in angles]
+        return self._mesg(Command.GET_ANGLES, has_reply=True)
 
     def send_angle(self, id, degree, speed):
         """Send one angle
@@ -191,7 +187,9 @@ class MycobotCommandGenerater(DataProcessor):
             speed (int): 0 ~100
         """
         check_datas(joint_id=id, degree=degree, speed=speed)
-        self._mesg(Command.SEND_ANGLE, id - 1, [self._angle_to_int(degree)], speed)
+        return self._mesg(
+            Command.SEND_ANGLE, id - 1, [self._angle_to_int(degree)], speed
+        )
 
     # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, degrees, speed):
@@ -204,38 +202,6 @@ class MycobotCommandGenerater(DataProcessor):
         check_datas(degrees=degrees, len6=degrees, speed=speed)
         degrees = [self._angle_to_int(degree) for degree in degrees]
         # data = [degrees, speed]
-        self._mesg(Command.SEND_ANGLES, degrees, speed)
-
-    def sync_send_angles(self, degrees, speed, timeout=7):
-        t = time.time()
-        self.send_angles(degrees, speed)
-        while time.time() - t < timeout:
-            f = self.is_in_position(degrees, 0)
-            if f:
-                break
-            time.sleep(0.1)
-        return self
-
-    def get_radians(self):
-        """Get all angle return a list
-
-        Return:
-            data_list (list[radian...]):
-        """
-        angles = self._mesg(Command.GET_ANGLES, has_reply=True)
-        return [
-            round(self._int_to_angle(angle) * (math.pi / 180), 3) for angle in angles
-        ]
-
-    def send_radians(self, radians, speed):
-        """Send all angles
-
-        Args:
-            radians (list): example [0, 0, 0, 0, 0, 0]
-            speed (int): 0 ~ 100
-        """
-        check_datas(len6=radians, speed=speed)
-        degrees = [self._angle_to_int(radian * (180 / math.pi)) for radian in radians]
         return self._mesg(Command.SEND_ANGLES, degrees, speed)
 
     def get_coords(self):
@@ -244,16 +210,7 @@ class MycobotCommandGenerater(DataProcessor):
         Return:
             data_list (list): [x, y, z, rx, ry, rz]
         """
-        received = self._mesg(Command.GET_COORDS, has_reply=True)
-        if not received:
-            return received
-
-        res = []
-        for idx in range(3):
-            res.append(self._int_to_coord(received[idx]))
-        for idx in range(3, 6):
-            res.append(self._int_to_angle(received[idx]))
-        return res
+        return self._mesg(Command.GET_COORDS, has_reply=True)
 
     def send_coord(self, id, coord, speed):
         """Send one coord
@@ -282,28 +239,19 @@ class MycobotCommandGenerater(DataProcessor):
             coord_list.append(self._coord_to_int(coords[idx]))
         for idx in range(3, 6):
             coord_list.append(self._angle_to_int(coords[idx]))
-        self._mesg(Command.SEND_COORDS, coord_list, speed, mode)
-
-    def sync_send_coords(self, coords, speed, mode, timeout=7):
-        t = time.time()
-        self.send_coords(coords, speed, mode)
-        while time.time() - t < timeout:
-            if self.is_in_position(coords, 1):
-                break
-            time.sleep(0.1)
-        return self
+        return self._mesg(Command.SEND_COORDS, coord_list, speed, mode)
 
     def pause(self):
-        self._mesg(Command.PAUSE)
+        return self._mesg(Command.PAUSE)
 
     def is_paused(self):
-        return self._process_single(self._mesg(Command.IS_PAUSED, has_reply=True))
+        return self._mesg(Command.IS_PAUSED, has_reply=True)
 
     def resume(self):
-        self._mesg(Command.RESUME)
+        return self._mesg(Command.RESUME)
 
     def stop(self):
-        self._mesg(Command.STOP)
+        return self._mesg(Command.STOP)
 
     def is_in_position(self, data, id):
         """
@@ -328,8 +276,7 @@ class MycobotCommandGenerater(DataProcessor):
         else:
             raise Exception("id is not right, please input 0 or 1")
 
-        received = self._mesg(Command.IS_IN_POSITION, data_list, id, has_reply=True)
-        return self._process_single(received)
+        return self._mesg(Command.IS_IN_POSITION, data_list, id, has_reply=True)
 
     def is_moving(self):
         """
@@ -339,7 +286,7 @@ class MycobotCommandGenerater(DataProcessor):
             1 : is moving
             -1: error data
         """
-        return self._process_single(self._mesg(Command.IS_MOVING, has_reply=True))
+        return self._mesg(Command.IS_MOVING, has_reply=True)
 
     # JOG mode and operation
     def jog_angle(self, joint_id, direction, speed):
@@ -350,7 +297,7 @@ class MycobotCommandGenerater(DataProcessor):
             direction: int [0, 1]
             speed: int (0 - 100)
         """
-        self._mesg(Command.JOG_ANGLE, joint_id, direction, speed)
+        return self._mesg(Command.JOG_ANGLE, joint_id, direction, speed)
 
     def jog_coord(self, coord_id, direction, speed):
         """Coord control
@@ -360,10 +307,10 @@ class MycobotCommandGenerater(DataProcessor):
             direction: int [0, 1]
             speed: int (0 - 100)
         """
-        self._mesg(Command.JOG_COORD, coord_id, direction, speed)
+        return self._mesg(Command.JOG_COORD, coord_id, direction, speed)
 
     def jog_stop(self):
-        self._mesg(Command.JOG_STOP)
+        return self._mesg(Command.JOG_STOP)
 
     def set_encoder(self, joint_id, encoder):
         """Set joint encoder value.
@@ -372,17 +319,17 @@ class MycobotCommandGenerater(DataProcessor):
             joint_id: Joint id 1 - 7
             encoder: The value of the set encoder.
         """
-        self._mesg(Command.SET_ENCODER, joint_id - 1, [encoder])
+        return self._mesg(Command.SET_ENCODER, joint_id - 1, [encoder])
 
     def get_encoder(self, joint_id):
         return self._mesg(Command.GET_ENCODER, joint_id - 1, has_reply=True)
 
     def set_encoders(self, encoders, sp):
-        self._mesg(Command.SET_ENCODERS, encoders, sp)
+        return self._mesg(Command.SET_ENCODERS, encoders, sp)
 
     # Running status and Settings
     def get_speed(self):
-        return self._process_single(self._mesg(Command.GET_SPEED, has_reply=True))
+        return self._mesg(Command.GET_SPEED, has_reply=True)
 
     def set_speed(self, speed):
         """Set speed value
@@ -391,8 +338,7 @@ class MycobotCommandGenerater(DataProcessor):
             speed (int): 0 - 100
         """
         check_datas(speed=speed)
-        self._mesg(Command.SET_SPEED, speed)
-        return self
+        return self._mesg(Command.SET_SPEED, speed)
 
     """
     def get_feed_override(self):
@@ -408,33 +354,27 @@ class MycobotCommandGenerater(DataProcessor):
 
     def get_joint_min_angle(self, joint_id):
         check_datas(joint_id=joint_id)
-        angle = self._mesg(Command.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
-        return self._int_to_angle(angle[0]) if angle else 0
+        return self._mesg(Command.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
 
     def get_joint_max_angle(self, joint_id):
         check_datas(joint_id=joint_id)
-        angle = self._mesg(Command.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
-        return self._int_to_angle(angle[0]) if angle else 0
+        return self._mesg(Command.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
 
     # Servo control
     def is_servo_enable(self, servo_id):
-        return self._process_single(self._mesg(Command.IS_SERVO_ENABLE, servo_id - 1))
+        return self._mesg(Command.IS_SERVO_ENABLE, servo_id - 1)
 
     def is_all_servo_enable(self):
-        return self._process_single(
-            self._mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True)
-        )
+        return self._mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True)
 
     def set_servo_data(self, servo_no, data_id, value):
-        self._mesg(Command.SET_SERVO_DATA, servo_no - 1, data_id, value)
+        return self._mesg(Command.SET_SERVO_DATA, servo_no - 1, data_id, value)
 
     def get_servo_data(self, servo_no, data_id):
-        return self._process_single(
-            self._mesg(Command.GET_SERVO_DATA, servo_no - 1, data_id, has_reply=True)
-        )
+        return self._mesg(Command.GET_SERVO_DATA, servo_no - 1, data_id, has_reply=True)
 
     def set_servo_calibration(self, servo_no):
-        self._mesg(Command.SET_SERVO_CALIBRATION, servo_no - 1)
+        return self._mesg(Command.SET_SERVO_CALIBRATION, servo_no - 1)
 
     def release_servo(self, servo_id):
         """Power off designated servo
@@ -442,7 +382,7 @@ class MycobotCommandGenerater(DataProcessor):
         Args:
             servo_id: 1 ~ 6
         """
-        self._mesg(Command.RELEASE_SERVO, servo_id)
+        return self._mesg(Command.RELEASE_SERVO, servo_id)
 
     def focus_servo(self, servo_id):
         """Power on designated servo
@@ -451,7 +391,7 @@ class MycobotCommandGenerater(DataProcessor):
             servo_id: 1 ~ 6
 
         """
-        self._mesg(Command.FOCUS_SERVO, servo_id)
+        return self._mesg(Command.FOCUS_SERVO, servo_id)
 
     # Atom IO
     def set_color(self, r=0, g=0, b=0):
@@ -464,8 +404,7 @@ class MycobotCommandGenerater(DataProcessor):
 
         """
         check_datas(rgb=[r, g, b])
-        self._mesg(Command.SET_COLOR, r, g, b)
-        return self
+        return self._mesg(Command.SET_COLOR, r, g, b)
 
     def set_pin_mode(self, pin_no, pin_mode):
         """Set the state mode of the specified pin in atom.
@@ -474,7 +413,7 @@ class MycobotCommandGenerater(DataProcessor):
             pin_no   (int):
             pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
         """
-        self._mesg(Command.SET_PIN_MODE, pin_no, pin_mode)
+        return self._mesg(Command.SET_PIN_MODE, pin_no, pin_mode)
 
     def set_digital_output(self, pin_no, pin_signal):
         """
@@ -483,12 +422,10 @@ class MycobotCommandGenerater(DataProcessor):
             pin_no     (int):
             pin_signal (int): 0 / 1
         """
-        self._mesg(Command.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
+        return self._mesg(Command.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
     def get_digital_input(self, pin_no):
-        return self._process_single(
-            self._mesg(Command.GET_DIGITAL_INPUT, pin_no, has_reply=True)
-        )
+        return self._mesg(Command.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
     """
     def set_pwm_mode(self, pin_no, channel):
@@ -496,12 +433,10 @@ class MycobotCommandGenerater(DataProcessor):
     """
 
     def set_pwm_output(self, channel, frequency, pin_val):
-        self._mesg(Command.SET_PWM_OUTPUT, channel, [frequency], pin_val)
+        return self._mesg(Command.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
     def get_gripper_value(self):
-        return self._process_single(
-            self._mesg(Command.GET_GRIPPER_VALUE, has_reply=True)
-        )
+        return self._mesg(Command.GET_GRIPPER_VALUE, has_reply=True)
 
     def set_gripper_state(self, flag, speed):
         """Set gripper switch
@@ -510,8 +445,7 @@ class MycobotCommandGenerater(DataProcessor):
             flag  (int): 0 - open, 1 - close
             speed (int): 0 ~ 100
         """
-        self._mesg(Command.SET_GRIPPER_STATE, flag, speed)
-        return self
+        return self._mesg(Command.SET_GRIPPER_STATE, flag, speed)
 
     def set_gripper_value(self, value, speed):
         """Set gripper value
@@ -521,14 +455,14 @@ class MycobotCommandGenerater(DataProcessor):
             speed (int): 0 ~ 100
         """
         check_datas(speed=speed)
-        self._mesg(Command.SET_GRIPPER_VALUE, [value], speed)
+        return self._mesg(Command.SET_GRIPPER_VALUE, [value], speed)
 
     def set_gripper_ini(self):
         """Set the current position to zero
 
         Current position value is `2048`.
         """
-        self._mesg(Command.SET_GRIPPER_INI)
+        return self._mesg(Command.SET_GRIPPER_INI)
 
     def is_gripper_moving(self):
         """Judge whether the gripper is moving or not
@@ -538,9 +472,7 @@ class MycobotCommandGenerater(DataProcessor):
             1 : is moving
             -1: error data
         """
-        return self._process_single(
-            self._mesg(Command.IS_GRIPPER_MOVING, has_reply=True)
-        )
+        return self._mesg(Command.IS_GRIPPER_MOVING, has_reply=True)
 
     # Basic
     def set_basic_output(self, pin_no, pin_signal):
@@ -549,10 +481,4 @@ class MycobotCommandGenerater(DataProcessor):
         Args:
             pin_signal: 0 / 1
         """
-        self._mesg(Command.SET_BASIC_OUTPUT, pin_no, pin_signal)
-        return self
-
-    # Other
-    def wait(self, t):
-        time.sleep(t)
-        return self
+        return self._mesg(Command.SET_BASIC_OUTPUT, pin_no, pin_signal)

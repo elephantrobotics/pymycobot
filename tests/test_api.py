@@ -57,6 +57,7 @@ def test_basic_api(setup):
     mc.send_angles(zero, sp)
     time.sleep(2)
     angles = mc.get_angles()
+    print(angles)
     print("check angle ", end="")
     for angle in angles:
         assert -2 < angle < 2, "The error is large."
@@ -74,6 +75,7 @@ def test_basic_api(setup):
     time.sleep(3)
 
     radians = mc.get_radians()
+    print(radians)
     time.sleep(0.1)
     print("check radian")
     for radian in radians:
@@ -90,6 +92,7 @@ def test_basic_api(setup):
     time.sleep(3)
 
     get_coords = mc.get_coords()
+    print(get_coords)
     time.sleep(0.5)
     print("check coords ", end="")
     for (old, new) in zip(coords, get_coords):
