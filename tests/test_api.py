@@ -31,12 +31,19 @@ def setup():
     print(port)
     print("")
 
+    baud = input("\nPlease input baudrate (default: 115200):")
+    if not baud:
+        baud = 115200
+    print(baud)
+    print("")
+
     DEBUG = False
-    f = input("Wether DEBUG mode[Y/n]:")
-    if f in ['y', 'Y', 'yes', 'Yes']:
+    f = input("Wether DEBUG mode[Y/n] (default: no):")
+    if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
     # mc = MyCobot(port, debug=True)
-    mc = MyCobot(port, debug=DEBUG)
+    mc = MyCobot(port, baud, debug=DEBUG)
+    print("")
 
 
 def test_basic_api(setup):
@@ -49,13 +56,14 @@ def test_basic_api(setup):
     mc.send_angles(zero, sp)
     time.sleep(2)
     angles = mc.get_angles()
-    print("check angle")
+    print("check angle ", end="")
     for angle in angles:
-        assert -5 < angle < 5, "The error is large."
+        assert -2 < angle < 2, "The error is large."
 
     for _ in range(10):
         print(mc.is_in_position(zero, 0), " ", end="")
         time.sleep(0.5)
+    print("")
 
     mc.send_angle(Angle.J1.value, 90, 50)
     time.sleep(4)
@@ -71,25 +79,32 @@ def test_basic_api(setup):
         assert 0.9 <= radian <= 1.1, "The error is large."
 
     coords = [160, 160, 160, 0, 0, 0]
-    mc.send_coords(coords, sp, 0)
+    print("check coords before sended ", end="")
+    for _ in range(3):
+        print(mc.is_in_position(coords, 1), " ", end="")
+        time.sleep(0.5)
+    print("")
+
+    mc.send_coords(coords, sp, 2)
     time.sleep(3)
 
     get_coords = mc.get_coords()
     time.sleep(0.5)
-    print("check radian")
+    print("check coords ", end="")
     for (old, new) in zip(coords, get_coords):
         assert old - 5 <= new <= old + 5
 
     for _ in range(10):
         print(mc.is_in_position(coords, 1), " ", end="")
         time.sleep(0.5)
+    print("")
 
     mc.send_coord(Coord.X.value, -40, 70)
     time.sleep(2)
 
 
 def test_jog(setup):
-    print("==========================================================")
+    print("\n==========================================================")
     print("start jog test...")
     zero = [0, 0, 0, 0, 0, 0]
     mc.send_angles(zero, sp)
@@ -97,13 +112,14 @@ def test_jog(setup):
 
     print("jog_angle() -> control joint1")
     mc.jog_angle(Angle.J1.value, 1, 10)
-    print(mc.is_paused())
-    time.sleep(3)
+    time.sleep(1)
+    print("wait 1 s, check is paused: %s" % mc.is_paused())
+    time.sleep(2)
     print("pause 10 s")
     mc.pause()
 
     time.sleep(3)
-    print(mc.is_paused())   # FIXME:
+    print("wait 3 s, check is paused: %s" % mc.is_paused())
     print("speed get", mc.get_speed())
     mc.set_speed(20)
     print("speed set", mc.get_speed())
@@ -111,7 +127,7 @@ def test_jog(setup):
     time.sleep(6)
 
     print("resume")
-    mc.resume()   # FIXME:
+    mc.resume()  # FIXME:
     time.sleep(10)
 
     coords = [160, 140, 160, 0, 0, 0]
@@ -136,7 +152,7 @@ def test_state_control(setup):
     time.sleep(4)
 
     print("is moving: 1 - true, 0 - false")
-    print(mc.is_moving())   # FIXME:
+    print(mc.is_moving())  # FIXME:
     time.sleep(1)
     mc.jog_angle(1, 1, 10)
     time.sleep(1)
@@ -186,6 +202,28 @@ def test_angle_limit(setup):
     print(mc.get_joint_max_angle(6))
 
 
+def test_servo(setup):
+    print("==========================================================")
+    print("Start servo test...")
+    time.sleep(2)
+
+    for _ in range(3):
+        print("Is all servos enable: %s" % mc.is_all_servo_enable())
+        time.sleep(0.1)
+    for i in range(1, 7):
+        print("Servo %s is enable %s" % (i, mc.is_servo_enable(i)))
+        time.sleep(0.1)
+
+    mc.release_all_servos()
+    print("Release all servos and wait 10s.")
+    time.sleep(10)
+
+    for i in range(1, 7):
+        print("Focused servo %s" % i)
+        mc.focus_servo(i)
+        time.sleep(1)
+
+
 def test_gripper(setup):
     print("==========================================================")
     print("start gripper test...")
@@ -212,28 +250,6 @@ def test_gripper(setup):
     time.sleep(2)
 
     print(mc.get_gripper_value())
-
-
-def test_servo(setup):
-    print("==========================================================")
-    print("Start servo test...")
-    time.sleep(2)
-    print(mc.is_all_servo_enable())
-    time.sleep(.1)
-    print(mc.is_servo_enable(1))
-    time.sleep(.1)
-    mc.focus_servo(1)
-    time.sleep(.1)
-    mc.focus_servo(2)
-    time.sleep(.1)
-    mc.focus_servo(3)
-    time.sleep(.1)
-    mc.focus_servo(4)
-    time.sleep(.1)
-    mc.focus_servo(5)
-    time.sleep(.1)
-    mc.focus_servo(6)
-    time.sleep(.1)
 
 
 def test_io(setup):
@@ -265,6 +281,48 @@ def test_pump(setup):
     time.sleep(3)
     pump_off()
     time.sleep(3)
+
+
+def test_error_data(setup):
+    try:
+        mc.send_angle(7, 0, 0)
+    except Exception as e:
+        print(e)
+
+    try:
+        mc.send_angle(1, 191, 0)
+    except Exception as e:
+        print(e)
+
+    try:
+        mc.send_angle(1, 180, -10)
+    except Exception as e:
+        print(e)
+
+    try:
+        mc.send_angles([], 1)
+    except Exception as e:
+        print(e)
+
+    try:
+        mc.send_angles([1, 2, 3, 4, 5, 6, 7], 1)
+    except Exception as e:
+        print(e)
+
+    try:
+        mc.send_angles([1, 2, 3, 4, 5, 6], 101)
+    except Exception as e:
+        print(e)
+
+    try:
+        mc.send_angles([-191, 2, 3, 4, 5, 6], -10)
+    except Exception as e:
+        print(e)
+
+    try:
+        mc.set_color(10, -1, 0)
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":
