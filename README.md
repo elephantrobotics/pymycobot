@@ -42,8 +42,7 @@ cd <your-path>/pymycobot
 ## Usage:
 
 ```python
-from pymycobot.mycobot import mycobot
-from pymycobot.mycobot import Angle, Coord
+from pymycobot import MyCobot, Angle, Coord
 from pymycobot import PI_PORT, PI_BAUD # For raspberry pi version of mycobot.
 ```
 
