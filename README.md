@@ -2,7 +2,7 @@
 
 This is a python API for serial communication with mycobot and controlling it.
 
-<!--![](./f3-min2.jpg)-->
+[![home](./f3-min2.jpg)](https://www.elephantrobotics.com/en/myCobot-en/)
 
 ## Installation
 
@@ -15,9 +15,10 @@ This is a python API for serial communication with mycobot and controlling it.
 ### Pip
 
 ```bash
-pip install pymycobot --upgrade --user
+pip install pymycobot --upgrade
 ```
 
+<!--
 **Notes:**
 
 > Now only the version is `Atom2.4` or later is supported. If you use an earlier version, please install `pymycobot 1.0.7`.
@@ -25,6 +26,7 @@ pip install pymycobot --upgrade --user
 ```bash
 pip install pymycobot==1.0.7 --user
 ```
+-->
 
 ### Source code
 
