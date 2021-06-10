@@ -75,7 +75,7 @@ class Command:
     SET_BASIC_OUTPUT = 0xA0
 
 
-class MyCobotData:
+class DataProcessor:
     # Functional approach
     def _encode_int8(self, data):
         return struct.pack("b", data)

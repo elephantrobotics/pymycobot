@@ -8,8 +8,9 @@ import pytest
 # Add relevant ranger module to PATH... there surely is a better way to do this...
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from pymycobot.mycobot import MyCobot
-from pymycobot.genre import Angle, Coord
+from pymycobot import MyCobot, Angle, Coord
+
+# from pymycobot.genre import Angle, Coord
 
 port: str
 mc: MyCobot
@@ -284,6 +285,8 @@ def test_pump(setup):
 
 
 def test_error_data(setup):
+    print("==========================================================")
+    print("Start data check test...\n")
     try:
         mc.send_angle(7, 0, 0)
     except Exception as e:
