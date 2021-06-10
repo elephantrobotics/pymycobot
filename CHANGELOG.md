@@ -2,7 +2,7 @@
 
 ## 6.10
 
-- release v2.5.0
+- release v2.5.1
 - improved parameter checking.
 - new class `MycobotCommandGenerator` that generate binary real command.
 - can import needed class from `pymycobot`, like:

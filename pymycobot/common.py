@@ -1,7 +1,7 @@
 import struct
 
 
-class Command:
+class Command(object):
     # BASIC
     HEADER = 0xFE
     FOOTER = 0xFA
@@ -75,7 +75,7 @@ class Command:
     SET_BASIC_OUTPUT = 0xA0
 
 
-class DataProcessor:
+class DataProcessor(object):
     # Functional approach
     def _encode_int8(self, data):
         return struct.pack("b", data)
