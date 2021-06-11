@@ -58,7 +58,7 @@ class MyCobot(MycobotCommandGenerater):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super()._mesg(genre, *args, **kwargs)
+        real_command, has_reply = super(MyCobot, self)._mesg(genre, *args, **kwargs)
         self._write(self._flatten(real_command))
 
         if has_reply:

@@ -25,7 +25,7 @@ def setup():
 
 def test_generator(setup):
     # print(mg.__dir__())
-    print(mg, version())
+    print(mg.version())
     print(mg.power_on())
     print(mg.power_off())
     print(mg.release_all_servos())
