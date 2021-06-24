@@ -188,7 +188,7 @@ class MycobotCommandGenerater(DataProcessor):
         """
         check_datas(joint_id=id, degree=degree, speed=speed)
         return self._mesg(
-            Command.SEND_ANGLE, id - 1, [self._angle_to_int(degree)], speed
+            Command.SEND_ANGLE, id, [self._angle_to_int(degree)], speed
         )
 
     # @check_parameters(Command.SEND_ANGLES)
@@ -222,7 +222,7 @@ class MycobotCommandGenerater(DataProcessor):
         """
         check_datas(speed=speed)
         return self._mesg(
-            Command.SEND_COORD, id - 1, [self._coord_to_int(coord)], speed
+            Command.SEND_COORD, id, [self._coord_to_int(coord)], speed
         )
 
     def send_coords(self, coords, speed, mode):
@@ -319,10 +319,10 @@ class MycobotCommandGenerater(DataProcessor):
             joint_id: Joint id 1 - 7
             encoder: The value of the set encoder.
         """
-        return self._mesg(Command.SET_ENCODER, joint_id - 1, [encoder])
+        return self._mesg(Command.SET_ENCODER, joint_id, [encoder])
 
     def get_encoder(self, joint_id):
-        return self._mesg(Command.GET_ENCODER, joint_id - 1, has_reply=True)
+        return self._mesg(Command.GET_ENCODER, joint_id, has_reply=True)
 
     def set_encoders(self, encoders, sp):
         return self._mesg(Command.SET_ENCODERS, encoders, sp)
@@ -362,19 +362,19 @@ class MycobotCommandGenerater(DataProcessor):
 
     # Servo control
     def is_servo_enable(self, servo_id):
-        return self._mesg(Command.IS_SERVO_ENABLE, servo_id - 1)
+        return self._mesg(Command.IS_SERVO_ENABLE, servo_id)
 
     def is_all_servo_enable(self):
         return self._mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True)
 
     def set_servo_data(self, servo_no, data_id, value):
-        return self._mesg(Command.SET_SERVO_DATA, servo_no - 1, data_id, value)
+        return self._mesg(Command.SET_SERVO_DATA, servo_no, data_id, value)
 
     def get_servo_data(self, servo_no, data_id):
-        return self._mesg(Command.GET_SERVO_DATA, servo_no - 1, data_id, has_reply=True)
+        return self._mesg(Command.GET_SERVO_DATA, servo_no, data_id, has_reply=True)
 
     def set_servo_calibration(self, servo_no):
-        return self._mesg(Command.SET_SERVO_CALIBRATION, servo_no - 1)
+        return self._mesg(Command.SET_SERVO_CALIBRATION, servo_no)
 
     def release_servo(self, servo_id):
         """Power off designated servo

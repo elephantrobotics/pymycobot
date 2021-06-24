@@ -1,5 +1,10 @@
 # 2021
 
+## 6.24
+
+- release v2.5.3
+- sync with Atom3.1
+
 ## 6.10
 
 - release v2.5.1

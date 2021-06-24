@@ -5,7 +5,7 @@ from pymycobot.genre import Angle, Coord
 
 __all__ = ["MyCobot", "MycobotCommandGenerater", "Angle", "Coord"]
 
-__version__ = "2.5.2"
+__version__ = "2.5.3"
 __author__ = "Zachary zhang"
 __email__ = "lijun.zhang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

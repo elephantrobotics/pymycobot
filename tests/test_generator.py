@@ -25,6 +25,7 @@ def setup():
 
 def test_generator(setup):
     # print(mg.__dir__())
+    print(mg.send_coords([-160, 160, 160, 0, 0, 0], 7, 2))
     print(mg.version())
     print(mg.power_on())
     print(mg.power_off())
@@ -35,7 +36,6 @@ def test_generator(setup):
     print(mg.send_angles([0, 0, 0, 0, 0, 0], 5))
     print(mg.get_coords())
     print(mg.send_coord(1, 110.5, 8))
-    print(mg.send_coords([160, 160, 160, 0, 0, 0], 7, 2))
     print(mg.pause())
     print(mg.is_paused())
     print(mg.resume())
