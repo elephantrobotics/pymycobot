@@ -30,13 +30,16 @@ pip install pymycobot==1.0.7 --user
 
 ### Source code
 
+For development
+
 ```bash
-git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
-cd <your-path>/pymycobot
-# Install
-[sudo] python2 setup.py install
-# or
-[sudo] python3 setup.py install
+git clone https://github.com/elephantrobotics/pymycobot.git
+cd pymycobot
+# Develop
+python3 -m venv ./venv
+source ./venv/bin/activate
+pip install -U pip
+pip install -e .
 ```
 
 ## Usage:
