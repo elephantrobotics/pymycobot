@@ -37,7 +37,7 @@ class MyCobot(MycobotCommandGenerater):
         self._serial_port.flush()
         time.sleep(0.05)
 
-    def _read(self, size=1024):
+    def _read(self):
         if self._serial_port.inWaiting() > 0:
             data = self._serial_port.read(self._serial_port.inWaiting())
             self.log.debug("_read: {}".format(data))
