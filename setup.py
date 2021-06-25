@@ -1,3 +1,4 @@
+import os
 import sys
 
 PYTHON_VERSION = sys.version_info[:2]
@@ -6,6 +7,7 @@ if (2, 7) != PYTHON_VERSION < (3, 5):
     sys.exit(1)
 
 import setuptools
+os.environ["_MYCOBOT_VERSION_ONLY"] = "1"
 import pymycobot
 
 if PYTHON_VERSION == (2, 7):
