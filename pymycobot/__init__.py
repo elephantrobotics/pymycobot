@@ -1,9 +1,11 @@
 from __future__ import absolute_import
-from pymycobot.mycobot import MyCobot
-from pymycobot.generate import MycobotCommandGenerater
-from pymycobot.genre import Angle, Coord
+import os
+if os.environ.get("_MYCOBOT_VERSION_ONLY") != "1":
+    from pymycobot.mycobot import MyCobot
+    from pymycobot.generate import MycobotCommandGenerater
+    from pymycobot.genre import Angle, Coord
 
-__all__ = ["MyCobot", "MycobotCommandGenerater", "Angle", "Coord"]
+    __all__ = ["MyCobot", "MycobotCommandGenerater", "Angle", "Coord"]
 
 __version__ = "2.5.3"
 __author__ = "Zachary zhang"
