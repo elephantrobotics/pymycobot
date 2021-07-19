@@ -50,4 +50,4 @@ The [`demo`](./demo) directory stores some test case files.
 
 You can find out which interfaces pymycobot provides in `pymycobot/README.md`.
 
-Please go to [here](./pymycobot/README.md).
+Please go to [here](./docs/README.md).
