@@ -13,7 +13,34 @@ class MyCobot(MycobotCommandGenerater):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
-        Look at parent class: `MycobotCommandGenerater`.
+
+        # Overall status
+            Look at parent class: `MycobotCommandGenerater`.
+
+        # MDI mode and operation
+            get_radians()
+            send_radians()
+            sync_send_angles() *
+            sync_send_coords() *
+            Other look at parent class: `MycobotCommandGenerater`.
+
+        # JOG mode and operation
+            Look at parent class: `MycobotCommandGenerater`.
+
+        # Running status and Settings
+            Look at parent class: `MycobotCommandGenerater`.
+
+        # Servo control
+            Look at parent class: `MycobotCommandGenerater`.
+
+        # Atom IO
+            Look at parent class: `MycobotCommandGenerater`.
+
+        # Basic
+            Look at parent class: `MycobotCommandGenerater`.
+
+        # Other
+            wait() *
     """
 
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):

@@ -19,18 +19,13 @@ class MycobotCommandGenerater(DataProcessor):
             is_power_on()
             release_all_servos()
             is_controller_connected()
-            set_free_mode()
 
         # MDI mode and operation
             get_angles()
             send_angle()
             send_angles()
-            sync_send_angles() *
-            get_radians()
-            send_radians()
             get_coords()
             send_coords()
-            sync_send_coords() *
             pause()
             resume()
             stop()
@@ -77,9 +72,6 @@ class MycobotCommandGenerater(DataProcessor):
 
         # Basic
             set_basic_output() *
-
-        # Other
-            wait() *
     """
 
     def __init__(self, debug=False):
