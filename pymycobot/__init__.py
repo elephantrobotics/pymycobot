@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import os
+
 if os.environ.get("_MYCOBOT_VERSION_ONLY") != "1":
     from pymycobot.mycobot import MyCobot
     from pymycobot.generate import MycobotCommandGenerater
@@ -7,7 +8,7 @@ if os.environ.get("_MYCOBOT_VERSION_ONLY") != "1":
 
     __all__ = ["MyCobot", "MycobotCommandGenerater", "Angle", "Coord"]
 
-__version__ = "2.5.3"
+__version__ = "2.5.4"
 __author__ = "Zachary zhang"
 __email__ = "lijun.zhang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

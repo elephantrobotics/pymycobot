@@ -163,6 +163,25 @@ class MyCobot(MycobotCommandGenerater):
             time.sleep(0.1)
         return self
 
+    # Basic for raspberry pi.
+    def gpio_init(self):
+        """Init GPIO module.
+        Raspberry Pi version need this.
+        """
+        import RPi.GPIO as GPIO
+
+        GPIO.setmode(GPIO.BMC)
+        self.gpio = GPIO
+
+    def gpio_output(self, pin, v):
+        """Set GPIO output value.
+        Args:
+            pin: port number(int).
+            v: Output value(int), 1 - GPIO.HEIGH, 2 - GPIO.LOW
+        """
+        self.gpio.setup(pin, self.gpio.OUT)
+        self.gpio.setup(pin, v)
+
     # Other
     def wait(self, t):
         time.sleep(t)

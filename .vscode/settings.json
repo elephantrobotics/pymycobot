@@ -5,10 +5,12 @@
         "datas",
         "datefmt",
         "fomatter",
+        "gpio",
         "mesg",
         "mycobot",
         "pymycobot",
         "struct",
         "zhang"
-    ]
+    ],
+    "restructuredtext.confPath": ""
 }

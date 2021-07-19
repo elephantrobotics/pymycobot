@@ -1,13 +1,23 @@
-# 2021
+# ChangeLog for pymycobot.
 
-## 6.24
+## v2.5.4 (2021-07-19)
+
+- release v2.5.4
+- add methods for raspberry pi version basic control.
+  - `def gpio_init(self)`
+  - `def gpio_output(self, pin, v)`
+
+---
+
+## v2.5.3 (2021-06-24)
 
 - release v2.5.3
 - sync with Atom3.1
 
-## 6.10
+---
 
-- release v2.5.1
+## v2.5.1 (2021-06-10)
+
 - improved parameter checking.
 - new class `MycobotCommandGenerator` that generate binary real command.
 - can import needed class from `pymycobot`, like:
@@ -15,18 +25,23 @@
   from pymycobot import Mycobot, Angle, Coord, MycobotCommandGenerator
   ```
 
-## 5.27
+---
+
+## v2.4.2 (2021-05-27)
 
 - release v2.4.2
 - fixed `set_pwm_output()`
 
-## 5.24
+---
+
+## 2021-05-24
 
 - update demo.
 
-## 4.27
+---
 
-- release v2.4.0
+## v2.4.0 (2021-04-27)
+
 - set_free_mode -> release_all_servos
 - Add new port:
   - is_controller_connected
@@ -36,73 +51,89 @@
   - set_basic_output
 - Update API document.
 
-## 4.25
+---
 
-- release v2.3.6
+## v2.3.6 (2021-04-25)
+
 - fix focus_servo error
 
-## 4.20
+---
 
-- release v2.3.5
+## v2.3.5 (2021-04-20)
+
 - fix v2.3.4 install error
 
-## 4.19
+---
 
-- release **v2.3.4**
+## v2.3.4 (2021-04-19)
+
 - update debug mode
 
-## 4.2
+---
 
-- relase **v2.3.3**
+## v2.3.3 (2021-04-02)
+
 - fix bug.
 
-## 3.29
+---
 
-- release **v2.3.1**
+## v2.3.1 (2021-03-29)
+
 - fix error bug
 - add new method `set_encoder`, `get_encoder`, `set_encoders`
 
-## 3.26
+---
 
-- release **v2.3**
+## v2.3.0 (2021-03-26)
+
 - fix `is_in_position()`
 - refactor process method
 - some methods can be chained
 - add new methods to control pump
 - change `set_led_color(rgb:str)` -> `set_color(r:int, g:int, b:in)`
 
-## 3.12
+---
+
+## 2021-03-12
 
 added more test file.
 
-## 2.5
+---
 
-relase **v2.2.0**
+## v2.2.0 (2021-02-05)
 
 - add new method for girpper and IO.
 
-## 1.25
+---
 
-release **v2.1.2**
+## v2.1.2 (2021-01-25)
 
 - refactor pymycobot
 - add Error class
 
-## 1.20
+---
+
+## 2021-01-20
 
 `v1.0.6` fix get_coords() error.
 
 relase v2.0.0
 
-## 1.16
+---
+
+## 2021-01-16
 
 Upload to server, can use `pip` to installation now.
 
-## 1.9
+---
+
+## 2021-01-09
 
 Fix the API problem that `is_moving()` and other methods of mycobot cannot be used.
 
-## 1.8
+---
+
+## 2021-01-08
 
 Python API add new methods:
 
@@ -110,14 +141,18 @@ Python API add new methods:
 - `jog_coord()`
 - `jog_stop()`
 
-# 2020
+---
 
-## 12.30
+## 202-12-30
 
 Adding usage documents to Python API.
 
-## 12.29
+---
+
+## 2020-12-29
 
 Python API supports python2.7
 
 Modify the serial port to manual setting, support the use of window.
+
+---

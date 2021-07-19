@@ -6,10 +6,20 @@ lint:
 	@if [ ! -f flake8 ]; then $(PY) -m pip install flake8; fi
 	flake8
 
+.PHONY: format
+format:
+	@if [ ! `$(PY) -m pip freeze | grep black` ]; then $(PY) -m pip install black; fi
+	$(PY) -m black ./pymycobot ./setup.py
+
 .PHONY: test
 test:
 	@if [ ! -f pytest ]; then $(PY) -m pip install pytest; fi
 	pytest -s ./tests/test_api.py
+
+.PHONY: clean
+clean:
+	find . -type f -name *.pyc -delete
+	find . -type d -name __pycache__ -delete
 
 .PHONY: del
 del: clean
@@ -25,8 +35,3 @@ install: del
 release: del
 	$(PY) setup.py sdist bdist_wheel
 	twine upload dist/*
-
-.PHONY: clean
-clean:
-	find . -type f -name *.pyc -delete
-	find . -type d -name __pycache__ -delete

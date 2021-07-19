@@ -1,4 +1,3 @@
-import math
 import logging
 import sys
 
@@ -179,9 +178,7 @@ class MycobotCommandGenerater(DataProcessor):
             speed (int): 0 ~100
         """
         check_datas(joint_id=id, degree=degree, speed=speed)
-        return self._mesg(
-            Command.SEND_ANGLE, id, [self._angle_to_int(degree)], speed
-        )
+        return self._mesg(Command.SEND_ANGLE, id, [self._angle_to_int(degree)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, degrees, speed):
@@ -213,9 +210,7 @@ class MycobotCommandGenerater(DataProcessor):
             speed(int):
         """
         check_datas(speed=speed)
-        return self._mesg(
-            Command.SEND_COORD, id, [self._coord_to_int(coord)], speed
-        )
+        return self._mesg(Command.SEND_COORD, id, [self._coord_to_int(coord)], speed)
 
     def send_coords(self, coords, speed, mode):
         """Send all coords
@@ -468,7 +463,7 @@ class MycobotCommandGenerater(DataProcessor):
 
     # Basic
     def set_basic_output(self, pin_no, pin_signal):
-        """
+        """Set basic output for M5 version.
 
         Args:
             pin_signal: 0 / 1

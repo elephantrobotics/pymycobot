@@ -7,13 +7,14 @@ if (2, 7) != PYTHON_VERSION < (3, 5):
     sys.exit(1)
 
 import setuptools
+
 os.environ["_MYCOBOT_VERSION_ONLY"] = "1"
 import pymycobot
 
 if PYTHON_VERSION == (2, 7):
     long_description = ""
 else:
-    long_description = open("pymycobot/README.md").read()
+    long_description = open("README.md").read() + open("docs/README.md").read()
 
 setuptools.setup(
     name="pymycobot",
