@@ -170,7 +170,7 @@ class MyCobot(MycobotCommandGenerater):
         """
         import RPi.GPIO as GPIO
 
-        GPIO.setmode(GPIO.BMC)
+        GPIO.setmode(GPIO.BCM)
         self.gpio = GPIO
 
     def gpio_output(self, pin, v):

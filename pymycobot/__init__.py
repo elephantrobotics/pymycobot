@@ -8,7 +8,7 @@ if os.environ.get("_MYCOBOT_VERSION_ONLY") != "1":
 
     __all__ = ["MyCobot", "MycobotCommandGenerater", "Angle", "Coord"]
 
-__version__ = "2.5.4"
+__version__ = "2.5.5"
 __author__ = "Zachary zhang"
 __email__ = "lijun.zhang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
