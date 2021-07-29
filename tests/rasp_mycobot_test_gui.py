@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import tkinter
+from tkinter import ttk
 import time
 import threading
 import os
+import serial
+import serial.tools.list_ports
 
 from pymycobot.mycobot import MyCobot
 from pymycobot import PI_PORT, PI_BAUD
@@ -19,69 +22,85 @@ class MycobotTest(object):
         self.win.title("树莓派版 Mycobot 测试工具")
         self.win.geometry("918x511+10+10")  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
 
+        self.port_label = tkinter.Label(self.win, text="选择串口：")
+        self.port_label.grid(row=0)
+        self.port_list = ttk.Combobox(
+            self.win, width=15, postcommand=self.get_serial_port_list
+        )  # #创建下拉菜单
+        self.get_serial_port_list()  # #给下拉菜单设定值
+        self.port_list.current(0)
+        self.port_list.grid(row=0, column=1)
+
+        self.baud_label = tkinter.Label(self.win, text="选择波特率：")
+        self.baud_label.grid(row=1)
+        self.baud_list = ttk.Combobox(self.win, width=15)
+        self.baud_list["value"] = ("115200", "1000000")
+        self.baud_list.current(0)
+        self.baud_list.grid(row=1, column=1)
+
         # Connect
         self.connect_label = tkinter.Label(self.win, text="连接mycobot：")
-        self.connect_label.grid(row=0)
+        self.connect_label.grid(row=2)
         self.connect = tkinter.Button(self.win, text="连接", command=self.connect_mycobot)
         self.disconnect = tkinter.Button(
             self.win, text="断开", command=self.disconnect_mycobot
         )
-        self.connect.grid(row=1)
-        self.disconnect.grid(row=1, column=1)
+        self.connect.grid(row=3)
+        self.disconnect.grid(row=3, column=1)
 
         # Check servo.
         self.check_label = tkinter.Label(self.win, text="检测连接：")
-        self.check_label.grid(row=2)
+        self.check_label.grid(row=4)
         self.check_btn = tkinter.Button(
             self.win, text="开始检测", command=self.check_mycobot_servos
         )
-        self.check_btn.grid(row=2, column=1)
+        self.check_btn.grid(row=4, column=1)
 
         # Calibration.
         self.calibration_num = None
         self.calibration_label = tkinter.Label(self.win, text="校准舵机：")
-        self.calibration_label.grid(row=3)
+        self.calibration_label.grid(row=5)
         self.calibration_btn = tkinter.Button(
             self.win, text="开始校准", command=self.calibration_mycobot
         )
-        self.calibration_btn.grid(row=3, column=1)
+        self.calibration_btn.grid(row=5, column=1)
 
         # LED.
         self.set_color_label = tkinter.Label(self.win, text="测试Atom灯板：")
-        self.set_color_label.grid(row=4, columnspan=2)
+        self.set_color_label.grid(row=6, columnspan=2)
         self.color_red = tkinter.Button(
             self.win, text="设置红色", command=lambda: self.send_color("red")
         )
         self.color_green = tkinter.Button(
             self.win, text="设置绿色", command=lambda: self.send_color("green")
         )
-        self.color_red.grid(row=5)
-        self.color_green.grid(row=5, column=1)
+        self.color_red.grid(row=7)
+        self.color_green.grid(row=7, column=1)
 
         # Aging test.
         self.aging_stop = False
         self.movement_label = tkinter.Label(self.win, text="老化循环动作：")
-        self.movement_label.grid(row=6)
+        self.movement_label.grid(row=8)
         self.start_btn = tkinter.Button(
             self.win, text="开始", command=self.start_aging_test
         )
-        self.start_btn.grid(row=7)
+        self.start_btn.grid(row=9)
         self.stop_btn = tkinter.Button(
             self.win, text="停止", command=self.stop_aging_test
         )
-        self.stop_btn.grid(row=7, column=1)
+        self.stop_btn.grid(row=9, column=1)
 
         # Release
         self.release_btn = tkinter.Button(
             self.win, text="放松所有电机", command=self.release_mycobot
         )
-        self.release_btn.grid(row=8)
+        self.release_btn.grid(row=10)
 
         # rectify
         self.rectify_btn = tkinter.Button(
             self.win, text="校准pid", command=self.rectify_mycobot
         )
-        self.rectify_btn.grid(row=8, column=1)
+        self.rectify_btn.grid(row=10, column=1)
 
         # Log output.
         self.log_label = tkinter.Label(self.win, text="日志：")
@@ -104,8 +123,19 @@ class MycobotTest(object):
     # Connect method
     # ============================================================
     def connect_mycobot(self):
+        port = self.port_list.get()
+        if not port:
+            self.write_log_to_Text("请选择串口")
+            return
+        baud = self.baud_list.get()
+        if not baud:
+            self.write_log_to_Text("请选择波特率")
+            return
+        baud = int(baud)
+
         try:
-            self.mycobot = MyCobot(PI_PORT, PI_BAUD)
+            # self.mycobot = MyCobot(PI_PORT, PI_BAUD)
+            self.mycobot = MyCobot(port, baud)
             # self.mycobot = MyCobot("/dev/cu.usbserial-0213245D", 115200)
             self.write_log_to_Text("连接成功 !")
         except Exception as e:
@@ -140,6 +170,9 @@ class MycobotTest(object):
         self.write_log_to_Text("Release over.")
 
     def check_mycobot_servos(self):
+        if not self.has_mycobot():
+            return
+
         ping_commands = [
             [255, 255, 1, 2, 1, 251],
             [255, 255, 2, 2, 1, 250],
@@ -221,6 +254,9 @@ class MycobotTest(object):
             self.write_log_to_Text("结束老化测试失败 ！！！")
 
     def rectify_mycobot(self):
+        if not self.has_mycobot():
+            return
+
         for i in range(1, 7):
             self.mycobot.set_servo_data(i, 24, 0)
             time.sleep(0.1)
@@ -377,6 +413,14 @@ WantedBy=multi-user.target
                 self.mycobot.send_angles(angles, 0)
                 time.sleep(0.7)
         self.write_log_to_Text("测试校准结束.")
+
+    def get_serial_port_list(self):
+        plist = [
+            str(x).split(" - ")[0].strip() for x in serial.tools.list_ports.comports()
+        ]
+        print(plist)
+        self.port_list["value"] = plist
+        return plist
 
     def get_current_time(self):
         """Get current time with format."""
