@@ -1,0 +1,4 @@
+pyserial
+pytext
+flask8
+black
