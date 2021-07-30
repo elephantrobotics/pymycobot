@@ -40,6 +40,7 @@ class Command(object):
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
     SET_ENCODERS = 0x3C
+    GET_ENCODERS = 0x3D
 
     # RUNNING STATUS AND SETTINGS
     GET_SPEED = 0x40
@@ -73,6 +74,7 @@ class Command(object):
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
+    GET_BASIC_OUTPUT = 0xA1
 
 
 class DataProcessor(object):

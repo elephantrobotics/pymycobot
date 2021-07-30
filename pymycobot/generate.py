@@ -25,10 +25,6 @@ class MycobotCommandGenerater(DataProcessor):
             send_angles()
             get_coords()
             send_coords()
-            pause()
-            resume()
-            stop()
-            is_paused()
             is_in_position()
             is_moving() x
 
@@ -39,8 +35,16 @@ class MycobotCommandGenerater(DataProcessor):
             set_encoder()
             get_encoder()
             set_encoders()
+            pause()
+            resume()
+            stop()
+            is_paused()
 
         # Running status and Settings
+            get_encoder()
+            set_encoder()
+            get_encoders()
+            set_encoders()
             get_speed()
             set_speed() *
             get_joint_min_angle()
@@ -70,7 +74,8 @@ class MycobotCommandGenerater(DataProcessor):
             is_gripper_moving()
 
         # Basic
-            set_basic_output() *
+            set_basic_output()
+            get_basic_input()
     """
 
     def __init__(self, debug=False):
@@ -228,18 +233,6 @@ class MycobotCommandGenerater(DataProcessor):
             coord_list.append(self._angle_to_int(coords[idx]))
         return self._mesg(Command.SEND_COORDS, coord_list, speed, mode)
 
-    def pause(self):
-        return self._mesg(Command.PAUSE)
-
-    def is_paused(self):
-        return self._mesg(Command.IS_PAUSED, has_reply=True)
-
-    def resume(self):
-        return self._mesg(Command.RESUME)
-
-    def stop(self):
-        return self._mesg(Command.STOP)
-
     def is_in_position(self, data, id):
         """
 
@@ -299,6 +292,18 @@ class MycobotCommandGenerater(DataProcessor):
     def jog_stop(self):
         return self._mesg(Command.JOG_STOP)
 
+    def pause(self):
+        return self._mesg(Command.PAUSE)
+
+    def is_paused(self):
+        return self._mesg(Command.IS_PAUSED, has_reply=True)
+
+    def resume(self):
+        return self._mesg(Command.RESUME)
+
+    def stop(self):
+        return self._mesg(Command.STOP)
+
     def set_encoder(self, joint_id, encoder):
         """Set joint encoder value.
 
@@ -313,6 +318,9 @@ class MycobotCommandGenerater(DataProcessor):
 
     def set_encoders(self, encoders, sp):
         return self._mesg(Command.SET_ENCODERS, encoders, sp)
+
+    def set_encoders(self):
+        return self._mesg(Command.GET_ENCODERS, has_reply=True)
 
     # Running status and Settings
     def get_speed(self):
@@ -466,6 +474,15 @@ class MycobotCommandGenerater(DataProcessor):
         """Set basic output for M5 version.
 
         Args:
+            pin_no: pin port number.
             pin_signal: 0 / 1
         """
         return self._mesg(Command.SET_BASIC_OUTPUT, pin_no, pin_signal)
+
+    def get_basic_input(self, pin_no):
+        """Get basic input for M5 version.
+
+        Args:
+            pin_no: pin port number.
+        """
+        return self._mesg(Command.GET_BASIC_OUTPUT, pin_no, has_reply=True)
