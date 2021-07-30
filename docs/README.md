@@ -5,76 +5,83 @@
 We support Python2, Python3.5 or later.
 
 <details>
-<summary>Class:</summary>
+<summary>Catalogue:</summary>
 
 <!-- vim-markdown-toc GFM -->
 
 * [MyCobot](#mycobot)
-    * [Overall status](#overall-status)
-        * [power_on](#power_on)
-        * [power_off](#power_off)
-        * [is_power_on](#is_power_on)
-        * [release_all_servos](#release_all_servos)
-        * [is_controller_connected](#is_controller_connected)
-    * [MDI mode and operation](#mdi-mode-and-operation)
-        * [get_angles](#get_angles)
-        * [send_angle](#send_angle)
-        * [send_angles()](#send_angles)
-        * [get_radians](#get_radians)
-        * [send_radians](#send_radians)
-        * [get_coords](#get_coords)
-        * [send_coord](#send_coord)
-        * [send_coords](#send_coords)
-        * [sync_send_angles](#sync_send_angles)
-        * [sync_send_coords](#sync_send_coords)
-        * [pause](#pause)
-        * [resume](#resume)
-        * [stop](#stop)
-        * [is_paused](#is_paused)
-        * [is_in_position](#is_in_position)
-    * [JOG mode and operation](#jog-mode-and-operation)
-        * [jog_angle](#jog_angle)
-        * [jog_coord](#jog_coord)
-        * [jog_stop](#jog_stop)
-        * [set_encoder](#set_encoder)
-        * [get_encoder](#get_encoder)
-        * [set_encoders](#set_encoders)
-    * [Running status and Settings](#running-status-and-settings)
-        * [get_speed](#get_speed)
-        * [set_speed](#set_speed)
-        * [get_joint_min_angle](#get_joint_min_angle)
-        * [get_joint_max_angle](#get_joint_max_angle)
-    * [Servo control](#servo-control)
-        * [is_servo_enable](#is_servo_enable)
-        * [is_all_servo_enable](#is_all_servo_enable)
-        * [set_servo_data](#set_servo_data)
-        * [get_servo_data](#get_servo_data)
-    * [set_servo_calibration](#set_servo_calibration)
-        * [release_servo](#release_servo)
-        * [focus_servo](#focus_servo)
-    * [Atom IO](#atom-io)
-        * [set_color](#set_color)
-        * [set_pin_mode](#set_pin_mode)
-        * [set_digital_output()](#set_digital_output)
-        * [get_digital_input()](#get_digital_input)
-        * [set_pwm_output()](#set_pwm_output)
-        * [get_gripper_value](#get_gripper_value)
-        * [set_gripper_state](#set_gripper_state)
-        * [set_gripper_value](#set_gripper_value)
-        * [set_gripper_ini](#set_gripper_ini)
-        * [is_gripper_moving](#is_gripper_moving)
-    * [Basic](#basic)
-        * [set_basic_output](#set_basic_output)
+	* [Overall status](#overall-status)
+		* [power_on](#power_on)
+		* [power_off](#power_off)
+		* [is_power_on](#is_power_on)
+		* [release_all_servos](#release_all_servos)
+		* [is_controller_connected](#is_controller_connected)
+	* [MDI mode and operation](#mdi-mode-and-operation)
+		* [get_angles](#get_angles)
+		* [send_angle](#send_angle)
+		* [send_angles()](#send_angles)
+		* [get_radians](#get_radians)
+		* [send_radians](#send_radians)
+		* [get_coords](#get_coords)
+		* [send_coord](#send_coord)
+		* [send_coords](#send_coords)
+		* [sync_send_angles](#sync_send_angles)
+		* [sync_send_coords](#sync_send_coords)
+		* [is_in_position](#is_in_position)
+	* [JOG mode and operation](#jog-mode-and-operation)
+		* [jog_angle](#jog_angle)
+		* [jog_coord](#jog_coord)
+		* [jog_stop](#jog_stop)
+		* [pause](#pause)
+		* [resume](#resume)
+		* [stop](#stop)
+		* [is_paused](#is_paused)
+		* [set_encoder](#set_encoder)
+		* [get_encoder](#get_encoder)
+		* [set_encoders](#set_encoders)
+		* [get_encoders](#get_encoders)
+	* [Running status and Settings](#running-status-and-settings)
+		* [get_speed](#get_speed)
+		* [set_speed](#set_speed)
+		* [get_joint_min_angle](#get_joint_min_angle)
+		* [get_joint_max_angle](#get_joint_max_angle)
+	* [Servo control](#servo-control)
+		* [is_servo_enable](#is_servo_enable)
+		* [is_all_servo_enable](#is_all_servo_enable)
+		* [set_servo_data](#set_servo_data)
+		* [get_servo_data](#get_servo_data)
+		* [set_servo_calibration](#set_servo_calibration)
+		* [release_servo](#release_servo)
+		* [focus_servo](#focus_servo)
+	* [Atom IO](#atom-io)
+		* [set_color](#set_color)
+		* [set_pin_mode](#set_pin_mode)
+		* [set_digital_output()](#set_digital_output)
+		* [get_digital_input()](#get_digital_input)
+		* [set_pwm_output()](#set_pwm_output)
+		* [get_gripper_value](#get_gripper_value)
+		* [set_gripper_state](#set_gripper_state)
+		* [set_gripper_value](#set_gripper_value)
+		* [set_gripper_ini](#set_gripper_ini)
+		* [is_gripper_moving](#is_gripper_moving)
+	* [Basic](#basic)
+		* [get_basic_output](#get_basic_output)
+		* [set_basic_output](#set_basic_output)
 * [Angle](#angle)
 * [Coord](#coord)
+* [utils (Module)](#utils-module)
+	* [get_port_list](#get_port_list)
+	* [detect_port_of_basic](#detect_port_of_basic)
 
 <!-- vim-markdown-toc -->
 </details>
 
 # MyCobot
 
+**Import to your project**:
+
 ```python
-from pymycobot.mycobot import MyCobot
+from pymycobot import MyCobot
 ```
 
 > Note: If no parameter is given, there is no parameter; if no return value is given, there is no return value
@@ -288,36 +295,6 @@ from pymycobot.mycobot import MyCobot
   - `mode`: (`int`): `0` - angular, `1` - linear
   - `timeout`: default 7s.
 
-### pause
-
-- **Prototype**: `pause()`
-
-- **Description**: Pause movement.
-
-### resume
-
-- **Prototype**: `resume()`
-
-- **Description**: Recovery movement.
-
-### stop
-
-- **Prototype**: `stop()`
-
-- **Description**: Stop moving.
-
-### is_paused
-
-- **Prototype**: `is_paused()`
-
-- **Description**: Judge whether the manipulator pauses or not.
-
-- **Returns** :
-
-  - `1` - paused
-  - `0` - not paused
-  - `-1` - error
-
 ### is_in_position
 
 - **Prototype**: `is_in_position(data, flag)`
@@ -367,6 +344,36 @@ from pymycobot.mycobot import MyCobot
 
 - **Description**: Stop jog moving.
 
+### pause
+
+- **Prototype**: `pause()`
+
+- **Description**: Pause movement.
+
+### resume
+
+- **Prototype**: `resume()`
+
+- **Description**: Recovery movement.
+
+### stop
+
+- **Prototype**: `stop()`
+
+- **Description**: Stop moving.
+
+### is_paused
+
+- **Prototype**: `is_paused()`
+
+- **Description**: Judge whether the manipulator pauses or not.
+
+- **Returns** :
+
+  - `1` - paused
+  - `0` - not paused
+  - `-1` - error
+
 ### set_encoder
 
 - **Prototype**: `set_encoder(joint_id, encoder)`
@@ -397,6 +404,14 @@ from pymycobot.mycobot import MyCobot
 - **Parameters**:
   - `encoders`: A encoder list, length 6.
   - `sp`: speed 0 - 100
+
+### get_encoders
+
+- **Prototype**: `get_encoders()`
+
+- **Description**: Get the six joints of the manipulator.
+
+- **Returns**: the list of encoder (`list`)
 
 ## Running status and Settings
 
@@ -489,7 +504,7 @@ from pymycobot.mycobot import MyCobot
   - `1`: enable
   - `-1`: error
 
-## set_servo_calibration
+### set_servo_calibration
 
 - **Prototype**: `set_servo_calibration(servo_no)`
 - **Description**: The current position of the calibration joint actuator is the angle zero point, and the corresponding potential value is 2048.
@@ -616,6 +631,18 @@ from pymycobot.mycobot import MyCobot
 
 ## Basic
 
+### get_basic_output
+
+- **Prototype**: `get_basic_output(pin_no)`
+
+- **Description**: Get bottom pin.
+
+- **Parameters**
+
+  - `pin_no` (`int`) Pin number.
+
+- **Return**: `pin_signal` (`int`) 0 / 1
+
 ### set_basic_output
 
 - **Prototype**: `set_basic_output(pin_no, pin_signal)`
@@ -630,7 +657,7 @@ from pymycobot.mycobot import MyCobot
 # Angle
 
 ```python
-from pymycobot.genre import Angle
+from pymycobot import Angle
 ```
 
 **Description**
@@ -640,11 +667,50 @@ Instance class of joint. It's recommended to use this class to select joint.
 # Coord
 
 ```python
-from pymycobot.genre import Coord
+from pymycobot import Coord
 ```
 
 **Description**
 
 Instance class of coord. It's recommended to use this class to select coord.
 
+# utils (Module)
+
+This module support some help method.
+
+**Usage:**
+
+```python
+from pymycobot import utils
+```
+
+## get_port_list
+
+- **Prototype**: `get_port_list()`
+
+- **Description**: Get the all serial port list.
+
+- **Return**: serial port list (`list`)
+
+## detect_port_of_basic
+
+- **Prototype**: `detect_port_of_basic()`
+
+- **Description**: Returns the serial port string of the first detected M5 Basic. If it is not found, it returns `None`.
+
+- **Return**: detected port (`str`) or `None`
+
+- **Example**:
+
+  ```python
+  from pymycobot import MyCobot, utils
+
+  port = utils.detect_port_of_basic()
+  if port is None:
+  	raise Exception('Detection failed.')
+  mycobot = MyCobot(port, 115200)
+  ```
+
 ---
+
+More demo can go to [here](../demo).

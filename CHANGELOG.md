@@ -1,5 +1,16 @@
 # ChangeLog for pymycobot.
 
+## v2.5.6 (2021-07-30)
+
+- release v2.5.6
+- add new api:
+  - `def get_encoders(self)`
+  - `def get_basic_input(self, pin, v)`
+- add `utils` module.
+- update api document.
+
+---
+
 ## v2.5.4 (2021-07-19)
 
 - release v2.5.4

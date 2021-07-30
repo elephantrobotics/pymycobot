@@ -9,6 +9,7 @@
         "mesg",
         "mycobot",
         "pymycobot",
+        "pytest",
         "struct",
         "yscrollcommand",
         "yview",

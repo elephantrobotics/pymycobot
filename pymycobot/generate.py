@@ -133,9 +133,11 @@ class MycobotCommandGenerater(DataProcessor):
 
     # Overall status
     def power_on(self):
+        """Open communication with Atom."""
         return self._mesg(Command.POWER_ON)
 
     def power_off(self):
+        """Close communication with Atom."""
         return self._mesg(Command.POWER_OFF)
 
     def is_power_on(self):
@@ -152,6 +154,7 @@ class MycobotCommandGenerater(DataProcessor):
         return self._mesg(Command.RELEASE_ALL_SERVOS)
 
     def is_controller_connected(self):
+        """Wether connected with Atom."""
         return self._mesg(Command.IS_CONTROLLER_CONNECTED, has_reply=True)
 
     """
@@ -167,7 +170,7 @@ class MycobotCommandGenerater(DataProcessor):
 
     # MDI mode and operation
     def get_angles(self):
-        """Get all angle return a list
+        """Get all angle return a list.
 
         Return:
             data_list (list[angle...]):
@@ -175,12 +178,12 @@ class MycobotCommandGenerater(DataProcessor):
         return self._mesg(Command.GET_ANGLES, has_reply=True)
 
     def send_angle(self, id, degree, speed):
-        """Send one angle
+        """Send one angle.
 
         Args:
-            id (common.Angle):
-            degree (float):
-            speed (int): 0 ~100
+            id (common.Angle/int): Joint number.
+            degree (float): angle value.
+            speed (int): 0 ~ 100
         """
         check_datas(joint_id=id, degree=degree, speed=speed)
         return self._mesg(Command.SEND_ANGLE, id, [self._angle_to_int(degree)], speed)
@@ -207,18 +210,18 @@ class MycobotCommandGenerater(DataProcessor):
         return self._mesg(Command.GET_COORDS, has_reply=True)
 
     def send_coord(self, id, coord, speed):
-        """Send one coord
+        """Send one position of coordination.
 
         Args:
-            id(common.Coord):
+            id(common.Coord/int): coordination number.
             coord(float): mm
-            speed(int):
+            speed(int): 0 ~ 100
         """
         check_datas(speed=speed)
         return self._mesg(Command.SEND_COORD, id, [self._coord_to_int(coord)], speed)
 
     def send_coords(self, coords, speed, mode):
-        """Send all coords
+        """Send all coordinations.
 
         Args:
             coords: [x(mm), y, z, rx(angle), ry, rz]
@@ -234,10 +237,11 @@ class MycobotCommandGenerater(DataProcessor):
         return self._mesg(Command.SEND_COORDS, coord_list, speed, mode)
 
     def is_in_position(self, data, id):
-        """
+        """Determine whether the given position is reached.
 
         Args:
             id: 1 - coords, 0 - angles
+            data: The value list of angles or coordinations.
 
         Return:
             0 : error position
@@ -270,17 +274,17 @@ class MycobotCommandGenerater(DataProcessor):
 
     # JOG mode and operation
     def jog_angle(self, joint_id, direction, speed):
-        """Joint control
+        """Control joint in JOG mode.
 
         Args:
-            joint_id: string
+            joint_id(int): Joint number.
             direction: int [0, 1]
             speed: int (0 - 100)
         """
         return self._mesg(Command.JOG_ANGLE, joint_id, direction, speed)
 
     def jog_coord(self, coord_id, direction, speed):
-        """Coord control
+        """Control coordination in JOG mode.
 
         Args:
             coord: string
@@ -290,6 +294,7 @@ class MycobotCommandGenerater(DataProcessor):
         return self._mesg(Command.JOG_COORD, coord_id, direction, speed)
 
     def jog_stop(self):
+        """Stop JOG movement."""
         return self._mesg(Command.JOG_STOP)
 
     def pause(self):
@@ -431,6 +436,7 @@ class MycobotCommandGenerater(DataProcessor):
         return self._mesg(Command.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
     def get_gripper_value(self):
+        """Get the value of gripper."""
         return self._mesg(Command.GET_GRIPPER_VALUE, has_reply=True)
 
     def set_gripper_state(self, flag, speed):
