@@ -324,7 +324,7 @@ class MycobotCommandGenerater(DataProcessor):
     def set_encoders(self, encoders, sp):
         return self._mesg(Command.SET_ENCODERS, encoders, sp)
 
-    def set_encoders(self):
+    def get_encoders(self):
         return self._mesg(Command.GET_ENCODERS, has_reply=True)
 
     # Running status and Settings
@@ -491,4 +491,4 @@ class MycobotCommandGenerater(DataProcessor):
         Args:
             pin_no: pin port number.
         """
-        return self._mesg(Command.GET_BASIC_OUTPUT, pin_no, has_reply=True)
+        return self._mesg(Command.GET_BASIC_INPUT, pin_no, has_reply=True)

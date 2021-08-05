@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot.
 
+## v2.5.7 (2021-08-05)
+
+- release v2.5.7
+- fix error. [#19](https://github.com/elephantrobotics/pymycobot/issues/19) [#20](https://github.com/elephantrobotics/pymycobot/issues/20)
+
 ## v2.5.6 (2021-07-30)
 
 - release v2.5.6

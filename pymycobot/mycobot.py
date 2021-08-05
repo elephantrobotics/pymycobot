@@ -1,6 +1,5 @@
 import time
 import math
-import serial
 import logging
 
 from pymycobot.log import setup_logging
@@ -55,6 +54,8 @@ class MyCobot(MycobotCommandGenerater):
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
+        import serial
+
         self._serial_port = serial.Serial(port, baudrate, timeout=timeout)
 
     def _write(self, command):
@@ -104,6 +105,8 @@ class MyCobot(MycobotCommandGenerater):
                 Command.GET_GRIPPER_VALUE,
                 Command.IS_GRIPPER_MOVING,
                 Command.GET_SPEED,
+                Command.GET_ENCODER,
+                Command.GET_BASIC_INPUT,
             ]:
                 return self._process_single(res)
             elif genre in [Command.GET_ANGLES]:

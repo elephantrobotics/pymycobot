@@ -74,7 +74,7 @@ class Command(object):
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
-    GET_BASIC_OUTPUT = 0xA1
+    GET_BASIC_INPUT = 0xA1
 
 
 class DataProcessor(object):
