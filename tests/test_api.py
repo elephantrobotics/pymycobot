@@ -1,14 +1,13 @@
-import time
 import os
 import sys
-import serial
-import serial.tools.list_ports
+import time
 import pytest
 
 # Add relevant ranger module to PATH... there surely is a better way to do this...
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from pymycobot import MyCobot, Angle, Coord
+from pymycobot import utils
 
 # from pymycobot.genre import Angle, Coord
 
@@ -21,14 +20,19 @@ sp: int = 80
 def setup():
     print("")
     global port, mc
-    plist = list(serial.tools.list_ports.comports())
-    idx = 1
-    for port in plist:
-        print("{} : {}".format(idx, port))
-        idx += 1
 
-    _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
-    port = str(plist[int(_in) - 1]).split(" - ")[0].strip()
+    detected = utils.detect_port_of_basic()
+    if not detected:
+        plist = utils.get_port_list()
+        idx = 1
+        for port in plist:
+            print("{} : {}".format(idx, port))
+            idx += 1
+
+        _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
+        port = plist[int(_in) - 1]
+    else:
+        port = detected
     print(port)
     print("")
 
@@ -42,7 +46,6 @@ def setup():
     f = input("Wether DEBUG mode[Y/n] (default: no):")
     if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
-    # mc = MyCobot(port, debug=True)
     mc = MyCobot(port, baud, debug=DEBUG)
     print("")
 
@@ -285,6 +288,13 @@ def test_pump(setup):
     time.sleep(3)
     pump_off()
     time.sleep(3)
+
+
+def test_encoder(setup):
+    print(mc.get_encoders())
+    time.sleep(1)
+    for i in range(1, 7):
+        print(i, mc.get_encoder(i))
 
 
 def test_error_data(setup):

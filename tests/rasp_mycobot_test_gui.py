@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import socket
 import tkinter
 from tkinter import ttk
 import time
 import threading
 import os
+import textwrap
 import serial
 import serial.tools.list_ports
 
@@ -123,11 +125,11 @@ class MycobotTest(object):
     # Connect method
     # ============================================================
     def connect_mycobot(self):
-        port = self.port_list.get()
+        self.prot = port = self.port_list.get()
         if not port:
             self.write_log_to_Text("请选择串口")
             return
-        baud = self.baud_list.get()
+        self.baud = baud = self.baud_list.get()
         if not baud:
             self.write_log_to_Text("请选择波特率")
             return
@@ -291,101 +293,113 @@ class MycobotTest(object):
         Aging test thread target.
         By using in `start_aging_test()` and `stop_aging_test()`.
         """
+        # if socket.gethostname() != "pi":
+        #     self.write_log_to_Text("老化测试支持 Raspberry OS.")
+        #     return
 
-        aging_test_content_py = """\
-#!/usr/bin/python3
+        aging_test_content_py = textwrap.dedent(
+            """\
+            #!/usr/bin/python3
 
-from pymycobot.mycobot import MyCobot
-from pymycobot import PI_PORT, PI_BAUD
-import time
-
-
-mycobot = MyCobot(PI_PORT, PI_BAUD)
-
-def aging_test():
-    mycobot.send_angles([0, 0, 0, 0, 0, 0], 90)
-    time.sleep(2.5)
-
-    mycobot.send_angles([170, 0, 0, 0, 0, 0], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([-170, 0, 0, 0, 0, 0], 90)
-    time.sleep(3.5)
-
-    mycobot.send_angles([0, 0, 0, 0, 0, 0], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([0, 90, 0, 0, 0, 0], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([0, -90, 0, 0, 0, 0], 90)
-    time.sleep(3.5)
-
-    mycobot.send_angles([0, 0, 0, 0, 0, 0], 90)
-    time.sleep(2.5)
-
-    mycobot.send_angles([0, 0, 140, 0, 0, 0], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([0, 0, -140, 0, 0, 0], 90)
-    time.sleep(3.5)
-
-    mycobot.send_angles([0, 0, 0, 0, 0, 0], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([0, 0, 0, 130, 0, 0], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([0, 0, 0, -110, 0, 0], 90)
-    time.sleep(3.5)
-
-    mycobot.send_angles([0, 0, 0, 0, 0, 0], 90)
-    time.sleep(2.5)
-
-    mycobot.send_angles([0, 0, 0, 0, 165, 0], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([0, 0, 0, 0, -165, 0], 90)
-    time.sleep(3.5)
-
-    mycobot.send_angles([0, 0, 0, 0, 0, 0], 90)
-    time.sleep(2.5)
-
-    mycobot.send_angles([0, 0, 0, 0, 0, 180], 90)
-    time.sleep(2)
-
-    mycobot.send_angles([0, 0, 0, 0, 0, -180], 90)
-    time.sleep(3.5)
+            from pymycobot.mycobot import MyCobot
+            from pymycobot import PI_PORT, PI_BAUD
+            import time
 
 
-if __name__ == '__main__':
-    #i=10
-    while 1:
-        aging_test()
-     #   i-=1
+            mycobot = MyCobot('%s', %s)
 
-        """
+            def aging_test():
+                # fast
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([170, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([-170, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 90, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, -90, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 140, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, -140, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 130, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, -110, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 165, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, -165, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 180], 95)
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, -180], 95)
 
-        aging_test_content_sh = """\
-#!/bin/bash
-/usr/bin/python3 /home/pi/Desktop/aging_test.py
+                # middle
+                mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([170, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(6.5).send_angles([-170, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 90, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, -90, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 140, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, -140, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 130, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, -110, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 165, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, -165, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 180], 55)
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, -180], 55)
 
-        """
+                # slow
+                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([170, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([-170, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(11).send_angles([0, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, 90, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, -90, 0, 0, 0, 0], 15)
+                mycobot.wait(0).send_angles([0, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, 0, 140, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, 0, -140, 0, 0, 0], 15)
+                mycobot.wait(11).send_angles([0, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, 0, 0, 130, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, 0, 0, -110, 0, 0], 15)
+                mycobot.wait(11).send_angles([0, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, 0, 0, 0, 165, 0], 15)
+                mycobot.wait(7).send_angles([0, 0, 0, 0, -165, 0], 15)
+                mycobot.wait(11).send_angles([0, 0, 0, 0, 0, 0], 15)
+                mycobot.wait(7).send_angles([0, 0, 0, 0, 0, 180], 15)
+                mycobot.wait(7).send_angles([0, 0, 0, 0, 0, -180], 15)
 
-        aging_test_content_service = """\
-[Unit]
-Description=aging-test
 
-[Service]
-Type=forking
-Restart=on-failure
-RestartSec=2
-ExecStart=/home/pi/aging_test.sh
+            if __name__ == '__main__':
+                while True:
+                    aging_test()
+            """
+            % (self.prot, self.baud)
+        )
 
-[Install]
-WantedBy=multi-user.target
+        aging_test_content_sh = textwrap.dedent(
+            """\
+            #!/bin/bash
+            /usr/bin/python3 /home/pi/Desktop/aging_test.py
+            """
+        )
 
-        """
+        aging_test_content_service = textwrap.dedent(
+            """\
+            [Unit]
+            Description=aging-test
+
+            [Service]
+            Type=forking
+            User=pi
+            Restart=on-failure
+            RestartSec=2
+            ExecStart=/home/pi/aging_test.sh
+
+            [Install]
+            WantedBy=multi-user.target
+            """
+        )
 
         os.system(
             'echo "' + aging_test_content_py + '" >> /home/pi/Desktop/aging_test.py'

@@ -12,6 +12,7 @@ test_test.py
 
 .DS_Store
 
+.VSCodeCounter
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb
 

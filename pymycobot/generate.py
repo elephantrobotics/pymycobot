@@ -218,7 +218,9 @@ class MycobotCommandGenerater(DataProcessor):
             speed(int): 0 ~ 100
         """
         check_datas(speed=speed)
-        return self._mesg(Command.SEND_COORD, id, [self._coord_to_int(coord)], speed)
+        return self._mesg(
+            Command.SEND_COORD, id - 1, [self._coord_to_int(coord)], speed
+        )
 
     def send_coords(self, coords, speed, mode):
         """Send all coordinations.
@@ -319,9 +321,26 @@ class MycobotCommandGenerater(DataProcessor):
         return self._mesg(Command.SET_ENCODER, joint_id, [encoder])
 
     def get_encoder(self, joint_id):
+        """Get servo encoder
+
+        Args:
+            joint_id (int): servo number.
+
+        Returns:
+            (int16): servo encoder value.
+        """
         return self._mesg(Command.GET_ENCODER, joint_id, has_reply=True)
 
     def set_encoders(self, encoders, sp):
+        """Set all servo encoder.
+
+        Args:
+            encoders (list): encoder list
+            sp (int): speed
+
+        Returns:
+            (str): command.
+        """
         return self._mesg(Command.SET_ENCODERS, encoders, sp)
 
     def get_encoders(self):

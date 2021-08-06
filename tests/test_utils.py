@@ -1,7 +1,5 @@
-import time
 import os
 import sys
-import pytest
 
 # Add relevant ranger module to PATH... there surely is a better way to do this...
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
