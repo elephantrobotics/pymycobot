@@ -381,7 +381,7 @@ class MycobotCommandGenerater(DataProcessor):
 
     # Servo control
     def is_servo_enable(self, servo_id):
-        return self._mesg(Command.IS_SERVO_ENABLE, servo_id)
+        return self._mesg(Command.IS_SERVO_ENABLE, servo_id, has_reply=True)
 
     def is_all_servo_enable(self):
         return self._mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True)
