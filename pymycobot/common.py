@@ -151,6 +151,8 @@ class DataProcessor(object):
                 one = valid_data[idx : idx + 2]
                 res.append(self._decode_int16(one))
         elif data_len == 2:
+            if genre in [Command.IS_SERVO_ENABLE]:
+                return [self._decode_int8(valid_data[1:2])]
             res.append(self._decode_int16(valid_data))
         else:
             res.append(self._decode_int8(valid_data))
