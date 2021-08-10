@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot.
 
+## v2.5.8 (2021-08-10)
+- release v2.5.8
+- fix `is_servo_enable` error.
+- fix `send_coord` index error.
+
 ## v2.5.7 (2021-08-05)
 
 - release v2.5.7

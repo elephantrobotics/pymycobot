@@ -1,3 +1,4 @@
+# encoding=utf-8
 import sys
 
 PYTHON_VERSION = sys.version_info[:2]
@@ -12,7 +13,10 @@ import pymycobot
 if PYTHON_VERSION == (2, 7):
     long_description = ""
 else:
-    long_description = open("README.md").read() + open("docs/README.md").read()
+    long_description = (
+        open("README.md", encoding="utf-8").read()
+        + open("docs/README.md", encoding="utf-8").read()
+    )
 
 setuptools.setup(
     name="pymycobot",
