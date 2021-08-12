@@ -220,6 +220,7 @@ class MycobotTest(object):
         if self.calibration_num == 6:
             self.write_log_to_Text("全部校准完成.")
             self.calibration_num = None
+            self.rectify_mycobot()
             self._calibration_test()
 
     def send_color(self, color: str):
@@ -310,6 +311,7 @@ class MycobotTest(object):
 
             def aging_test():
                 # fast
+                mycobot.set_color(255, 0, 0)
                 mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 95)
                 mycobot.wait(3).send_angles([170, 0, 0, 0, 0, 0], 95)
                 mycobot.wait(3).send_angles([-170, 0, 0, 0, 0, 0], 95)
@@ -330,6 +332,7 @@ class MycobotTest(object):
                 mycobot.wait(3).send_angles([0, 0, 0, 0, 0, -180], 95)
 
                 # middle
+                mycobot.set_color(0, 255, 0)
                 mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0], 55)
                 mycobot.wait(5).send_angles([170, 0, 0, 0, 0, 0], 55)
                 mycobot.wait(6.5).send_angles([-170, 0, 0, 0, 0, 0], 55)
@@ -350,6 +353,7 @@ class MycobotTest(object):
                 mycobot.wait(5).send_angles([0, 0, 0, 0, 0, -180], 55)
 
                 # slow
+                mycobot.set_color(0, 0, 255)
                 mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], 15)
                 mycobot.wait(7).send_angles([170, 0, 0, 0, 0, 0], 15)
                 mycobot.wait(7).send_angles([-170, 0, 0, 0, 0, 0], 15)
