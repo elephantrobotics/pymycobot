@@ -67,6 +67,9 @@ We support Python2, Python3.5 or later.
 	* [Basic](#basic)
 		* [get_basic_output](#get_basic_output)
 		* [set_basic_output](#set_basic_output)
+	* [Raspberry pi -- GPIO](#raspberry-pi----gpio)
+		* [gpio_init](#gpio_init)
+		* [gpio_output](#gpio_output)
 * [Angle](#angle)
 * [Coord](#coord)
 * [utils (Module)](#utils-module)
@@ -653,6 +656,25 @@ from pymycobot import MyCobot
 
   - `pin_no` (`int`) Pin number.
   - `pin_signal` (`int`): 0 / 1
+
+## Raspberry pi -- GPIO
+
+### gpio_init
+
+- **Prototype**: `gpio_init()`
+
+- **Description**: Init GPIO module, and set BCM mode.
+
+### gpio_output
+
+- **Prototype**: `gpio_output(pin, v)`
+
+- **Description**: Set GPIO port output value.
+
+- **Parameters**
+
+  - `pin` (`int`) Pin number.
+  - `v` (`int`): 0 / 1
 
 # Angle
 
