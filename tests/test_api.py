@@ -244,16 +244,16 @@ def test_gripper(setup):
     flag = mc.is_gripper_moving()
     assert flag == 0
 
-    mc.set_gripper_value(2048, 50)
+    mc.set_gripper_value(0, 50)
     time.sleep(2)
 
-    mc.set_gripper_value(1500, 50)
-    time.sleep(2)
-
-    mc.set_gripper_state(0, 70)
+    mc.set_gripper_value(100, 50)
     time.sleep(2)
 
     mc.set_gripper_state(1, 70)
+    time.sleep(2)
+
+    mc.set_gripper_state(0, 70)
     time.sleep(2)
 
     print(mc.get_gripper_value())
