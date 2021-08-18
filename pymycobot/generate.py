@@ -471,11 +471,11 @@ class MycobotCommandGenerater(DataProcessor):
         """Set gripper value
 
         Args:
-            value (int): 0 ~ 4096
+            value (int): 0 ~ 100
             speed (int): 0 ~ 100
         """
         check_datas(speed=speed)
-        return self._mesg(Command.SET_GRIPPER_VALUE, [value], speed)
+        return self._mesg(Command.SET_GRIPPER_VALUE, value, speed)
 
     def set_gripper_ini(self):
         """Set the current position to zero
