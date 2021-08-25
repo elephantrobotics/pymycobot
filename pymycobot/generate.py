@@ -218,9 +218,8 @@ class MycobotCommandGenerater(DataProcessor):
             speed(int): 0 ~ 100
         """
         check_datas(speed=speed)
-        return self._mesg(
-            Command.SEND_COORD, id - 1, [self._coord_to_int(coord)], speed
-        )
+        value = self._coord_to_int(coord) if id <= 3 else self._angle_to_int(coord)
+        return self._mesg(Command.SEND_COORD, id, [value], speed)
 
     def send_coords(self, coords, speed, mode):
         """Send all coordinations.
