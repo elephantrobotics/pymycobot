@@ -180,7 +180,7 @@ class MyCobot(MycobotCommandGenerater):
         """Set GPIO output value.
         Args:
             pin: port number(int).
-            v: Output value(int), 1 - GPIO.HEIGH, 2 - GPIO.LOW
+            v: Output value(int), 1 - GPIO.HEIGH, 0 - GPIO.LOW
         """
         self.gpio.setup(pin, self.gpio.OUT)
         self.gpio.setup(pin, v)

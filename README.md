@@ -1,5 +1,9 @@
 # This is Python API for myCobot
 
+![Python 2.7](https://img.shields.io/badge/Python-v2.7%5E-green?logo=python)
+![Python 3](https://img.shields.io/badge/Python-v3%5E-green?logo=python)
+[![pypi_version](https://img.shields.io/pypi/v/pymycobot?label=pypi)](https://pypi.org/project/pigit)
+
 This is a python API for serial communication with mycobot and controlling it.
 
 [![home](./f3-min2.jpg)](https://www.elephantrobotics.com/en/myCobot-en/)
