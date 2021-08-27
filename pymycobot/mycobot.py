@@ -171,7 +171,7 @@ class MyCobot(MycobotCommandGenerater):
         """Init GPIO module.
         Raspberry Pi version need this.
         """
-        import RPi.GPIO as GPIO
+        import RPi.GPIO as GPIO  # type: ignore
 
         GPIO.setmode(GPIO.BCM)
         self.gpio = GPIO
