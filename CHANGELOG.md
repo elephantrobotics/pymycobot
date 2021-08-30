@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot.
 
+## v2.5.9 (2021-08-30)
+- release v2.5.9
+- import `utils` module.
+- modify `send_coord()` for atom4.0
+- update document.
+
 ## v2.5.8 (2021-08-10)
 - release v2.5.8
 - fix `is_servo_enable` error.

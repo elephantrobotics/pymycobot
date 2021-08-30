@@ -7,7 +7,7 @@ from pymycobot import utils
 
 __all__ = ["MyCobot", "MycobotCommandGenerater", "Angle", "Coord", "utils"]
 
-__version__ = "2.5.8"
+__version__ = "2.5.9"
 __author__ = "Zachary zhang"
 __email__ = "lijun.zhang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
