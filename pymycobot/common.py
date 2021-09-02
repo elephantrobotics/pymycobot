@@ -1,8 +1,10 @@
+# coding=utf-8
+
 from __future__ import division
 import struct
 
 
-class Command(object):
+class ProtocolCode(object):
     # BASIC
     HEADER = 0xFE
     FOOTER = 0xFA
@@ -92,16 +94,16 @@ class DataProcessor(object):
     def _decode_int16(self, data):
         return struct.unpack(">h", data)[0]
 
-    def _angle_to_int(self, angle):
+    def _angle2int(self, angle):
         return int(angle * 100)
 
-    def _coord_to_int(self, coord):
+    def _coord2int(self, coord):
         return int(coord * 10)
 
-    def _int_to_angle(self, _int):
+    def _int2angle(self, _int):
         return round(_int / 100.0, 3)
 
-    def _int_to_coord(self, _int):
+    def _int2coord(self, _int):
         return round(_int / 10.0, 2)
 
     def _flatten(self, _list):
@@ -121,7 +123,7 @@ class DataProcessor(object):
         )
 
     def _is_frame_header(self, data, pos):
-        return data[pos] == Command.HEADER and data[pos + 1] == Command.HEADER
+        return data[pos] == ProtocolCode.HEADER and data[pos + 1] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre):
         if not data:
@@ -152,7 +154,7 @@ class DataProcessor(object):
                 one = valid_data[idx : idx + 2]
                 res.append(self._decode_int16(one))
         elif data_len == 2:
-            if genre in [Command.IS_SERVO_ENABLE]:
+            if genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
             res.append(self._decode_int16(valid_data))
         else:

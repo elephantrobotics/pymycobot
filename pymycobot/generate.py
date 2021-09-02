@@ -1,9 +1,11 @@
-import logging
+# coding=utf-8
+
 import sys
+import logging
 
 from pymycobot.log import setup_logging
-from pymycobot.error import check_datas
-from pymycobot.common import Command, DataProcessor
+from pymycobot.error import calibration_parameters
+from pymycobot.common import ProtocolCode, DataProcessor
 
 
 class MycobotCommandGenerater(DataProcessor):
@@ -81,9 +83,6 @@ class MycobotCommandGenerater(DataProcessor):
     def __init__(self, debug=False):
         """
         Args:
-            port     : port string
-            baudrate : baud rate string, default '115200'
-            timeout  : default 0.1
             debug    : whether show debug info
         """
         self._version = sys.version_info[:2][0]
@@ -93,7 +92,6 @@ class MycobotCommandGenerater(DataProcessor):
 
     def _mesg(self, genre, *args, **kwargs):
         """
-
         Args:
             genre: command type (Command)
             *args: other data.
@@ -107,12 +105,12 @@ class MycobotCommandGenerater(DataProcessor):
 
         LEN = len(command_data) + 2
         command = [
-            Command.HEADER,
-            Command.HEADER,
+            ProtocolCode.HEADER,
+            ProtocolCode.HEADER,
             LEN,
             genre,
             command_data,
-            Command.FOOTER,
+            ProtocolCode.FOOTER,
         ]
 
         real_command = self._flatten(command)
@@ -121,24 +119,23 @@ class MycobotCommandGenerater(DataProcessor):
         return real_command, has_reply
 
     # System status
-    def version(self):  # TODO: test method <11-03-21, yourname> #
+    def version(self):  # TODO: test method <2021-03-11, yourname> #
         """Get cobot version
 
         Return:
             mycobot   : 1
             mycobotPro: 101
         """
-        recv = self._mesg(Command.VERSION, has_reply=True)
-        return recv
+        return self._mesg(ProtocolCode.VERSION, has_reply=True)
 
     # Overall status
     def power_on(self):
         """Open communication with Atom."""
-        return self._mesg(Command.POWER_ON)
+        return self._mesg(ProtocolCode.POWER_ON)
 
     def power_off(self):
         """Close communication with Atom."""
-        return self._mesg(Command.POWER_OFF)
+        return self._mesg(ProtocolCode.POWER_OFF)
 
     def is_power_on(self):
         """Adjust robot arm status
@@ -148,14 +145,14 @@ class MycobotCommandGenerater(DataProcessor):
             0 : power off
             -1: error data
         """
-        return self._mesg(Command.IS_POWER_ON, has_reply=True)
+        return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
 
     def release_all_servos(self):
-        return self._mesg(Command.RELEASE_ALL_SERVOS)
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
 
     def is_controller_connected(self):
         """Wether connected with Atom."""
-        return self._mesg(Command.IS_CONTROLLER_CONNECTED, has_reply=True)
+        return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
 
     """
     def set_free_mode(self, flag):  # TODO:no finish
@@ -175,7 +172,7 @@ class MycobotCommandGenerater(DataProcessor):
         Return:
             data_list (list[angle...]):
         """
-        return self._mesg(Command.GET_ANGLES, has_reply=True)
+        return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
     def send_angle(self, id, degree, speed):
         """Send one angle.
@@ -185,8 +182,8 @@ class MycobotCommandGenerater(DataProcessor):
             degree (float): angle value.
             speed (int): 0 ~ 100
         """
-        check_datas(joint_id=id, degree=degree, speed=speed)
-        return self._mesg(Command.SEND_ANGLE, id, [self._angle_to_int(degree)], speed)
+        calibration_parameters(id=id, degree=degree, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, degrees, speed):
@@ -196,10 +193,10 @@ class MycobotCommandGenerater(DataProcessor):
             degrees (list): example [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             speed (int): 0 ~ 100
         """
-        check_datas(degrees=degrees, len6=degrees, speed=speed)
-        degrees = [self._angle_to_int(degree) for degree in degrees]
+        calibration_parameters(degrees=degrees, speed=speed)
+        degrees = [self._angle2int(degree) for degree in degrees]
         # data = [degrees, speed]
-        return self._mesg(Command.SEND_ANGLES, degrees, speed)
+        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
     def get_coords(self):
         """Get all coords.
@@ -207,7 +204,7 @@ class MycobotCommandGenerater(DataProcessor):
         Return:
             data_list (list): [x, y, z, rx, ry, rz]
         """
-        return self._mesg(Command.GET_COORDS, has_reply=True)
+        return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
 
     def send_coord(self, id, coord, speed):
         """Send one position of coordination.
@@ -217,9 +214,9 @@ class MycobotCommandGenerater(DataProcessor):
             coord(float): mm
             speed(int): 0 ~ 100
         """
-        check_datas(speed=speed)
-        value = self._coord_to_int(coord) if id <= 3 else self._angle_to_int(coord)
-        return self._mesg(Command.SEND_COORD, id, [value], speed)
+        calibration_parameters(id=id, speed=speed)
+        value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
+        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
     def send_coords(self, coords, speed, mode):
         """Send all coordinations.
@@ -229,15 +226,15 @@ class MycobotCommandGenerater(DataProcessor):
             speed(int);
             mode(int): 0 - normal, 1 - angluar, 2 - linear
         """
-        check_datas(len6=coords, speed=speed)
+        calibration_parameters(coords=coords, speed=speed)
         coord_list = []
         for idx in range(3):
-            coord_list.append(self._coord_to_int(coords[idx]))
+            coord_list.append(self._coord2int(coords[idx]))
         for idx in range(3, 6):
-            coord_list.append(self._angle_to_int(coords[idx]))
-        return self._mesg(Command.SEND_COORDS, coord_list, speed, mode)
+            coord_list.append(self._angle2int(coords[idx]))
+        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
 
-    def is_in_position(self, data, id):
+    def is_in_position(self, data, id=0):
         """Determine whether the given position is reached.
 
         Args:
@@ -249,19 +246,20 @@ class MycobotCommandGenerater(DataProcessor):
             1 : right position
             -1: error data
         """
-        check_datas(len6=data)
         if id == 1:
+            calibration_parameters(coords=data)
             data_list = []
             for idx in range(3):
-                data_list.append(self._coord_to_int(data[idx]))
+                data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
-                data_list.append(self._angle_to_int(data[idx]))
+                data_list.append(self._angle2int(data[idx]))
         elif id == 0:
-            data_list = [self._angle_to_int(i) for i in data]
+            calibration_parameters(degrees=data)
+            data_list = [self._angle2int(i) for i in data]
         else:
             raise Exception("id is not right, please input 0 or 1")
 
-        return self._mesg(Command.IS_IN_POSITION, data_list, id, has_reply=True)
+        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, id, has_reply=True)
 
     def is_moving(self):
         """
@@ -271,7 +269,7 @@ class MycobotCommandGenerater(DataProcessor):
             1 : is moving
             -1: error data
         """
-        return self._mesg(Command.IS_MOVING, has_reply=True)
+        return self._mesg(ProtocolCode.IS_MOVING, has_reply=True)
 
     # JOG mode and operation
     def jog_angle(self, joint_id, direction, speed):
@@ -282,7 +280,7 @@ class MycobotCommandGenerater(DataProcessor):
             direction: int [0, 1]
             speed: int (0 - 100)
         """
-        return self._mesg(Command.JOG_ANGLE, joint_id, direction, speed)
+        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed)
 
     def jog_coord(self, coord_id, direction, speed):
         """Control coordination in JOG mode.
@@ -292,23 +290,23 @@ class MycobotCommandGenerater(DataProcessor):
             direction: int [0, 1]
             speed: int (0 - 100)
         """
-        return self._mesg(Command.JOG_COORD, coord_id, direction, speed)
+        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
 
     def jog_stop(self):
         """Stop JOG movement."""
-        return self._mesg(Command.JOG_STOP)
+        return self._mesg(ProtocolCode.JOG_STOP)
 
     def pause(self):
-        return self._mesg(Command.PAUSE)
+        return self._mesg(ProtocolCode.PAUSE)
 
     def is_paused(self):
-        return self._mesg(Command.IS_PAUSED, has_reply=True)
+        return self._mesg(ProtocolCode.IS_PAUSED, has_reply=True)
 
     def resume(self):
-        return self._mesg(Command.RESUME)
+        return self._mesg(ProtocolCode.RESUME)
 
     def stop(self):
-        return self._mesg(Command.STOP)
+        return self._mesg(ProtocolCode.STOP)
 
     def set_encoder(self, joint_id, encoder):
         """Set joint encoder value.
@@ -317,7 +315,7 @@ class MycobotCommandGenerater(DataProcessor):
             joint_id: Joint id 1 - 7
             encoder: The value of the set encoder.
         """
-        return self._mesg(Command.SET_ENCODER, joint_id, [encoder])
+        return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
 
     def get_encoder(self, joint_id):
         """Get servo encoder
@@ -328,7 +326,7 @@ class MycobotCommandGenerater(DataProcessor):
         Returns:
             (int16): servo encoder value.
         """
-        return self._mesg(Command.GET_ENCODER, joint_id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
 
     def set_encoders(self, encoders, sp):
         """Set all servo encoder.
@@ -340,14 +338,14 @@ class MycobotCommandGenerater(DataProcessor):
         Returns:
             (str): command.
         """
-        return self._mesg(Command.SET_ENCODERS, encoders, sp)
+        return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
 
     def get_encoders(self):
-        return self._mesg(Command.GET_ENCODERS, has_reply=True)
+        return self._mesg(ProtocolCode.GET_ENCODERS, has_reply=True)
 
     # Running status and Settings
     def get_speed(self):
-        return self._mesg(Command.GET_SPEED, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SPEED, has_reply=True)
 
     def set_speed(self, speed):
         """Set speed value
@@ -355,8 +353,8 @@ class MycobotCommandGenerater(DataProcessor):
         Args:
             speed (int): 0 - 100
         """
-        check_datas(speed=speed)
-        return self._mesg(Command.SET_SPEED, speed)
+        calibration_parameters(speed=speed)
+        return self._mesg(ProtocolCode.SET_SPEED, speed)
 
     """
     def get_feed_override(self):
@@ -371,28 +369,30 @@ class MycobotCommandGenerater(DataProcessor):
     """
 
     def get_joint_min_angle(self, joint_id):
-        check_datas(joint_id=joint_id)
-        return self._mesg(Command.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
+        calibration_parameters(id=joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
 
     def get_joint_max_angle(self, joint_id):
-        check_datas(joint_id=joint_id)
-        return self._mesg(Command.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
+        calibration_parameters(id=joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
 
     # Servo control
     def is_servo_enable(self, servo_id):
-        return self._mesg(Command.IS_SERVO_ENABLE, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.IS_SERVO_ENABLE, servo_id, has_reply=True)
 
     def is_all_servo_enable(self):
-        return self._mesg(Command.IS_ALL_SERVO_ENABLE, has_reply=True)
+        return self._mesg(ProtocolCode.IS_ALL_SERVO_ENABLE, has_reply=True)
 
     def set_servo_data(self, servo_no, data_id, value):
-        return self._mesg(Command.SET_SERVO_DATA, servo_no, data_id, value)
+        return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_no, data_id, value)
 
     def get_servo_data(self, servo_no, data_id):
-        return self._mesg(Command.GET_SERVO_DATA, servo_no, data_id, has_reply=True)
+        return self._mesg(
+            ProtocolCode.GET_SERVO_DATA, servo_no, data_id, has_reply=True
+        )
 
     def set_servo_calibration(self, servo_no):
-        return self._mesg(Command.SET_SERVO_CALIBRATION, servo_no)
+        return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_no)
 
     def release_servo(self, servo_id):
         """Power off designated servo
@@ -400,7 +400,7 @@ class MycobotCommandGenerater(DataProcessor):
         Args:
             servo_id: 1 ~ 6
         """
-        return self._mesg(Command.RELEASE_SERVO, servo_id)
+        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
 
     def focus_servo(self, servo_id):
         """Power on designated servo
@@ -409,7 +409,7 @@ class MycobotCommandGenerater(DataProcessor):
             servo_id: 1 ~ 6
 
         """
-        return self._mesg(Command.FOCUS_SERVO, servo_id)
+        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
     # Atom IO
     def set_color(self, r=0, g=0, b=0):
@@ -421,8 +421,8 @@ class MycobotCommandGenerater(DataProcessor):
             b (int): 0 ~ 255
 
         """
-        check_datas(rgb=[r, g, b])
-        return self._mesg(Command.SET_COLOR, r, g, b)
+        calibration_parameters(rgb=[r, g, b])
+        return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
 
     def set_pin_mode(self, pin_no, pin_mode):
         """Set the state mode of the specified pin in atom.
@@ -431,7 +431,7 @@ class MycobotCommandGenerater(DataProcessor):
             pin_no   (int):
             pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
         """
-        return self._mesg(Command.SET_PIN_MODE, pin_no, pin_mode)
+        return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
 
     def set_digital_output(self, pin_no, pin_signal):
         """
@@ -440,10 +440,10 @@ class MycobotCommandGenerater(DataProcessor):
             pin_no     (int):
             pin_signal (int): 0 / 1
         """
-        return self._mesg(Command.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
+        return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
     def get_digital_input(self, pin_no):
-        return self._mesg(Command.GET_DIGITAL_INPUT, pin_no, has_reply=True)
+        return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
     """
     def set_pwm_mode(self, pin_no, channel):
@@ -451,11 +451,11 @@ class MycobotCommandGenerater(DataProcessor):
     """
 
     def set_pwm_output(self, channel, frequency, pin_val):
-        return self._mesg(Command.SET_PWM_OUTPUT, channel, [frequency], pin_val)
+        return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
     def get_gripper_value(self):
         """Get the value of gripper."""
-        return self._mesg(Command.GET_GRIPPER_VALUE, has_reply=True)
+        return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
 
     def set_gripper_state(self, flag, speed):
         """Set gripper switch
@@ -464,7 +464,7 @@ class MycobotCommandGenerater(DataProcessor):
             flag  (int): 0 - open, 1 - close
             speed (int): 0 ~ 100
         """
-        return self._mesg(Command.SET_GRIPPER_STATE, flag, speed)
+        return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
 
     def set_gripper_value(self, value, speed):
         """Set gripper value
@@ -473,15 +473,15 @@ class MycobotCommandGenerater(DataProcessor):
             value (int): 0 ~ 100
             speed (int): 0 ~ 100
         """
-        check_datas(speed=speed)
-        return self._mesg(Command.SET_GRIPPER_VALUE, value, speed)
+        calibration_parameters(speed=speed)
+        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, value, speed)
 
     def set_gripper_ini(self):
         """Set the current position to zero
 
         Current position value is `2048`.
         """
-        return self._mesg(Command.SET_GRIPPER_INI)
+        return self._mesg(ProtocolCode.SET_GRIPPER_INI)
 
     def is_gripper_moving(self):
         """Judge whether the gripper is moving or not
@@ -491,7 +491,7 @@ class MycobotCommandGenerater(DataProcessor):
             1 : is moving
             -1: error data
         """
-        return self._mesg(Command.IS_GRIPPER_MOVING, has_reply=True)
+        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
 
     # Basic
     def set_basic_output(self, pin_no, pin_signal):
@@ -501,7 +501,7 @@ class MycobotCommandGenerater(DataProcessor):
             pin_no: pin port number.
             pin_signal: 0 / 1
         """
-        return self._mesg(Command.SET_BASIC_OUTPUT, pin_no, pin_signal)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_basic_input(self, pin_no):
         """Get basic input for M5 version.
@@ -509,4 +509,4 @@ class MycobotCommandGenerater(DataProcessor):
         Args:
             pin_no: pin port number.
         """
-        return self._mesg(Command.GET_BASIC_INPUT, pin_no, has_reply=True)
+        return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no, has_reply=True)
