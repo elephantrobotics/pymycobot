@@ -3,14 +3,22 @@
 from __future__ import absolute_import
 import datetime
 
-from pymycobot.mycobot import MyCobot
 from pymycobot.generate import MycobotCommandGenerater
+from pymycobot.mycobot import MyCobot
+from pymycobot.mypalletizer import MyPalletizer
 from pymycobot.genre import Angle, Coord
 from pymycobot import utils
 
-__all__ = ["MyCobot", "MycobotCommandGenerater", "Angle", "Coord", "utils"]
+__all__ = [
+    "MyCobot",
+    "MycobotCommandGenerater",
+    "Angle",
+    "Coord",
+    "utils",
+    "MyPalletizer",
+]
 
-__version__ = "2.5.9"
+__version__ = "2.6.0.beta.1"
 __author__ = "Zachary zhang"
 __email__ = "lijun.zhang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

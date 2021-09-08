@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from __future__ import division
+import time
 import struct
 
 
@@ -149,7 +150,7 @@ class DataProcessor(object):
 
         # process valid data
         res = []
-        if data_len == 12:
+        if data_len == 12 or data_len == 8:
             for idx in range(0, len(valid_data), 2):
                 one = valid_data[idx : idx + 2]
                 res.append(self._decode_int16(one))
@@ -163,3 +164,21 @@ class DataProcessor(object):
 
     def _process_single(self, data):
         return data[0] if data else -1
+
+
+def write(self, command):
+    self.log.debug("_write: {}".format(command))
+
+    self._serial_port.write(command)
+    self._serial_port.flush()
+    time.sleep(0.05)
+
+
+def read(self):
+    if self._serial_port.inWaiting() > 0:
+        data = self._serial_port.read(self._serial_port.inWaiting())
+        self.log.debug("_read: {}".format(data))
+    else:
+        self.log.debug("_read: no data can be read")
+        data = None
+    return data

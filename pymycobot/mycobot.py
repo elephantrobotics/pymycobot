@@ -7,7 +7,7 @@ import logging
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import MycobotCommandGenerater
-from pymycobot.common import ProtocolCode
+from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
@@ -57,25 +57,15 @@ class MyCobot(MycobotCommandGenerater):
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
+
+        self.calibration_parameters = calibration_parameters
+
         import serial
 
         self._serial_port = serial.Serial(port, baudrate, timeout=timeout)
 
-    def _write(self, command):
-        self.log.debug("_write: {}".format(command))
-
-        self._serial_port.write(command)
-        self._serial_port.flush()
-        time.sleep(0.05)
-
-    def _read(self):
-        if self._serial_port.inWaiting() > 0:
-            data = self._serial_port.read(self._serial_port.inWaiting())
-            self.log.debug("_read: {}".format(data))
-        else:
-            self.log.debug("_read: no data can be read")
-            data = None
-        return data
+    _write = write
+    _read = read
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -124,7 +114,10 @@ class MyCobot(MycobotCommandGenerater):
                     return r
                 else:
                     return res
-            elif genre in [ProtocolCode.GET_JOINT_MIN_ANGLE, ProtocolCode.GET_JOINT_MAX_ANGLE]:
+            elif genre in [
+                ProtocolCode.GET_JOINT_MIN_ANGLE,
+                ProtocolCode.GET_JOINT_MAX_ANGLE,
+            ]:
                 return self._int2angle(res[0]) if res else 0
             else:
                 return res
