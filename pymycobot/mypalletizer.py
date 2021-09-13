@@ -7,8 +7,75 @@ from .generate import MycobotCommandGenerater
 from .common import ProtocolCode, read, write
 
 
-def calibration_parameters(**kwargs):
+class MyPalletizedataException(Exception):
     pass
+
+
+MIN_ID = 0
+MAX_ID = 5
+
+# In fact, most joints cannot reach plus or minus 180 degrees.
+# There may be a value greater than 180 when reading the angle,
+# and the maximum and minimum values are expanded for compatibility.
+MIN_ANGLE = -170.0
+MAX_ANGLE = 170.0
+
+
+def calibration_parameters(**kwargs):
+    if kwargs.get("id", None) is not None and not MIN_ID <= kwargs["id"] <= MAX_ID:
+        raise MyPalletizedataException(
+            "The id not right, should be {0} ~ {1}, but received {2}.".format(
+                MIN_ID, MAX_ID, kwargs["id"]
+            )
+        )
+
+    if (
+        kwargs.get("degree", None) is not None
+        and not MIN_ANGLE <= kwargs["degree"] <= MAX_ANGLE
+    ):
+        raise MyPalletizedataException(
+            "degree value not right, should be {0} ~ {1}, but received {2}".format(
+                MIN_ANGLE, MAX_ANGLE, kwargs["degree"]
+            )
+        )
+
+    if kwargs.get("degrees", None) is not None:
+        degrees = kwargs["degrees"]
+        if not isinstance(degrees, list):
+            raise MyPalletizedataException("`degrees` must be a list.")
+        if len(degrees) != 4:
+            raise MyPalletizedataException(
+                "The length of `degrees` must be 4.")
+        for idx, angle in enumerate(degrees):
+            if not MIN_ANGLE <= angle <= MAX_ANGLE:
+                raise MyPalletizedataException(
+                    "Has invalid degree value, error on index {0}. Degree should be {1} ~ {2}.".format(
+                        idx, MIN_ANGLE, MAX_ANGLE
+                    )
+                )
+
+    if kwargs.get("coords", None) is not None:
+        coords = kwargs["coords"]
+        if not isinstance(coords, list):
+            raise MyPalletizedataException("`coords` must be a list.")
+        if len(coords) != 4:
+            raise MyPalletizedataException(
+                "The length of `coords` must be 4.")
+
+    if kwargs.get("speed", None) is not None and not 0 <= kwargs["speed"] <= 100:
+        raise MyPalletizedataException(
+            "speed value not right, should be 0 ~ 100, the error speed is %s"
+            % kwargs["speed"]
+        )
+
+    if kwargs.get("rgb", None) is not None:
+        rgb_str = ["r", "g", "b"]
+        for i, v in enumerate(kwargs["rgb"]):
+            if not (0 <= v <= 255):
+                raise MyPalletizedataException(
+                    "The RGB value needs be 0 ~ 255, but the %s is %s" % (
+                        rgb_str[i], v)
+                )
 
 
 class MyPalletizer(MycobotCommandGenerater):
@@ -24,7 +91,6 @@ class MyPalletizer(MycobotCommandGenerater):
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
-
         self.calibration_parameters = calibration_parameters
 
         import serial

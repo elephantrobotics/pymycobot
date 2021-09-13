@@ -11,7 +11,7 @@ record.txt
 test_test.py
 
 .DS_Store
-
+.history
 .VSCodeCounter
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb

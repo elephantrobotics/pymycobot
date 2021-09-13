@@ -4,6 +4,7 @@ import sys
 import logging
 
 from pymycobot.log import setup_logging
+from pymycobot.error import calibration_parameters
 from pymycobot.common import ProtocolCode, DataProcessor
 
 

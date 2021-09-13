@@ -109,7 +109,8 @@ class DataProcessor(object):
 
     def _flatten(self, _list):
         return sum(
-            ([x] if not isinstance(x, list) else self._flatten(x) for x in _list), []
+            ([x] if not isinstance(x, list) else self._flatten(x)
+             for x in _list), []
         )
 
     def _process_data_command(self, args):
@@ -118,7 +119,8 @@ class DataProcessor(object):
 
         return self._flatten(
             [
-                [self._encode_int16(int(i)) for i in x] if isinstance(x, list) else x
+                [self._encode_int16(int(i))
+                 for i in x] if isinstance(x, list) else x
                 for x in args
             ]
         )
@@ -135,24 +137,24 @@ class DataProcessor(object):
         # Get valid header: 0xfe0xfe
         for idx in range(data_len - 1):
             if self._is_frame_header(data, idx):
-                break
+                data_len = data[idx + 2] - 2
+                if data_len > 0:
+                    break
         else:
             return []
-
-        data_len = data[idx + 2] - 2
 
         # compare send header and received header
         cmd_id = data[idx + 3]
         if cmd_id != genre:
             return []
         data_pos = idx + 4
-        valid_data = data[data_pos : data_pos + data_len]
+        valid_data = data[data_pos: data_pos + data_len]
 
         # process valid data
         res = []
         if data_len == 12 or data_len == 8:
             for idx in range(0, len(valid_data), 2):
-                one = valid_data[idx : idx + 2]
+                one = valid_data[idx: idx + 2]
                 res.append(self._decode_int16(one))
         elif data_len == 2:
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:

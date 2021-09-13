@@ -79,7 +79,8 @@ class MyCobot(MycobotCommandGenerater):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(MyCobot, self)._mesg(genre, *args, **kwargs)
+        real_command, has_reply = super(
+            MyCobot, self)._mesg(genre, *args, **kwargs)
         self._write(self._flatten(real_command))
 
         if has_reply:
@@ -140,7 +141,8 @@ class MyCobot(MycobotCommandGenerater):
             speed (int): 0 ~ 100
         """
         calibration_parameters(len6=radians, speed=speed)
-        degrees = [self._angle2int(radian * (180 / math.pi)) for radian in radians]
+        degrees = [self._angle2int(radian * (180 / math.pi))
+                   for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
     def sync_send_angles(self, degrees, speed, timeout=7):
