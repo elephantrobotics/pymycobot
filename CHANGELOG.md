@@ -1,5 +1,9 @@
 # ChangeLog for pymycobot.
 
+## v2.6.0 (2021-9-13)
+- release v2.6.0
+- Preliminary adaptation mypalletizer
+
 ## v2.5.9 (2021-08-30)
 - release v2.5.9
 - import `utils` module.
