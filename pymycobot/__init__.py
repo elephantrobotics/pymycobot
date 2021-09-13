@@ -18,9 +18,9 @@ __all__ = [
     "MyPalletizer",
 ]
 
-__version__ = "2.6.0.beta.1"
-__author__ = "Zachary zhang"
-__email__ = "lijun.zhang@elephantrobotics.com"
+__version__ = "2.6.0"
+__author__ = "Elephantrobotics"
+__email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
 __copyright__ = "CopyRight (c) 2020-{0} Shenzhen Elephantrobotics technology".format(
     datetime.datetime.now().year
