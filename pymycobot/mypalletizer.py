@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import logging
+import math
 
 from .log import setup_logging
 from .generate import MycobotCommandGenerater
@@ -156,3 +157,67 @@ class MyPalletizer(MycobotCommandGenerater):
             else:
                 return res
         return None
+
+    def get_radians(self):
+        """Get all angle return a list
+
+        Return:
+            data_list (list[radian...]):
+        """
+        angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
+        return [round(angle * (math.pi / 180), 3) for angle in angles]
+
+    def send_radians(self, radians, speed):
+        """Send all angles
+
+        Args:
+            radians (list): example [0, 0, 0, 0, 0, 0]
+            speed (int): 0 ~ 100
+        """
+        calibration_parameters(len6=radians, speed=speed)
+        degrees = [self._angle2int(radian * (180 / math.pi))
+                   for radian in radians]
+        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
+
+    def sync_send_angles(self, degrees, speed, timeout=7):
+        t = time.time()
+        self.send_angles(degrees, speed)
+        while time.time() - t < timeout:
+            f = self.is_in_position(degrees, 0)
+            if f:
+                break
+            time.sleep(0.1)
+        return self
+
+    def sync_send_coords(self, coords, speed, mode, timeout=7):
+        t = time.time()
+        self.send_coords(coords, speed, mode)
+        while time.time() - t < timeout:
+            if self.is_in_position(coords, 1):
+                break
+            time.sleep(0.1)
+        return self
+
+    # Basic for raspberry pi.
+    def gpio_init(self):
+        """Init GPIO module.
+        Raspberry Pi version need this.
+        """
+        import RPi.GPIO as GPIO  # type: ignore
+
+        GPIO.setmode(GPIO.BCM)
+        self.gpio = GPIO
+
+    def gpio_output(self, pin, v):
+        """Set GPIO output value.
+        Args:
+            pin: port number(int).
+            v: Output value(int), 1 - GPIO.HEIGH, 0 - GPIO.LOW
+        """
+        self.gpio.setup(pin, self.gpio.OUT)
+        self.gpio.setup(pin, v)
+
+    # Other
+    def wait(self, t):
+        time.sleep(t)
+        return self
