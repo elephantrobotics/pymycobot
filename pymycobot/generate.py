@@ -8,8 +8,10 @@ from pymycobot.error import calibration_parameters
 from pymycobot.common import ProtocolCode, DataProcessor
 
 
-class MycobotCommandGenerater(DataProcessor):
-    """MyCobot Python API (Chain operation: *)
+class MyCobotCommandGenerator(DataProcessor):
+    """MyCobot Python API
+    (* = Chain operation)
+    (x = ???)
 
     Supported methods:
 

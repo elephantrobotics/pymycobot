@@ -4,7 +4,7 @@ import logging
 import math
 
 from .log import setup_logging
-from .generate import MycobotCommandGenerater
+from .generate import MycobotCommandGenerator
 from .common import ProtocolCode, read, write
 
 
@@ -79,14 +79,14 @@ def calibration_parameters(**kwargs):
                 )
 
 
-class MyPalletizer(MycobotCommandGenerater):
+class MyPalletizer(MycobotCommandGenerator):
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
         """
         Args:
             port     : port string
             baudrate : baud rate string, default '115200'
             timeout  : default 0.1
-            debug    : whether show debug info
+            debug    : whether to show debug info
         """
         super(MyPalletizer, self).__init__(debug)
         self.debug = debug

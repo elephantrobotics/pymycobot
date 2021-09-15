@@ -4,42 +4,43 @@ from __future__ import division
 import time
 import math
 import logging
+import serial
 
 from pymycobot.log import setup_logging
-from pymycobot.generate import MycobotCommandGenerater
+from pymycobot.generate import MyCobotCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MyCobot(MycobotCommandGenerater):
+class MyCobot(MyCobotCommandGenerator):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
 
         # Overall status
-            Look at parent class: `MycobotCommandGenerater`.
+            Look at parent class: `MyCobotCommandGenerator`.
 
         # MDI mode and operation
             get_radians()
             send_radians()
             sync_send_angles() *
             sync_send_coords() *
-            Other look at parent class: `MycobotCommandGenerater`.
+            Other look at parent class: `MyCobotCommandGenerator`.
 
         # JOG mode and operation
-            Look at parent class: `MycobotCommandGenerater`.
+            Look at parent class: `MyCobotCommandGenerator`.
 
         # Running status and Settings
-            Look at parent class: `MycobotCommandGenerater`.
+            Look at parent class: `MyCobotCommandGenerator`.
 
         # Servo control
-            Look at parent class: `MycobotCommandGenerater`.
+            Look at parent class: `MyCobotCommandGenerator`.
 
         # Atom IO
-            Look at parent class: `MycobotCommandGenerater`.
+            Look at parent class: `MyCobotCommandGenerator`.
 
         # Basic
-            Look at parent class: `MycobotCommandGenerater`.
+            Look at parent class: `MyCobotCommandGenerator`.
 
         # Other
             wait() *
@@ -57,11 +58,7 @@ class MyCobot(MycobotCommandGenerater):
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
-
         self.calibration_parameters = calibration_parameters
-
-        import serial
-
         self._serial_port = serial.Serial(port, baudrate, timeout=timeout)
 
     _write = write
