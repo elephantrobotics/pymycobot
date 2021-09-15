@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 import datetime
 
-from pymycobot.generate import MycobotCommandGenerator
+from pymycobot.generate import MyCobotCommandGenerator
 from pymycobot.mycobot import MyCobot
 from pymycobot.mypalletizer import MyPalletizer
 from pymycobot.genre import Angle, Coord
@@ -11,7 +11,7 @@ from pymycobot import utils
 
 __all__ = [
     "MyCobot",
-    "MycobotCommandGenerator",
+    "MyCobotCommandGenerator",
     "Angle",
     "Coord",
     "utils",

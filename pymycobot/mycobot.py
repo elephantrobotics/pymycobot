@@ -55,9 +55,9 @@ class MyCobot(MyCobotCommandGenerator):
             debug    : whether show debug info
         """
         super(MyCobot, self).__init__(debug)
-        self.debug = debug
-        setup_logging(self.debug)
-        self.log = logging.getLogger(__name__)
+#        self.debug = debug
+#        setup_logging(self.debug)
+#        self.log = logging.getLogger(__name__)
         self.calibration_parameters = calibration_parameters
         self._serial_port = serial.Serial(port, baudrate, timeout=timeout)
 
@@ -80,7 +80,7 @@ class MyCobot(MyCobotCommandGenerator):
             MyCobot, self)._mesg(genre, *args, **kwargs)
         self._write(self._flatten(real_command))
 
-        if has_reply:
+        if has_reply:  # has_reply can be a bool, or an int indicating the expended length of the reply.
             data = self._read()
             res = self._process_received(data, genre)
             if genre in [

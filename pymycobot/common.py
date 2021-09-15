@@ -170,17 +170,28 @@ class DataProcessor(object):
 
 def write(self, command):
     self.log.debug("_write: {}".format(command))
-
     self._serial_port.write(command)
     self._serial_port.flush()
-    time.sleep(0.05)
 
 
 def read(self):
-    if self._serial_port.inWaiting() > 0:
-        data = self._serial_port.read(self._serial_port.inWaiting())
-        self.log.debug("_read: {}".format(data))
-    else:
-        self.log.debug("_read: no data can be read")
-        data = None
-    return data
+    while True:
+        header = self._serial_port.read(2)
+        if (len(header) == 2) and (header[0] == 0xFF) and (header[1] == 0xFF):
+            # Read the undocumented messages that precede every read.
+            self.log.debug(f"_read: mystery header {header}")
+            instruction = self._serial_port.read(1)
+            length = self._serial_port.read(1)
+            self.log.debug(f"_read: mystery instruction {instruction[0]} length {length[0]}")
+            body = self._serial_port.read(length[0])
+            self.log.debug(f"_read: mystery body {body}")
+        elif (len(header) == 2) and (header[0] == ProtocolCode.HEADER) and (header[1] == ProtocolCode.HEADER):
+            # Read the actual messages we want.
+            length = self._serial_port.read(1)
+            body = self._serial_port.read(length[0])
+            if len(body) < length[0]:
+                self.log.debug("_read: could not read body")
+                return None
+            data = header + length + body
+            self.log.debug("_read: {}".format(data))
+            return data
