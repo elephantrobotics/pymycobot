@@ -10,8 +10,10 @@ from pymycobot.common import ProtocolCode, DataProcessor
 
 class MyCobotCommandGenerator(DataProcessor):
     """MyCobot Python API
-    (* = Chain operation)
-    (x = ???)
+    
+    Annotations:
+        * = Chain operation
+        x = ??? 
 
     Supported methods:
 
