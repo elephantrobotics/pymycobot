@@ -65,7 +65,6 @@ class MyCobotCommandGenerator(DataProcessor):
 
         # Atom IO
             set_color() *
-            set_led_color()
             set_pin_mode()
             set_digital_output()
             get_digital_input()
