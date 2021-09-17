@@ -8,8 +8,12 @@ from pymycobot.error import calibration_parameters
 from pymycobot.common import ProtocolCode, DataProcessor
 
 
-class MycobotCommandGenerater(DataProcessor):
-    """MyCobot Python API (Chain operation: *)
+class MyCobotCommandGenerator(DataProcessor):
+    """MyCobot Python API
+    
+    Annotations:
+        * = Chain operation
+        x = ??? 
 
     Supported methods:
 
@@ -63,7 +67,6 @@ class MycobotCommandGenerater(DataProcessor):
 
         # Atom IO
             set_color() *
-            set_led_color()
             set_pin_mode()
             set_digital_output()
             get_digital_input()
