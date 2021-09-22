@@ -190,7 +190,9 @@ class MycobotCommandGenerater(DataProcessor):
         """Send all angles
 
         Args:
-            degrees (list): example [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            degrees (list): 
+                example for mycobot [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                example for mypalletizer [0.0, 0.0, 0.0, 0.0]
             speed (int): 0 ~ 100
         """
         self.calibration_parameters(degrees=degrees, speed=speed)
@@ -201,7 +203,9 @@ class MycobotCommandGenerater(DataProcessor):
         """Get all coords.
 
         Return:
-            data_list (list): [x, y, z, rx, ry, rz]
+            data_list (list): 
+            for mycobot [x, y, z, rx, ry, rz],
+            for mypalletizer [x, y, z, θ]
         """
         return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
 
@@ -221,9 +225,11 @@ class MycobotCommandGenerater(DataProcessor):
         """Send all coordinations.
 
         Args:
-            coords: [x(mm), y, z, rx(angle), ry, rz]
+            coords: 
+                for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+                for mypalletizer: [x, y, z, θ]
             speed(int);
-            mode(int): 0 - normal, 1 - angluar, 2 - linear
+            mode(int): 0 - angluar, 1 - linear
         """
         self.calibration_parameters(coords=coords, speed=speed)
         coord_list = []
@@ -311,7 +317,9 @@ class MycobotCommandGenerater(DataProcessor):
         """Set joint encoder value.
 
         Args:
-            joint_id: Joint id 1 - 7
+            joint_id: 
+                for mycobot: Joint id 1 - 7
+                for mypalletizer: Joint id 1 - 4
             encoder: The value of the set encoder.
         """
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
@@ -397,7 +405,10 @@ class MycobotCommandGenerater(DataProcessor):
         """Power off designated servo
 
         Args:
-            servo_id: 1 ~ 6
+            for mycobot :
+                servo_id: 1 ~ 6
+            for mypalletizer:
+                servo_id: 1 ~ 4
         """
         return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
 
@@ -405,7 +416,10 @@ class MycobotCommandGenerater(DataProcessor):
         """Power on designated servo
 
         Args:
-            servo_id: 1 ~ 6
+            for mycobot :
+                servo_id: 1 ~ 6
+            for mypalletizer:
+                servo_id: 1 ~ 4
 
         """
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
