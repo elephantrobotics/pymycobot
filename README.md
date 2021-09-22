@@ -42,6 +42,12 @@ cd <your-path>/pymycobot
 # or
 [sudo] python3 setup.py install
 ```
+Or the more modern form:
+```
+# Install
+pip install .
+# Uninstall
+pip uninstall .
 
 ## Usage:
 

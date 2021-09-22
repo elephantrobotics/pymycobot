@@ -6,9 +6,9 @@ from pprint import pprint
 # Add relevant ranger module to PATH... there surely is a better way to do this...
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from pymycobot import MycobotCommandGenerater
+from pymycobot import MyCobotCommandGenerator
 
-mg: MycobotCommandGenerater
+mg: MyCobotCommandGenerator
 
 
 @pytest.fixture(scope="module")
@@ -16,7 +16,7 @@ def setup():
     global mg
     print("")
     DEBUG = False
-    mg = MycobotCommandGenerater(debug=DEBUG)
+    mg = MyCobotCommandGenerator(debug=DEBUG)
     print("")
 
 
