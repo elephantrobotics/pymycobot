@@ -9,7 +9,6 @@ if (2, 7) != PYTHON_VERSION < (3, 5):
 
 import setuptools
 import textwrap
-import pymycobot
 
 try:
     long_description = (
@@ -67,13 +66,13 @@ except:
 
 setuptools.setup(
     name="pymycobot",
-    version=pymycobot.__version__,
-    author=pymycobot.__author__,
-    author_email=pymycobot.__email__,
+    version="2.6.0",
+    author="Elephantrobotics",
+    author_email="weiquan.xu@elephantrobotics.com",
     description="Python API for serial communication of MyCobot.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url=pymycobot.__git_url__,
+    url="https://github.com/elephantrobotics/pymycobot",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 2.7",
