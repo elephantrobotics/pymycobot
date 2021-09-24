@@ -16,6 +16,7 @@ test_test.py
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb
 
+*.pyc
 __pycache__/port.cpython-39.pyc
 demo/__pycache__/port.cpython-39.pyc
 demo/__pycache__/port_setup.cpython-39.pyc
