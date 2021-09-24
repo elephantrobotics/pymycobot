@@ -8,8 +8,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from pymycobot import MyCobotCommandGenerator
 
-mg: MyCobotCommandGenerator
-
 
 @pytest.fixture(scope="module")
 def setup():
