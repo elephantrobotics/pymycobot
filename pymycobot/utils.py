@@ -4,7 +4,7 @@ from __future__ import print_function
 
 try:
     from serial.tools.list_ports import comports
-except ModuleNotFoundError:
+except ImportError:
     print("Not found module `pyserial`, please install.")
 
 

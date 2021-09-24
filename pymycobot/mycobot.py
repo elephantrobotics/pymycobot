@@ -4,7 +4,6 @@ from __future__ import division
 import time
 import math
 import logging
-import serial
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import MyCobotCommandGenerator
@@ -56,6 +55,7 @@ class MyCobot(MyCobotCommandGenerator):
         """
         super(MyCobot, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
+        import serial
         self._serial_port = serial.Serial(port, baudrate, timeout=timeout)
 
     _write = write
