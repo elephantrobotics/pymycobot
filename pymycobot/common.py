@@ -87,7 +87,10 @@ class DataProcessor(object):
         return struct.pack("b", data)
 
     def _encode_int16(self, data):
-        return list(struct.pack(">h", data))
+        if isinstance(data, int):
+            return list(struct.pack(">h", data))
+        else:
+            return sum([list(struct.pack('>h', elem)) for elem in data], [])
 
     def _decode_int8(self, data):
         return struct.unpack("b", data)[0]
