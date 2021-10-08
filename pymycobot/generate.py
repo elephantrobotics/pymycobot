@@ -185,7 +185,7 @@ class MyCobotCommandGenerator(DataProcessor):
             degree (float): angle value.
             speed (int): 0 ~ 100
         """
-        self.calibration_parameters(id=id, degree=degree, speed=speed)
+        calibration_parameters(id=id, degree=degree, speed=speed)
         return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
@@ -198,7 +198,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 example for mypalletizer [0.0, 0.0, 0.0, 0.0]
             speed (int): 0 ~ 100
         """
-        self.calibration_parameters(degrees=degrees, speed=speed)
+        calibration_parameters(degrees=degrees, speed=speed)
         degrees = [self._angle2int(degree) for degree in degrees]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
@@ -220,7 +220,7 @@ class MyCobotCommandGenerator(DataProcessor):
             coord(float): mm
             speed(int): 0 ~ 100
         """
-        self.calibration_parameters(id=id, speed=speed)
+        calibration_parameters(id=id, speed=speed)
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
@@ -234,7 +234,7 @@ class MyCobotCommandGenerator(DataProcessor):
             speed(int);
             mode(int): 0 - angluar, 1 - linear
         """
-        self.calibration_parameters(coords=coords, speed=speed)
+        calibration_parameters(coords=coords, speed=speed)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -255,14 +255,14 @@ class MyCobotCommandGenerator(DataProcessor):
             -1: error data
         """
         if id == 1:
-            self.calibration_parameters(coords=data)
+            calibration_parameters(coords=data)
             data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
                 data_list.append(self._angle2int(data[idx]))
         elif id == 0:
-            self.calibration_parameters(degrees=data)
+            calibration_parameters(degrees=data)
             data_list = [self._angle2int(i) for i in data]
         else:
             raise Exception("id is not right, please input 0 or 1")
@@ -363,7 +363,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             speed (int): 0 - 100
         """
-        self.calibration_parameters(speed=speed)
+        calibration_parameters(speed=speed)
         return self._mesg(ProtocolCode.SET_SPEED, speed)
 
     """
@@ -379,11 +379,11 @@ class MyCobotCommandGenerator(DataProcessor):
     """
 
     def get_joint_min_angle(self, joint_id):
-        self.calibration_parameters(id=joint_id)
+        calibration_parameters(id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
 
     def get_joint_max_angle(self, joint_id):
-        self.calibration_parameters(id=joint_id)
+        calibration_parameters(id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
 
     # Servo control
@@ -437,7 +437,7 @@ class MyCobotCommandGenerator(DataProcessor):
             b (int): 0 ~ 255
 
         """
-        self.calibration_parameters(rgb=[r, g, b])
+        calibration_parameters(rgb=[r, g, b])
         return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
 
     def set_pin_mode(self, pin_no, pin_mode):
@@ -489,7 +489,7 @@ class MyCobotCommandGenerator(DataProcessor):
             value (int): 0 ~ 100
             speed (int): 0 ~ 100
         """
-        self.calibration_parameters(speed=speed)
+        calibration_parameters(speed=speed)
         return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, value, speed)
 
     def set_gripper_ini(self):

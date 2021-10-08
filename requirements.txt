@@ -1,4 +1,3 @@
 pyserial
-pytext
-flask8
-black
+pytest
+flake8
