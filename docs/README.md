@@ -66,7 +66,7 @@ We support Python2, Python3.5 or later.
     - [set_gripper_ini](#set_gripper_ini)
     - [is_gripper_moving](#is_gripper_moving)
   - [Basic](#basic)
-    - [get_basic_output](#get_basic_output)
+    - [get_basic_input](#get_basic_input)
     - [set_basic_output](#set_basic_output)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio_init](#gpio_init)
@@ -639,9 +639,9 @@ from pymycobot import MyCobot
 
 ## Basic
 
-### get_basic_output
+### get_basic_input
 
-- **Prototype**: `get_basic_output(pin_no)`
+- **Prototype**: `get_basic_input(pin_no)`
 
 - **Description**: Get bottom pin.
 
