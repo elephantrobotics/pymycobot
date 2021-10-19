@@ -1,6 +1,12 @@
-# ChangeLog for pymycobot.
+# ChangeLog for pymycobot
+
+## v2.6.1 (2021-10-19)
+
+- release v2.6.1
+- Fix transmission angle or coordinate jam problem. (sync_send_angles() and sync_send_coords())
 
 ## v2.6.0 (2021-9-13)
+
 - release v2.6.0
 - Preliminary adaptation mypalletizer
 
