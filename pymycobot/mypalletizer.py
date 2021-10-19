@@ -2,6 +2,7 @@
 
 import logging
 import math
+import time
 
 from .log import setup_logging
 from .generate import MyCobotCommandGenerator
@@ -183,8 +184,8 @@ class MyPalletizer(MyCobotCommandGenerator):
         t = time.time()
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
-            f = self.is_in_position(degrees, 0)
-            if f:
+            f = self.is_moving()
+            if not f:
                 break
             time.sleep(0.1)
         return self
@@ -193,7 +194,7 @@ class MyPalletizer(MyCobotCommandGenerator):
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
-            if self.is_in_position(coords, 1):
+            if not self.is_moving():
                 break
             time.sleep(0.1)
         return self
