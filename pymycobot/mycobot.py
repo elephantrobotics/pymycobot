@@ -175,7 +175,7 @@ class MyCobot(MyCobotCommandGenerator):
             v: Output value(int), 1 - GPIO.HEIGH, 0 - GPIO.LOW
         """
         self.gpio.setup(pin, self.gpio.OUT)
-        self.gpio.setup(pin, v)
+        self.gpio.output(pin, v)
 
     # Other
     def wait(self, t):
