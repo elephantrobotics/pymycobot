@@ -22,7 +22,3 @@ print(m.send_command("get_coords"))
 # m.send_command(
 #     "sync_send_coords([53,53,412,-90.7,-1.5,12.67],30,1)")
 # print(m.send_command("is_in_position([53,53,412,-90.7,-1.5,12.67],1)"))
-
-# m.send_command("jog_angle(1,1,20)")
-# time.sleep(2)
-# m.send_command("jog_stop")

@@ -6,6 +6,7 @@ import datetime
 from pymycobot.generate import MyCobotCommandGenerator
 from pymycobot.mycobot import MyCobot
 from pymycobot.mypalletizer import MyPalletizer
+from pymycobot.mycobotsocket import MyCobotSocket
 from pymycobot.genre import Angle, Coord
 from pymycobot import utils
 
@@ -16,9 +17,10 @@ __all__ = [
     "Coord",
     "utils",
     "MyPalletizer",
+    "MyCobotSocket"
 ]
 
-__version__ = "2.6.1"
+__version__ = "2.6.2"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

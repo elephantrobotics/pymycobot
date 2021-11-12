@@ -3,22 +3,21 @@
 from __future__ import division
 import socket
 import time
-import sys
-# import threading
 
 
 class MyCobotSocket:
     """MyCobot Python API Socket communication class."""
 
-    def __init__(self, ip, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, ip, port, baudrate="1000000"):
         """
         Args:
+            ip       : ip address
             port     : port string
-            baudrate : baud rate string, default '115200'
-            timeout  : default 0.1
-            debug    : whether show debug info
+            baudrate : baud rate string, default '1000000'
         """
-        self.SERVER_IP = ip  # 输入正确的目标ip地址，请查看树莓派ip
+        # 输入正确的目标ip地址，请查看树莓派ip
+        self.SERVER_IP = ip
+        # 端口号
         self.SERVER_PORT = 9000
         self.sock = self.connect()
         self.send_command(port)
@@ -31,9 +30,12 @@ class MyCobotSocket:
 
     def send_command(self, command):
         # 发送数据
-        self.sock.sendall((command+"~").encode())
+        self.sock.sendall(command.encode())
         # 接收数据
         data = self.sock.recv(1024)
-        if data.decode() == "None":
+        res = data.decode()
+        if res == "None":
             return ""
-        return data.decode()
+        elif 'ERROR' in res:
+            raise Exception(command+"\n"+res)
+        return res

@@ -76,6 +76,9 @@ We support Python2, Python3.5 or later.
 - [utils (Module)](#utils-module)
   - [get_port_list](#get_port_list)
   - [detect_port_of_basic](#detect_port_of_basic)
+  - [MyCobotSocket](#mycobotsocket)
+    - [Client](#client)
+    - [Server](#server)
 
 <!-- vim-markdown-toc -->
 </details>
@@ -734,9 +737,38 @@ from pymycobot import utils
 
   port = utils.detect_port_of_basic()
   if port is None:
-  	raise Exception('Detection failed.')
+   raise Exception('Detection failed.')
   mycobot = MyCobot(port, 115200)
   ```
+
+## MyCobotSocket
+
+> Note:
+> Only supports python3
+> The robotic arm that uses this class of premise has a server and has been turned on.
+
+Use TCP/IP to control the robotic arm
+
+### Client
+
+```python
+# demo
+from pymycobot import MyCobotSocket
+# Port 9000 is used by default
+mc = MyCobotSocket("192.168.10.115","/dev/ttyAMA0","1000000")
+
+mc.send_command("power_on")
+
+res = mc.send_command("get_angles")
+print(res)
+mc.send_command("send_angles([0,0,0,0,0,0],30)")
+...
+
+```
+
+### Server
+
+Server file is in the demo folder
 
 ---
 
