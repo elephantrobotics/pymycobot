@@ -145,12 +145,17 @@ class DataProcessor(object):
                     break
         else:
             return []
-
+        unique_data = [ProtocolCode.GET_BASIC_INPUT,
+                       ProtocolCode.GET_DIGITAL_INPUT]
         # compare send header and received header
         cmd_id = data[idx + 3]
         if cmd_id != genre:
             return []
-        data_pos = idx + 4
+        if cmd_id in unique_data:
+            data_pos = idx + 5
+            data_len -= 1
+        else:
+            data_pos = idx + 4
         valid_data = data[data_pos: data_pos + data_len]
 
         # process valid data
