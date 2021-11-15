@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v2.7.0 (2021-11-15)
+
+- release v2.7.0
+- Added TCP/IP to control the robotic arm
+- Fixed the problem that the get_basic_input() and get_digital_input() methods return incorrect data
+
 ## v2.6.1 (2021-10-19)
 
 - release v2.6.1
