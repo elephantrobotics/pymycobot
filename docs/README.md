@@ -755,13 +755,12 @@ Use TCP/IP to control the robotic arm
 # demo
 from pymycobot import MyCobotSocket
 # Port 9000 is used by default
-mc = MyCobotSocket("192.168.10.115","/dev/ttyAMA0","1000000")
+mc = MyCobotSocket("192.168.10.10","/dev/ttyAMA0","1000000")
 
-mc.send_command("power_on")
-
-res = mc.send_command("get_angles")
+res = mc.get_angles()
 print(res)
-mc.send_command("send_angles([0,0,0,0,0,0],30)")
+
+mc.send_angles([0,0,0,0,0,0],20)
 ...
 
 ```

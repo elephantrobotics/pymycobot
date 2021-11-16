@@ -1,24 +1,16 @@
-from pymycobot.mycobotsocket import MyCobotSocket
-import time
-m = MyCobotSocket("192.168.10.115", "/dev/ttyAMA0", "1000000")
-# m.send_command("send_angles([0,0,0,0,0,0],40)")
-# m.send_command("power_on")
-# print(m.send_command("is_power_on"))
-# m.send_command("release_all_servos")
-# print(m.send_command("is_controller_connected"))
-# m.send_command("send_angles([0,0,0,0,0,0],30)")
-# m.send_command("send_angle(1,100,30)")
-print(m.send_command("get_coords"))
-# print(m.send_command("get_coords"))
-# m.send_command("send_coords([59.2,-52.4,231.5,169.03,15.64,-91.2],20,1)")
-# print(m.send_command(
-#     "is_in_position([59.2,-52.4,231.5,169.03,15.64,-91.2],1)"))
-# m.send_command("jog_coord(1,0,20)")
-# print(m.send_command("release_servo(2)"))
-# m.send_command("sync_send_angles([0,0,0,0,0,0],30)")
-# m.send_command("sync_send_angles([100,0,0,0,0,0],30)")
-# m.send_command(
-#     "sync_send_coords([59.2,-52.4,231.5,169.03,15.64,-91.2],30,1)")
-# m.send_command(
-#     "sync_send_coords([53,53,412,-90.7,-1.5,12.67],30,1)")
-# print(m.send_command("is_in_position([53,53,412,-90.7,-1.5,12.67],1)"))
+from pymycobot import MyCobotSocket
+
+mc = MyCobotSocket("192.168.10.10", "/dev/ttyAMA0")
+
+print(mc.get_angles())
+# mc.power_on()
+# mc.power_off()
+# mc.sync_send_angles([-0.08, 71.27, -116.27, 19.77, 7.55, -1.23], 20)
+# mc.sync_send_angles([-1.05, -7.29, 1.4, -49.39, 7.55, -1.23], 20)
+# print(mc.is_controller_connected())
+# print(mc.release_all_servos())
+# print(mc.get_angles())
+# mc.send_angle(1, 100, 20)
+# print(mc.get_coords())
+# mc.send_coords([180.4, -55.1, 210.1, -172.81, 7.32, -86.97], 20, 1)
+# print(mc.jog_angle(1, 1, 20))

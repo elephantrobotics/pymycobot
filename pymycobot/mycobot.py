@@ -83,7 +83,7 @@ class MyCobot(MyCobotCommandGenerator):
             if genre in [
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,
+                ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
                 ProtocolCode.IS_IN_POSITION,
                 ProtocolCode.IS_MOVING,
                 ProtocolCode.IS_SERVO_ENABLE,

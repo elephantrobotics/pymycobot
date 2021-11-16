@@ -128,41 +128,43 @@ class DataProcessor(object):
             ]
         )
 
-    def _is_frame_header(self, data, pos):
-        return data[pos] == ProtocolCode.HEADER and data[pos + 1] == ProtocolCode.HEADER
+    def _is_frame_header(self, data, pos1, pos2):
+        return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre):
         if not data:
             return []
-
+        # print(data)
         data = bytearray(data)
         data_len = len(data)
         # Get valid header: 0xfe0xfe
-        for idx in range(data_len - 1):
-            if self._is_frame_header(data, idx):
-                data_len = data[idx + 2] - 2
-                if data_len > 0:
+        header_i, header_j = 0, 1
+        while header_j < data_len-4:
+            if self._is_frame_header(data, header_i, header_j):
+                cmd_id = data[header_i + 3]
+                # compare send header and received header
+                if cmd_id == genre:
                     break
+            header_i += 1
+            header_j += 1
         else:
             return []
+        data_len = data[header_i + 2] - 2
         unique_data = [ProtocolCode.GET_BASIC_INPUT,
                        ProtocolCode.GET_DIGITAL_INPUT]
-        # compare send header and received header
-        cmd_id = data[idx + 3]
-        if cmd_id != genre:
-            return []
+
         if cmd_id in unique_data:
-            data_pos = idx + 5
+            data_pos = header_i + 5
             data_len -= 1
         else:
-            data_pos = idx + 4
+            data_pos = header_i + 4
         valid_data = data[data_pos: data_pos + data_len]
 
         # process valid data
         res = []
         if data_len == 12 or data_len == 8:
-            for idx in range(0, len(valid_data), 2):
-                one = valid_data[idx: idx + 2]
+            for header_i in range(0, len(valid_data), 2):
+                one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
         elif data_len == 2:
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:
@@ -176,12 +178,16 @@ class DataProcessor(object):
         return data[0] if data else -1
 
 
-def write(self, command):
-    self.log.debug("_write: {}".format(command))
-
-    self._serial_port.write(command)
-    self._serial_port.flush()
-    time.sleep(0.05)
+def write(self, command, method=None):
+    if method == "socket":
+        self.sock.sendall(str(command).encode())
+        data = self.sock.recv(1024)
+        return data
+    else:
+        self.log.debug("_write: {}".format(command))
+        self._serial_port.write(command)
+        self._serial_port.flush()
+        time.sleep(0.05)
 
 
 def read(self):
