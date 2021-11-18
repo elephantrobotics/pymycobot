@@ -3,6 +3,7 @@
 from __future__ import division
 import time
 import struct
+import json
 
 
 class ProtocolCode(object):
@@ -88,7 +89,7 @@ class DataProcessor(object):
 
     def _encode_int16(self, data):
         if isinstance(data, int):
-            return list(struct.pack(">h", data))
+            return [ord(i) if isinstance(i, str) else i for i in list(struct.pack(">h", data))]
         else:
             return sum([list(struct.pack('>h', elem)) for elem in data], [])
 

@@ -1,6 +1,6 @@
 from pymycobot import MyCobotSocket
 
-mc = MyCobotSocket("192.168.10.10", "/dev/ttyAMA0")
+mc = MyCobotSocket("192.168.10.10", "9000")
 
 print(mc.get_angles())
 # mc.power_on()

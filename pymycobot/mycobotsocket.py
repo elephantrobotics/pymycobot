@@ -48,7 +48,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
     _write = write
     _read = read
 
-    def __init__(self, ip, port, baudrate="1000000", timeout='0.1'):
+    def __init__(self, ip, netport, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
         """
         Args:
             port     : port string
@@ -62,7 +62,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
         # 端口号
         self.SERVER_PORT = 9000
         self.sock = self.connect()
-        self._write(port, "socket")
+        self._write(serialport, "socket")
         self._write(baudrate, "socket")
         self._write(timeout, "socket")
 
@@ -168,24 +168,12 @@ class MyCobotSocket(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    # Basic for raspberry pi.
-    def gpio_init(self):
-        """Init GPIO module.
-        Raspberry Pi version need this.
-        """
-        import RPi.GPIO as GPIO  # type: ignore
-
-        GPIO.setmode(GPIO.BCM)
-        self.gpio = GPIO
-
-    def gpio_output(self, pin, v):
+    def pub_pump(self, v):
         """Set GPIO output value.
         Args:
-            pin: port number(int).
-            v: Output value(int), 1 - GPIO.HEIGH, 0 - GPIO.LOW
+            v: Output value(int), 1 - pump close, 0 - pump open
         """
-        self.gpio.setup(pin, self.gpio.OUT)
-        self.gpio.output(pin, v)
+        self._write(v, "socket")
 
     # Other
     def wait(self, t):
