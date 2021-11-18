@@ -14,8 +14,7 @@ test_test.py
 .history
 *.bat
 .VSCodeCounter
-.vscode/.ropeproject/config.py
-.vscode/.ropeproject/objectdb
+.vscode/
 
 *.pyc
 __pycache__/port.cpython-39.pyc
