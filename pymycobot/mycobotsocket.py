@@ -192,7 +192,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
         """Set state of GPIO pin
         Args:
             pin_no: (int)
-            state: (int) 0 --> GPIO..HIGH  1 --> GPIO.LOW
+            state: (int) 0 --> GPIO.HIGH  1 --> GPIO.LOW
         """
         return self._mesg(ProtocolCode.SET_GPIO_OUTPUT, pin_no, state)
 

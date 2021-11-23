@@ -20,7 +20,7 @@ __all__ = [
     "MyCobotSocket"
 ]
 
-__version__ = "2.7.1b1"
+__version__ = "2.7.1"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

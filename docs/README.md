@@ -79,6 +79,12 @@ We support Python2, Python3.5 or later.
   - [MyCobotSocket](#mycobotsocket)
     - [Client](#client)
     - [Server](#server)
+  - [socket control](#socket-control)
+    - [connect](#connect)
+    - [set_gpio_mode](#set_gpio_mode)
+    - [set_gpio_out](#set_gpio_out)
+    - [set_gpio_output](#set_gpio_output)
+    - [get_gpio_in](#get_gpio_in)
 
 <!-- vim-markdown-toc -->
 </details>
@@ -755,7 +761,9 @@ Use TCP/IP to control the robotic arm
 # demo
 from pymycobot import MyCobotSocket
 # Port 9000 is used by default
-mc = MyCobotSocket("192.168.10.10","/dev/ttyAMA0","1000000")
+mc = MyCobotSocket("192.168.10.10","9000")
+
+mc.connect("/dev/ttyAMA0","1000000")
 
 res = mc.get_angles()
 print(res)
@@ -769,6 +777,88 @@ mc.send_angles([0,0,0,0,0,0],20)
 
 Server file is in the demo folder
 
----
 
+## socket control
+
+> Note:
+> Most of the methods are the same as the class mycobot, only the new methods are listed here.
+
+### connect
+
+- **Prototype**: `connect(serialport, baudrate, timeout)`
+
+- **Description**: Connect the robot arm through the serial port and baud rate
+
+- **Parameters**
+
+  - `serialport`: (`str`) default `/dev/ttyAMA0`.
+  - `baudrate`: default `1000000`.
+  - `timeout`: default `0.1`.
+
+### set_gpio_mode
+
+- **Prototype**: `set_gpio_mode(mode)`
+
+- **Description**: Set pin coding method.
+
+- **Parameters**
+
+  - `mode` (`str`) "BCM" or "BOARD".
+
+### set_gpio_out
+
+- **Prototype**: `set_gpio_out(pin_no, mode)`
+
+- **Description**: Set the pin as input or output.
+
+- **Parameters**
+
+  - `pin_no` (`int`) pin id.
+  - `mode` (`str`) "in" or "out"
+
+### set_gpio_output
+
+- **Prototype**: `set_gpio_output(pin_no, state)`
+
+- **Description**: Set the pin to high or low level.
+
+- **Parameters**
+
+  - `pin_no` (`int`) pin id.
+  - `state` (`int`) 0 or 1
+
+### get_gpio_in
+
+- **Prototype**: `get_gpio_in(pin_no)`
+
+- **Description**: Get pin level status.
+
+- **Parameters**
+
+  - `pin_no` (`int`) pin id.
+
+
+```python
+# Set up the demo of the suction pump
+import time
+from pymycobot import MyCobotSocket
+# connect server
+m = MyCobotSocket("192.168.10.10", '9000')
+# default serialport:/dev/ttyAMA0 Baudrate:1000000
+m.connect()
+
+m.set_gpio_mode("BCM")
+m.set_gpio_out(20, "out")
+m.set_gpio_out(21, "out")
+# open
+m.set_gpio_output(20, 0)
+m.set_gpio_output(21, 0)
+time.sleep(3)
+# close
+m.set_gpio_output(20, 1)
+m.set_gpio_output(21, 1)
+
+```
+
+---
 More demo can go to [here](../demo).
