@@ -71,5 +71,12 @@ def calibration_parameters(**kwargs):
         for i, v in enumerate(kwargs["rgb"]):
             if not (0 <= v <= 255):
                 raise MyCobotDataException(
-                    "The RGB value needs be 0 ~ 255, but the %s is %s" % (rgb_str[i], v)
+                    "The RGB value needs be 0 ~ 255, but the %s is %s" % (
+                        rgb_str[i], v)
                 )
+
+    if kwargs.get("gpiomode", None) is not None:
+        mode = kwargs["gpiomode"]
+        if mode not in ["BCM", "BOARD"]:
+            raise MyCobotDataException(
+                "'module' object has no attribute '%s',Available values are: 'BCM' or 'BOARD'" % (mode))

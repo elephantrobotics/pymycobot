@@ -59,7 +59,6 @@ class MyCobotSocket(MyCobotCommandGenerator):
         super(MyCobotSocket, self).__init__()
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
-        # 端口号
         self.SERVER_PORT = 9000
         self.sock = self.connect()
         self._write(serialport, "socket")
@@ -68,7 +67,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
 
     def connect(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.SERVER_IP, self.SERVER_PORT))  # 打开链接
+        sock.connect((self.SERVER_IP, self.SERVER_PORT))
         return sock
 
     def _mesg(self, genre, *args, **kwargs):
@@ -87,7 +86,6 @@ class MyCobotSocket(MyCobotCommandGenerator):
             MyCobotSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         data = self._write(self._flatten(real_command), "socket")
-
         if data != b'None':
             res = self._process_received(data, genre)
             if genre in [
@@ -168,12 +166,42 @@ class MyCobotSocket(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    def pub_pump(self, v):
-        """Set GPIO output value.
+    def set_gpio_mode(self, mode):
+        """Set GPIO mode
         Args:
-            v: Output value(int), 1 - pump close, 0 - pump open
+            mode: BCM or BOARD (str)
         """
-        self._write(v, "socket")
+        self.calibration_parameters(gpiomode=mode)
+        if mode == "BCM":
+            return self._mesg(ProtocolCode.SET_GPIO_MODE, 0)
+        else:
+            return self._mesg(ProtocolCode.SET_GPIO_MODE, 1)
+
+    def set_gpio_out(self, pin_no, mode):
+        """Equivalent to: GPIO.setup(pin_no, mode)
+        Args:
+            pin_no: (int)
+            mode: (str) in --> GPIO.IN  out --> GPIO.OUT 
+        """
+        if mode == "in":
+            return self._mesg(ProtocolCode.SET_GPIO_UP, pin_no, 0)
+        else:
+            return self._mesg(ProtocolCode.SET_GPIO_UP, pin_no, 1)
+
+    def set_gpio_output(self, pin_no, state):
+        """Set state of GPIO pin
+        Args:
+            pin_no: (int)
+            state: (int) 0 --> GPIO..HIGH  1 --> GPIO.LOW
+        """
+        return self._mesg(ProtocolCode.SET_GPIO_OUTPUT, pin_no, state)
+
+    def get_gpio_in(self, pin_no):
+        """Detect state of GPIO pin
+        Args:
+            pin_no: (int)
+        """
+        return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no)
 
     # Other
     def wait(self, t):

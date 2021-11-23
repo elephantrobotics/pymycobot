@@ -80,6 +80,12 @@ class ProtocolCode(object):
     SET_BASIC_OUTPUT = 0xA0
     GET_BASIC_INPUT = 0xA1
 
+    # Linux GPIO, mode: GPIO.BCM
+    SET_GPIO_MODE = 0xAA
+    SET_GPIO_UP = 0xAB
+    SET_GPIO_OUTPUT = 0xAC
+    GET_GPIO_IN = 0xAD
+
 
 class DataProcessor(object):
     # Functional approach
