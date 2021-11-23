@@ -48,24 +48,24 @@ class MyCobotSocket(MyCobotCommandGenerator):
     _write = write
     _read = read
 
-    def __init__(self, ip, netport, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
+    def __init__(self, ip, netport):
         """
         Args:
-            port     : port string
-            baudrate : baud rate string, default '115200'
-            timeout  : default 0.1
-            debug    : whether show debug info
+            ip: Server ip
+            netport: Server port
         """
         super(MyCobotSocket, self).__init__()
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = 9000
-        self.sock = self.connect()
+        self.sock = self.connect_socket()
+
+    def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
         self._write(serialport, "socket")
         self._write(baudrate, "socket")
         self._write(timeout, "socket")
 
-    def connect(self):
+    def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.SERVER_IP, self.SERVER_PORT))
         return sock
