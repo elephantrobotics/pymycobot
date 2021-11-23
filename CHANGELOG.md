@@ -1,5 +1,13 @@
 # ChangeLog for pymycobot
 
+## v2.7.1 (2021-11-23)
+
+- release v2.7.1
+- Refactor tcp/ip control method
+- Optimize tcp/ip control gpio
+- Fix the error of get_basic_input() again
+- Added instructions for using MyCobotSocket
+
 ## v2.7.0 (2021-11-15)
 
 - release v2.7.0

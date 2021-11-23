@@ -3,5 +3,6 @@
 
 from pymycobot import MyCobotSocket
 
-m = MyCobotSocket("192.168.10.10", "/dev/ttyAMA0", "1000000")
+m = MyCobotSocket("192.168.10.10", "9000")
+m.connect()
 print(m.get_coords())
