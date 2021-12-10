@@ -48,7 +48,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
     _write = write
     _read = read
 
-    def __init__(self, ip, netport):
+    def __init__(self, ip, netport=9000):
         """
         Args:
             ip: Server ip
@@ -57,7 +57,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
         super(MyCobotSocket, self).__init__()
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
-        self.SERVER_PORT = 9000
+        self.SERVER_PORT = netport
         self.sock = self.connect_socket()
 
     def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):

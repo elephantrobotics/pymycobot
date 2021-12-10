@@ -186,7 +186,7 @@ class DataProcessor(object):
 
 def write(self, command, method=None):
     if method == "socket":
-        self.sock.sendall(str(command).encode())
+        self.sock.sendall(bytes(command))
         data = self.sock.recv(1024)
         return data
     else:
