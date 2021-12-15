@@ -105,6 +105,10 @@ class MyCobotCommandGenerator(DataProcessor):
         """
         command_data = self._process_data_command(args)
 
+        if genre == 178:
+            # 修改wifi端口
+            command_data = self._encode_int16(command_data)
+
         LEN = len(command_data) + 2
         command = [
             ProtocolCode.HEADER,
@@ -117,7 +121,6 @@ class MyCobotCommandGenerator(DataProcessor):
 
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
-
         return real_command, has_reply
 
     # System status
@@ -525,3 +528,36 @@ class MyCobotCommandGenerator(DataProcessor):
             pin_no: pin port number.
         """
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no, has_reply=True)
+
+    def set_ssid_pwd(self, account, password):
+        """Set connected wifi account and password. (Apply to m5 or seeed)
+
+        Args:
+            return: (account, password)
+        """
+        self._mesg(ProtocolCode.SET_SSID_PWD)
+        return self._mesg(ProtocolCode.SET_SSID_PWD, account, password)
+
+    def get_ssid_pwd(self):
+        """Get connected wifi account and password. (Apply to m5 or seeed)
+
+        Args:
+            return: (account, password)
+        """
+        return self._mesg(ProtocolCode.GET_SSID_PWD, has_reply=True)
+
+    def set_server_port(self, port):
+        """Set server port. (Apply to m5 or seeed)
+
+        Args:
+            port: Set server port.
+        """
+        return self._mesg(ProtocolCode.SET_SERVER_PORT, port)
+
+    def get_tof_distance(self):
+        """Get the measured distance.
+
+        Args:
+            return: The unit is mm
+        """
+        return self._mesg(ProtocolCode.GET_TOF_DISTANCE)

@@ -103,6 +103,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
                 ProtocolCode.GET_SPEED,
                 ProtocolCode.GET_ENCODER,
                 ProtocolCode.GET_BASIC_INPUT,
+                ProtocolCode.GET_TOF_DISTANCE
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:

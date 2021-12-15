@@ -15,6 +15,7 @@ test_test.py
 *.bat
 .VSCodeCounter
 .vscode/
+*.sh
 
 *.pyc
 __pycache__/port.cpython-39.pyc

@@ -86,6 +86,14 @@ class ProtocolCode(object):
     SET_GPIO_OUTPUT = 0xAC
     GET_GPIO_IN = 0xAD
 
+    # set WIFI
+    SET_SSID_PWD = 0xB0
+    GET_SSID_PWD = 0xB1
+    SET_SERVER_PORT = 0xB2
+
+    # Get the measured distance
+    GET_TOF_DISTANCE = 0xC0
+
 
 class DataProcessor(object):
     # Functional approach
@@ -138,9 +146,11 @@ class DataProcessor(object):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre):
+        if genre == 177:
+            data = str(data)[2:-1].split(": ")
+            return data[1][0:-9], data[-1]
         if not data:
             return []
-        # print(data)
         data = bytearray(data)
         data_len = len(data)
         # Get valid header: 0xfe0xfe
@@ -186,8 +196,23 @@ class DataProcessor(object):
 
 def write(self, command, method=None):
     if method == "socket":
+        if command[3] == 176 and len(command) > 5:
+            command = "'"+command[4]+"'"+"("+command[5]+")"
+            command = command.encode()
         self.sock.sendall(bytes(command))
-        data = self.sock.recv(1024)
+        if command[-2] == 177:
+            while True:
+                data = self.sock.recv(1024)
+                if b'password' in data:
+                    break
+        if command[-2] == 192:
+            data = b''
+            while True:
+                data += self.sock.recv(1024)
+                if len(data) == 6:
+                    break
+        else:
+            data = self.sock.recv(1024)
         return data
     else:
         self.log.debug("_write: {}".format(command))
