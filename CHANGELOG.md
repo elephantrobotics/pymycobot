@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v2.7.2 (2021-12-15)
+
+- release v2.7.2
+- Added network communication and distance detection functions for m5 and seed versions
+
 ## v2.7.1 (2021-11-23)
 
 - release v2.7.1
