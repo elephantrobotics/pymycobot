@@ -530,10 +530,11 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no, has_reply=True)
 
     def set_ssid_pwd(self, account, password):
-        """Set connected wifi account and password. (Apply to m5 or seeed)
+        """Change connected wifi. (Apply to m5 or seeed)
 
         Args:
-            return: (account, password)
+            account: (str) new wifi account.
+            password: (str) new wifi password.
         """
         self._mesg(ProtocolCode.SET_SSID_PWD)
         return self._mesg(ProtocolCode.SET_SSID_PWD, account, password)

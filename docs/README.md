@@ -68,6 +68,10 @@ We support Python2, Python3.5 or later.
   - [Basic](#basic)
     - [get_basic_input](#get_basic_input)
     - [set_basic_output](#set_basic_output)
+    - [set_ssid_pwd](#set_ssid_pwd)
+    - [get_ssid_pwd](#get_ssid_pwd)
+    - [set_server_port](#set_server_port)
+    - [get_tof_distance](#get_tof_distance)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio_init](#gpio_init)
     - [gpio_output](#gpio_output)
@@ -670,6 +674,43 @@ from pymycobot import MyCobot
 
   - `pin_no` (`int`) Pin number.
   - `pin_signal` (`int`): 0 / 1
+
+### set_ssid_pwd
+
+- **Prototype**: `set_ssid_pwd(account, password)`
+
+- **Description**: Change connected wifi.(Apply to m5 or seeed)
+
+- **Parameters**
+
+  - `account` (`str`) new wifi account.
+  - `password` (`str`): new wifi password.
+
+### get_ssid_pwd
+
+- **Prototype**: `get_ssid_pwd()`
+
+- **Description**: Get connected wifi account and password.(Apply to m5 or seeed)
+
+- **Return**: `(account, password)`.
+
+### set_server_port
+
+- **Prototype**: `set_server_port(port)`
+
+- **Description**: Change the connection port of the server.
+
+- **Parameters**
+
+  - `port` (`int`) The new connection port of the server.
+
+### get_tof_distance
+
+- **Prototype**: `get_tof_distance()`
+
+- **Description**: Get the detected distance (Requires external distance detector).
+
+- **Return**: `int` The unit is mm.
 
 ## Raspberry pi -- GPIO
 
