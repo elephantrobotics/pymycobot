@@ -561,4 +561,4 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             return: The unit is mm
         """
-        return self._mesg(ProtocolCode.GET_TOF_DISTANCE)
+        return self._mesg(ProtocolCode.GET_TOF_DISTANCE, has_reply=True)
