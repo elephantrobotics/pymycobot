@@ -80,7 +80,7 @@ We support Python2, Python3.5 or later.
 - [utils (Module)](#utils-module)
   - [get_port_list](#get_port_list)
   - [detect_port_of_basic](#detect_port_of_basic)
-  - [MyCobotSocket](#mycobotsocket)
+- [MyCobotSocket](#mycobotsocket)
     - [Client](#client)
     - [Server](#server)
   - [socket control](#socket-control)
@@ -89,6 +89,7 @@ We support Python2, Python3.5 or later.
     - [set_gpio_out](#set_gpio_out)
     - [set_gpio_output](#set_gpio_output)
     - [get_gpio_in](#get_gpio_in)
+  
 
 <!-- vim-markdown-toc -->
 </details>
@@ -788,10 +789,10 @@ from pymycobot import utils
   mycobot = MyCobot(port, 115200)
   ```
 
-## MyCobotSocket
+# MyCobotSocket
 
 > Note:
-> Only supports python3
+> raspberryPi version Only supports python3
 > The robotic arm that uses this class of premise has a server and has been turned on.
 
 Use TCP/IP to control the robotic arm

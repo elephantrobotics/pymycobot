@@ -1,6 +1,11 @@
 # ChangeLog for pymycobot
 
-## v2.7.2.1 (2021-12-15)
+## v2.7.4 (2021-12-15)
+
+- release v2.7.4
+- Fix m5 network communication bug
+
+## v2.7.3 (2021-12-15)
 
 - release v2.7.3
 - fix get_tof_distance() no return problem.

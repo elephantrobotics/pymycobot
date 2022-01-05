@@ -58,9 +58,18 @@ class MyCobotSocket(MyCobotCommandGenerator):
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
+        self.rasp = False
         self.sock = self.connect_socket()
 
     def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
+        """Interface to connect to the built-in system such as Raspberry Pi
+        Args:
+            serialport: 
+            baudrate: 
+            timeout:
+        
+        """
+        self.rasp = True
         self._write(serialport, "socket")
         self._write(baudrate, "socket")
         self._write(timeout, "socket")
@@ -86,7 +95,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
             MyCobotSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         data = self._write(self._flatten(real_command), "socket")
-        if data != b'None':
+        if data:
             res = self._process_received(data, genre)
             if genre in [
                 ProtocolCode.IS_POWER_ON,

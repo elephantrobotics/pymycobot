@@ -196,23 +196,31 @@ class DataProcessor(object):
 
 def write(self, command, method=None):
     if method == "socket":
-        if command[3] == 176 and len(command) > 5:
+        data = b""
+        if len(command)>3 and command[3] == 176 and len(command) > 5:
             command = "'"+command[4]+"'"+"("+command[5]+")"
             command = command.encode()
-        self.sock.sendall(bytes(command))
-        if command[-2] == 177:
+        if self.rasp:
+            self.sock.sendall(str(command).encode())
+        else:
+            self.sock.sendall(bytes(command))
+        
+        if len(command) > 3 and command[3] == 177:
             while True:
                 data = self.sock.recv(1024)
                 if b'password' in data:
                     break
-        if command[-2] == 192:
-            data = b''
+        elif len(command) > 3 and command[3] == 192:
             while True:
                 data += self.sock.recv(1024)
                 if len(data) == 6:
                     break
         else:
-            data = self.sock.recv(1024)
+            try:
+                self.sock.settimeout(0.1)
+                data = self.sock.recv(1024)
+            except:
+                data = b''
         return data
     else:
         self.log.debug("_write: {}".format(command))
