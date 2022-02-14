@@ -32,7 +32,10 @@ def get_logger(name):
 class MycobotServer(object):
 
     def __init__(self, host, port):
-        GPIO.setwarnings(False)
+        try:
+            GPIO.setwarnings(False)
+        except:
+            pass
         self.logger = get_logger("AS")
         self.mc = None
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
