@@ -11,7 +11,7 @@ class ProtocolCode(object):
     FOOTER = 0xFA
 
     # System status
-    VERSION = 0x00
+    VERSION = 0x01
 
     # Overall status
     POWER_ON = 0x10
