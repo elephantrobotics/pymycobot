@@ -132,6 +132,7 @@ class MyCobotCommandGenerator(DataProcessor):
             mycobotPro: 101
         """
         return self._process_single(self._mesg(ProtocolCode.VERSION, has_reply=True))
+
     # Overall status
     def power_on(self):
         """Open communication with Atom."""
