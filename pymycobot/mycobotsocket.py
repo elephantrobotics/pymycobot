@@ -98,6 +98,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
         if data:
             res = self._process_received(data, genre)
             if genre in [
+                ProtocolCode.VERSION,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
                 ProtocolCode.IS_PAUSED,

@@ -123,6 +123,7 @@ class MyPalletizer(MyCobotCommandGenerator):
             data = self._read()
             res = self._process_received(data, genre)
             if genre in [
+                ProtocolCode.VERSION,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
                 ProtocolCode.IS_PAUSED,
