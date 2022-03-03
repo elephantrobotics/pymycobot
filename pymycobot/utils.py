@@ -10,7 +10,11 @@ except ImportError:
 
 def get_port_list():
     # type:() -> list
-    """Get all serial port string."""
+    """Get all the serial port string.
+
+    Return:
+        serial port list(list)
+    """
     return [p.device for p in comports()]
 
 
