@@ -62,11 +62,11 @@ class MyCobotSocket(MyCobotCommandGenerator):
         self.sock = self.connect_socket()
 
     def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
-        """Interface to connect to the built-in system such as Raspberry Pi
+        """Connect the robot arm through the serial port and baud rate
         Args:
-            serialport: 
-            baudrate: 
-            timeout:
+            serialport: (str) default /dev/ttyAMA0
+            baudrate: default 1000000
+            timeout: default 0.1
         
         """
         self.rasp = True
@@ -177,9 +177,9 @@ class MyCobotSocket(MyCobotCommandGenerator):
         return self
 
     def set_gpio_mode(self, mode):
-        """Set GPIO mode
+        """Set pin coding method
         Args:
-            mode: BCM or BOARD (str)
+            mode: (str) BCM or BOARD 
         """
         self.calibration_parameters(gpiomode=mode)
         if mode == "BCM":
@@ -188,10 +188,10 @@ class MyCobotSocket(MyCobotCommandGenerator):
             return self._mesg(ProtocolCode.SET_GPIO_MODE, 1)
 
     def set_gpio_out(self, pin_no, mode):
-        """Equivalent to: GPIO.setup(pin_no, mode)
+        """Set the pin as input or output
         Args:
-            pin_no: (int)
-            mode: (str) in --> GPIO.IN  out --> GPIO.OUT 
+            pin_no: (int) pin id
+            mode: (str) "in" or "out"
         """
         if mode == "in":
             return self._mesg(ProtocolCode.SET_GPIO_UP, pin_no, 0)
@@ -199,17 +199,17 @@ class MyCobotSocket(MyCobotCommandGenerator):
             return self._mesg(ProtocolCode.SET_GPIO_UP, pin_no, 1)
 
     def set_gpio_output(self, pin_no, state):
-        """Set state of GPIO pin
+        """Set the pin to high or low level
         Args:
-            pin_no: (int)
-            state: (int) 0 --> GPIO.HIGH  1 --> GPIO.LOW
+            pin_no: (int) pin id.
+            state: (int) 0 or 1
         """
         return self._mesg(ProtocolCode.SET_GPIO_OUTPUT, pin_no, state)
 
     def get_gpio_in(self, pin_no):
-        """Detect state of GPIO pin
+        """Get pin level status.
         Args:
-            pin_no: (int)
+            pin_no: (int) pin id.
         """
         return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no)
 

@@ -120,20 +120,20 @@ class MyCobot(MyCobotCommandGenerator):
         return None
 
     def get_radians(self):
-        """Get all angle return a list
+        """Get the radians of all joints
 
         Return:
-            data_list (list[radian...]):
+            list: A list of float radians [radian1, ...]
         """
         angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
         return [round(angle * (math.pi / 180), 3) for angle in angles]
 
     def send_radians(self, radians, speed):
-        """Send all angles
+        """Send the radians of all joints to robot arm
 
         Args:
-            radians (list): example [0, 0, 0, 0, 0, 0]
-            speed (int): 0 ~ 100
+            radians: a list of radian values( List[float]), length 6
+            speed: (int )0 ~ 100
         """
         calibration_parameters(len6=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
@@ -141,6 +141,13 @@ class MyCobot(MyCobotCommandGenerator):
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
     def sync_send_angles(self, degrees, speed, timeout=7):
+        """Send the angle in synchronous state and return when the target point is reached
+            
+        Args:
+            degrees: a list of degree values(List[float]), length 6.
+            speed: (int) 0 ~ 100
+            timeout: default 7s.
+        """
         t = time.time()
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
@@ -151,6 +158,14 @@ class MyCobot(MyCobotCommandGenerator):
         return self
 
     def sync_send_coords(self, coords, speed, mode, timeout=7):
+        """Send the coord in synchronous state and return when the target point is reached
+            
+        Args:
+            coords: a list of coord values(List[float])
+            speed: (int) 0 ~ 100
+            mode: (int): 0 - angular, 1 - linear
+            timeout: default 7s.
+        """
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
@@ -161,9 +176,7 @@ class MyCobot(MyCobotCommandGenerator):
 
     # Basic for raspberry pi.
     def gpio_init(self):
-        """Init GPIO module.
-        Raspberry Pi version need this.
-        """
+        """Init GPIO module, and set BCM mode."""
         import RPi.GPIO as GPIO  # type: ignore
 
         GPIO.setmode(GPIO.BCM)
@@ -171,9 +184,10 @@ class MyCobot(MyCobotCommandGenerator):
 
     def gpio_output(self, pin, v):
         """Set GPIO output value.
+
         Args:
-            pin: port number(int).
-            v: Output value(int), 1 - GPIO.HEIGH, 0 - GPIO.LOW
+            pin: (int)pin number.
+            v: (int) 0 / 1
         """
         self.gpio.setup(pin, self.gpio.OUT)
         self.gpio.output(pin, v)
