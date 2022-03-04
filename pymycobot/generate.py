@@ -218,9 +218,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send one coord to robot arm. 
 
         Args:
-            id : coord id(genre.Coord), int 1-6
-            coord : coord value(float)
-            speed : (int) 0 ~ 100
+            id(int) : coord id(genre.Coord), 1 ~ 6
+            coord(float) : coord value, mm
+            speed(int) : 0 ~ 100
         """
         self.calibration_parameters(id=id, speed=speed)
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
@@ -248,6 +248,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Judge whether in the position.
 
         Args:
+            id: 1 - coords, 0 - angles
             data: A data list, angles or coords, length 6.
 
         Return:
@@ -331,8 +332,11 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set a single joint rotation to the specified potential value.
 
         Args:
-            joint_id: (int) 1 ~ 6
-            encoder: 0 ~ 4096
+            joint_id: 
+                for mycobot: Joint id 1 - 6
+                for mypalletizer: Joint id 1 - 4
+                for mycobot gripper: Joint id 7
+            encoder: The value of the set encoder.
         """
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
 
@@ -485,7 +489,8 @@ class MyCobotCommandGenerator(DataProcessor):
         """Power off designated servo
 
         Args:
-            servo_id: 1 ~ 6
+            for mycobot: servo_id: 1 - 6
+            for mypalletizer: servo_id: 1 - 4
         """
         return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
 
@@ -493,7 +498,8 @@ class MyCobotCommandGenerator(DataProcessor):
         """Power on designated servo
 
         Args:
-            servo_id: 1 ~ 6
+            for mycobot: servo_id: 1 - 6
+            for mypalletizer: servo_id: 1 - 4
         """
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
@@ -598,7 +604,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_basic_input(self, pin_no):
-        """Get bottom pin.
+        """Get basic input for M5 version.
 
         Args:
             pin_no: (int) pin port number.
