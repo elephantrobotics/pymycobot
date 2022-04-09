@@ -204,7 +204,7 @@ def write(self, command, method=None):
             self.sock.sendall(str(command).encode())
         else:
             self.sock.sendall(bytes(command))
-        
+
         if len(command) > 3 and command[3] == 177:
             while True:
                 data = self.sock.recv(1024)
@@ -230,6 +230,7 @@ def write(self, command, method=None):
 
 
 def read(self):
+    time.sleep(0.1)
     if self._serial_port.inWaiting() > 0:
         data = self._serial_port.read(self._serial_port.inWaiting())
         self.log.debug("_read: {}".format(data))
