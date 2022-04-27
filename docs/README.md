@@ -44,6 +44,8 @@ We support Python2, Python3.5 or later.
   - [Running status and Settings](#running-status-and-settings)
     - [get_speed](#get_speed)
     - [set_speed](#set_speed)
+    - [set_joint_min](#set_joint_min)
+    - [set_joint_max](#set_joint_max)
     - [get_joint_min_angle](#get_joint_min_angle)
     - [get_joint_max_angle](#get_joint_max_angle)
   - [Servo control](#servo-control)
@@ -65,13 +67,22 @@ We support Python2, Python3.5 or later.
     - [set_gripper_value](#set_gripper_value)
     - [set_gripper_ini](#set_gripper_ini)
     - [is_gripper_moving](#is_gripper_moving)
-  - [Basic](#basic)
     - [get_basic_input](#get_basic_input)
     - [set_basic_output](#set_basic_output)
     - [set_ssid_pwd](#set_ssid_pwd)
     - [get_ssid_pwd](#get_ssid_pwd)
     - [set_server_port](#set_server_port)
     - [get_tof_distance](#get_tof_distance)
+    - [get_tool_reference](#get_tool_reference)
+    - [set_tool_reference](#set_tool_reference)
+    - [set_world_reference](#set_world_reference)
+    - [get_world_reference](#get_world_reference)
+    - [set_reference_frame](#set_reference_frame)
+    - [get_reference_frame](#get_reference_frame)
+    - [set_movement_type](#set_movement_type)
+    - [get_movement_type](#get_movement_type)
+    - [set_end_type](#set_end_type)
+    - [get_movement_type](#get_movement_type-1)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio_init](#gpio_init)
     - [gpio_output](#gpio_output)
@@ -453,6 +464,24 @@ from pymycobot import MyCobot
 
 - **Parameters**: speed: (`int`) 0 ~ 100
 
+### set_joint_min
+
+- **Prototype**: `set_joint_min(id, angle)`
+- **Description**: Sets the minimum angle for the specified joint.
+
+- **Parameters**: 
+  - `id`: (`int`) joint id 1-6.
+  - `angle`: 0 - 180.
+
+### set_joint_max
+
+- **Prototype**: `set_joint_max(id, angle)`
+- **Description**: Sets the maximum angle of the specified joint.
+
+- **Parameters**: 
+  - `id`: (`int`) joint id 1-6.
+  - `angle`: 0 - 180.
+
 ### get_joint_min_angle
 
 - **Prototype**: `get_joint_min_angle()`
@@ -651,8 +680,6 @@ from pymycobot import MyCobot
   - `1` : is moving
   - `-1`: error data
 
-## Basic
-
 ### get_basic_input
 
 - **Prototype**: `get_basic_input(pin_no)`
@@ -703,7 +730,7 @@ from pymycobot import MyCobot
 
 - **Parameters**
 
-  - `port` (`int`) The new connection port of the server.
+  - `port`: (`int`) The new connection port of the server.
 
 ### get_tof_distance
 
@@ -712,6 +739,99 @@ from pymycobot import MyCobot
 - **Description**: Get the detected distance (Requires external distance detector).
 
 - **Return**: `int` The unit is mm.
+
+### get_tool_reference
+
+- **Prototype**: `get_tool_reference()`
+
+- **Description**: Get tool coordinate system.
+
+- **Return**: `list` [x, y, z, rx, ry, rz].
+
+### set_tool_reference
+
+- **Prototype**: `set_tool_reference(coords)`
+
+- **Description**: Set tool coordinate system.
+
+- **Parameters**:
+  - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+### set_world_reference
+
+- **Prototype**: `set_world_reference(coords)`
+
+- **Description**: Set world coordinate system.
+
+- **Parameters**:
+  - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+### get_world_reference
+
+- **Prototype**: `get_world_reference()`
+
+- **Description**: Get world coordinate system.
+
+- **Return**: `list` [x, y, z, rx, ry, rz].
+
+### set_reference_frame
+
+- **Prototype**: `set_reference_frame(rftype)`
+
+- **Description**: Set base coordinate system.
+
+- **Parameters**:
+  - `rftype`: 0 - base 1 - tool.
+
+### get_reference_frame
+
+- **Prototype**: `get_reference_frame()`
+
+- **Description**: Get base coordinate system.
+
+- **Return**: 0 - base 1 - tool.
+
+### set_movement_type
+
+- **Prototype**: `set_movement_type(move_type)`
+
+- **Description**: Set movement type.
+
+- **Parameters**:
+  - `move_type`: 1 - movel, 0 - moveJ.
+
+### get_movement_type
+
+- **Prototype**: `get_movement_type()`
+
+- **Description**: Get movement type.
+
+- **Return**: 1 - movel, 0 - moveJ.
+
+### set_end_type
+
+- **Prototype**: `set_end_type(end)`
+
+- **Description**: Set end coordinate system.
+
+- **Parameters**:
+  - `end`:  0 - flange, 1 - tool.
+
+### get_movement_type
+
+- **Prototype**: `get_movement_type()`
+
+- **Description**: Get movement type.
+
+- **Return**: 0 - flange, 1 - tool.
+
+<!-- ### get_plan_speed
+
+- **Prototype**: `get_movement_type()`
+
+- **Description**: Get movement type.
+
+- **Return**: 0 - flange, 1 - tool. -->
 
 ## Raspberry pi -- GPIO
 

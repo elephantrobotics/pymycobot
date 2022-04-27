@@ -53,6 +53,8 @@ class ProtocolCode(object):
     GET_ACCELERATION = 0x44
     GET_JOINT_MIN_ANGLE = 0x4A
     GET_JOINT_MAX_ANGLE = 0x4B
+    SET_JOINT_MIN = 0x4C
+    SET_JOINT_MAX = 0x4D
 
     # SERVO CONTROL
     IS_SERVO_ENABLE = 0x50
@@ -93,7 +95,31 @@ class ProtocolCode(object):
 
     # Get the measured distance
     GET_TOF_DISTANCE = 0xC0
-
+    
+    # Coordinate transformation
+    SET_TOOL_REFERENCE = 0x81
+    GET_TOOL_REFERENCE = 0x82
+    SET_WORLD_REFERENCE = 0x83
+    GET_WORLD_REFERENCE = 0x84
+    SET_REFERENCE_FRAME = 0x85
+    GET_REFERENCE_FRAME = 0x86
+    SET_MOVEMENT_TYPE = 0x87
+    GET_MOVEMENT_TYPE = 0x88
+    SET_END_TYPE = 0x89
+    GET_END_TYPE = 0x8A
+    
+    # planning speed
+    GET_PLAN_SPEED = 0xD0
+    GET_PLAN_ACCELERATION = 0xD1
+    SET_PLAN_SPEED = 0xD2
+    SET_PLAN_ACCELERATION = 0xD3
+    
+    # Motor status read
+    GET_SERVO_SPEED = 0xE1
+    GET_SERVO_CURRENTS = 0xE2
+    GET_SERVO_VOLTAGES = 0xE3
+    GET_SERVO_STATUS = 0xE4
+    GET_SERVO_TEMPS = 0xE5
 
 class DataProcessor(object):
     # Functional approach
@@ -183,10 +209,19 @@ class DataProcessor(object):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
         elif data_len == 2:
+            if genre in [ProtocolCode.GET_PLAN_SPEED, ProtocolCode.GET_PLAN_ACCELERATION]:
+                return [self._decode_int8(valid_data[0:1]), self._decode_int8(valid_data[1:])]
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
             res.append(self._decode_int16(valid_data))
+        elif data_len == 3:
+            res.append(self._decode_int16(valid_data[1:]))
         else:
+            if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS]:
+                for i in range(data_len):
+                    data1 = self._decode_int8(valid_data[i:i+1])
+                    res.append(256+data1 if data1 <0 else data1)
+                return res
             res.append(self._decode_int8(valid_data))
         return res
 

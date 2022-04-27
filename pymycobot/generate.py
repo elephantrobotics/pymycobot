@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from shutil import move
 import sys
 import logging
 
@@ -108,6 +109,9 @@ class MyCobotCommandGenerator(DataProcessor):
         if genre == 178:
             # 修改wifi端口
             command_data = self._encode_int16(command_data)
+            
+        if genre in [76, 77]:
+            command_data = [command_data[0]] + self._encode_int16(command_data[1])
 
         LEN = len(command_data) + 2
         command = [
@@ -644,3 +648,161 @@ class MyCobotCommandGenerator(DataProcessor):
             (int) The unit is mm.
         """
         return self._mesg(ProtocolCode.GET_TOF_DISTANCE, has_reply=True)
+    
+    def set_tool_reference(self, coords):
+        """Set tool coordinate system
+        
+        Args:
+            coords: a list of coords value(List[float]), length 6.
+                for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+        """
+        self.calibration_parameters(coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_TOOL_REFERENCE, coord_list)
+    
+    def get_tool_reference(self):
+        """Get tool coordinate system """
+        return self._mesg(ProtocolCode.GET_TOOL_REFERENCE, has_reply=True)
+    
+    def set_world_reference(self, coords):
+        """Set the world coordinate system
+        Args:
+            coords: a list of coords value(List[float]), length 6.
+                for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+        """
+        self.calibration_parameters(coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
+    
+    def get_world_reference(self):
+        """Get the world coordinate system"""
+        return self._mesg(ProtocolCode.GET_WORLD_REFERENCE, has_reply=True)
+    
+    def set_reference_frame(self, rftype):
+        """Set the base coordinate system
+        
+        Args:
+            rftype: 0 - base 1 - tool.
+        """
+        return self._mesg(ProtocolCode.SET_REFERENCE_FRAME, rftype)
+    
+    def get_reference_frame(self):
+        """Get the base coordinate system
+        
+        Args:
+            Return: 0 - base 1 - tool.
+        """
+        return self._mesg(ProtocolCode.GET_REFERENCE_FRAME, has_reply=True)
+    
+    def set_movement_type(self, move_type):
+        """Set movement type
+        
+        Args:
+            move_type: 1 - movel, 0 - moveJ
+        """
+        return self._mesg(ProtocolCode.SET_MOVEMENT_TYPE, move_type)
+
+    def get_movement_type(self):
+        """Get movement type
+        
+        Args:
+            Return: 1 - movel, 0 - moveJ
+        """
+        return self._mesg(ProtocolCode.GET_MOVEMENT_TYPE, has_reply=True)
+    
+    def set_end_type(self, end):
+        """Set end coordinate system
+        
+        Args:
+            end: 0 - flange, 1 - tool
+        """
+        return self._mesg(ProtocolCode.SET_END_TYPE, end)
+    
+    def get_end_type(self):
+        """Get end coordinate system
+        
+        Args:
+            Return: 0 - flange, 1 - tool
+        """
+        return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
+        
+    
+    def get_plan_speed(self):
+        """Get planning speed
+        
+        Args:
+            return: [movel planning speed, movej planning speed].
+        """
+        return self._mesg(ProtocolCode.GET_PLAN_SPEED, has_reply=True)
+    
+    def get_plan_acceleration(self):
+        """Get planning acceleration
+        
+        Args:
+            return: [movel planning acceleration, movej planning acceleration].
+        """
+        return self._mesg(ProtocolCode.GET_PLAN_ACCELERATION, has_reply=True)
+    
+    def set_plan_speed(self, speed, is_linear):
+        """Set planning speed
+        
+        Args:
+            speed (int): (0 ~ 100).
+            is_linear: 0 -> joint 1 -> straight line
+        """
+        return self._mesg(ProtocolCode.SET_PLAN_SPEED, speed, is_linear)
+    
+    def set_plan_acceleration(self, acceleration, is_linear):
+        """Set planning acceleration
+        
+        Args:
+            acceleration (int): (0 ~ 100).
+            is_linear: 0 -> joint 1 -> straight line
+        """
+        return self._mesg(ProtocolCode.SET_PLAN_ACCELERATION, acceleration, is_linear)
+    
+    def get_servo_speed(self):
+        """Get joint speed (Only for mycobot 350)"""
+        return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
+    
+    def get_servo_currents(self):
+        """Get joint current (Only for mycobot 350)"""
+        return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
+    
+    def get_servo_voltages(self):
+        """Get joint voltages (Only for mycobot 350)"""
+        return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, has_reply=True)
+
+    def get_servo_status(self):
+        """Get joint status (Only for mycobot 350)"""
+        return self._mesg(ProtocolCode.GET_SERVO_STATUS, has_reply=True)
+
+    def get_servo_temps(self):
+        """Get joint temperature (Only for mycobot 350)"""
+        return self._mesg(ProtocolCode.GET_SERVO_TEMPS, has_reply=True)
+    
+    def set_joint_max(self, id, angle):
+        """Set the joint maximum angle
+        
+        Args:
+            id: 1 - 6
+            angle: 0 ~ 180 
+        """
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
+    
+    def set_joint_min(self, id, angle):
+        """Set the joint minimum angle
+        
+        Args:
+            id: 1 - 6
+            angle: 0 ~ 180 
+        """
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
