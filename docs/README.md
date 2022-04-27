@@ -82,7 +82,16 @@ We support Python2, Python3.5 or later.
     - [set_movement_type](#set_movement_type)
     - [get_movement_type](#get_movement_type)
     - [set_end_type](#set_end_type)
-    - [get_movement_type](#get_movement_type-1)
+    - [get_end_type](#get_end_type)
+    - [get_plan_speed](#get_plan_speed)
+    - [get_plan_acceleration](#get_plan_acceleration)
+    - [set_plan_speed](#set_plan_speed)
+    - [set_plan_acceleration](#set_plan_acceleration)
+    - [get_servo_speeds](#get_servo_speeds)
+    - [get_servo_currents](#get_servo_currents)
+    - [get_servo_voltages](#get_servo_voltages)
+    - [get_servo_status](#get_servo_status)
+    - [get_servo_temps](#get_servo_temps)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio_init](#gpio_init)
     - [gpio_output](#gpio_output)
@@ -817,21 +826,91 @@ from pymycobot import MyCobot
 - **Parameters**:
   - `end`:  0 - flange, 1 - tool.
 
-### get_movement_type
+### get_end_type
 
-- **Prototype**: `get_movement_type()`
+- **Prototype**: `get_end_type()`
 
-- **Description**: Get movement type.
+- **Description**: Get end coordinate system.
 
 - **Return**: 0 - flange, 1 - tool.
 
-<!-- ### get_plan_speed
+### get_plan_speed
 
-- **Prototype**: `get_movement_type()`
+- **Prototype**: `get_plan_speed()`
 
-- **Description**: Get movement type.
+- **Description**: Get planning speed.
 
-- **Return**: 0 - flange, 1 - tool. -->
+- **Return**: [ `movel planning speed`, `movej planning speed`].
+
+### get_plan_acceleration
+
+- **Prototype**: `get_plan_acceleration()`
+
+- **Description**: Get planning acceleration.
+
+- **Return**: [ `movel planning acceleration`, `movej planning acceleration`].
+
+### set_plan_speed
+
+- **Prototype**: `set_plan_speed(speed, is_linear)`
+
+- **Description**: Set planning speed.
+
+- **Parameters**
+
+  - `speed` (`int`) 0 - 100.
+  - `is_linear` (`int`): 0 / 1 (0 ->joint, 1 -> line)
+
+### set_plan_acceleration
+
+- **Prototype**: `set_plan_acceleration(acceleration, is_linear)`
+
+- **Description**: Set planning acceleration.
+
+- **Parameters**
+
+  - `acceleration` (`int`) 0 - 100.
+  - `is_linear` (`int`): 0 / 1 (0 ->joint, 1 -> line)
+
+### get_servo_speeds
+
+- **Prototype**: `get_servo_speeds()`
+
+- **Description**: Get joint velocity.
+
+- **Return**: `list` Speed of each joint.
+
+### get_servo_currents
+
+- **Prototype**: `get_servo_currents()`
+
+- **Description**: Get joint current.
+
+- **Return**: `list` Current of each joint.
+
+### get_servo_voltages
+
+- **Prototype**: `get_servo_voltages()`
+
+- **Description**: Get joint voltage.
+
+- **Return**: `list` Voltage of each joint.
+
+### get_servo_status
+
+- **Prototype**: `get_servo_status()`
+
+- **Description**: Get the state of each joint.
+
+- **Return**: `list` the state of each joint.
+
+### get_servo_temps
+
+- **Prototype**: `get_servo_temps()`
+
+- **Description**: Get the temperature of each joint.
+
+- **Return**: `list` temperature of each joint.
 
 ## Raspberry pi -- GPIO
 

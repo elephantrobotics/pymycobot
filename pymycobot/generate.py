@@ -769,7 +769,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_PLAN_ACCELERATION, acceleration, is_linear)
     
-    def get_servo_speed(self):
+    def get_servo_speeds(self):
         """Get joint speed (Only for mycobot 350)"""
         return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
     
