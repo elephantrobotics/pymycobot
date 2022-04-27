@@ -56,7 +56,12 @@ class MyCobot(MyCobotCommandGenerator):
         super(MyCobot, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
-        self._serial_port = serial.Serial(port, baudrate, timeout=timeout)
+        self._serial_port = serial.Serial()
+        self._serial_port.port = port
+        self._serial_port.baudrate = baudrate
+        self._serial_port.timeout = timeout
+        self._serial_port.rts = False
+        self._serial_port.open()
 
     _write = write
     _read = read
@@ -96,12 +101,17 @@ class MyCobot(MyCobotCommandGenerator):
                 ProtocolCode.GET_SPEED,
                 ProtocolCode.GET_ENCODER,
                 ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE
+                ProtocolCode.GET_TOF_DISTANCE,
+                ProtocolCode.GET_END_TYPE,
+                ProtocolCode.GET_MOVEMENT_TYPE,
+                ProtocolCode.GET_REFERENCE_FRAME,
+                ProtocolCode.GET_JOINT_MIN_ANGLE,
+                ProtocolCode.GET_JOINT_MAX_ANGLE
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS]:
+            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
                 if res:
                     r = []
                     for idx in range(3):
@@ -111,11 +121,7 @@ class MyCobot(MyCobotCommandGenerator):
                     return r
                 else:
                     return res
-            elif genre in [
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ]:
-                return self._int2angle(res[0]) if res else 0
+            
             else:
                 return res
         return None
