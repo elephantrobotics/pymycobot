@@ -121,7 +121,8 @@ class MyCobot(MyCobotCommandGenerator):
                     return r
                 else:
                     return res
-            
+            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+                return [self._int2coord(angle) for angle in res]
             else:
                 return res
         return None

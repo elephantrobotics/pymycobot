@@ -187,7 +187,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send one degree of joint to robot arm.
 
         Args:
-            id : Joint id(genre.Angle), int 1-6
+            id : Joint id(genre.Angle)\n
+                    For mycobot: int 1-6.\n
+                    For mypalletizer: int 1-4.
             degree : degree value(float)(about -170 ~ 170).
             speed : (int) 0 ~ 100
         """
@@ -199,9 +201,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send the degrees of all joints to robot arm.
 
         Args:
-            degrees : a list of degree values(List[float]), length 6.
-                example for mycobot [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                example for mypalletizer [0.0, 0.0, 0.0, 0.0]
+            degrees: a list of degree values(List[float]), length 6 or 4.\n
+                        for mycobot: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0].\n
+                        for mypalletizer: [0.0, 0.0, 0.0, 0.0]
             speed : (int) 0 ~ 100
         """
         self.calibration_parameters(degrees=degrees, speed=speed)
@@ -213,8 +215,8 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Return:
             list : A float list of coord 
-                for mycobot -[x, y, z, rx, ry, rz],
-                for mypalletizer -[x, y, z, θ]
+                for mycobot: [x, y, z, rx, ry, rz]\n
+                for mypalletizer: [x, y, z, θ]
         """
         return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
 
@@ -222,7 +224,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send one coord to robot arm. 
 
         Args:
-            id(int) : coord id(genre.Coord), 1 ~ 6
+            id(int) : coord id(genre.Coord)\n
+                        For mycobot: int 1-6.\n
+                        For mypalletizer: int 1-4.
             coord(float) : coord value, mm
             speed(int) : 0 ~ 100
         """
@@ -234,9 +238,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send all coords to robot arm.
 
         Args:
-            coords: a list of coords value(List[float]), length 6.
-                for mycobot :[x(mm), y, z, rx(angle), ry, rz]
-                for mypalletizer: [x, y, z, θ]
+            coords: a list of coords value(List[float]), length 6 or 4.
+                        for mycobot :[x(mm), y, z, rx(angle), ry, rz]\n
+                        for mypalletizer: [x, y, z, θ]
             speed : (int) 0 ~ 100
             mode : (int) 0 - angluar, 1 - linear
         """
@@ -290,7 +294,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Jog control angle.
 
         Args:
-            joint_id: (int) 1 ~ 6.
+            joint_id:
+                    For mycobot: int 1-6.\n
+                    For mypalletizer: int 1-4.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -300,7 +306,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Jog control coord.
 
         Args:
-            coord_id: (int) 1 ~ 6
+            coord_id:
+                    For mycobot: int 1-6.\n
+                    For mypalletizer: int 1-4.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -493,8 +501,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Power off designated servo
 
         Args:
-            for mycobot: servo_id: 1 - 6
-            for mypalletizer: servo_id: 1 - 4
+            servo_id:
+                for mycobot: 1 - 6.\n
+                for mypalletizer: 1 - 4
         """
         return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
 
@@ -502,8 +511,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Power on designated servo
 
         Args:
-            for mycobot: servo_id: 1 - 6
-            for mypalletizer: servo_id: 1 - 4
+            servo_id:
+                for mycobot: 1 - 6\n
+                for mypalletizer: 1 - 4
         """
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
@@ -774,11 +784,17 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
     
     def get_servo_currents(self):
-        """Get joint current (Only for mycobot 350)"""
+        """Get joint current (Only for mycobot 350)
+        
+        return: mA
+        """
         return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
     
     def get_servo_voltages(self):
-        """Get joint voltages (Only for mycobot 350)"""
+        """Get joint voltages (Only for mycobot 350)
+        
+        return: volts
+        """
         return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, has_reply=True)
 
     def get_servo_status(self):
@@ -793,7 +809,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set the joint maximum angle
         
         Args:
-            id: 1 - 6
+            id: 
+                For mycobot: int 1-6.\n
+                For mypalletizer: int 1-4.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
@@ -802,7 +820,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set the joint minimum angle
         
         Args:
-            id: 1 - 6
+            id: 
+                For mycobot: int 1-6.\n
+                For mypalletizer: int 1-4.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)

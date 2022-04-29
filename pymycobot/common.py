@@ -261,8 +261,6 @@ def write(self, command, method=None):
         self.log.debug("_write: {}".format(command))
         self._serial_port.write(command)
         self._serial_port.flush()
-        time.sleep(0.05)
-
 
 def read(self):
     time.sleep(0.1)

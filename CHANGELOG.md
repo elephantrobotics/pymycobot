@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v2.7.5 (2022-4-29)
+
+- release v2.7.5
+- Fixed an issue where the M5 would restart when the serial port was initialized for the first time.
+- New interface: `get_tool_reference`,`set_tool_reference`,`set_world_reference`,`get_world_reference`,`set_reference_frame`,`get_reference_frame`,`set_movement_type`,`get_movement_type`,`set_end_type`,`get_end_type`,`get_plan_speed`,`get_plan_acceleration`,`set_plan_speed`,`set_plan_acceleration`,`get_servo_speeds`,`get_servo_currents`,`get_servo_voltages`,`get_servo_status`,`get_servo_temps`.
+
 ## v2.7.4 (2021-12-15)
 
 - release v2.7.4

@@ -16,5 +16,6 @@
         "yview",
         "zhang"
     ],
-    "restructuredtext.confPath": ""
+    "restructuredtext.confPath": "",
+    "python.formatting.provider": "black"
 }
