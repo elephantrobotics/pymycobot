@@ -48,7 +48,7 @@ Or the more modern form:
 pip install .
 # Uninstall
 pip uninstall .
-
+```
 ## Usage:
 
 ```python
