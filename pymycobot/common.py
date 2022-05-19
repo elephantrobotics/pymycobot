@@ -11,7 +11,10 @@ class ProtocolCode(object):
     FOOTER = 0xFA
 
     # System status
-    VERSION = 0x01
+    ROBOT_VERSION = 0x01
+    SOFTWARE_VERSION = 0x02
+    GET_ROBOT_ID = 0x03
+    SET_ROBOT_ID = 0x04
 
     # Overall status
     POWER_ON = 0x10
@@ -20,6 +23,7 @@ class ProtocolCode(object):
     RELEASE_ALL_SERVOS = 0x13
     IS_CONTROLLER_CONNECTED = 0x14
     READ_NEXT_ERROR = 0x15
+    SET_FRESH_MODE = 0x16
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
 
@@ -39,12 +43,15 @@ class ProtocolCode(object):
 
     # JOG MODE AND OPERATION
     JOG_ANGLE = 0x30
+    JOG_ABSOLUTE = 0x31
     JOG_COORD = 0x32
+    JOG_INCREMENT = 0x33
     JOG_STOP = 0x34
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
     SET_ENCODERS = 0x3C
     GET_ENCODERS = 0x3D
+    SET_ENCODERS_DRAG = 0x3E
 
     # RUNNING STATUS AND SETTINGS
     GET_SPEED = 0x40
@@ -62,6 +69,7 @@ class ProtocolCode(object):
     SET_SERVO_DATA = 0x52
     GET_SERVO_DATA = 0x53
     SET_SERVO_CALIBRATION = 0x54
+    JOINT_BRAKE = 0x55
     RELEASE_SERVO = 0x56
     FOCUS_SERVO = 0x57
 
@@ -74,9 +82,11 @@ class ProtocolCode(object):
     GET_GRIPPER_VALUE = 0x65
     SET_GRIPPER_STATE = 0x66
     SET_GRIPPER_VALUE = 0x67
-    SET_GRIPPER_INI = 0x68
+    SET_GRIPPER_CALIBRATION = 0x68 
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
+    SET_ELETRIC_GRIPPER = 0x6B
+    INIT_ELETRIC_GRIPPER = 0x6C
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -108,6 +118,11 @@ class ProtocolCode(object):
     SET_END_TYPE = 0x89
     GET_END_TYPE = 0x8A
     
+    # Impact checking
+    SET_JOINT_CURRENT = 0x90
+    GET_JOINT_CURRENT = 0x91
+    SET_CURRENT_STATE = 0x92
+    
     # planning speed
     GET_PLAN_SPEED = 0xD0
     GET_PLAN_ACCELERATION = 0xD1
@@ -120,6 +135,11 @@ class ProtocolCode(object):
     GET_SERVO_VOLTAGES = 0xE3
     GET_SERVO_STATUS = 0xE4
     GET_SERVO_TEMPS = 0xE5
+    
+    # IIC
+    # SET_IIC_STATE = 0xA4
+    # GET_IIS_BYTE = 0xA5
+    # SET_IIC_BYTE = 0xA6 
 
 class DataProcessor(object):
     # Functional approach
@@ -204,7 +224,7 @@ class DataProcessor(object):
 
         # process valid data
         res = []
-        if data_len == 12 or data_len == 8:
+        if data_len == 12 or data_len == 8 or data_len == 24:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))

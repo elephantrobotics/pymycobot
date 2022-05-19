@@ -1,6 +1,5 @@
 # coding=utf-8
 
-from shutil import move
 import sys
 import logging
 
@@ -163,16 +162,13 @@ class MyCobotCommandGenerator(DataProcessor):
         """Wether connected with Atom."""
         return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
 
-    """
-    def set_free_mode(self, flag):  # TODO:no finish
-        if flag:
-            self._mesg(Command.SET_FREE_MODE, 1)
-        else:
-            self._mesg(Command.SET_FREE_MODE, 0)
+    def set_free_mode(self, flag):
+        """set to free mode"""
+        return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
 
-    def is_free_mode(self):  # TODO: no finish
-        return self._process_single(self._mesg(Command.IS_FREE_MODE, has_reply=True))
-    """
+    def is_free_mode(self):
+        """Check if it is free mode"""
+        return self._process_single(self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True))
 
     # MDI mode and operation
     def get_angles(self):
@@ -256,8 +252,8 @@ class MyCobotCommandGenerator(DataProcessor):
         """Judge whether in the position.
 
         Args:
-            id: 1 - coords, 0 - angles
             data: A data list, angles or coords, length 6.
+            id: 1 - coords, 0 - angles
 
         Return:
             1 : True
@@ -496,6 +492,14 @@ class MyCobotCommandGenerator(DataProcessor):
             servo_no: Serial number of articulated steering gear, 1 - 6.
         """
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_no)
+    
+    def joint_brake(self, joint_id):
+        """Make it stop when the joint is in motion, and the buffer distance is positively related to the existing speed
+        
+        Args:
+            joint_id: 1 - 6 
+        """
+        return self._mesg(ProtocolCode.JOINT_BRAKE, joint_id)
 
     def release_servo(self, servo_id):
         """Power off designated servo
@@ -595,7 +599,7 @@ class MyCobotCommandGenerator(DataProcessor):
 
     def set_gripper_ini(self):
         """Set the current position to zero, set current position value is `2048`."""
-        return self._mesg(ProtocolCode.SET_GRIPPER_INI)
+        return self._mesg(ProtocolCode.SET_GRIPPER_CALIBRATION)
 
     def is_gripper_moving(self):
         """Judge whether the gripper is moving or not
@@ -680,6 +684,7 @@ class MyCobotCommandGenerator(DataProcessor):
     
     def set_world_reference(self, coords):
         """Set the world coordinate system
+        
         Args:
             coords: a list of coords value(List[float]), length 6.
                 for mycobot :[x(mm), y, z, rx(angle), ry, rz]
@@ -780,25 +785,31 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_PLAN_ACCELERATION, acceleration, is_linear)
     
     def get_servo_speeds(self):
-        """Get joint speed (Only for mycobot 350)"""
+        """Get joint speed (Only for mycobot 350)
+        
+        Return: unit step/s
+        """
         return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
     
     def get_servo_currents(self):
         """Get joint current (Only for mycobot 350)
         
-        return: mA
+        Return: 0 ~ 3250 mA
         """
         return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
     
     def get_servo_voltages(self):
         """Get joint voltages (Only for mycobot 350)
         
-        return: volts
+        Return: volts < 24 V
         """
         return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, has_reply=True)
 
     def get_servo_status(self):
-        """Get joint status (Only for mycobot 350)"""
+        """Get joint status (Only for mycobot 350)
+        
+        Return: [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error, a value of 1 indicates an error
+        """
         return self._mesg(ProtocolCode.GET_SERVO_STATUS, has_reply=True)
 
     def get_servo_temps(self):
@@ -826,3 +837,32 @@ class MyCobotCommandGenerator(DataProcessor):
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
+    
+    def init_eletric_gripper(self):
+        """Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper) (only for 350)"""
+        return self._mesg(ProtocolCode.INIT_ELETRIC_GRIPPER)
+    
+    def set_eletric_gripper(self, status):
+        """Set Electric Gripper Mode (only for 350)
+        
+        Args:
+            status: 0 - open, 1 - close.
+        """
+        return self._mesg(ProtocolCode.SET_ELETRIC_GRIPPER, status)
+    
+    def set_encoders_drag(self, encoders, speeds):
+        """Send all encoders and speeds
+        
+        Args:
+            encoders: encoders list
+            speeds: Obtained by the get_servo_speeds() method 
+        """
+        return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
+    
+    def set_refresh_mode(self, mode):
+        """Set command refresh mode
+        
+        Args:
+            mode: 0 - with interpolation  1 - No interpolation
+        """
+        self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
