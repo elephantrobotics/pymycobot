@@ -284,16 +284,23 @@ def write(self, command, method=None):
         self._serial_port.flush()
 
 def read(self):
-    # time.sleep(0.1)
-    # t = time.time()
     datas = b''
+    data_len = -1
     k = 0
     pre = 0
     while True:
         data = self._serial_port.read()
-        # print(da)
         k+=1
-        if data == b'\xfe':
+        if data_len == 1 and data == b'\xfa':
+            datas += data
+            break
+        elif len(datas) == 2:
+            data_len = struct.unpack("b",data)[0]
+            datas += data
+        elif len(datas)>2 and data_len>0:
+            datas += data
+            data_len -= 1
+        elif data == b'\xfe':
             if datas == b'':
                 datas += data
                 pre = k
@@ -303,18 +310,4 @@ def read(self):
                 else:
                     datas = b'\xfe'
                     pre = k  
-        elif len(datas)>=2:
-            print(datas)
-            if data == b'\xfa':
-                datas += data
-                break
-            datas += data
-    # print(time.time()-t)
-    # if self._serial_port.inWaiting() > 0:
-    #     data = self._serial_port.read(self._serial_port.inWaiting())
-    #     self.log.debug("_read: {}".format(data))
-    # else:
-    #     self.log.debug("_read: no data can be read")
-    #     data = None
-    # print(data)
     return datas
