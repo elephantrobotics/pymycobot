@@ -838,11 +838,11 @@ class MyCobotCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
     
-    def init_eletric_gripper(self):
+    def init_eletric_gripper(self): # TODO 22-5-19 need test
         """Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper) (only for 350)"""
         return self._mesg(ProtocolCode.INIT_ELETRIC_GRIPPER)
     
-    def set_eletric_gripper(self, status):
+    def set_eletric_gripper(self, status):  # TODO 22-5-19 need test
         """Set Electric Gripper Mode (only for 350)
         
         Args:
@@ -850,7 +850,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_ELETRIC_GRIPPER, status)
     
-    def set_encoders_drag(self, encoders, speeds):
+    def set_encoders_drag(self, encoders, speeds):  # TODO 22-5-19 need test
         """Send all encoders and speeds
         
         Args:
@@ -859,7 +859,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
     
-    def set_refresh_mode(self, mode):
+    def set_refresh_mode(self, mode):   # TODO 22-5-19 need test
         """Set command refresh mode
         
         Args:

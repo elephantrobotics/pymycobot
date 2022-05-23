@@ -4,7 +4,9 @@ from __future__ import absolute_import
 import datetime
 
 from pymycobot.generate import MyCobotCommandGenerator
+from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.mycobot import MyCobot
+from pymycobot.mybuddy import MyBuddy
 from pymycobot.mypalletizer import MyPalletizer
 from pymycobot.mycobotsocket import MyCobotSocket
 from pymycobot.genre import Angle, Coord
@@ -17,10 +19,12 @@ __all__ = [
     "Coord",
     "utils",
     "MyPalletizer",
-    "MyCobotSocket"
+    "MyCobotSocket",
+    "MyBuddyCommandGenerator",
+    "MyBuddy"
 ]
 
-__version__ = "2.7.5"
+__version__ = "2.7.6"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

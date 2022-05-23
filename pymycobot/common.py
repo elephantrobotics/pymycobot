@@ -192,6 +192,7 @@ class DataProcessor(object):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre):
+        print(data)
         if genre == 177:
             data = str(data)[2:-1].split(": ")
             return data[1][0:-9], data[-1]
@@ -283,11 +284,37 @@ def write(self, command, method=None):
         self._serial_port.flush()
 
 def read(self):
-    time.sleep(0.1)
-    if self._serial_port.inWaiting() > 0:
-        data = self._serial_port.read(self._serial_port.inWaiting())
-        self.log.debug("_read: {}".format(data))
-    else:
-        self.log.debug("_read: no data can be read")
-        data = None
-    return data
+    # time.sleep(0.1)
+    # t = time.time()
+    datas = b''
+    k = 0
+    pre = 0
+    while True:
+        data = self._serial_port.read()
+        # print(da)
+        k+=1
+        if data == b'\xfe':
+            if datas == b'':
+                datas += data
+                pre = k
+            else:
+                if k-1 == pre:
+                    datas += data
+                else:
+                    datas = b'\xfe'
+                    pre = k  
+        elif len(datas)>=2:
+            print(datas)
+            if data == b'\xfa':
+                datas += data
+                break
+            datas += data
+    # print(time.time()-t)
+    # if self._serial_port.inWaiting() > 0:
+    #     data = self._serial_port.read(self._serial_port.inWaiting())
+    #     self.log.debug("_read: {}".format(data))
+    # else:
+    #     self.log.debug("_read: no data can be read")
+    #     data = None
+    # print(data)
+    return datas

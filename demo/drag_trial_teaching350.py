@@ -110,7 +110,7 @@ class TeachingTest(Helper):
         self.echo("Start play")
         for angles in self.record_list:
             # print(angles)
-            self.mc.send_encoders_drag(angles[0], angles[1])
+            self.mc.set_encoders_drag(angles[0], angles[1])
             time.sleep(0.1)
         self.echo("Finish play")
 

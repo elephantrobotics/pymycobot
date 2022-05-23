@@ -56,7 +56,7 @@ class MycobotServer(object):
                         data = conn.recv(1024)
                         command = data.decode('utf-8')
                         if data.decode('utf-8') == "":
-                            print("close dsiconnect!")
+                            print("close disconnect!")
                             break
                         res = b'1'
                         command = command.replace(" ", "")
