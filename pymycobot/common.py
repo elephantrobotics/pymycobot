@@ -58,6 +58,7 @@ class ProtocolCode(object):
     SET_SPEED = 0x41
     GET_FEED_OVERRIDE = 0x42
     GET_ACCELERATION = 0x44
+    SET_ACCELERATION = 0x45
     GET_JOINT_MIN_ANGLE = 0x4A
     GET_JOINT_MAX_ANGLE = 0x4B
     SET_JOINT_MIN = 0x4C
@@ -91,6 +92,8 @@ class ProtocolCode(object):
     # Basic
     SET_BASIC_OUTPUT = 0xA0
     GET_BASIC_INPUT = 0xA1
+    GET_BASE_INPUT = 0xA2
+    SET_BASE_PWM = 0xA5
 
     # Linux GPIO, mode: GPIO.BCM
     SET_GPIO_MODE = 0xAA

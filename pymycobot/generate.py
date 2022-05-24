@@ -127,14 +127,30 @@ class MyCobotCommandGenerator(DataProcessor):
         return real_command, has_reply
 
     # System status
-    def version(self):  # TODO: test method <2021-03-11, yourname> #
+    def get_robot_version(self):  # TODO: test method <2021-03-11, yourname> #
         """Get cobot version
 
         Return:
             mycobot   : 1
             mycobotPro: 101
         """
-        return self._mesg(ProtocolCode.VERSION, has_reply=True)
+        return self._mesg(ProtocolCode.ROBOT_VERSION, has_reply=True)
+    
+    def get_system_version(self):
+        """get system version"""
+        return self._mesg(ProtocolCode.SOFTWARE_VERSION, has_reply = True)
+
+    def get_robot_id(self):
+        """get robot id"""
+        return self._mesg(ProtocolCode.GET_ROBOT_ID, has_reply = True)
+    
+    def set_robot_id(self, id):
+        """set robot id
+        
+        Args:
+            id(int): 0 ~ 255
+        """
+        return self._mesg(ProtocolCode.SET_ROBOT_ID, id)
 
     # Overall status
     def power_on(self):
@@ -309,6 +325,28 @@ class MyCobotCommandGenerator(DataProcessor):
             speed: int (0 - 100)
         """
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
+    
+    def jog_absolute(self, joint_id, angle, speed):
+        """Jog absolute angle.
+
+        Args:
+            joint_id:
+                    For mycobot: int 1-6.\n
+                    For mypalletizer: int 1-4.
+            angle: -180 ~ 180
+            speed: int (0 - 100)
+        """
+        return self._mesg(ProtocolCode.JOG_ABSOLUTE, joint_id, [self._angle2int(angle)], speed)
+    
+    def jog_increment(self, joint_id, increment, speed):
+        """step mode
+
+        Args:
+            joint_id: int 1-6.
+            increment: 
+            speed: int (1 - 100)
+        """
+        return self._mesg(ProtocolCode.JOG_INCREMENT, id, joint_id, increment, speed)
 
     def jog_stop(self):
         """Stop jog moving"""

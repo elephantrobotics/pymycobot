@@ -122,7 +122,7 @@ class TeachingTest(Helper):
             while self.playing:
                 idx_ = i % len_
                 i += 1
-                self.mc.send_angles(self.record_list[idx_], 80)
+                self.mc.set_encoders(self.record_list[idx_], 80)
                 time.sleep(0.1)
 
         self.echo("Start loop play.")

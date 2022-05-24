@@ -86,6 +86,10 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Wether connected with Atom."""
         return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, 0, has_reply=True)
 
+    def read_next_error(self):
+        """Robot Error Detection"""
+        self._mesg(ProtocolCode.READ_NEXT_ERROR, 0, has_reply=True)
+
     def set_free_mode(self, id):
         """set free mode
 
@@ -392,7 +396,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             id: 1/2/3 (L/R/W)
             acc: 1 - 100
         """
-        return self._mesg(ProtocolCode.GET_ACCELERATION, id, acc)
+        return self._mesg(ProtocolCode.SET_ACCELERATION, id, acc)
 
     def get_joint_min_angle(self, id, joint_id):
         """Gets the minimum movement angle of the specified joint
@@ -536,27 +540,9 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             servo_id: 1 - 6\n
         """
         return self._mesg(ProtocolCode.FOCUS_SERVO, id, servo_id)
-    
-    def get_acceleration(self, id):
-        """Read acceleration during all moves
-        
-        Args:
-            id: 1/2/3 (L/R/W)
-        """
-        return self._mesg(ProtocolCode.GET_ACCELERATION, id, has_reply=True)
 
     # Atom IO
-    def set_color(self, r=0, g=0, b=0):
-        """Set the light color on the top of the robot arm.
-
-        Args:
-            r (int): 0 ~ 255
-            g (int): 0 ~ 255
-            b (int): 0 ~ 255
-
-        """
-        self.calibration_parameters(rgb=[r, g, b])
-        return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
+    
 
     def set_pin_mode(self, id, pin_no, pin_mode):
         """Set the state mode of the specified pin in atom.
@@ -647,6 +633,19 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             -1 - error data
         """
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, id, has_reply=True)
+
+    def set_color(self, id, r=0, g=0, b=0):
+        """Set the light color on the top of the robot arm.
+
+        Args:
+            id: 1/2 (L/R)
+            r (int): 0 ~ 255
+            g (int): 0 ~ 255
+            b (int): 0 ~ 255
+
+        """
+        self.calibration_parameters(rgb=[r, g, b])
+        return self._mesg(ProtocolCode.SET_COLOR, id, r, g, b)
 
     def set_tool_reference(self, id, coords):
         """Set tool coordinate system
@@ -800,7 +799,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Args:
             pin_no: (int) pin port number (0 - 20).
         """
-        return self._mesg(ProtocolCode.GET_BASIC_INPUT, 0, pin_no, has_reply=True)
+        return self._mesg(ProtocolCode.GET_BASE_INPUT, 0, pin_no, has_reply=True)
 
     def get_plan_speed(self):
         """Get planning speed
