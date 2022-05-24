@@ -153,7 +153,7 @@ class DataProcessor(object):
             return sum([list(struct.pack('>h', elem)) for elem in data], [])
 
     def _decode_int8(self, data):
-        return struct.unpack("b", data)[0]
+        return struct.unpack("B", data)[0]
 
     def _decode_int16(self, data):
         return struct.unpack(">h", data)[0]
@@ -192,7 +192,6 @@ class DataProcessor(object):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre):
-        print(data)
         if genre == 177:
             data = str(data)[2:-1].split(": ")
             return data[1][0:-9], data[-1]
@@ -288,26 +287,33 @@ def read(self):
     data_len = -1
     k = 0
     pre = 0
-    while True:
-        data = self._serial_port.read()
-        k+=1
-        if data_len == 1 and data == b'\xfa':
-            datas += data
-            break
-        elif len(datas) == 2:
-            data_len = struct.unpack("b",data)[0]
-            datas += data
-        elif len(datas)>2 and data_len>0:
-            datas += data
-            data_len -= 1
-        elif data == b'\xfe':
-            if datas == b'':
+    t = time.time()
+    while True and time.time() - t < 0.1:
+        try:
+            data = self._serial_port.read()
+            k+=1
+            if data_len == 1 and data == b'\xfa':
                 datas += data
-                pre = k
-            else:
-                if k-1 == pre:
+                break
+            elif len(datas) == 2:
+                data_len = struct.unpack("b",data)[0]
+                datas += data
+            elif len(datas)>2 and data_len>0:
+                datas += data
+                data_len -= 1
+            elif data == b'\xfe':
+                if datas == b'':
                     datas += data
+                    pre = k
                 else:
-                    datas = b'\xfe'
-                    pre = k  
+                    if k-1 == pre:
+                        datas += data
+                    else:
+                        datas = b'\xfe'
+                        pre = k  
+        except:
+            datas = None
+            break
+    else:
+        datas = None
     return datas
