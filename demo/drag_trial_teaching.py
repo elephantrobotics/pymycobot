@@ -89,7 +89,7 @@ class TeachingTest(Helper):
             start_t = time.time()
 
             while self.recording:
-                angles = self.mc.get_angles()
+                angles = self.mc.get_encoders()
                 if angles:
                     self.record_list.append(angles)
                     time.sleep(0.1)
@@ -109,7 +109,7 @@ class TeachingTest(Helper):
         self.echo("Start play")
         for angles in self.record_list:
             # print(angles)
-            self.mc.send_angles(angles, 80)
+            self.mc.set_encoders(angles, 80)
             time.sleep(0.1)
         self.echo("Finish play")
 
