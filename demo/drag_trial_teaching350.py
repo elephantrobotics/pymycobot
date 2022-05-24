@@ -93,7 +93,7 @@ class TeachingTest(Helper):
                 speeds = self.mc.get_servo_speeds()
                 if angles:
                     self.record_list.append([angles, speeds])
-                    time.sleep(0.1)
+                    time.sleep(0.042)
                     print("\r {}".format(time.time() - start_t), end="")
 
         self.echo("Start recording.")
@@ -111,7 +111,7 @@ class TeachingTest(Helper):
         for angles in self.record_list:
             # print(angles)
             self.mc.set_encoders_drag(angles[0], angles[1])
-            time.sleep(0.1)
+            time.sleep(0.055)
         self.echo("Finish play")
 
     def loop_play(self):
