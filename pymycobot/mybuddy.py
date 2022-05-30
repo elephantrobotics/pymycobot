@@ -4,6 +4,7 @@ from __future__ import division
 import time
 import math
 import logging
+import struct
 
 from pymycobot.log import setup_logging
 from pymycobot.Interface import MyBuddyCommandGenerator
@@ -64,7 +65,52 @@ class MyBuddy(MyBuddyCommandGenerator):
         self._serial_port.open()
 
     _write = write
-    _read = read
+    
+    def _read(self):
+        datas = b''
+        data_len = -1
+        real_data = b''
+        check_digit = 0
+        k = 0
+        pre = 0
+        t = time.time()
+        while True and time.time() - t < 0.1:
+            try:
+                data = self._serial_port.read()
+                k+=1
+                if data_len == 1:
+                    datas += data
+                    if struct.pack("B", check_digit & 0xff) == data:
+                        break
+                elif len(datas) == 3:
+                    data_len = struct.unpack("b",data)[0]
+                    datas += data
+                elif len(datas)>=2:
+                    datas += data
+                    if len(datas) == 5: 
+                        check_digit += self._decode_int8(data)
+                    elif len(datas)>5:
+                        real_data += data
+                    if real_data != b'':
+                        check_digit += self._decode_int8(real_data)
+                        real_data = b''
+                    data_len -= 1
+                elif data == b'\xfe':
+                    if datas == b'':
+                        datas += data
+                        pre = k
+                    else:
+                        if k-1 == pre:
+                            datas += data
+                        else:
+                            datas = b'\xfe'
+                            pre = k  
+            except:
+                datas = None
+                break
+        else:
+            datas = None
+        return datas
 
     def _mesg(self, genre, *args, **kwargs):
         """

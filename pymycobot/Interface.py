@@ -120,7 +120,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Return:
             list: A float list of all degree.
         """
-        return self._mesg(ProtocolCode.GET_ANGLES, id)
+        return self._mesg(ProtocolCode.GET_ANGLES, id, has_reply=True)
 
     def send_angle(self, id, joint, angle, speed):
         """Send one degree of joint to robot arm.

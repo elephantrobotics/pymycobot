@@ -165,9 +165,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Adjust robot arm status
 
         Return:
-            1 : power on
-            0 : power off
-            -1: error data
+            1 - power on
+            0 - power off
+            -1 - error data
         """
         return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
 
@@ -178,12 +178,24 @@ class MyCobotCommandGenerator(DataProcessor):
         """Wether connected with Atom."""
         return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
 
+    def read_next_error(self):
+        """Robot Error Detection"""
+        self._mesg(ProtocolCode.READ_NEXT_ERROR, 0, has_reply=True)    
+    
     def set_free_mode(self, flag):
-        """set to free mode"""
+        """set to free mode
+        
+        Args:
+            flag: 0/1
+        """
         return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
 
     def is_free_mode(self):
-        """Check if it is free mode"""
+        """Check if it is free mode
+        
+        Return:
+            0/1
+        """
         return self._process_single(self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True))
 
     # MDI mode and operation
@@ -268,13 +280,15 @@ class MyCobotCommandGenerator(DataProcessor):
         """Judge whether in the position.
 
         Args:
-            data: A data list, angles or coords, length 6.
+            data: A data list, angles or coords.
+                    for mycobot: len 6.
+                    for mypalletizer: len 4
             id: 1 - coords, 0 - angles
 
         Return:
-            1 : True
-            0 : False
-            -1: Error
+            1 - True
+            0 - False
+            -1 - Error
         """
         if id == 1:
             self.calibration_parameters(coords=data)
@@ -292,12 +306,12 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, id, has_reply=True)
 
     def is_moving(self):
-        """
+        """Detect if the robot is moving
 
         Return:
-            0 : not moving
-            1 : is moving
-            -1 : error data
+            0 - not moving
+            1 - is moving
+            -1 - error data
         """
         return self._mesg(ProtocolCode.IS_MOVING, has_reply=True)
 
@@ -344,7 +358,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             joint_id: int 1-6.
             increment: 
-            speed: int (1 - 100)
+            speed: int (0 - 100)
         """
         return self._mesg(ProtocolCode.JOG_INCREMENT, id, joint_id, increment, speed)
 
@@ -403,9 +417,6 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             encoders: A encoder list, length 6.
             sp: speed 0 ~ 100
-
-        Returns:
-            (str): command.
         """
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
 
@@ -422,7 +433,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Get speed
 
         Return: 
-            speed: (int)
+            int
         """
         return self._mesg(ProtocolCode.GET_SPEED, has_reply=True)
 
@@ -430,7 +441,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set speed value
 
         Args:
-            speed (int): 0 - 100
+            speed (int) - 0 ~ 100
         """
         self.calibration_parameters(speed=speed)
         return self._mesg(ProtocolCode.SET_SPEED, speed)
@@ -440,12 +451,19 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._process_single(
             self._mesg(Command.GET_FEED_OVERRIDE, has_reply=True)
         )
-
+    """
     def get_acceleration(self):
         return self._process_single(
-            self._mesg(Command.GET_ACCELERATION, has_reply=True)
+            self._mesg(ProtocolCode.GET_ACCELERATION, has_reply=True)
         )
-    """
+
+    def set_acceleration(self, acc):
+        """Set speed for all moves
+        
+        Args:
+            acc: int
+        """
+        return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
 
     def get_joint_min_angle(self, joint_id):
         """Gets the minimum movement angle of the specified joint
@@ -495,41 +513,41 @@ class MyCobotCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.IS_ALL_SERVO_ENABLE, has_reply=True)
 
-    def set_servo_data(self, servo_no, data_id, value):
+    def set_servo_data(self, servo_id, data_id, value):
         """Set the data parameters of the specified address of the steering gear
 
         Args:
-            servo_no: Serial number of articulated steering gear, 1 - 6.
+            servo_id: Serial number of articulated steering gear, 1 - 6.
             data_id: Data address.
             value: 0 - 4096
         """
-        return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_no, data_id, value)
+        return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
 
-    def get_servo_data(self, servo_no, data_id):
+    def get_servo_data(self, servo_id, data_id):
         """Read the data parameter of the specified address of the steering gear.
 
         Args:
-            servo_no: Serial number of articulated steering gear, 1 - 6.
+            servo_id: Serial number of articulated steering gear, 1 - 6.
             data_id: Data address.
 
         Return:
-            values: 0 - 4096
+            values 0 - 4096
             0 - disable
             1 - enable
             -1 - error
         """
         return self._mesg(
-            ProtocolCode.GET_SERVO_DATA, servo_no, data_id, has_reply=True
+            ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
         )
 
-    def set_servo_calibration(self, servo_no):
+    def set_servo_calibration(self, servo_id):
         """The current position of the calibration joint actuator is the angle zero point, 
             and the corresponding potential value is 2048.
 
         Args:
-            servo_no: Serial number of articulated steering gear, 1 - 6.
+            servo_id: Serial number of articulated steering gear, 1 - 6.
         """
-        return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_no)
+        return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
     
     def joint_brake(self, joint_id):
         """Make it stop when the joint is in motion, and the buffer distance is positively related to the existing speed
@@ -635,7 +653,7 @@ class MyCobotCommandGenerator(DataProcessor):
         self.calibration_parameters(speed=speed)
         return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, value, speed)
 
-    def set_gripper_ini(self):
+    def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
         return self._mesg(ProtocolCode.SET_GRIPPER_CALIBRATION)
 
@@ -643,9 +661,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Judge whether the gripper is moving or not
 
         Returns:
-            0 : not moving
-            1 : is moving
-            -1: error data
+            0 - not moving
+            1 - is moving
+            -1- error data
         """
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
 
@@ -750,8 +768,8 @@ class MyCobotCommandGenerator(DataProcessor):
     def get_reference_frame(self):
         """Get the base coordinate system
         
-        Args:
-            Return: 0 - base 1 - tool.
+        Return: 
+            0 - base 1 - tool.
         """
         return self._mesg(ProtocolCode.GET_REFERENCE_FRAME, has_reply=True)
     
@@ -766,8 +784,8 @@ class MyCobotCommandGenerator(DataProcessor):
     def get_movement_type(self):
         """Get movement type
         
-        Args:
-            Return: 1 - movel, 0 - moveJ
+        Return: 
+            1 - movel, 0 - moveJ
         """
         return self._mesg(ProtocolCode.GET_MOVEMENT_TYPE, has_reply=True)
     
@@ -782,8 +800,7 @@ class MyCobotCommandGenerator(DataProcessor):
     def get_end_type(self):
         """Get end coordinate system
         
-        Args:
-            Return: 0 - flange, 1 - tool
+        Return: 0 - flange, 1 - tool
         """
         return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
         
