@@ -1,8 +1,11 @@
+'''
+Drag and teach in windows version
+'''
 import time
 import os
 import sys
-import termios
-import tty
+# import termios
+# import tty
 import threading
 import json
 import serial
@@ -47,19 +50,19 @@ def setup():
     mc = MyBuddy(port, baud, debug=DEBUG)
 
 
-class Raw(object):
-    """Set raw input mode for device"""
+# class Raw(object):
+#     """Set raw input mode for device"""
 
-    def __init__(self, stream):
-        self.stream = stream
-        self.fd = self.stream.fileno()
+#     def __init__(self, stream):
+#         self.stream = stream
+#         self.fd = self.stream.fileno()
 
-    def __enter__(self):
-        self.original_stty = termios.tcgetattr(self.stream)
-        tty.setcbreak(self.stream)
+#     def __enter__(self):
+#         self.original_stty = termios.tcgetattr(self.stream)
+#         tty.setcbreak(self.stream)
 
-    def __exit__(self, type, value, traceback):
-        termios.tcsetattr(self.stream, termios.TCSANOW, self.original_stty)
+#     def __exit__(self, type, value, traceback):
+#         termios.tcsetattr(self.stream, termios.TCSANOW, self.original_stty)
 
 
 class Helper(object):
@@ -67,8 +70,8 @@ class Helper(object):
         self.w, self.h = os.get_terminal_size()
 
     def echo(self, msg):
-        print("\r{}".format(" " * self.w), end="")
-        print("\r{}".format(msg), end="")
+        print("\r{}".format(" " * self.w))
+        print("\r{}".format(msg))
 
 
 class TeachingTest(Helper):
@@ -89,12 +92,12 @@ class TeachingTest(Helper):
             start_t = time.time()
 
             while self.recording:
-                angles_1 = self.mc.get_encoders(1)
+                angles_1 =  self.mc.get_encoders(1)
                 angles_2 = self.mc.get_encoders(2)
                 if angles_1 and angles_2:
                     self.record_list.append([angles_1,angles_2])
                     time.sleep(0.1)
-                    print("\r {}".format(time.time() - start_t), end="")
+                    # print("\r {}".format(time.time() - start_t), end="")
 
         self.echo("Start recording.")
         self.record_t = threading.Thread(target=_record, daemon=True)
@@ -109,9 +112,10 @@ class TeachingTest(Helper):
     def play(self):
         self.echo("Start play")
         for angles in self.record_list:
-            # print(angles)
-            self.mc.set_encoders(angles[0], 80)
-            self.mc.set_encoders(angles[1], 80)
+            print(angles[1])
+            self.mc.set_encoders(1,angles[0], 80, 1)
+            time.sleep(0.05)
+            self.mc.set_encoders(2,angles[1], 80,1)
             time.sleep(0.1)
         self.echo("Finish play")
 
@@ -159,14 +163,14 @@ class TeachingTest(Helper):
     def print_menu(self):
         print(
             """\
-        \r q: quit
-        \r r: start record
-        \r c: stop record
-        \r p: play once
-        \r P: loop play / stop loop play
-        \r s: save to local
-        \r l: load from local
-        \r f: release mycobot
+        \r q + Enter: quit
+        \r r + Enter: start record
+        \r c + Enter: stop record
+        \r p + Enter: play once
+        \r P + Enter: loop play / stop loop play
+        \r s + Enter: save to local
+        \r l + Enter: load from local
+        \r f + Enter: release mycobot
         \r----------------------------------
             """
         )
@@ -175,31 +179,34 @@ class TeachingTest(Helper):
         self.print_menu()
 
         while not False:
-            with Raw(sys.stdin):
-                key = sys.stdin.read(1)
-                if key == "q":
-                    break
-                elif key == "r":  # recorder
-                    self.record()
-                elif key == "c":  # stop recorder
-                    self.stop_record()
-                elif key == "p":  # play
-                    self.play()
-                elif key == "P":  # loop play
-                    if not self.playing:
-                        self.loop_play()
-                    else:
-                        self.stop_loop_play()
-                elif key == "s":  # save to local
-                    self.save_to_local()
-                elif key == "l":  # load from local
-                    self.load_from_local()
-                elif key == "f":  # free move
-                    self.mc.release_all_servos()
-                    self.echo("Released")
+            key = input()
+            # with Raw(sys.stdin):
+            #     key = sys.stdin.read(1)
+            if key == "q":
+                break
+            elif key == "r":  # recorder
+                self.record()
+            elif key == "c":  # stop recorder
+                self.stop_record()
+            elif key == "p":  # play
+                self.play()
+            elif key == "P":  # loop play
+                if not self.playing:
+                    self.loop_play()
                 else:
-                    print(key)
-                    continue
+                    self.stop_loop_play()
+            elif key == "s":  # save to local
+                self.save_to_local()
+            elif key == "l":  # load from local
+                self.load_from_local()
+            elif key == "f":  # free move
+                self.mc.release_all_servos(0)
+                time.sleep(0.05)
+                self.mc.release_all_servos(2)
+                self.echo("Released")
+            else:
+                print(key)
+                continue
 
 
 if __name__ == "__main__":

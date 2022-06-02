@@ -173,13 +173,16 @@ class MyBuddy(MyBuddyCommandGenerator):
                 return res
         return None
 
-    def get_radians(self):
+    def get_radians(self, id):
         """Get the radians of all joints
 
+        Args: 
+            id: 1/2/3 (L/R/W)
+            
         Return:
             list: A list of float radians [radian1, ...]
         """
-        angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
+        angles = self._mesg(ProtocolCode.GET_ANGLES, id, has_reply=True)
         return [round(angle * (math.pi / 180), 3) for angle in angles]
 
     def send_radians(self, id, radians, speed):
