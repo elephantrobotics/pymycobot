@@ -153,7 +153,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Args:
             id: 1/2/3 (L/R/W).
         """
-        return self._mesg(ProtocolCode.GET_COORDS, id)
+        return self._mesg(ProtocolCode.GET_COORDS, id, has_reply=True)
 
     def send_coord(self, id, coord, data, speed):
         """Send a single coordinate to the robotic arm
