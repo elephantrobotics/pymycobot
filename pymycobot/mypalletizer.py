@@ -45,9 +45,9 @@ def calibration_parameters(**kwargs):
         degrees = kwargs["degrees"]
         if not isinstance(degrees, list):
             raise MyPalletizedataException("`degrees` must be a list.")
-        if len(degrees) != 4:
+        if len(degrees) not in [3,4]:
             raise MyPalletizedataException(
-                "The length of `degrees` must be 4.")
+                "The length of `degrees` must be 3 /  4.")
         for idx, angle in enumerate(degrees):
             if not MIN_ANGLE <= angle <= MAX_ANGLE:
                 raise MyPalletizedataException(
@@ -128,7 +128,7 @@ class MyPalletizer(MyCobotCommandGenerator):
             data = self._read()
             res = self._process_received(data, genre)
             if genre in [
-                ProtocolCode.VERSION,
+                ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
                 ProtocolCode.IS_PAUSED,
@@ -153,7 +153,8 @@ class MyPalletizer(MyCobotCommandGenerator):
                     r = []
                     for idx in range(3):
                         r.append(self._int2coord(res[idx]))
-                    r.append(self._int2angle(res[3]))
+                    if len(idx)>3:
+                        r.append(self._int2angle(res[3]))
                     return r
                 else:
                     return res

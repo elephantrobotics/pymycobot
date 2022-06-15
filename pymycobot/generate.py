@@ -214,6 +214,7 @@ class MyCobotCommandGenerator(DataProcessor):
             id : Joint id(genre.Angle)\n
                     For mycobot: int 1-6.\n
                     For mypalletizer: int 1-4.
+                    For mypalletizer 340: int 1-3.
             degree : degree value(float)(about -170 ~ 170).
             speed : (int) 0 ~ 100
         """
@@ -228,6 +229,7 @@ class MyCobotCommandGenerator(DataProcessor):
             degrees: a list of degree values(List[float]), length 6 or 4.\n
                         for mycobot: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0].\n
                         for mypalletizer: [0.0, 0.0, 0.0, 0.0]
+                        for mypalletizer 340: [0.0, 0.0, 0.0]
             speed : (int) 0 ~ 100
         """
         self.calibration_parameters(degrees=degrees, speed=speed)
@@ -241,6 +243,7 @@ class MyCobotCommandGenerator(DataProcessor):
             list : A float list of coord 
                 for mycobot: [x, y, z, rx, ry, rz]\n
                 for mypalletizer: [x, y, z, θ]
+                for mypalletizer 340: [x, y, z]
         """
         return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
 
@@ -251,10 +254,11 @@ class MyCobotCommandGenerator(DataProcessor):
             id(int) : coord id(genre.Coord)\n
                         For mycobot: int 1-6.\n
                         For mypalletizer: int 1-4.
+                        For mypalletizer 340: int 1-3.
             coord(float) : coord value, mm
             speed(int) : 0 ~ 100
         """
-        self.calibration_parameters(id=id, speed=speed)
+        # self.calibration_parameters(id=id, speed=speed)
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
@@ -262,13 +266,14 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send all coords to robot arm.
 
         Args:
-            coords: a list of coords value(List[float]), length 6 or 4.
+            coords: a list of coords value(List[float]).
                         for mycobot :[x(mm), y, z, rx(angle), ry, rz]\n
                         for mypalletizer: [x, y, z, θ]
+                        for mypalletizer 340: [x, y, z]
             speed : (int) 0 ~ 100
             mode : (int) 0 - angluar, 1 - linear
         """
-        self.calibration_parameters(coords=coords, speed=speed)
+        # self.calibration_parameters(coords=coords, speed=speed)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -283,6 +288,7 @@ class MyCobotCommandGenerator(DataProcessor):
             data: A data list, angles or coords.
                     for mycobot: len 6.
                     for mypalletizer: len 4
+                    for mypalletizer 340: len 3
             id: 1 - coords, 0 - angles
 
         Return:
@@ -291,14 +297,14 @@ class MyCobotCommandGenerator(DataProcessor):
             -1 - Error
         """
         if id == 1:
-            self.calibration_parameters(coords=data)
+            # self.calibration_parameters(coords=data)
             data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
                 data_list.append(self._angle2int(data[idx]))
         elif id == 0:
-            self.calibration_parameters(degrees=data)
+            # self.calibration_parameters(degrees=data)
             data_list = [self._angle2int(i) for i in data]
         else:
             raise Exception("id is not right, please input 0 or 1")
@@ -323,6 +329,7 @@ class MyCobotCommandGenerator(DataProcessor):
             joint_id:
                     For mycobot: int 1-6.\n
                     For mypalletizer: int 1-4.
+                    For mypalletizer 340: int 1-3.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -335,6 +342,7 @@ class MyCobotCommandGenerator(DataProcessor):
             coord_id:
                     For mycobot: int 1-6.\n
                     For mypalletizer: int 1-4.
+                    For mypalletizer 340: int 1-3.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -395,6 +403,7 @@ class MyCobotCommandGenerator(DataProcessor):
             joint_id: 
                 for mycobot: Joint id 1 - 6
                 for mypalletizer: Joint id 1 - 4
+                for mypalletizer 340: Joint id 1 - 3
                 for mycobot gripper: Joint id 7
             encoder: The value of the set encoder.
         """
@@ -564,6 +573,7 @@ class MyCobotCommandGenerator(DataProcessor):
             servo_id:
                 for mycobot: 1 - 6.\n
                 for mypalletizer: 1 - 4
+                for mypalletizer 340: 1 - 3
         """
         return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
 
@@ -574,6 +584,7 @@ class MyCobotCommandGenerator(DataProcessor):
             servo_id:
                 for mycobot: 1 - 6\n
                 for mypalletizer: 1 - 4
+                for mypalletizer 340: 1 - 3
         """
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
