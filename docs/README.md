@@ -92,6 +92,10 @@ We support Python2, Python3.5 or later.
     - [get_servo_voltages](#get_servo_voltages)
     - [get_servo_status](#get_servo_status)
     - [get_servo_temps](#get_servo_temps)
+    - [init_eletric_gripper](#init_eletric_gripper)
+    - [set_eletric_gripper](#set_eletric_gripper)
+    - [set_encoders_drag](#set_encoders_drag)
+    - [set_refresh_mode](#set_refresh_mode)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio_init](#gpio_init)
     - [gpio_output](#gpio_output)
@@ -992,6 +996,43 @@ from pymycobot import MyCobot
 - **Description**: Get the temperature of each joint.
 
 - **Return**: `list` temperature of each joint.
+
+### init_eletric_gripper
+
+- **Prototype**: `init_eletric_gripper()`
+
+- **Description**: Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper) (only for 350)
+
+### set_eletric_gripper
+
+- **Prototype**: `set_eletric_gripper(status)`
+
+- **Description**: Set Electric Gripper Mode (only for 350).
+
+- **Parameters**
+
+  - `status` (`int`): 0 - open, 1 - close.
+
+### set_encoders_drag
+
+- **Prototype**: `set_encoders_drag(encoders, speeds)`
+
+- **Description**: Send all encoders and speeds
+
+- **Parameters**
+
+  - `encoders` (`list`) : encoders list.
+  - `speeds`: Obtained by the get_servo_speeds() method
+
+### set_refresh_mode
+
+- **Prototype**: `set_refresh_mode(mode)`
+
+- **Description**: Set command refresh mode
+
+- **Parameters**
+
+  - `mode`: 0 - with interpolation  1 - No interpolation
 
 ## Raspberry pi -- GPIO
 

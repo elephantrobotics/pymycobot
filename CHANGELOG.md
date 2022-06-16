@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v2.7.6 (2022-6-15)
+
+- release v2.7.6
+- Update 320 API
+
 ## v2.7.5 (2022-4-29)
 
 - release v2.7.5
