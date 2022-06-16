@@ -206,7 +206,7 @@ class DataProcessor(object):
         header_i, header_j = 0, 1
         while header_j < data_len-4:
             if self._is_frame_header(data, header_i, header_j):
-                cmd_id = data[header_i + 4]
+                cmd_id = data[header_i + 3]
                 # compare send header and received header
                 if cmd_id == genre:
                     break
@@ -214,7 +214,7 @@ class DataProcessor(object):
             header_j += 1
         else:
             return []
-        data_len = data[header_i + 3] - 2
+        data_len = data[header_i + 2] - 2
         unique_data = [ProtocolCode.GET_BASIC_INPUT,
                        ProtocolCode.GET_DIGITAL_INPUT]
 
@@ -222,7 +222,7 @@ class DataProcessor(object):
             data_pos = header_i + 5
             data_len -= 1
         else:
-            data_pos = header_i + 5
+            data_pos = header_i + 4
         valid_data = data[data_pos: data_pos + data_len]
 
         # process valid data
