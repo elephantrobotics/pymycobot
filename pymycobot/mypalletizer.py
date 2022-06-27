@@ -153,7 +153,7 @@ class MyPalletizer(MyCobotCommandGenerator):
                     r = []
                     for idx in range(3):
                         r.append(self._int2coord(res[idx]))
-                    if len(idx)>3:
+                    if len(res)>3:
                         r.append(self._int2angle(res[3]))
                     return r
                 else:
