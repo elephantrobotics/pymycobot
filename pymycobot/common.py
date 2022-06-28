@@ -143,6 +143,22 @@ class ProtocolCode(object):
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
     # SET_IIC_BYTE = 0xA6 
+    
+    # mypalletizer lite
+    END = "\r"
+    COORDS_SET = "g0"
+    BACK_ZERO = "g28"
+    SLEEP_TIME = "g4"
+    ABS_CARTESIAN = "g90"
+    REL_CARTESIAN = "g91"
+    SET_JOINT = "g92"
+    GIRPPER_OPEN = "M3"
+    GIRPPER_CLOSE = "M4"
+    RELEASE_SERVOS = "M17"
+    LOCK_SERVOS = "M18"
+    GET_CURRENT_JOINT_INFO = "M114"
+    GET_BACK_ZERO_STATUS = "M119"
+    # SET_POINT
 
 class DataProcessor(object):
     # Functional approach
@@ -195,6 +211,8 @@ class DataProcessor(object):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre):
+        if not data:
+            return []
         if genre == 177:
             data = str(data)[2:-1].split(": ")
             return data[1][0:-9], data[-1]
@@ -243,7 +261,7 @@ class DataProcessor(object):
             if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS]:
                 for i in range(data_len):
                     data1 = self._decode_int8(valid_data[i:i+1])
-                    res.append(256+data1 if data1 <0 else data1)
+                    res.append(0xff & data1 if data1 <0 else data1)
                 return res
             res.append(self._decode_int8(valid_data))
         return res
@@ -253,11 +271,11 @@ class DataProcessor(object):
 
 
 def write(self, command, method=None):
+    if len(command)>3 and command[3] == 176 and len(command) > 5:
+        command = "'"+command[4]+"'"+"("+command[5]+")"
+        command = command.encode()
     if method == "socket":
         data = b""
-        if len(command)>3 and command[3] == 176 and len(command) > 5:
-            command = "'"+command[4]+"'"+"("+command[5]+")"
-            command = command.encode()
         if self.rasp:
             self.sock.sendall(str(command).encode())
         else:
@@ -285,38 +303,40 @@ def write(self, command, method=None):
         self._serial_port.write(command)
         self._serial_port.flush()
 
-def read(self):
-    datas = b''
+def read(self, genre):
+    datas = b""
     data_len = -1
     k = 0
     pre = 0
     t = time.time()
-    while True: 
-        try:
-            data = self._serial_port.read()
-            k+=1
-            if data_len == 1 and data == b'\xfa':
-                datas += data
-                break
-            elif len(datas) == 2:
-                data_len = struct.unpack("b",data)[0]
-                datas += data
-            elif len(datas)>2 and data_len>0:
-                datas += data
-                data_len -= 1
-            elif data == b'\xfe':
-                if datas == b'':
-                    datas += data
-                    pre = k
-                else:
-                    if k-1 == pre:
-                        datas += data
-                    else:
-                        datas = b'\xfe'
-                        pre = k  
-        except:
-            datas = None
+    if genre == 0xB1:
+        time.sleep(0.1)
+        if self._serial_port.inWaiting()>0:
+            datas = self._serial_port.read(self._serial_port.inWaiting())
+            print(datas)
+        return datas
+    while True and time.time() - t < 0.1: 
+        data = self._serial_port.read()
+        k+=1
+        if data_len == 1 and data == b'\xfa':
+            datas += data
             break
+        elif len(datas) == 2:
+            data_len = struct.unpack("b",data)[0]
+            datas += data
+        elif len(datas)>2 and data_len>0:
+            datas += data
+            data_len -= 1
+        elif data == b'\xfe':
+            if datas == b'':
+                datas += data
+                pre = k
+            else:
+                if k-1 == pre:
+                    datas += data
+                else:
+                    datas = b'\xfe'
+                    pre = k  
     else:
         datas = None
     return datas

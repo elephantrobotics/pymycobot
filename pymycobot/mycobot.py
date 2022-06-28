@@ -83,7 +83,7 @@ class MyCobot(MyCobotCommandGenerator):
         self._write(self._flatten(real_command))
 
         if has_reply:
-            data = self._read()
+            data = self._read(genre)
             res = self._process_received(data, genre)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,

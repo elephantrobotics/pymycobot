@@ -1,5 +1,12 @@
 # ChangeLog for pymycobot
 
+## v2.8.0 (2022-6-28)
+
+- release v2.7.7
+- Added the ability to obtain and set the wifi account password through the serial port
+- Fix mypalletizer class BUG
+- Initial release of mybuddy interface
+
 ## v2.7.6 (2022-6-15)
 
 - release v2.7.6

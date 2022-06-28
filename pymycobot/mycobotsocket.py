@@ -14,6 +14,7 @@ from pymycobot.error import calibration_parameters
 
 class MyCobotSocket(MyCobotCommandGenerator):
     """MyCobot Python API Serial communication class.
+    Note: Please use this class under the same network
 
     Supported methods:
 
@@ -62,7 +63,8 @@ class MyCobotSocket(MyCobotCommandGenerator):
         self.sock = self.connect_socket()
 
     def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
-        """Connect the robot arm through the serial port and baud rate
+        """Connect the robot arm through the serial port and baud rate (Use only when connecting the pi version)
+        
         Args:
             serialport: (str) default /dev/ttyAMA0
             baudrate: default 1000000
@@ -98,7 +100,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
         if data:
             res = self._process_received(data, genre)
             if genre in [
-                ProtocolCode.VERSION,
+                ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
                 ProtocolCode.IS_PAUSED,
