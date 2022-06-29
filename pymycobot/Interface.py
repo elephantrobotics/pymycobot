@@ -43,52 +43,92 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         return real_command, has_reply
 
     # System status
-    def get_robot_version(self):  # TODO: test method <2021-03-11, yourname> #
-        """Get cobot version"""
-        return self._mesg(ProtocolCode.ROBOT_VERSION, 0, has_reply=True)
+    def get_robot_version(self, id):
+        """Get cobot version
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        return self._mesg(ProtocolCode.ROBOT_VERSION, id, has_reply=True)
 
-    def get_system_version(self):  # TODO: test method <2021-03-11, yourname> #
-        """Get cobot version"""
-        return self._mesg(ProtocolCode.SOFTWARE_VERSION, 0, has_reply=True)
+    def get_system_version(self, id):
+        """Get cobot version
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        return self._mesg(ProtocolCode.SOFTWARE_VERSION, id, has_reply=True)
 
-    def get_robot_id(self):
-        """Detect this robot id"""
-        return self._mesg(ProtocolCode.GET_ROBOT_ID, 0, has_reply=True)
+    def get_robot_id(self, id):
+        """Detect this robot id
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        return self._mesg(ProtocolCode.GET_ROBOT_ID, id, has_reply=True)
 
-    def set_robot_id(self, id):
-        """Set this robot id"""
-        return self._mesg(ProtocolCode.SET_ROBOT_ID, 0, id)
+    def set_robot_id(self, id, new_id):
+        """Set this robot id
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+            new_id: 1 - 253
+        """
+        return self._mesg(ProtocolCode.SET_ROBOT_ID, id, new_id)
 
     # Overall status
-    def power_on(self):
-        """Open communication with Atom."""
-        return self._mesg(ProtocolCode.POWER_ON, 0)
+    def power_on(self, id=0):
+        """Open communication with Atom.
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        return self._mesg(ProtocolCode.POWER_ON, id)
 
-    def power_off(self):
-        """Close communication with Atom."""
-        return self._mesg(ProtocolCode.POWER_OFF, 0)
+    def power_off(self, id=0):
+        """Close communication with Atom.
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        return self._mesg(ProtocolCode.POWER_OFF, id)
 
-    def is_power_on(self):
+    def is_power_on(self, id=0):
         """Adjust robot arm status
 
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+            
         Return:
             1 - power on
             0 - power off
             -1 - error data
         """
-        return self._mesg(ProtocolCode.IS_POWER_ON, 0, has_reply=True)
+        return self._mesg(ProtocolCode.IS_POWER_ON, id, has_reply=True)
 
-    def release_all_servos(self):
-        """Robot turns off torque output"""
-        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, 0)
+    def release_all_servos(self, id=0):
+        """Robot turns off torque output
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, id)
 
-    def is_controller_connected(self):
-        """Wether connected with Atom."""
-        return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, 0, has_reply=True)
+    def is_controller_connected(self, id=0):
+        """Wether connected with Atom.
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, id, has_reply=True)
 
-    def read_next_error(self):
-        """Robot Error Detection"""
-        self._mesg(ProtocolCode.READ_NEXT_ERROR, 0, has_reply=True)
+    def read_next_error(self, id = 0):
+        """Robot Error Detection
+        
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+        """
+        self._mesg(ProtocolCode.READ_NEXT_ERROR, id, has_reply=True)
 
     def set_free_mode(self, id):
         """set free mode
@@ -145,6 +185,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             mode: 0 - with interpolation 1 - No interpolation 2 - reserved.
 
         """
+        degrees = [self._angle2int(degree) for degree in degrees]
         return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed, mode)
 
     def get_coords(self, id):
@@ -188,7 +229,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Pause movement
 
         Args:
-            id: ALL/L/R/W (0/1/2/3).
+            id: 0/1/2/3 (ALL/L/R/W).
         """
         return self._mesg(ProtocolCode.PAUSE, id)
 
@@ -196,7 +237,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Judge whether the manipulator pauses or not.
 
         Args:
-            id: ALL/L/R/W (0/1/2/3).
+            id: 0/1/2/3 (ALL/L/R/W).
             
         Return:
             1 - paused
@@ -209,7 +250,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Recovery movement
 
         Args:
-            id: ALL/L/R/W (0/1/2/3).
+            id: 0/1/2/3 (ALL/L/R/W).
         """
         return self._mesg(ProtocolCode.RESUME, id)
 
@@ -217,7 +258,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Stop moving
 
         Args:
-            id: ALL/L/R/W (0/1/2/3).
+            id: 0/1/2/3 (ALL/L/R/W).
         """
         return self._mesg(ProtocolCode.STOP, id)
 
@@ -225,7 +266,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Judge whether in the position.
 
         Args:
-            id: ALL/L/R/W (0/1/2/3).
+            id: 0/1/2/3 (ALL/L/R/W).
             mode: 1 - coords, 0 - angles
             data: A data list, angles or coords, length 6.
 
@@ -253,7 +294,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Detect if the robot is moving
         
         Args:
-            id: ALL/L/R/W (0/1/2/3).
+            id: 0/1/2/3 (ALL/L/R/W).
             
         Return:
             0 - not moving
@@ -353,7 +394,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Get the six joints of the manipulator
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             
         Return:
             The list of encoders
@@ -801,40 +842,46 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_BASE_INPUT, 0, pin_no, has_reply=True)
 
-    def get_plan_speed(self):
+    def get_plan_speed(self, id = 0):
         """Get planning speed
 
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+            
         Return: 
             [movel planning speed, movej planning speed].
         """
-        return self._mesg(ProtocolCode.GET_PLAN_SPEED, 0, has_reply=True)
+        return self._mesg(ProtocolCode.GET_PLAN_SPEED, id, has_reply=True)
 
-    def get_plan_acceleration(self):
+    def get_plan_acceleration(self, id = 0):
         """Get planning acceleration
 
+        Args:
+            id: 0/1/2/3 (ALL/L/R/W)
+            
         Return: 
             [movel planning acceleration, movej planning acceleration].
         """
-        return self._mesg(ProtocolCode.GET_PLAN_ACCELERATION, 0, has_reply=True)
+        return self._mesg(ProtocolCode.GET_PLAN_ACCELERATION, id, has_reply=True)
 
-    def set_plan_speed(self, speed, is_linear):
+    def set_plan_speed(self, id, speed):
         """Set planning speed
 
         Args:
+            id: 0/1/2/3 (ALL/L/R/W)
             speed (int): (0 ~ 100).
-            is_linear: 0 -> joint 1 -> straight line
         """
-        return self._mesg(ProtocolCode.SET_PLAN_SPEED, 0, speed, is_linear)
+        return self._mesg(ProtocolCode.SET_PLAN_SPEED, id, speed)
 
-    def set_plan_acceleration(self, acceleration, is_linear):
+    def set_plan_acceleration(self, id, acceleration):
         """Set planning acceleration
 
         Args:
+            id: 0/1/2/3 (ALL/L/R/W)
             acceleration (int): (0 ~ 100).
-            is_linear: 0 -> joint 1 -> straight line
         """
         return self._mesg(
-            ProtocolCode.SET_PLAN_ACCELERATION, 0, acceleration, is_linear
+            ProtocolCode.SET_PLAN_ACCELERATION, id, acceleration
         )
 
     def get_servo_currents(self, id):
@@ -877,6 +924,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             id: 1/2/3 (L/R/W)
         """
         return self._mesg(0xE6, id, has_reply=True)
+    
     
     # def init_iic(self):
     #     from smbus2 import SMBus
