@@ -1,8 +1,13 @@
 # ChangeLog for pymycobot
 
+## v2.8.1 (2022-7-1)
+
+- release v2.8.1
+- Fix MyBuddy send_angles() function BUG
+
 ## v2.8.0 (2022-6-28)
 
-- release v2.7.7
+- release v2.8.0
 - Added the ability to obtain and set the wifi account password through the serial port
 - Fix mypalletizer class BUG
 - Initial release of mybuddy interface

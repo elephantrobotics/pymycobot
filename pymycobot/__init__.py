@@ -24,7 +24,7 @@ __all__ = [
     "MyBuddy"
 ]
 
-__version__ = "2.8.0"
+__version__ = "2.8.1"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
