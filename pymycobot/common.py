@@ -24,6 +24,7 @@ class ProtocolCode(object):
     IS_CONTROLLER_CONNECTED = 0x14
     READ_NEXT_ERROR = 0x15
     SET_FRESH_MODE = 0x16
+    GET_FRESH_MODE = 0x17   
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
 

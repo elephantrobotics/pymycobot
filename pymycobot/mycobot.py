@@ -107,7 +107,8 @@ class MyCobot(MyCobotCommandGenerator):
                 ProtocolCode.GET_MOVEMENT_TYPE,
                 ProtocolCode.GET_REFERENCE_FRAME,
                 ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE
+                ProtocolCode.GET_JOINT_MAX_ANGLE,
+                ProtocolCode.GET_FRESH_MODE
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:

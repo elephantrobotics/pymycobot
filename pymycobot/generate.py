@@ -925,10 +925,14 @@ class MyCobotCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
     
-    def set_refresh_mode(self, mode):   # TODO 22-5-19 need test
+    def set_fresh_mode(self, mode):   # TODO 22-5-19 need test
         """Set command refresh mode
         
         Args:
             mode: 0 - with interpolation  1 - No interpolation
         """
-        self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
+        return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
+        
+    def get_fresh_mode(self):
+        """Query sports mode"""
+        return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply = True)
