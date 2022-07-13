@@ -60,7 +60,7 @@ class MyBuddySocket(MyBuddyCommandGenerator):
         self.SERVER_PORT = netport
         self.rasp = False
         self.sock = self.connect_socket()
-
+        
     def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
         """Connect the robot arm through the serial port and baud rate
         Args:
@@ -93,11 +93,9 @@ class MyBuddySocket(MyBuddyCommandGenerator):
         """
         real_command, has_reply = super(
             MyBuddySocket, self)._mesg(genre, *args, **kwargs)
-        self._write(self._flatten(real_command))
-
-        if has_reply:
-            data = self._read()
-            res = self._process_received(data, genre)
+        data = self._write(self._flatten(real_command), "socket")
+        if data:
+            res = self._process_received(data, genre, arm=12)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.IS_POWER_ON,
@@ -221,3 +219,6 @@ class MyBuddySocket(MyBuddyCommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
+    
+    def close(self):
+        self.sock.close()

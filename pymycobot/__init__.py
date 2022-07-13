@@ -11,6 +11,8 @@ from pymycobot.mypalletizer import MyPalletizer
 from pymycobot.mycobotsocket import MyCobotSocket
 from pymycobot.genre import Angle, Coord
 from pymycobot import utils
+from pymycobot.mybuddysocket import MyBuddySocket
+from pymycobot.mypalletizerlite import MyPalletizerLite
 
 __all__ = [
     "MyCobot",
@@ -21,10 +23,12 @@ __all__ = [
     "MyPalletizer",
     "MyCobotSocket",
     "MyBuddyCommandGenerator",
-    "MyBuddy"
+    "MyBuddy",
+    "MyBuddySocket",
+    "MyPalletizerLite"
 ]
 
-__version__ = "2.8.0"
+__version__ = "2.9.0"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

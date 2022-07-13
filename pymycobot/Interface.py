@@ -129,6 +129,16 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             id: 0/1/2/3 (ALL/L/R/W)
         """
         self._mesg(ProtocolCode.READ_NEXT_ERROR, id, has_reply=True)
+        
+    def set_fresh_mode(self, id, mode):
+        """Set command refresh mode
+        
+        Args:
+            id: 1/2 (L/R)\n
+            mode (int): 
+                0 - Always execute the latest command first.\n 
+                1 - Execute instructions sequentially in the form of a queue. 
+        """
 
     def set_free_mode(self, id):
         """set free mode
@@ -155,7 +165,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """ Get the degree of all joints.
 
         Args:
-            id: 1/2/3 (L/R/W)
+            id: 1/2 (L/R)
             
         Return:
             list: A float list of all degree.
@@ -175,24 +185,22 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             ProtocolCode.SEND_ANGLE, id, joint, [self._angle2int(angle)], speed
         )
 
-    def send_angles(self, id, degrees, speed, mode):
+    def send_angles(self, id, degrees, speed):
         """Send all angles to the robotic arm
 
         Args:
-            id: 1/2/3 (L/R/W).
-            degrees: [angle_list]
+            id: 1/2 (L/R).
+            degrees: [angle_list] len 6
             speed: 1 - 100
-            mode: 0 - with interpolation 1 - No interpolation 2 - reserved.
-
         """
         degrees = [self._angle2int(degree) for degree in degrees]
-        return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed, mode)
+        return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
 
     def get_coords(self, id):
         """Get the coordinates of the robotic arm
         
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
         """
         return self._mesg(ProtocolCode.GET_COORDS, id, has_reply=True)
 
@@ -212,7 +220,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Send all coords to robot arm.
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             coords: a list of coords value(List[float]), length 6, [x(mm), y, z, rx(angle), ry, rz]\n
             speed : (int) 0 ~ 100
             mode : (int) 0 - moveJ, 1 - moveL, 2 - moveC
@@ -224,6 +232,24 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.SEND_COORDS, id, coord_list, speed, mode)
+    
+    def get_angle(self, id, joint_id):
+        """Get the angle of a single joint
+        
+        Args:
+            id (int): 1/2/3 (L/R/W).
+            joint_id (int): 1 - 7 (7 is gripper)
+        """
+        return self._mesg(ProtocolCode.GET_ANGLE, id, joint_id, has_reply = True)
+    
+    def get_coord(self, id, joint_id):
+        """Read a single coordinate parameter
+        
+        Args:
+            id (int): 1/2/3 (L/R/W).
+            joint_id (int): 1 - 7 (7 is gripper)
+        """
+        return self._mesg(ProtocolCode.GET_COORD, id, joint_id, has_reply = True)
 
     def pause(self, id):
         """Pause movement
@@ -262,13 +288,14 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.STOP, id)
 
-    def is_in_position(self, id, mode, data):  # TODO 通信协议可能有问题，待完善
+    def is_in_position(self, id, data, mode):  # TODO 通信协议可能有问题，待完善
         """Judge whether in the position.
 
         Args:
             id: 0/1/2/3 (ALL/L/R/W).
+            data: A data list, angles or coords. If id is 1/2. data length is 6. If id is 0. data len 13. if id is 3. data len 1
             mode: 1 - coords, 0 - angles
-            data: A data list, angles or coords, length 6.
+            
 
         Return:
             1 - True
@@ -276,14 +303,14 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             -1 - Error
         """
         if mode == 1:
-            self.calibration_parameters(coords=data)
+            # self.calibration_parameters(coords=data)
             data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
                 data_list.append(self._angle2int(data[idx]))
         elif mode == 0:
-            self.calibration_parameters(degrees=data)
+            # self.calibration_parameters(degrees=data)
             data_list = [self._angle2int(i) for i in data]
         else:
             raise Exception("id is not right, please input 0 or 1")
@@ -379,16 +406,15 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_ENCODER, id, joint_id, has_reply=True)
 
-    def set_encoders(self, id, encoders, speed, mode):
+    def set_encoders(self, id, encoders, speed):
         """Set the six joints of the manipulator to execute synchronously to the specified position.
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             encoders: A encoder list, length 6.
             speed: speed 1 ~ 100
-            mode: 0 - with interpolation 1 - No interpolation 2 - reserved.
         """
-        return self._mesg(ProtocolCode.SET_ENCODERS, id, encoders, speed, mode)
+        return self._mesg(ProtocolCode.SET_ENCODERS, id, encoders, speed)
 
     def get_encoders(self, id):
         """Get the six joints of the manipulator

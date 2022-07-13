@@ -40,6 +40,8 @@ class ProtocolCode(object):
     STOP = 0x29
     IS_IN_POSITION = 0x2A
     IS_MOVING = 0x2B
+    GET_ANGLE = 0x2C
+    GET_COORD = 0x2D
 
     # JOG MODE AND OPERATION
     JOG_ANGLE = 0x30
@@ -88,6 +90,8 @@ class ProtocolCode(object):
     SET_COLOR = 0x6A
     SET_ELETRIC_GRIPPER = 0x6B
     INIT_ELETRIC_GRIPPER = 0x6C
+    
+    GET_ACCEI_DATA = 0x73
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -210,7 +214,7 @@ class DataProcessor(object):
     def _is_frame_header(self, data, pos1, pos2):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
-    def _process_received(self, data, genre):
+    def _process_received(self, data, genre, arm = 6):
         if not data:
             return []
         if genre == 177:
@@ -224,7 +228,10 @@ class DataProcessor(object):
         header_i, header_j = 0, 1
         while header_j < data_len-4:
             if self._is_frame_header(data, header_i, header_j):
-                cmd_id = data[header_i + 3]
+                if arm == 6:
+                    cmd_id = data[header_i + 3]
+                elif arm == 12:
+                    cmd_id = data[header_i + 4]
                 # compare send header and received header
                 if cmd_id == genre:
                     break
@@ -232,7 +239,10 @@ class DataProcessor(object):
             header_j += 1
         else:
             return []
-        data_len = data[header_i + 2] - 2
+        if arm == 6:
+            data_len = data[header_i + 2] - 2
+        elif arm == 12:
+            data_len = data[header_i + 3] - 2
         unique_data = [ProtocolCode.GET_BASIC_INPUT,
                        ProtocolCode.GET_DIGITAL_INPUT]
 
@@ -240,12 +250,16 @@ class DataProcessor(object):
             data_pos = header_i + 5
             data_len -= 1
         else:
-            data_pos = header_i + 4
+            if arm == 6:
+                data_pos = header_i + 4
+            elif arm == 12:
+                data_pos = header_i + 5
+                
         valid_data = data[data_pos: data_pos + data_len]
 
         # process valid data
         res = []
-        if data_len == 12 or data_len == 8 or data_len == 24:
+        if data_len in [6, 8, 12 ,24]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
@@ -264,6 +278,9 @@ class DataProcessor(object):
                     res.append(0xff & data1 if data1 <0 else data1)
                 return res
             res.append(self._decode_int8(valid_data))
+        if genre == 0x73:
+            for i in range(len(res)):
+                res[i] /= 1000
         return res
 
     def _process_single(self, data):
@@ -293,13 +310,13 @@ def write(self, command, method=None):
                     break
         else:
             try:
-                self.sock.settimeout(0.1)
+                self.sock.settimeout(0.2)
                 data = self.sock.recv(1024)
             except:
                 data = b''
         return data
     else:
-        self.log.debug("_write: {}".format(command))
+        self.log.debug("_write: {}".format([hex(i) for i in command]))
         self._serial_port.write(command)
         self._serial_port.flush()
 
@@ -309,14 +326,17 @@ def read(self, genre):
     k = 0
     pre = 0
     t = time.time()
+    wait_time = 0.1
     if genre == 0xB1:
         time.sleep(0.1)
         if self._serial_port.inWaiting()>0:
             datas = self._serial_port.read(self._serial_port.inWaiting())
-            print(datas)
         return datas
-    while True and time.time() - t < 0.1: 
+    elif genre == 0x73:
+        wait_time = 1
+    while True and time.time() - t < wait_time: 
         data = self._serial_port.read()
+        # print("1:",data)
         k+=1
         if data_len == 1 and data == b'\xfa':
             datas += data

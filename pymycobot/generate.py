@@ -109,8 +109,10 @@ class MyCobotCommandGenerator(DataProcessor):
             # 修改wifi端口
             command_data = self._encode_int16(command_data)
             
-        if genre in [76, 77]:
+        elif genre in [76, 77]:
             command_data = [command_data[0]] + self._encode_int16(command_data[1])
+        elif genre == 115:
+            command_data = [command_data[1],command_data[3]]
 
         LEN = len(command_data) + 2
         command = [
@@ -262,7 +264,7 @@ class MyCobotCommandGenerator(DataProcessor):
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
-    def send_coords(self, coords, speed, mode):
+    def send_coords(self, coords, speed, mode=None):
         """Send all coords to robot arm.
 
         Args:
@@ -271,7 +273,7 @@ class MyCobotCommandGenerator(DataProcessor):
                         for mypalletizer: [x, y, z, θ]
                         for mypalletizer 340: [x, y, z]
             speed : (int) 0 ~ 100
-            mode : (int) 0 - angluar, 1 - linear
+            mode : (int) 0 - angluar, 1 - linear (mypalletizer 340 does not require this parameter)
         """
         # self.calibration_parameters(coords=coords, speed=speed)
         coord_list = []
@@ -279,21 +281,24 @@ class MyCobotCommandGenerator(DataProcessor):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
+        # print(coord_list)
+        if mode is not None:
+            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
+        else:
+            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed)
 
     def is_in_position(self, data, id=0):
-        """Judge whether in the position.
+        """Judge whether in the position. (mypalletizer 340 does not have this interface)
 
         Args:
             data: A data list, angles or coords.
                     for mycobot: len 6.
                     for mypalletizer: len 4
-                    for mypalletizer 340: len 3
             id: 1 - coords, 0 - angles
 
         Return:
-            1 - True
-            0 - False
+            1 - True\n
+            0 - False\n
             -1 - Error
         """
         if id == 1:
@@ -349,7 +354,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
     
     def jog_absolute(self, joint_id, angle, speed):
-        """Jog absolute angle.
+        """Jog absolute angle. (mypalletizer 340 does not have this interface)
 
         Args:
             joint_id:
@@ -397,20 +402,19 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.STOP)
 
     def set_encoder(self, joint_id, encoder):
-        """Set a single joint rotation to the specified potential value.
+        """Set a single joint rotation to the specified potential value. (mypalletizer 340 does not have this interface)
 
         Args:
             joint_id: 
                 for mycobot: Joint id 1 - 6
                 for mypalletizer: Joint id 1 - 4
-                for mypalletizer 340: Joint id 1 - 3
                 for mycobot gripper: Joint id 7
             encoder: The value of the set encoder.
         """
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
 
     def get_encoder(self, joint_id):
-        """Obtain the specified joint potential value.
+        """Obtain the specified joint potential value. (mypalletizer 340 does not have this interface)
 
         Args:
             joint_id: (int) 1 ~ 6
@@ -421,7 +425,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
 
     def set_encoders(self, encoders, sp):
-        """Set the six joints of the manipulator to execute synchronously to the specified position.
+        """Set the six joints of the manipulator to execute synchronously to the specified position. (mypalletizer 340 does not have this interface)
 
         Args:
             encoders: A encoder list, length 6.
@@ -430,7 +434,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
 
     def get_encoders(self):
-        """Get the six joints of the manipulator
+        """Get the six joints of the manipulator (mypalletizer 340 does not have this interface)
 
         Return:
             The list of encoders
@@ -736,8 +740,9 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             coords: a list of coords value(List[float]), length 6.
                 for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+                for mypalletizer 340: [x, y, z]
         """
-        self.calibration_parameters(coords=coords)
+        # self.calibration_parameters(coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -755,8 +760,9 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             coords: a list of coords value(List[float]), length 6.
                 for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+                for mypalletizer 340: [x, y, z]
         """
-        self.calibration_parameters(coords=coords)
+        # self.calibration_parameters(coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -889,6 +895,7 @@ class MyCobotCommandGenerator(DataProcessor):
             id: 
                 For mycobot: int 1-6.\n
                 For mypalletizer: int 1-4.
+                For mypalletizer 340: int 1-3.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
@@ -899,7 +906,8 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             id: 
                 For mycobot: int 1-6.\n
-                For mypalletizer: int 1-4.
+                For mypalletizer: int 1-4.\n
+                For mypalletizer 340: int 1-3.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)

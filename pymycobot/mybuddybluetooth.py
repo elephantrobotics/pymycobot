@@ -40,7 +40,7 @@ class MyBuddyBlueTooth(MyBuddyCommandGenerator):
 
         if has_reply:
             data = self.__read()
-            res = self._process_received(data, genre)
+            res = self._process_received(data, genre, arm=12)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.IS_POWER_ON,

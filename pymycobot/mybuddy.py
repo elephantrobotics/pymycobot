@@ -112,60 +112,6 @@ class MyBuddy(MyBuddyCommandGenerator):
             datas = None
         return datas
     
-    def _process_received(self, data, genre):
-        if genre == 177:
-            data = str(data)[2:-1].split(": ")
-            return data[1][0:-9], data[-1]
-        if not data:
-            return []
-        data = bytearray(data)
-        data_len = len(data)
-        # Get valid header: 0xfe0xfe
-        header_i, header_j = 0, 1
-        while header_j < data_len-4:
-            if self._is_frame_header(data, header_i, header_j):
-                cmd_id = data[header_i + 4]
-                # compare send header and received header
-                if cmd_id == genre:
-                    break
-            header_i += 1
-            header_j += 1
-        else:
-            return []
-        data_len = data[header_i + 3] - 2
-        unique_data = [ProtocolCode.GET_BASIC_INPUT,
-                       ProtocolCode.GET_DIGITAL_INPUT]
-
-        if cmd_id in unique_data:
-            data_pos = header_i + 5
-            data_len -= 1
-        else:
-            data_pos = header_i + 5
-        valid_data = data[data_pos: data_pos + data_len]
-
-        # process valid data
-        res = []
-        if data_len == 12 or data_len == 8 or data_len == 24:
-            for header_i in range(0, len(valid_data), 2):
-                one = valid_data[header_i: header_i + 2]
-                res.append(self._decode_int16(one))
-        elif data_len == 2:
-            if genre in [ProtocolCode.GET_PLAN_SPEED, ProtocolCode.GET_PLAN_ACCELERATION]:
-                return [self._decode_int8(valid_data[0:1]), self._decode_int8(valid_data[1:])]
-            if genre in [ProtocolCode.IS_SERVO_ENABLE]:
-                return [self._decode_int8(valid_data[1:2])]
-            res.append(self._decode_int16(valid_data))
-        elif data_len == 3:
-            res.append(self._decode_int16(valid_data[1:]))
-        else:
-            if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS]:
-                for i in range(data_len):
-                    data1 = self._decode_int8(valid_data[i:i+1])
-                    res.append(256+data1 if data1 <0 else data1)
-                return res
-            res.append(self._decode_int8(valid_data))
-        return res
-
     def _mesg(self, genre, *args, **kwargs):
         """
 
@@ -184,9 +130,11 @@ class MyBuddy(MyBuddyCommandGenerator):
 
         if has_reply:
             data = self._read()
-            res = self._process_received(data, genre)
+            res = self._process_received(data, genre, arm=12)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
+                ProtocolCode.SOFTWARE_VERSION,
+                ProtocolCode.GET_ROBOT_ID,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
                 ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
@@ -231,7 +179,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         """Get the radians of all joints
 
         Args: 
-            id: 1/2/3 (L/R/W)
+            id: 1/2 (L/R)
             
         Return:
             list: A list of float radians [radian1, ...]
@@ -243,50 +191,14 @@ class MyBuddy(MyBuddyCommandGenerator):
         """Send the radians of all joints to robot arm
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             radians: a list of radian values( List[float]), length 6
             speed: (int )0 ~ 100
         """
-        calibration_parameters(len6=radians, speed=speed)
+        # calibration_parameters(len6=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
-
-    def sync_send_angles(self, id, degrees, speed, timeout=7):
-        """Send the angle in synchronous state and return when the target point is reached
-            
-        Args:
-            id: 1/2/3 (L/R/W).
-            degrees: a list of degree values(List[float]), length 6.
-            speed: (int) 0 ~ 100
-            timeout: default 7s.
-        """
-        t = time.time()
-        self.send_angles(id, degrees, speed)
-        while time.time() - t < timeout:
-            f = self.is_in_position(degrees, 0)
-            if f:
-                break
-            time.sleep(0.1)
-        return self
-
-    def sync_send_coords(self, id, coords, speed, mode, timeout=7):
-        """Send the coord in synchronous state and return when the target point is reached
-            
-        Args:
-            id: 1/2/3 (L/R/W).
-            coords: a list of coord values(List[float])
-            speed: (int) 0 ~ 100
-            mode: (int): 0 - angular, 1 - linear
-            timeout: default 7s.
-        """
-        t = time.time()
-        self.send_coords(id, coords, speed, mode)
-        while time.time() - t < timeout:
-            if self.is_in_position(coords, 1):
-                break
-            time.sleep(0.1)
-        return self
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -310,3 +222,6 @@ class MyBuddy(MyBuddyCommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
+
+    def close(self):
+        self._serial_port.close()

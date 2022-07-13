@@ -23,15 +23,18 @@ class MyPalletizerLite:
             data = self._serial_port.read(self._serial_port.inWaiting())  
         return data
         
-    def release_all_servo(self):
+    def release_all_servos(self):
+        """relax all joints"""
         self._serial_port.write((ProtocolCode.RELEASE_SERVOS+ProtocolCode.END).encode())
         self._serial_port.flush()
         
-    def power_on(self):
+    def focus_servo(self):
+        """Lock all joints"""
         self._serial_port.write((ProtocolCode.LOCK_SERVOS+ProtocolCode.END).encode())
         self._serial_port.flush()
         
     def go_zero(self):
+        """back to zero"""
         self._serial_port.write((ProtocolCode.BACK_ZERO+ProtocolCode.END).encode())
         self._serial_port.flush()
         
