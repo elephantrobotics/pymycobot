@@ -134,11 +134,12 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Set command refresh mode
         
         Args:
-            id: 1/2 (L/R)\n
+            id: 1/2 (L/R).\n
             mode (int): 
-                0 - Always execute the latest command first.\n 
+                0 - Always execute the latest command first.
                 1 - Execute instructions sequentially in the form of a queue. 
         """
+        return self._mesg(ProtocolCode.SET_FRESH_MODE, id, mode)
 
     def set_free_mode(self, id):
         """set free mode
