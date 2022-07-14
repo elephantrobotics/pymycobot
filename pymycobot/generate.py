@@ -182,7 +182,7 @@ class MyCobotCommandGenerator(DataProcessor):
 
     def read_next_error(self):
         """Robot Error Detection"""
-        self._mesg(ProtocolCode.READ_NEXT_ERROR, 0, has_reply=True)    
+        return self._mesg(ProtocolCode.READ_NEXT_ERROR, 0, has_reply=True)    
     
     def set_free_mode(self, flag):
         """set to free mode
