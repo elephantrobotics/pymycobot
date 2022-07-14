@@ -109,8 +109,10 @@ class MyCobotCommandGenerator(DataProcessor):
             # 修改wifi端口
             command_data = self._encode_int16(command_data)
             
-        if genre in [76, 77]:
+        elif genre in [76, 77]:
             command_data = [command_data[0]] + self._encode_int16(command_data[1])
+        elif genre == 115:
+            command_data = [command_data[1],command_data[3]]
 
         LEN = len(command_data) + 2
         command = [
@@ -218,7 +220,7 @@ class MyCobotCommandGenerator(DataProcessor):
             degree : degree value(float)(about -170 ~ 170).
             speed : (int) 0 ~ 100
         """
-        self.calibration_parameters(id=id, degree=degree, speed=speed)
+        # self.calibration_parameters(id=id, degree=degree, speed=speed)
         return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
@@ -226,13 +228,13 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send the degrees of all joints to robot arm.
 
         Args:
-            degrees: a list of degree values(List[float]), length 6 or 4.\n
+            degrees: a list of degree values(List[float]).\n
                         for mycobot: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0].\n
                         for mypalletizer: [0.0, 0.0, 0.0, 0.0]
                         for mypalletizer 340: [0.0, 0.0, 0.0]
             speed : (int) 0 ~ 100
         """
-        self.calibration_parameters(degrees=degrees, speed=speed)
+        # self.calibration_parameters(degrees=degrees, speed=speed)
         degrees = [self._angle2int(degree) for degree in degrees]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
@@ -262,7 +264,7 @@ class MyCobotCommandGenerator(DataProcessor):
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
-    def send_coords(self, coords, speed, mode):
+    def send_coords(self, coords, speed, mode=None):
         """Send all coords to robot arm.
 
         Args:
@@ -271,7 +273,7 @@ class MyCobotCommandGenerator(DataProcessor):
                         for mypalletizer: [x, y, z, θ]
                         for mypalletizer 340: [x, y, z]
             speed : (int) 0 ~ 100
-            mode : (int) 0 - angluar, 1 - linear
+            mode : (int) 0 - angluar, 1 - linear (mypalletizer 340 does not require this parameter)
         """
         # self.calibration_parameters(coords=coords, speed=speed)
         coord_list = []
@@ -279,21 +281,24 @@ class MyCobotCommandGenerator(DataProcessor):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
+        # print(coord_list)
+        if mode is not None:
+            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
+        else:
+            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed)
 
     def is_in_position(self, data, id=0):
-        """Judge whether in the position.
+        """Judge whether in the position. (mypalletizer 340 does not have this interface)
 
         Args:
             data: A data list, angles or coords.
                     for mycobot: len 6.
                     for mypalletizer: len 4
-                    for mypalletizer 340: len 3
             id: 1 - coords, 0 - angles
 
         Return:
-            1 - True
-            0 - False
+            1 - True\n
+            0 - False\n
             -1 - Error
         """
         if id == 1:
@@ -326,7 +331,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Jog control angle.
 
         Args:
-            joint_id:
+            joint_id: int
                     For mycobot: int 1-6.\n
                     For mypalletizer: int 1-4.
                     For mypalletizer 340: int 1-3.
@@ -339,7 +344,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Jog control coord.
 
         Args:
-            coord_id:
+            coord_id: int
                     For mycobot: int 1-6.\n
                     For mypalletizer: int 1-4.
                     For mypalletizer 340: int 1-3.
@@ -349,10 +354,10 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
     
     def jog_absolute(self, joint_id, angle, speed):
-        """Jog absolute angle.
+        """Jog absolute angle. (mypalletizer 340 does not have this interface)
 
         Args:
-            joint_id:
+            joint_id: int
                     For mycobot: int 1-6.\n
                     For mypalletizer: int 1-4.
             angle: -180 ~ 180
@@ -397,20 +402,19 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.STOP)
 
     def set_encoder(self, joint_id, encoder):
-        """Set a single joint rotation to the specified potential value.
+        """Set a single joint rotation to the specified potential value. (mypalletizer 340 does not have this interface)
 
         Args:
-            joint_id: 
+            joint_id: int
                 for mycobot: Joint id 1 - 6
                 for mypalletizer: Joint id 1 - 4
-                for mypalletizer 340: Joint id 1 - 3
                 for mycobot gripper: Joint id 7
             encoder: The value of the set encoder.
         """
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
 
     def get_encoder(self, joint_id):
-        """Obtain the specified joint potential value.
+        """Obtain the specified joint potential value. (mypalletizer 340 does not have this interface)
 
         Args:
             joint_id: (int) 1 ~ 6
@@ -421,7 +425,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
 
     def set_encoders(self, encoders, sp):
-        """Set the six joints of the manipulator to execute synchronously to the specified position.
+        """Set the six joints of the manipulator to execute synchronously to the specified position. (mypalletizer 340 does not have this interface)
 
         Args:
             encoders: A encoder list, length 6.
@@ -430,7 +434,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
 
     def get_encoders(self):
-        """Get the six joints of the manipulator
+        """Get the six joints of the manipulator (mypalletizer 340 does not have this interface)
 
         Return:
             The list of encoders
@@ -452,7 +456,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             speed (int) - 0 ~ 100
         """
-        self.calibration_parameters(speed=speed)
+        # self.calibration_parameters(speed=speed)
         return self._mesg(ProtocolCode.SET_SPEED, speed)
 
     """
@@ -483,7 +487,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Return:
             angle value(float)
         """
-        self.calibration_parameters(id=joint_id)
+        # self.calibration_parameters(id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
 
     def get_joint_max_angle(self, joint_id):
@@ -495,7 +499,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Return:
             angle value(float)
         """
-        self.calibration_parameters(id=joint_id)
+        # self.calibration_parameters(id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
 
     # Servo control
@@ -541,9 +545,6 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Return:
             values 0 - 4096
-            0 - disable
-            1 - enable
-            -1 - error
         """
         return self._mesg(
             ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
@@ -570,7 +571,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Power off designated servo
 
         Args:
-            servo_id:
+            servo_id: int
                 for mycobot: 1 - 6.\n
                 for mypalletizer: 1 - 4
                 for mypalletizer 340: 1 - 3
@@ -581,7 +582,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Power on designated servo
 
         Args:
-            servo_id:
+            servo_id: int
                 for mycobot: 1 - 6\n
                 for mypalletizer: 1 - 4
                 for mypalletizer 340: 1 - 3
@@ -641,7 +642,8 @@ class MyCobotCommandGenerator(DataProcessor):
     def get_gripper_value(self):
         """Get the value of gripper.
 
-        Return: gripper value (int)
+        Return: 
+            gripper value (int)
         """
         return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
 
@@ -709,8 +711,8 @@ class MyCobotCommandGenerator(DataProcessor):
     def get_ssid_pwd(self):
         """Get connected wifi account and password. (Apply to m5 or seeed)
 
-        Args:
-            return: (account, password)
+        Return: 
+            (account, password)
         """
         return self._mesg(ProtocolCode.GET_SSID_PWD, has_reply=True)
 
@@ -734,10 +736,11 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set tool coordinate system
         
         Args:
-            coords: a list of coords value(List[float]), length 6.
+            coords: a list of coords value(List[float])
                 for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+                for mypalletizer 340: [x, y, z]
         """
-        self.calibration_parameters(coords=coords)
+        # self.calibration_parameters(coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -753,10 +756,11 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set the world coordinate system
         
         Args:
-            coords: a list of coords value(List[float]), length 6.
+            coords: a list of coords value(List[float])
                 for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+                for mypalletizer 340: [x, y, z]
         """
-        self.calibration_parameters(coords=coords)
+        # self.calibration_parameters(coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -804,14 +808,16 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set end coordinate system
         
         Args:
-            end: 0 - flange, 1 - tool
+            end: int
+                0 - flange, 1 - tool
         """
         return self._mesg(ProtocolCode.SET_END_TYPE, end)
     
     def get_end_type(self):
         """Get end coordinate system
         
-        Return: 0 - flange, 1 - tool
+        Return: 
+            0 - flange, 1 - tool
         """
         return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
         
@@ -820,7 +826,8 @@ class MyCobotCommandGenerator(DataProcessor):
         """Get planning speed
         
         Args:
-            return: [movel planning speed, movej planning speed].
+            return: 
+                [movel planning speed, movej planning speed].
         """
         return self._mesg(ProtocolCode.GET_PLAN_SPEED, has_reply=True)
     
@@ -828,7 +835,8 @@ class MyCobotCommandGenerator(DataProcessor):
         """Get planning acceleration
         
         Args:
-            return: [movel planning acceleration, movej planning acceleration].
+            return: 
+                [movel planning acceleration, movej planning acceleration].
         """
         return self._mesg(ProtocolCode.GET_PLAN_ACCELERATION, has_reply=True)
     
@@ -853,28 +861,32 @@ class MyCobotCommandGenerator(DataProcessor):
     def get_servo_speeds(self):
         """Get joint speed (Only for mycobot 350)
         
-        Return: unit step/s
+        Return: 
+            unit step/s
         """
         return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
     
     def get_servo_currents(self):
         """Get joint current (Only for mycobot 350)
         
-        Return: 0 ~ 3250 mA
+        Return: 
+            0 ~ 3250 mA
         """
         return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
     
     def get_servo_voltages(self):
         """Get joint voltages (Only for mycobot 350)
         
-        Return: volts < 24 V
+        Return: 
+            volts < 24 V
         """
         return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, has_reply=True)
 
     def get_servo_status(self):
         """Get joint status (Only for mycobot 350)
         
-        Return: [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error, a value of 1 indicates an error
+        Return: 
+            [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error, a value of 1 indicates an error
         """
         return self._mesg(ProtocolCode.GET_SERVO_STATUS, has_reply=True)
 
@@ -886,9 +898,10 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set the joint maximum angle
         
         Args:
-            id: 
+            id: int.
                 For mycobot: int 1-6.\n
                 For mypalletizer: int 1-4.
+                For mypalletizer 340: int 1-3.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
@@ -897,9 +910,10 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set the joint minimum angle
         
         Args:
-            id: 
+            id: int.
                 For mycobot: int 1-6.\n
-                For mypalletizer: int 1-4.
+                For mypalletizer: int 1-4.\n
+                For mypalletizer 340: int 1-3.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
@@ -929,7 +943,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set command refresh mode
         
         Args:
-            mode: 0 - with interpolation  1 - No interpolation
+            mode: int.
+                0 - Always execute the latest command first.
+                1 - Execute instructions sequentially in the form of a queue.
         """
         return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
         

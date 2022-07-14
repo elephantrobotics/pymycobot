@@ -90,9 +90,6 @@ class MyPalletizer(MyCobotCommandGenerator):
             debug    : whether to show debug info
         """
         super(MyPalletizer, self).__init__(debug)
-        self.debug = debug
-        setup_logging(self.debug)
-        self.log = logging.getLogger(__name__)
         self.calibration_parameters = calibration_parameters
 
         import serial
@@ -126,9 +123,12 @@ class MyPalletizer(MyCobotCommandGenerator):
 
         if has_reply:
             data = self._read(genre)
+            # print(data)
             res = self._process_received(data, genre)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
+                ProtocolCode.SOFTWARE_VERSION,
+                ProtocolCode.GET_ROBOT_ID,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
                 ProtocolCode.IS_PAUSED,
@@ -183,7 +183,7 @@ class MyPalletizer(MyCobotCommandGenerator):
             radians (list): example [0, 0, 0, 0, 0, 0]
             speed (int): 0 ~ 100
         """
-        calibration_parameters(len6=radians, speed=speed)
+        # calibration_parameters(len6=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
@@ -230,3 +230,15 @@ class MyPalletizer(MyCobotCommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
+    
+    def get_accie_data(self, value):
+        """Get gyroscope data
+        
+        Args:
+            value: 
+                0 - Get data from a 3-axis gyroscope.\n
+                1 - Get data from a 2-axis gyroscope.
+            
+        """
+        data_list = [[25, 21], [26, 32]]
+        return self._mesg(ProtocolCode.GET_ACCEI_DATA, data_list[1] if value else data_list[0], has_reply=True)

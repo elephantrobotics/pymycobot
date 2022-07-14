@@ -6,7 +6,7 @@ log
 pymycobot/__pycache__/
 tests/__pycache__/
 
-test.py
+test*.py
 record.txt
 test_test.py
 
