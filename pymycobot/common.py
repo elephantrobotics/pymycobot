@@ -144,6 +144,10 @@ class ProtocolCode(object):
     GET_SERVO_STATUS = 0xE4
     GET_SERVO_TEMPS = 0xE5
     
+    GET_BASE_COORDS = 0xF0
+    BASE_TO_SINGLE_COORDS = 0xF1
+    COLLISION = 0xF2
+    
     # IIC
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5

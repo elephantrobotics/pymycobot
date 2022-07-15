@@ -28,7 +28,7 @@ __all__ = [
     "MyPalletizerLite"
 ]
 
-__version__ = "2.9.0b1"
+__version__ = "2.9.0b3"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

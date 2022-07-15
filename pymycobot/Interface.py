@@ -953,6 +953,54 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(0xE6, id, has_reply=True)
     
+    def get_base_coords(self, coords, arm):
+        """Convert coordinates to base coordinates
+        
+        Args:
+            coords: a list of coords value(List[float]), length 6 [x(mm), y, z, rx(angle), ry, rz]
+            arm: 0 - left. 1 - right
+            
+        Return:
+            Base coords
+        """
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.GET_BASE_COORDS, 0, coord_list, arm, has_reply = True)
+    
+    def base_to_single_coords(self, base_coords, arm):
+        """Convert base coordinates to coordinates
+        
+        Args:
+            coords: a list of base coords value len 6
+            arm: 0 - left. 1 - right
+            
+        Return:
+            coords
+        """
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(base_coords[idx]))
+        for angle in base_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.BASE_TO_SINGLE_COORDS, 0, coord_list, arm, has_reply = True)
+    
+    def collision(self, left_angles, right_angles):
+        """Collision detection main program
+        
+        Args:
+            left_angles: left arm angle len 6.
+            right_angles: right arm angle len 6.
+            
+        Return:
+            int
+        """
+        degrees1 = [self._angle2int(degree) for degree in left_angles]
+        degrees2 = [self._angle2int(degree) for degree in right_angles]
+        
+        return self._mesg(ProtocolCode.COLLISION, 0, degrees1, degrees2, has_reply = True)
     
     # def init_iic(self):
     #     from smbus2 import SMBus
