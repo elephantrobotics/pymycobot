@@ -9,10 +9,10 @@ from pymycobot.bluet import BluetoothConnection
 
 class MyBuddyBlueTooth(MyBuddyCommandGenerator):
     """MyBuddy bluetooth API"""
-    def __init__(self):
+    def __init__(self, bt_address=None, port = 10):
         """There is a default Bluetooth search time of 5 seconds"""
         super(MyBuddyBlueTooth).__init__()
-        self.ble = BluetoothConnection()
+        self.ble = BluetoothConnection(bt_address, port)
         self.ble_obj = self.ble.connect_target_device()
         
     def __read(self):

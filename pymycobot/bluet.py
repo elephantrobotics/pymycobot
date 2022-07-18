@@ -3,10 +3,12 @@ import bluetooth
 import sys
 
 class BluetoothConnection:
-    def __init__(self):
+    def __init__(self, bd_address=None, port=None):
         self.device = []
         self.target_name = "mybuddy"
         self.nearby_devices = None
+        self.bd_address = bd_address
+        self.port = port
  
     def find_target_device(self):
         available_addr = []
@@ -19,6 +21,10 @@ class BluetoothConnection:
         return None
  
     def connect_target_device(self):
+        if self.bd_address:
+            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            sock.connect((self.bd_address, self.port))
+            return sock
         target_address = self.find_target_device()
         if target_address:
             if len(target_address) > 1:
