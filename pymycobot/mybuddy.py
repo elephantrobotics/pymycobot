@@ -159,6 +159,8 @@ class MyBuddy(MyBuddyCommandGenerator):
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
+            elif genre in [ProtocolCode.GET_ANGLE]:
+                return self._process_single(self._int2angle(angle) for angle in res)
             elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.BASE_TO_SINGLE_COORDS]:
                 if res:
                     r = []
