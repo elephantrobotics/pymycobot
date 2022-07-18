@@ -13,6 +13,7 @@ from pymycobot.genre import Angle, Coord
 from pymycobot import utils
 from pymycobot.mybuddysocket import MyBuddySocket
 from pymycobot.mypalletizerlite import MyPalletizerLite
+from pymycobot.mybuddybluetooth import MyBuddyBlueTooth
 
 __all__ = [
     "MyCobot",
@@ -25,6 +26,7 @@ __all__ = [
     "MyBuddyCommandGenerator",
     "MyBuddy",
     "MyBuddySocket",
+    "MyBuddyBlueTooth",
     "MyPalletizerLite"
 ]
 
