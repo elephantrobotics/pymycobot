@@ -1,10 +1,11 @@
 # coding: utf-8
-import bluetooth
 import sys
 
 class BluetoothConnection:
     def __init__(self, bd_address=None, port=None):
         self.device = []
+        import bluetooth
+        self.bluetooth = bluetooth
         self.target_name = "mybuddy"
         self.nearby_devices = None
         self.bd_address = bd_address
@@ -12,7 +13,7 @@ class BluetoothConnection:
  
     def find_target_device(self):
         available_addr = []
-        self.nearby_devices = bluetooth.discover_devices(lookup_names=True, duration=5)
+        self.nearby_devices = self.bluetooth.discover_devices(lookup_names=True, duration=5)
         if self.nearby_devices:
             for addr, name in self.nearby_devices:
                 if self.target_name == name:
@@ -22,7 +23,7 @@ class BluetoothConnection:
  
     def connect_target_device(self):
         if self.bd_address:
-            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            sock = self.bluetooth.BluetoothSocket(self.bluetooth.RFCOMM)
             sock.connect((self.bd_address, self.port))
             return sock
         target_address = self.find_target_device()
@@ -36,7 +37,7 @@ class BluetoothConnection:
                 sys.stdout.write(device_info)
                 choose_device = input("please enter 1-{}:".format(len(target_address)))
                 target_address = target_address[int(choose_device)-1][0]
-            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            sock = self.bluetooth.BluetoothSocket(self.bluetooth.RFCOMM)
             try:
                 sock.connect((target_address[0][0], 1))
                 return sock

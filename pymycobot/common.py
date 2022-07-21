@@ -147,6 +147,13 @@ class ProtocolCode(object):
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
     COLLISION = 0xF2
+    GET_BASE_COORD = 0xF3
+    GET_ALL_BASE_COORDS = 0xF4
+    WRITE_BASE_COORD = 0xF5
+    WRITE_BASE_COORDS = 0xF6
+    JOG_INC_COORD = 0xF7
+    COLLISION_SWITCH = 0xF8
+    IS_COLLISION_ON = 0xF9
     
     # IIC
     # SET_IIC_STATE = 0xA4
@@ -299,7 +306,7 @@ def write(self, command, method=None):
     if method == "socket":
         data = b""
         if self.rasp:
-            self.sock.sendall(str(command).encode())
+            self.sock.send(str(command).encode())
         else:
             self.sock.sendall(bytes(command))
 
@@ -315,7 +322,7 @@ def write(self, command, method=None):
                     break
         else:
             try:
-                self.sock.settimeout(0.2)
+                self.sock.settimeout(1)
                 data = self.sock.recv(1024)
             except:
                 data = b''

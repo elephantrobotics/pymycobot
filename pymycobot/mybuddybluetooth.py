@@ -1,5 +1,4 @@
 # coding: utf-8
-import bluetooth
 
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
@@ -9,17 +8,32 @@ from pymycobot.bluet import BluetoothConnection
 
 class MyBuddyBlueTooth(MyBuddyCommandGenerator):
     """MyBuddy bluetooth API"""
+    _write = write
     def __init__(self, bt_address=None, port = 10):
-        """There is a default Bluetooth search time of 5 seconds"""
+        """When bt_address is the default value of None, enter the Bluetooth search mode. There is a default Bluetooth search time of 5 seconds"""
         super(MyBuddyBlueTooth).__init__()
         self.ble = BluetoothConnection(bt_address, port)
-        self.ble_obj = self.ble.connect_target_device()
+        self.sock = self.ble.connect_target_device()
         
-    def __read(self):
-        while True:
-            data = self.ble_obj.recv(1024)
-            if data:
-                return data
+    def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.2'):
+        """Connect the robot arm through the serial port and baud rate
+        
+        Args:
+            serialport: (str) default /dev/ttyAMA0
+            baudrate: default 1000000
+            timeout: default 0.1
+        
+        """
+        self.rasp = True
+        self._write(serialport, "socket")
+        self._write(baudrate, "socket")
+        self._write(timeout, "socket")
+        # self._write([254, 254, 1, 2, 32, 32], "socket")
+        # self._write([254, 254, 1, 2, 32, 32], "socket")
+        # self._write([254, 254, 1, 2, 32, 32], "socket")
+        
+        # self._write(timeout, "socket")
+        # self._write(timeout, "socket")
         
         
     def _mesg(self, genre, *args, **kwargs):
@@ -36,13 +50,14 @@ class MyBuddyBlueTooth(MyBuddyCommandGenerator):
         """
         real_command, has_reply = super(
             MyBuddyBlueTooth, self)._mesg(genre, *args, **kwargs)
-        self.ble_obj.write(bytes(self._flatten(real_command)))
+        data = self._write(self._flatten(real_command), "socket")
 
-        if has_reply:
-            data = self.__read()
+        if data:
             res = self._process_received(data, genre, arm=12)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
+                ProtocolCode.SOFTWARE_VERSION,
+                ProtocolCode.GET_ROBOT_ID,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
                 ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
@@ -67,7 +82,14 @@ class MyBuddyBlueTooth(MyBuddyCommandGenerator):
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+            elif genre in [ProtocolCode.GET_ANGLE]:
+                return self._process_single(self._int2angle(angle) for angle in res)
+            elif genre in [ProtocolCode.GET_COORD]:
+                if real_command[5] < 4:
+                    return self._int2coord(res[0])
+                else:
+                    return self._int2angle(res[0])
+            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.BASE_TO_SINGLE_COORDS]:
                 if res:
                     r = []
                     for idx in range(3):
@@ -75,12 +97,15 @@ class MyBuddyBlueTooth(MyBuddyCommandGenerator):
                     for idx in range(3, 6):
                         r.append(self._int2angle(res[idx]))
                     return r
-                else:
+                else: 
                     return res
-            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.COLLISION]:
                 return [self._int2coord(angle) for angle in res]
             else:
                 return res
         return None
         
+    def close(self):
+        self._write("close","socket")
+        self.sock.close()
         

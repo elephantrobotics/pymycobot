@@ -160,7 +160,12 @@ class MyBuddy(MyBuddyCommandGenerator):
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [ProtocolCode.GET_ANGLE]:
-                return self._process_single(self._int2angle(angle) for angle in res)
+                return self._int2angle(res[0]) if res else None
+            elif genre in [ProtocolCode.GET_COORD]:
+                if real_command[5] < 4:
+                    return self._int2coord(res[0]) if res else None
+                else:
+                    return self._int2angle(res[0]) if res else None
             elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.BASE_TO_SINGLE_COORDS]:
                 if res:
                     r = []
@@ -203,22 +208,48 @@ class MyBuddy(MyBuddyCommandGenerator):
         return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
 
     # Basic for raspberry pi.
-    def gpio_init(self):
-        """Init GPIO module, and set BCM mode."""
+    def set_gpio_mode(self, pin_no, mode):
+        """Init GPIO module, and set BCM mode.
+        
+        Args:
+            pin_no: (int)pin number.
+            mode: 0 - input 1 - output
+        """
         import RPi.GPIO as GPIO  # type: ignore
-
-        GPIO.setmode(GPIO.BCM)
         self.gpio = GPIO
+        self.gpio.setmode(GPIO.BCM)
+        if mode == 1:
+            self.gpio.setup(pin_no, self.gpio.OUT)
+        else:
+            self.gpio.setup(pin_no, self.gpio.IN)
+            
 
-    def gpio_output(self, pin, v):
+    def set_gpio_output(self, pin, v):
         """Set GPIO output value.
 
         Args:
             pin: (int)pin number.
             v: (int) 0 / 1
         """
-        self.gpio.setup(pin, self.gpio.OUT)
         self.gpio.output(pin, v)
+        
+    def set_gpio_input(self, pin):
+        """Set GPIO input value.
+
+        Args:
+            pin: (int)pin number.
+        """
+        self.gpio.input(pin)
+        
+    def set_gpio_pwm(self, pin, baud, dc):
+        """Set GPIO PWM value.
+
+        Args:
+            pin: (int)pin number.
+            baud: (int) 10 - 1000000
+            dc: (int) 0 - 100
+        """
+        self.gpio.PWM(pin, baud, dc)
 
     # Other
     def wait(self, t):

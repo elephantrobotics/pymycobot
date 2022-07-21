@@ -25,9 +25,9 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             command_data = self._encode_int16(command_data)
 
         LEN = len(command_data) + 1
-        check_digit = sum(command_data[1:]) + genre
-        if check_digit >= 256:
-            check_digit %= 256
+        check_digit = (sum(command_data[1:]) + genre) & 0xff
+        # if check_digit >= 256:
+        #     check_digit %= 256
         command = [
             ProtocolCode.HEADER,
             ProtocolCode.HEADER,
@@ -843,33 +843,6 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_JOINT_CURRENT, id, joint_id)
 
-    # Basic
-    def set_basic_mode(self, pin_no, pin_mode):
-        """Set base IO, input or output mode
-
-        Args:
-            pin_no: 1 - 5
-            pin_mode: 0 - input 1 - output
-        """
-        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, 0, pin_no, pin_mode)
-
-    def set_basic_output(self, pin_no, pin_signal):
-        """Set basic output.
-
-        Args:
-            pin_no: pin port number (0 - 20).
-            pin_signal: 0 / 1 (0 - low, 1 - high)
-        """
-        return self._mesg(ProtocolCode.GET_BASIC_INPUT, 0, pin_no, pin_signal)
-
-    def get_basic_input(self, pin_no):
-        """Get basic input for M5 version.
-
-        Args:
-            pin_no: (int) pin port number (0 - 20).
-        """
-        return self._mesg(ProtocolCode.GET_BASE_INPUT, 0, pin_no, has_reply=True)
-
     def get_plan_speed(self, id = 0):
         """Get planning speed
 
@@ -953,8 +926,8 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(0xE6, id, has_reply=True)
     
-    def get_base_coords(self, coords, arm):
-        """Convert coordinates to base coordinates
+    def get_base_coords(self, *args: int):
+        """Convert coordinates to base coordinates. Pass in parameters or no parameters
         
         Args:
             coords: a list of coords value(List[float]), length 6 [x(mm), y, z, rx(angle), ry, rz]
@@ -963,12 +936,16 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Return:
             Base coords
         """
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.GET_BASE_COORDS, 0, coord_list, arm, has_reply = True)
+        if len(args) == 2:
+            coords, arm = args
+            coord_list = []
+            for idx in range(3):
+                coord_list.append(self._coord2int(coords[idx]))
+            for angle in coords[3:]:
+                coord_list.append(self._angle2int(angle))
+            return self._mesg(ProtocolCode.GET_BASE_COORDS, 0, coord_list, arm, has_reply = True)
+        elif len(args) == 0:
+            return self._mesg(ProtocolCode.GET_ALL_BASE_COORDS, 0, has_reply = True)
     
     def base_to_single_coords(self, base_coords, arm):
         """Convert base coordinates to coordinates
@@ -1001,6 +978,65 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         degrees2 = [self._angle2int(degree) for degree in right_angles]
         
         return self._mesg(ProtocolCode.COLLISION, 0, degrees1, degrees2, has_reply = True)
+    
+    def get_base_coord(self, id):
+        """Get the base coordinates of the single arm
+        
+        Args:
+            id: 1/2 (L/R)
+        """
+        return self._mesg(ProtocolCode.GET_BASE_COORD, id, has_reply = True)
+    
+    def write_base_coord(self, id, axis, coord, speed):
+        """Base single coordinate movement
+        
+        Args:
+            id: 1/2 (L/R)
+            axis: 1 - 6 (x/y/z/rx/ry/rz)
+            coord: Coordinate value
+            speed: 1 - 100
+        """
+        value = self._coord2int(coord) if axis <= 3 else self._angle2int(coord)
+        return self._mesg(ProtocolCode.WRITE_BASE_COORD, id, axis, [value], speed)
+    
+    def write_base_coords(self, id, coords, speed):
+        """base coordinate move
+        
+        Args:
+            id: 1/2 (L/R)
+            coords: coords: a list of coords value(List[float]), length 6, [x(mm), y, z, rx(angle), ry, rz]
+            speed: 1 - 100
+        """
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.WRITE_BASE_COORDS, id, coord_list, speed)
+    
+    def jog_inc_coord(self, axis, increment, speed):
+        """Double-arm coordinated coordinate stepping
+        
+        Args:
+            axis: 1 - 6 (x/y/z/rx/ry/rz)
+            increment: 
+            speed: 1 - 100
+        """
+        value = self._coord2int(increment) if axis <= 3 else self._angle2int(increment)
+        return self._mesg(ProtocolCode.JOG_INC_COORD, 0, [value], speed)
+        
+    def collision_switch(self, state):
+        """Collision Detection Switch
+        
+        Args:
+            state (int): 0 - close 1 - open (Off by default)
+        """
+        return self._mesg(ProtocolCode.COLLISION_SWITCH, state)
+    
+    def is_collision_on(self):
+        """Get collision detection status"""
+        return self._mesg(ProtocolCode.IS_COLLISION_ON, 0, has_reply = True)
+        
     
     # def init_iic(self):
     #     from smbus2 import SMBus
