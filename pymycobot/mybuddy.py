@@ -129,7 +129,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         self._write(self._flatten(real_command))
 
         if has_reply:
-            data = b'\xfe\xfe\x03\x04-\xf32R' #self._read()
+            data = self._read()
             res = self._process_received(data, genre, arm=12)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
