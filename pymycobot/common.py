@@ -290,7 +290,7 @@ class DataProcessor(object):
                     res.append(0xff & data1 if data1 <0 else data1)
                 return res
             res.append(self._decode_int8(valid_data))
-        if genre == 0x73:
+        if genre == ProtocolCode.GET_ACCEI_DATA:
             for i in range(len(res)):
                 res[i] /= 1000
         return res
@@ -339,12 +339,12 @@ def read(self, genre):
     pre = 0
     t = time.time()
     wait_time = 0.1
-    if genre == 0xB1:
+    if genre == ProtocolCode.GET_SSID_PWD:
         time.sleep(0.1)
         if self._serial_port.inWaiting()>0:
             datas = self._serial_port.read(self._serial_port.inWaiting())
         return datas
-    elif genre == 0x73:
+    elif genre == ProtocolCode.GET_ACCEI_DATA:
         wait_time = 1
     while True and time.time() - t < wait_time: 
         data = self._serial_port.read()

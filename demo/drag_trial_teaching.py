@@ -84,7 +84,7 @@ class TeachingTest(Helper):
     def record(self):
         self.record_list = []
         self.recording = True
-
+        self.mc.set_fresh_mode(0)
         def _record():
             start_t = time.time()
 

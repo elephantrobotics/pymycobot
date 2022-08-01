@@ -4,7 +4,7 @@ import time
 from pymycobot.common import ProtocolCode
 
 
-class MyPalletizerLite:
+class Mira:
     def __init__(self, port, baudrate="115200", timeout=0.1):
         """
         Args:
@@ -28,7 +28,7 @@ class MyPalletizerLite:
         self._serial_port.write((ProtocolCode.RELEASE_SERVOS+ProtocolCode.END).encode())
         self._serial_port.flush()
         
-    def focus_servo(self):
+    def focus_servos(self):
         """Lock all joints"""
         self._serial_port.write((ProtocolCode.LOCK_SERVOS+ProtocolCode.END).encode())
         self._serial_port.flush()

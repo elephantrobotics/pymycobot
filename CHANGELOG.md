@@ -1,5 +1,9 @@
 # ChangeLog for pymycobot
 
+## v2.9.0
+
+- release v2.8.1
+
 ## v2.8.1 (2022-7-1)
 
 - release v2.8.1

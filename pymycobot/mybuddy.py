@@ -129,7 +129,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         self._write(self._flatten(real_command))
 
         if has_reply:
-            data = self._read()
+            data = b'\xfe\xfe\x03\x04-\xf32R' #self._read()
             res = self._process_received(data, genre, arm=12)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
@@ -163,10 +163,12 @@ class MyBuddy(MyBuddyCommandGenerator):
                 return self._int2angle(res[0]) if res else None
             elif genre in [ProtocolCode.GET_COORD]:
                 if real_command[5] < 4:
+                    if real_command[2] == 3:
+                        return self._int2angle(res[0]) if res else None
                     return self._int2coord(res[0]) if res else None
                 else:
                     return self._int2angle(res[0]) if res else None
-            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.BASE_TO_SINGLE_COORDS]:
+            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.GET_BASE_COORD, ProtocolCode.BASE_TO_SINGLE_COORDS]:
                 if res:
                     r = []
                     for idx in range(3):

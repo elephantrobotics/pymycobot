@@ -10,7 +10,7 @@ We support Python2, Python3.5 or later.
 <!-- vim-markdown-toc GFM -->
 
 - [pymycobot](#pymycobot)
-- [MyCobot](#mycobot)
+- [MyCobot / Mypalletizer](#mycobot--mypalletizer)
   - [Overall status](#overall-status)
     - [power_on](#power_on)
     - [power_off](#power_off)
@@ -114,10 +114,16 @@ We support Python2, Python3.5 or later.
     - [set_gpio_output](#set_gpio_output)
     - [get_gpio_in](#get_gpio_in)
 - [MyBuddy](#mybuddy)
+    - [base_to_single_coords(base_coords, arm)](#base_to_single_coordsbase_coords-arm)
+    - [collision(left_angles, right_angles)](#collisionleft_angles-right_angles)
+    - [collision_switch(state)](#collision_switchstate)
     - [focus_servo(id, servo_id)](#focus_servoid-servo_id)
     - [get_acceleration(id)](#get_accelerationid)
+    - [get_angle(id, joint_id)](#get_angleid-joint_id)
     - [get_angles(id)](#get_anglesid)
-    - [get_basic_input(pin_no)](#get_basic_inputpin_no)
+    - [get_base_coord(id)](#get_base_coordid)
+    - [get_base_coords(\*args: int)](#get_base_coordsargs-int)
+    - [get_coord(id, joint_id)](#get_coordid-joint_id)
     - [get_coords(id)](#get_coordsid)
     - [get_digital_input(id, pin_no)](#get_digital_inputid-pin_no)
     - [get_encoder(id, joint_id)](#get_encoderid-joint_id)
@@ -128,78 +134,88 @@ We support Python2, Python3.5 or later.
     - [get_joint_max_angle(id, joint_id)](#get_joint_max_angleid-joint_id)
     - [get_joint_min_angle(id, joint_id)](#get_joint_min_angleid-joint_id)
     - [get_movement_type(id)](#get_movement_typeid)
-    - [get_plan_acceleration()](#get_plan_acceleration-1)
-    - [get_plan_speed()](#get_plan_speed-1)
+    - [get_plan_acceleration(id=0)](#get_plan_accelerationid0)
+    - [get_plan_speed(id=0)](#get_plan_speedid0)
     - [get_reference_frame(id)](#get_reference_frameid)
-    - [get_robot_id()](#get_robot_id)
-    - [get_robot_version()](#get_robot_version)
+    - [get_robot_id(id)](#get_robot_idid)
+    - [get_robot_version(id)](#get_robot_versionid)
     - [get_servo_currents(id)](#get_servo_currentsid)
     - [get_servo_data(id, servo_no, data_id)](#get_servo_dataid-servo_no-data_id)
     - [get_servo_status(id)](#get_servo_statusid)
     - [get_servo_temps(id)](#get_servo_tempsid)
     - [get_servo_voltages(id)](#get_servo_voltagesid)
     - [get_speed(id)](#get_speedid)
-    - [get_system_version()](#get_system_version)
+    - [get_system_version(id)](#get_system_versionid)
     - [get_tool_reference(id)](#get_tool_referenceid)
     - [get_world_reference(id)](#get_world_referenceid)
     - [is_all_servo_enable(id)](#is_all_servo_enableid)
-    - [is_controller_connected()](#is_controller_connected-1)
+    - [is_collision_on()](#is_collision_on)
+    - [is_controller_connected(id=0)](#is_controller_connectedid0)
     - [is_free_mode(id)](#is_free_modeid)
     - [is_gripper_moving(id)](#is_gripper_movingid)
-    - [is_in_position(id, mode, data)](#is_in_positionid-mode-data)
+    - [is_in_position(id, data, mode)](#is_in_positionid-data-mode)
     - [is_moving(id)](#is_movingid)
     - [is_paused(id)](#is_pausedid)
-    - [is_power_on()](#is_power_on-1)
+    - [is_power_on(id=0)](#is_power_onid0)
     - [is_servo_enable(id, servo_id)](#is_servo_enableid-servo_id)
     - [jog_absolute(id, joint_id, angle, speed)](#jog_absoluteid-joint_id-angle-speed)
     - [jog_angle(id, joint_id, direction, speed)](#jog_angleid-joint_id-direction-speed)
     - [jog_coord(id, coord_id, direction, speed)](#jog_coordid-coord_id-direction-speed)
+    - [jog_inc_coord(axis, increment, speed)](#jog_inc_coordaxis-increment-speed)
     - [jog_increment(id, joint_id, increment, speed)](#jog_incrementid-joint_id-increment-speed)
     - [jog_stop(id)](#jog_stopid)
     - [joint_brake(id, joint_id)](#joint_brakeid-joint_id)
     - [pause(id)](#pauseid)
-    - [power_off()](#power_off-1)
-    - [power_on()](#power_on-1)
-    - [release_all_servos()](#release_all_servos-1)
+    - [power_off(id=0)](#power_offid0)
+    - [power_on(id=0)](#power_onid0)
+    - [read_next_error(id=0)](#read_next_errorid0)
+    - [release_all_servos(id=0)](#release_all_servosid0)
     - [release_servo(id, servo_id)](#release_servoid-servo_id)
     - [resume(id)](#resumeid)
     - [send_angle(id, joint, angle, speed)](#send_angleid-joint-angle-speed)
-    - [send_angles(id, degrees, speed, mode)](#send_anglesid-degrees-speed-mode)
+    - [send_angles(id, degrees, speed)](#send_anglesid-degrees-speed)
     - [send_coord(id, coord, data, speed)](#send_coordid-coord-data-speed)
     - [send_coords(id, coords, speed, mode)](#send_coordsid-coords-speed-mode)
     - [set_acceleration(id, acc)](#set_accelerationid-acc)
-    - [set_basic_mode(pin_no, pin_mode)](#set_basic_modepin_no-pin_mode)
-    - [set_basic_output(pin_no, pin_signal)](#set_basic_outputpin_no-pin_signal)
-    - [set_color(r=0, g=0, b=0)](#set_colorr0-g0-b0)
+    - [set_color(id, r=0, g=0, b=0)](#set_colorid-r0-g0-b0)
     - [set_digital_output(id, pin_no, pin_signal)](#set_digital_outputid-pin_no-pin_signal)
     - [set_encoder(id, joint_id, encoder, speed)](#set_encoderid-joint_id-encoder-speed)
-    - [set_encoders(id, encoders, speed, mode)](#set_encodersid-encoders-speed-mode)
+    - [set_encoders(id, encoders, speed)](#set_encodersid-encoders-speed)
     - [set_end_type(id, end)](#set_end_typeid-end)
-    - [set_free_mode(id)](#set_free_modeid)
+    - [set_free_mode(id, value)](#set_free_modeid-value)
+    - [set_fresh_mode(id, mode)](#set_fresh_modeid-mode)
     - [set_gripper_calibration(id)](#set_gripper_calibrationid)
     - [set_gripper_state(id, flag)](#set_gripper_stateid-flag)
-    - [set_gripper_value(id, value)](#set_gripper_valueid-value)
+    - [set_gripper_value(id, value, speed)](#set_gripper_valueid-value-speed)
     - [set_joint_current(id, joint_id, current)](#set_joint_currentid-joint_id-current)
     - [set_joint_max(id, joint_id, angle)](#set_joint_maxid-joint_id-angle)
     - [set_joint_min(id, joint_id, angle)](#set_joint_minid-joint_id-angle)
     - [set_movement_type(id, move_type)](#set_movement_typeid-move_type)
     - [set_pin_mode(id, pin_no, pin_mode)](#set_pin_modeid-pin_no-pin_mode)
-    - [set_plan_acceleration(acceleration, is_linear)](#set_plan_accelerationacceleration-is_linear)
-    - [set_plan_speed(speed, is_linear)](#set_plan_speedspeed-is_linear)
+    - [set_plan_acceleration(id, acceleration)](#set_plan_accelerationid-acceleration)
+    - [set_plan_speed(id, speed)](#set_plan_speedid-speed)
     - [set_pwm_output(id, channel, frequency, pin_val)](#set_pwm_outputid-channel-frequency-pin_val)
     - [set_reference_frame(id, rftype)](#set_reference_frameid-rftype)
-    - [set_robot_id(id)](#set_robot_idid)
+    - [set_robot_id(id, new_id)](#set_robot_idid-new_id)
     - [set_servo_calibration(id, servo_no)](#set_servo_calibrationid-servo_no)
     - [set_servo_data(id, servo_no, data_id, value)](#set_servo_dataid-servo_no-data_id-value)
     - [set_speed(id, speed)](#set_speedid-speed)
     - [set_tool_reference(id, coords)](#set_tool_referenceid-coords)
     - [set_world_reference(id, coords)](#set_world_referenceid-coords)
     - [stop(id)](#stopid)
+    - [write_base_coord(id, axis, coord, speed)](#write_base_coordid-axis-coord-speed)
+    - [write_base_coords(id, coords, speed)](#write_base_coordsid-coords-speed)
+    - [get_radians(id)](#get_radiansid)
+    - [send_radians(id, radians, speed)](#send_radiansid-radians-speed)
+    - [set_gpio_input(pin)](#set_gpio_inputpin)
+    - [set_gpio_mode(pin_no, mode)](#set_gpio_modepin_no-mode)
+    - [set_gpio_output(pin, v)](#set_gpio_outputpin-v)
+    - [set_gpio_pwm(pin, baud, dc)](#set_gpio_pwmpin-baud-dc)
   
 <!-- vim-markdown-toc -->
 </details>
 
-# MyCobot
+# MyCobot / Mypalletizer
 
 **Import to your project**:
 
@@ -1223,77 +1239,147 @@ m.set_gpio_output(21, 1)
 
 # MyBuddy
 
-MyBuddy Python API
+### base_to_single_coords(base_coords, arm)
+
+Convert base coordinates to coordinates
+
+* **Parameters**
+
+  * **coords** – a list of base coords value len 6
+
+  * **arm** – 0 - left. 1 - right
+
+* **Returns**
+
+    coords
+
+### collision(left_angles, right_angles)
+
+Collision detection main program
+
+* **Parameters**
+
+  * **left_angles** – left arm angle len 6.
+
+  * **right_angles** – right arm angle len 6.
+
+* **Returns**
+
+    int
+
+### collision_switch(state)
+
+Collision Detection Switch
+
+* **Parameters**
+
+    **state** (_int_) – 0 - close 1 - open (Off by default)
 
 ### focus_servo(id, servo_id)
 
 Power on designated servo
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **servo_id** – 1 - 6
+  * **servo_id** – 1 - 6
 
 ### get_acceleration(id)
 
 Read acceleration during all moves
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2/3 (L/R/W)
+
+### get_angle(id, joint_id)
+
+Get the angle of a single joint
+
+* **Parameters**
+
+  * **id** (_int_) – 1/2/3 (L/R/W).
+
+  * **joint_id** (_int_) – 1 - 7 (7 is gripper)
 
 ### get_angles(id)
 
 Get the degree of all joints.
 
-- **Parameters**
+* **Parameters**
 
-    **id** – 1/2/3 (L/R/W)
+    **id** – 1/2 (L/R)
 
-- **Returns**
+* **Returns**
 
     A float list of all degree.
 
-- **Return type**
+* **Return type**
 
     list
 
-### get_basic_input(pin_no)
+### get_base_coord(id)
 
-Get basic input for M5 version.
+Get the base coordinates of the single arm
 
-- **Parameters**
+* **Parameters**
 
-    **pin_no** – (int) pin port number (0 - 20).
+    **id** – 1/2 (L/R)
+
+### get_base_coords(\*args: int)
+
+Convert coordinates to base coordinates. Pass in parameters or no parameters
+
+* **Parameters**
+
+  * **coords** – a list of coords value(List[float]), length 6 [x(mm), y, z, rx(angle), ry, rz]
+
+  * **arm** – 0 - left. 1 - right
+
+* **Returns**
+
+    Base coords
+
+### get_coord(id, joint_id)
+
+Read a single coordinate parameter
+
+* **Parameters**
+
+  * **id** (_int_) – 1/2/3 (L/R/W).
+
+  * **joint_id** (_int_) – 1 - 7 (7 is gripper)
 
 ### get_coords(id)
 
-- **Parameters**
+Get the coordinates of the robotic arm
 
-    **id** – 1/2/3 (L/R/W).
+* **Parameters**
+
+    **id** – 1/2 (L/R).
 
 ### get_digital_input(id, pin_no)
 
 singal value
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2 (L/R)
+  * **id** – 1/2 (L/R)
 
-  - **pin_no** (_int_) – 1 - 5
+  * **pin_no** (_int_) – 1 - 5
 
 ### get_encoder(id, joint_id)
 
 Obtain the specified joint potential value.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2/3 (L/R/W).
 
-  - **joint_id** – (int) 1 ~ 6
+  * **joint_id** – (int) 1 ~ 6
 
-- **Returns**
+* **Returns**
 
     0 ~ 4096
 
@@ -1301,11 +1387,11 @@ Obtain the specified joint potential value.
 
 Get the six joints of the manipulator
 
-- **Parameters**
+* **Parameters**
 
-    **id** – 1/2/3 (L/R/W).
+    **id** – 1/2 (L/R).
 
-- **Returns**
+* **Returns**
 
     The list of encoders
 
@@ -1313,11 +1399,11 @@ Get the six joints of the manipulator
 
 Get end coordinate system
 
-- **Parameters**
+* **Parameters**
 
     **id** – 0/1/2 (ALL/L/R)
 
-- **Returns**
+* **Returns**
 
     0 - flange
     1 - tool
@@ -1326,11 +1412,11 @@ Get end coordinate system
 
 Get the value of gripper.
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2 (L/R)
 
-- **Returns**
+* **Returns**
 
     gripper value (int)
 
@@ -1338,23 +1424,23 @@ Get the value of gripper.
 
 Get Collision Current
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 0/1/2 (ALL/L/R)
+  * **id** – 0/1/2 (ALL/L/R)
 
-  - **joint_id** – 1 - 6
+  * **joint_id** – 1 - 6
 
 ### get_joint_max_angle(id, joint_id)
 
 Gets the maximum movement angle of the specified joint
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **joint_id** – (int) 1 - 6
+  * **joint_id** – (int) 1 - 6
 
-- **Returns**
+* **Returns**
 
     angle value(float)
 
@@ -1362,13 +1448,13 @@ Gets the maximum movement angle of the specified joint
 
 Gets the minimum movement angle of the specified joint
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **joint_id** – (int) 1 - 6
+  * **joint_id** – (int) 1 - 6
 
-- **Returns**
+* **Returns**
 
     angle value(float)
 
@@ -1376,28 +1462,36 @@ Gets the minimum movement angle of the specified joint
 
 Get movement type
 
-- **Parameters**
+* **Parameters**
 
     **id** – 0/1/2 (ALL/L/R)
 
-- **Returns**
+* **Returns**
 
     1 - movel
     0 - moveJ
 
-### get_plan_acceleration()
+### get_plan_acceleration(id=0)
 
 Get planning acceleration
 
-- **Returns**
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
+
+* **Returns**
 
     [movel planning acceleration, movej planning acceleration].
 
-### get_plan_speed()
+### get_plan_speed(id=0)
 
 Get planning speed
 
-- **Returns**
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
+
+* **Returns**
 
     [movel planning speed, movej planning speed].
 
@@ -1405,40 +1499,39 @@ Get planning speed
 
 Get the base coordinate system
 
-- **Parameters**
+* **Parameters**
 
     **id** – 0/1/2 (ALL/L/R)
 
-- **Returns**
+* **Returns**
 
     0 - base 1 - tool.
 
-### get_robot_id()
+### get_robot_id(id)
 
 Detect this robot id
 
-### get_robot_version()
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
+
+### get_robot_version(id)
 
 Get cobot version
 
-- **Returns**
+* **Parameters**
 
-    1
-    mycobotPro: 101
-
-- **Return type**
-
-    mycobot
+    **id** – 0/1/2/3 (ALL/L/R/W)
 
 ### get_servo_currents(id)
 
 Get joint current
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2/3 (L/R/W)
 
-- **Returns**
+* **Returns**
 
     value mA
 
@@ -1446,34 +1539,30 @@ Get joint current
 
 Read the data parameter of the specified address of the steering gear.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **servo_no** – Serial number of articulated steering gear, 1 - 6.
+  * **servo_no** – Serial number of articulated steering gear, 1 - 6.
 
-  - **data_id** – Data address.
+  * **data_id** – Data address.
 
-- **Returns**
+* **Returns**
 
-    0 - 4096
+    values (0 - 4096)
     0 - disable
     1 - enable
     -1 - error
-
-- **Return type**
-
-    values
 
 ### get_servo_status(id)
 
 Get joint status
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2/3 (L/R/W)
 
-- **Returns**
+* **Returns**
 
     [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error
 
@@ -1481,7 +1570,7 @@ Get joint status
 
 Get joint temperature
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2/3 (L/R/W)
 
@@ -1489,11 +1578,11 @@ Get joint temperature
 
 Get joint voltages
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2/3 (L/R/W)
 
-- **Returns**
+* **Returns**
 
     volts < 24 V
 
@@ -1501,36 +1590,31 @@ Get joint voltages
 
 Get speed
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2/3 (L/R/W).
 
-- **Returns**
-
-    (int)
-
-- **Return type**
+* **Returns**
 
     speed
 
-### get_system_version()
+* **Return type**
+
+    int
+
+### get_system_version(id)
 
 Get cobot version
 
-- **Returns**
+* **Parameters**
 
-    1
-    mycobotPro: 101
-
-- **Return type**
-
-    mycobot
+    **id** – 0/1/2/3 (ALL/L/R/W)
 
 ### get_tool_reference(id)
 
 Get tool coordinate system
 
-- **Parameters**
+* **Parameters**
 
     **id** – 0/1/2 (ALL/L/R)
 
@@ -1538,7 +1622,7 @@ Get tool coordinate system
 
 Get the world coordinate system
 
-- **Parameters**
+* **Parameters**
 
     **id** – 0/1/2 (ALL/L/R)
 
@@ -1546,29 +1630,37 @@ Get the world coordinate system
 
 Determine whether the specified steering gear is connected
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2/3 (L/R/W)
 
-- **Returns**
+* **Returns**
 
     0 - disable
     1 - enable
     -1 - error
 
-### is_controller_connected()
+### is_collision_on()
+
+Get collision detection status
+
+### is_controller_connected(id=0)
 
 Wether connected with Atom.
+
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
 
 ### is_free_mode(id)
 
 Check if it is free mode
 
-- **Parameters**
+* **Parameters**
 
     **id** – 0/1/2/3 (ALL/L/R/W)
 
-- **Returns**
+* **Returns**
 
     0/1
 
@@ -1576,97 +1668,87 @@ Check if it is free mode
 
 Judge whether the gripper is moving or not
 
-- **Parameters**
+* **Parameters**
 
     **id** – 1/2 (L/R)
 
-- **Returns**
+* **Returns**
 
-    not moving
-    1 : is moving
-    -1: error data
+    0 - not moving
+    1 - is moving
+    -1 - error data
 
-- **Return type**
-
-    0
-
-### is_in_position(id, mode, data)
+### is_in_position(id, data, mode)
 
 Judge whether in the position.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – ALL/L/R/W (0/1/2/3).
+  * **id** – 0/1/2/3 (ALL/L/R/W).
 
-  - **mode** – 1 - coords, 0 - angles
+  * **data** – A data list, angles or coords. If id is 1/2. data length is 6. If id is 0. data len 13. if id is 3. data len 1
 
-  - **data** – A data list, angles or coords, length 6.
+  * **mode** – 1 - coords, 0 - angles
 
-- **Returns**
+* **Returns**
 
-    True
-    0 : False
-    -1: Error
-
-- **Return type**
-
-    1
+    1 - True
+    0 - False
+    -1 - Error
 
 ### is_moving(id)
 
-- **Parameters**
+Detect if the robot is moving
 
-    **id** – ALL/L/R/W (0/1/2/3).
+* **Parameters**
 
-- **Returns**
+    **id** – 0/1/2/3 (ALL/L/R/W).
 
-    not moving
-    1 : is moving
-    -1 : error data
+* **Returns**
 
-- **Return type**
-
-    0
+    0 - not moving
+    1 - is moving
+    -1 - error data
 
 ### is_paused(id)
 
 Judge whether the manipulator pauses or not.
 
-- **Parameters**
+* **Parameters**
 
-    **id** – ALL/L/R/W (0/1/2/3).
+    **id** – 0/1/2/3 (ALL/L/R/W).
 
-- **Returns**
+* **Returns**
 
     1 - paused
     0 - not paused
     -1 - error
 
-### is_power_on()
+### is_power_on(id=0)
 
 Adjust robot arm status
 
-- **Returns**
+* **Parameters**
 
-    power on
-    0 : power off
-    -1: error data
+    **id** – 0/1/2/3 (ALL/L/R/W)
 
-- **Return type**
+* **Returns**
 
-    1
+    1 - power on
+    0 - power off
+    -1 - error data
 
 ### is_servo_enable(id, servo_id)
 
 Determine whether all steering gears are connected
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **servo_id** – (int) 1 ~ 6
+  * **servo_id** – (int) 1 ~ 6
 
-- **Returns**
+* **Returns**
 
     0 - disable
     1 - enable
@@ -1676,387 +1758,433 @@ Determine whether all steering gears are connected
 
 Absolute joint control
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2/3 (L/R/W).
 
-  - **joint_id** – int 1-6.
+  * **joint_id** – int 1-6.
 
-  - **angle** – int
+  * **angle** – int
 
-  - **speed** – int (0 - 100)
+  * **speed** – int (0 - 100)
 
 ### jog_angle(id, joint_id, direction, speed)
 
 Jog control angle.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2/3 (L/R/W).
 
-  - **joint_id** – int 1-6.
+  * **joint_id** – int 1-6.
 
-  - **direction** – 0 - decrease, 1 - increase
+  * **direction** – 0 - decrease, 1 - increase
 
-  - **speed** – int (0 - 100)
+  * **speed** – int (0 - 100)
 
 ### jog_coord(id, coord_id, direction, speed)
 
 Jog control coord.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2/3 (L/R/W).
 
-  - **coord_id** – int 1-6 (x/y/z/rx/ry/rz).
+  * **coord_id** – int 1-6 (x/y/z/rx/ry/rz).
 
-  - **direction** – 0 - decrease, 1 - increase
+  * **direction** – 0 - decrease, 1 - increase
 
-  - **speed** – int (0 - 100)
+  * **speed** – int (0 - 100)
+
+### jog_inc_coord(axis, increment, speed)
+
+Double-arm coordinated coordinate stepping
+
+* **Parameters**
+
+  * **axis** – 1 - 6 (x/y/z/rx/ry/rz)
+
+  * **increment** –
+
+  * **speed** – 1 - 100
 
 ### jog_increment(id, joint_id, increment, speed)
 
 step mode
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2/3 (L/R/W).
 
-  - **joint_id** – int 1-6.
+  * **joint_id** – int 1-6.
 
-  - **increment** – # TODO 未注明
+  * **increment** –
 
-  - **speed** – int (1 - 100)
+  * **speed** – int (1 - 100)
 
 ### jog_stop(id)
 
 Stop jog moving
-:param id: 1/2/3 (L/R/W).
+
+* **Parameters**
+
+    **id** – 1/2/3 (L/R/W).
 
 ### joint_brake(id, joint_id)
 
 Make it stop when the joint is in motion, and the buffer distance is positively related to the existing speed
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **joint_id** – 1 - 6
+  * **joint_id** – 1 - 6
 
 ### pause(id)
 
 Pause movement
 
-- **Parameters**
+* **Parameters**
 
-    **id** – ALL/L/R/W (0/1/2/3).
+    **id** – 0/1/2/3 (ALL/L/R/W).
 
-### power_off()
+### power_off(id=0)
 
 Close communication with Atom.
 
-### power_on()
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
+
+### power_on(id=0)
 
 Open communication with Atom.
 
-### release_all_servos()
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
+
+### read_next_error(id=0)
+
+Robot Error Detection
+
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
+
+### release_all_servos(id=0)
+
+Robot turns off torque output
+
+* **Parameters**
+
+    **id** – 0/1/2/3 (ALL/L/R/W)
 
 ### release_servo(id, servo_id)
 
 Power off designated servo
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **servo_id** – 1 - 6.
+  * **servo_id** – 1 - 6.
 
 ### resume(id)
 
 Recovery movement
 
-- **Parameters**
+* **Parameters**
 
-    **id** – ALL/L/R/W (0/1/2/3).
+    **id** – 0/1/2/3 (ALL/L/R/W).
 
 ### send_angle(id, joint, angle, speed)
 
 Send one degree of joint to robot arm.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **joint** – 1 ~ 6
+  * **joint** – 1 ~ 6
 
-  - **angle** – int
+  * **angle** – int
 
-  - **speed** – 1 ~ 100
+  * **speed** – 1 ~ 100
 
-### send_angles(id, degrees, speed, mode)
+### send_angles(id, degrees, speed)
 
-- **Parameters**
+Send all angles to the robotic arm
 
-  - **id** – 1/2/3 (L/R/W).
+* **Parameters**
 
-  - **degrees** – [angle_list]
+  * **id** – 1/2 (L/R).
 
-  - **speed** – 1 - 100
+  * **degrees** – [angle_list] len 6
 
-  - **mode** – 0 - with interpolation 1 - No interpolation 2 - reserved.
+  * **speed** – 1 - 100
 
 ### send_coord(id, coord, data, speed)
 
-- **Parameters**
+Send a single coordinate to the robotic arm
 
-  - **id** – 1/2/3 (L/R/W).
+* **Parameters**
 
-  - **coord** – 1 ~ 6 (x/y/z/rx/ry/rz)
+  * **id** – 1/2/3 (L/R/W).
 
-  - **data** – int
+  * **coord** – 1 ~ 6 (x/y/z/rx/ry/rz)
 
-  - **speed** – 0 ~ 100
+  * **data** – Coordinate value
+
+  * **speed** – 0 ~ 100
 
 ### send_coords(id, coords, speed, mode)
 
 Send all coords to robot arm.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2 (L/R).
 
-  - **coords** – a list of coords value(List[float]), length 6, [x(mm), y, z, rx(angle), ry, rz]
+  * **coords** – a list of coords value(List[float]), length 6, [x(mm), y, z, rx(angle), ry, rz]
 
-  - **speed** – (int) 0 ~ 100
+  * **speed** – (int) 0 ~ 100
 
-  - **mode** – (int) 0 - moveJ, 1 - moveL, 2 - moveC
+  * **mode** – (int) 0 - moveJ, 1 - moveL, 2 - moveC
 
 ### set_acceleration(id, acc)
 
 Read acceleration during all moves
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **acc** – 1 - 100
+  * **acc** – 1 - 100
 
-### set_basic_mode(pin_no, pin_mode)
-
-Set base IO, input or output mode
-
-- **Parameters**
-
-  - **pin_no** – 1 - 5
-
-  - **pin_mode** – 0 - input 1 - output
-
-### set_basic_output(pin_no, pin_signal)
-
-Set basic output.
-
-- **Parameters**
-
-  - **pin_no** – pin port number (0 - 20).
-
-  - **pin_signal** – 0 / 1 (0 - low, 1 - high)
-
-### set_color(r=0, g=0, b=0)
+### set_color(id, r=0, g=0, b=0)
 
 Set the light color on the top of the robot arm.
 
-- **Parameters**
+* **Parameters**
 
-  - **r** (_int_) – 0 ~ 255
+  * **id** – 1/2 (L/R)
 
-  - **g** (_int_) – 0 ~ 255
+  * **r** (_int_) – 0 ~ 255
 
-  - **b** (_int_) – 0 ~ 255
+  * **g** (_int_) – 0 ~ 255
+
+  * **b** (_int_) – 0 ~ 255
 
 ### set_digital_output(id, pin_no, pin_signal)
 
-- **Parameters**
+Set atom IO output level
 
-  - **id** – 1/2 (L/R)
+* **Parameters**
 
-  - **pin_no** (_int_) – 1 - 5
+  * **id** – 1/2 (L/R)
 
-  - **pin_signal** (_int_) – 0 / 1
+  * **pin_no** (_int_) – 1 - 5
+
+  * **pin_signal** (_int_) – 0 / 1
 
 ### set_encoder(id, joint_id, encoder, speed)
 
 Set a single joint rotation to the specified potential value.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2/3 (L/R/W).
 
-  - **joint_id** – 1 - 6.
+  * **joint_id** – 1 - 6.
 
-  - **encoder** – The value of the set encoder.
+  * **encoder** – The value of the set encoder.
 
-### set_encoders(id, encoders, speed, mode)
+### set_encoders(id, encoders, speed)
 
 Set the six joints of the manipulator to execute synchronously to the specified position.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W).
+  * **id** – 1/2 (L/R).
 
-  - **encoders** – A encoder list, length 6.
+  * **encoders** – A encoder list, length 6.
 
-  - **speed** – speed 1 ~ 100
-
-  - **mode** – 0 - with interpolation 1 - No interpolation 2 - reserved.
+  * **speed** – speed 1 ~ 100
 
 ### set_end_type(id, end)
 
 Set end coordinate system
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 0/1/2 (ALL/L/R)
+  * **id** – 0/1/2 (ALL/L/R)
 
-  - **end** – 0 - flange, 1 - tool
+  * **end** – 0 - flange, 1 - tool
 
-### set_free_mode(id)
+### set_free_mode(id, value)
 
 set free mode
 
-- **Parameters**
+* **Parameters**
 
-    **id** – 0/1/2/3 (ALL/L/R/W)
+  * **id** – 0/1/2/3 (ALL/L/R/W)
+
+  * **value** – 0 - close 1 - open
+
+### set_fresh_mode(id, mode)
+
+Set command refresh mode
+
+* **Parameters**
+
+  * **id** – 1/2 (L/R).
+
+  * **mode** – int
+    0 - Always execute the latest command first.
+    1 - Execute instructions sequentially in the form of a queue.
 
 ### set_gripper_calibration(id)
 
 Set the current position to zero, set current position value is 2048.
-:param id: 1/2 (L/R)
+
+* **Parameters**
+
+    **id** – 1/2 (L/R)
 
 ### set_gripper_state(id, flag)
 
 Set gripper switch state
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2 (L/R)
+  * **id** – 1/2 (L/R)
 
-  - **flag** (_int_) – 0 - close, 1 - open
+  * **flag** (_int_) – 0 - close, 1 - open
 
-### set_gripper_value(id, value)
+### set_gripper_value(id, value, speed)
 
 Set gripper value
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2 (L/R)
+  * **id** – 1/2 (L/R)
 
-  - **value** (_int_) – 0 ~ 100
+  * **value** (_int_) – 0 ~ 100
+
+  * **speed** (_int_) – 0 ~ 100
 
 ### set_joint_current(id, joint_id, current)
 
 Set Collision Current
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 0/1/2 (ALL/L/R)
+  * **id** – 0/1/2 (ALL/L/R)
 
-  - **joint_id** – 1 - 6
+  * **joint_id** – 1 - 6
 
-  - **current** – current value
+  * **current** – current value
 
 ### set_joint_max(id, joint_id, angle)
 
 Set the joint maximum angle
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **joint_id** – int 1-6.
+  * **joint_id** – int 1-6.
 
-  - **angle** – 0 ~ 180
+  * **angle** – 0 ~ 180
 
 ### set_joint_min(id, joint_id, angle)
 
 Set the joint minimum angle
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **joint_id** – int 1-6.
+  * **joint_id** – int 1-6.
 
-  - **angle** – 0 ~ 180
+  * **angle** – 0 ~ 180
 
 ### set_movement_type(id, move_type)
 
 Set movement type
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 0/1/2 (ALL/L/R)
+  * **id** – 0/1/2 (ALL/L/R)
 
-  - **move_type** – 1 - movel, 0 - moveJ
+  * **move_type** – 1 - movel, 0 - moveJ
 
 ### set_pin_mode(id, pin_no, pin_mode)
 
 Set the state mode of the specified pin in atom.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2 (L/R)
+  * **id** – 1/2 (L/R)
 
-  - **pin_no** (_int_) – pin number (1 - 5).
+  * **pin_no** (_int_) – pin number (1 - 5).
 
-  - **pin_mode** (_int_) – 0 - input, 1 - output
+  * **pin_mode** (_int_) – 0 - input, 1 - output
 
-### set_plan_acceleration(acceleration, is_linear)
+### set_plan_acceleration(id, acceleration)
 
 Set planning acceleration
 
-- **Parameters**
+* **Parameters**
 
-  - **acceleration** (_int_) – (0 ~ 100).
+  * **id** – 0/1/2/3 (ALL/L/R/W)
 
-  - **is_linear** – 0 -> joint 1 -> straight line
+  * **acceleration** (_int_) – (0 ~ 100).
 
-### set_plan_speed(speed, is_linear)
+### set_plan_speed(id, speed)
 
 Set planning speed
 
-- **Parameters**
+* **Parameters**
 
-  - **speed** (_int_) – (0 ~ 100).
+  * **id** – 0/1/2/3 (ALL/L/R/W)
 
-  - **is_linear** – 0 -> joint 1 -> straight line
+  * **speed** (_int_) – (0 ~ 100).
 
 ### set_pwm_output(id, channel, frequency, pin_val)
 
 PWM control
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2 (L/R)
+  * **id** – 1/2 (L/R)
 
-  - **channel** (_int_) – IO number (1 - 5).
+  * **channel** (_int_) – IO number (1 - 5).
 
-  - **frequency** (_int_) – clock frequency (0/1: 0 - 1Mhz 1 - 10Mhz)
+  * **frequency** (_int_) – clock frequency (0/1: 0 - 1Mhz 1 - 10Mhz)
 
-  - **pin_val** (_int_) – Duty cycle 0 ~ 100: 0 ~ 100%
+  * **pin_val** (_int_) – Duty cycle 0 ~ 100: 0 ~ 100%
 
 ### set_reference_frame(id, rftype)
 
 Set the base coordinate system
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 0/1/2 (ALL/L/R)
+  * **id** – 0/1/2 (ALL/L/R)
 
-  - **rftype** – 0 - base 1 - tool.
+  * **rftype** – 0 - base 1 - tool.
 
-### set_robot_id(id)
+### set_robot_id(id, new_id)
 
 Set this robot id
+
+* **Parameters**
+
+  * **id** – 0/1/2/3 (ALL/L/R/W)
+
+  * **new_id** – 1 - 253
 
 ### set_servo_calibration(id, servo_no)
 
@@ -2064,64 +2192,159 @@ The current position of the calibration joint actuator is the angle zero point,
 
     and the corresponding potential value is 2048.
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **servo_no** – Serial number of articulated steering gear, 1 - 6.
+  * **servo_no** – Serial number of articulated steering gear, 1 - 6.
 
 ### set_servo_data(id, servo_no, data_id, value)
 
 Set the data parameters of the specified address of the steering gear
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **servo_no** – Serial number of articulated steering gear, 1 - 6.
+  * **servo_no** – Serial number of articulated steering gear, 1 - 6.
 
-  - **data_id** – Data address.
+  * **data_id** – Data address.
 
-  - **value** – 0 - 4096
+  * **value** – 0 - 4096
 
 ### set_speed(id, speed)
 
 Set speed value
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 1/2/3 (L/R/W)
+  * **id** – 1/2/3 (L/R/W)
 
-  - **speed** (_int_) – 0 - 100
+  * **speed** (_int_) – 0 - 100
 
 ### set_tool_reference(id, coords)
 
 Set tool coordinate system
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 0/1/2 (ALL/L/R)
+  * **id** – 0/1/2 (ALL/L/R)
 
-  - **coords** – a list of coords value(List[float]), length 6.
-    for mycobot :[x(mm), y, z, rx(angle), ry, rz]
+  * **coords** – a list of coords value(List[float]), length 6. [x(mm), y, z, rx(angle), ry, rz]
 
 ### set_world_reference(id, coords)
 
 Set the world coordinate system
 
-- **Parameters**
+* **Parameters**
 
-  - **id** – 0/1/2 (ALL/L/R)
+  * **id** – 0/1/2 (ALL/L/R)
 
-  - **coords** – a list of coords value(List[float]), length 6 [x(mm), y, z, rx(angle), ry, rz]
+  * **coords** – a list of coords value(List[float]), length 6 [x(mm), y, z, rx(angle), ry, rz]
 
 ### stop(id)
 
 Stop moving
 
-- **Parameters**
+* **Parameters**
 
-    **id** – ALL/L/R/W (0/1/2/3).
+    **id** – 0/1/2/3 (ALL/L/R/W).
+
+### write_base_coord(id, axis, coord, speed)
+
+Base single coordinate movement
+
+* **Parameters**
+
+  * **id** – 1/2 (L/R)
+
+  * **axis** – 1 - 6 (x/y/z/rx/ry/rz)
+
+  * **coord** – Coordinate value
+
+  * **speed** – 1 - 100
+
+### write_base_coords(id, coords, speed)
+
+base coordinate move
+
+* **Parameters**
+
+  * **id** – 1/2 (L/R)
+
+  * **coords** – coords: a list of coords value(List[float]), length 6, [x(mm), y, z, rx(angle), ry, rz]
+
+  * **speed** – 1 - 100
+
+
+
+### get_radians(id)
+
+Get the radians of all joints
+
+* **Parameters**
+
+    **id** – 1/2 (L/R)
+
+* **Returns**
+
+    A list of float radians [radian1, …]
+
+* **Return type**
+
+    list
+
+### send_radians(id, radians, speed)
+
+Send the radians of all joints to robot arm
+
+* **Parameters**
+
+  * **id** – 1/2 (L/R).
+
+  * **radians** – a list of radian values( List[float]), length 6
+
+  * **speed** – (int )1 ~ 100
+
+### set_gpio_input(pin)
+
+Set GPIO input value.
+
+* **Parameters**
+
+    **pin** – (int)pin number.
+
+### set_gpio_mode(pin_no, mode)
+
+Init GPIO module, and set BCM mode.
+
+* **Parameters**
+
+  * **pin_no** – (int)pin number.
+
+  * **mode** – 0 - input 1 - output
+
+### set_gpio_output(pin, v)
+
+Set GPIO output value.
+
+* **Parameters**
+
+  * **pin** – (int)pin number.
+
+  * **v** – (int) 0 / 1
+
+### set_gpio_pwm(pin, baud, dc)
+
+Set GPIO PWM value.
+
+* **Parameters**
+
+  * **pin** – (int)pin number.
+
+  * **baud** – (int) 10 - 1000000
+
+  * **dc** – (int) 0 - 100
 
 ---
 More demo can go to [here](../demo).

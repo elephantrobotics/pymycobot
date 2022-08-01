@@ -182,6 +182,9 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             joint: 1 ~ 6
             angle: int
             speed: 1 ~ 100
+        
+        Return:
+            None
         """
         return self._mesg(
             ProtocolCode.SEND_ANGLE, id, joint, [self._angle2int(angle)], speed
@@ -212,7 +215,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Args:
             id: 1/2/3 (L/R/W).
             coord: 1 ~ 6 (x/y/z/rx/ry/rz)
-            data: int
+            data: Coordinate value
             speed: 0 ~ 100
         """
         value = self._coord2int(data) if coord <= 3 else self._angle2int(data)
@@ -673,12 +676,13 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_GRIPPER_STATE, id, flag)
 
-    def set_gripper_value(self, id, value):
+    def set_gripper_value(self, id, value, speed):
         """Set gripper value
 
         Args:
             id: 1/2 (L/R)
             value (int): 0 ~ 100
+            speed (int): 0 - 100
         """
         return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, id, value)
 
@@ -1023,7 +1027,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             speed: 1 - 100
         """
         value = self._coord2int(increment) if axis <= 3 else self._angle2int(increment)
-        return self._mesg(ProtocolCode.JOG_INC_COORD, 0, [value], speed)
+        return self._mesg(ProtocolCode.JOG_INC_COORD, 0, axis, [value], speed)
         
     def collision_switch(self, state):
         """Collision Detection Switch
