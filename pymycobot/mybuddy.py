@@ -235,8 +235,8 @@ class MyBuddy(MyBuddyCommandGenerator):
         """
         self.gpio.output(pin, v)
         
-    def set_gpio_input(self, pin):
-        """Set GPIO input value.
+    def get_gpio_input(self, pin):
+        """Get GPIO input value.
 
         Args:
             pin: (int)pin number.

@@ -1,4 +1,5 @@
 # coding=utf-8
+from re import I
 from pymycobot.common import ProtocolCode
 from pymycobot.generate import MyCobotCommandGenerator
 
@@ -136,8 +137,8 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Args:
             id: 1/2 (L/R).\n
             mode: int
-                0 - Always execute the latest command first.
-                1 - Execute instructions sequentially in the form of a queue. 
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue. 
         """
         return self._mesg(ProtocolCode.SET_FRESH_MODE, id, mode)
 
@@ -157,7 +158,8 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             id: 0/1/2/3 (ALL/L/R/W)
 
         Return: 
-            0/1
+            0 - No
+            1 - Yes
         """
         return self._process_single(
             self._mesg(ProtocolCode.IS_FREE_MODE, id, has_reply=True)
@@ -293,12 +295,12 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.STOP, id)
 
-    def is_in_position(self, id, data, mode):  # TODO 通信协议可能有问题，待完善
+    def is_in_position(self, id, data: list, mode):  # TODO 通信协议可能有问题，待完善
         """Judge whether in the position.
 
         Args:
             id: 0/1/2/3 (ALL/L/R/W).
-            data: A data list, angles or coords. If id is 1/2. data length is 6. If id is 0. data len 13. if id is 3. data len 1
+            data: A data list, angles or coords. If id is 1/2. data length is 6. If id is 0. data len 13 (data==[[left_angles/left_coords],[right_angles/right_coords],[waist_angle/waist_coord]]). if id is 3. data len 1
             mode: 1 - coords, 0 - angles
             
 
@@ -307,20 +309,45 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             0 - False
             -1 - Error
         """
+        # TODO 22-8-2 need test
+        data_list = []
         if mode == 1:
-            # self.calibration_parameters(coords=data)
-            data_list = []
-            for idx in range(3):
-                data_list.append(self._coord2int(data[idx]))
-            for idx in range(3, 6):
-                data_list.append(self._angle2int(data[idx]))
+            if len(data) == 3:
+                for i in data:
+                    # if isinstance(i, list):
+                    if len(i) == 6:
+                        for idx in range(3):
+                            data_list.append(self._coord2int(i[idx]))
+                        for idx in range(3, 6):
+                            data_list.append(self._angle2int(i[idx]))
+                    elif len(i) == 1:
+                        data_list.append(self._coord2int(i[0]))
+            elif len(data) == 6:
+                for idx in range(3):
+                    data_list.append(self._coord2int(data[idx]))
+                for idx in range(3, 6):
+                    data_list.append(self._angle2int(data[idx]))
+            elif len(data) == 1:
+                data_list.append(self._coord2int(data[0]))
         elif mode == 0:
             # self.calibration_parameters(degrees=data)
-            data_list = [self._angle2int(i) for i in data]
+            if len(data) == 3:
+                for i in data:
+                    # if isinstance(i, list):
+                    if len(i) == 6:
+                        for idx in range(6):
+                            data_list.append(self._angle2int(i[idx]))
+                    elif len(i) == 1:
+                        data_list.append(self._angle2int(i[0]))
+            elif len(data) == 6:
+                for idx in range(6):
+                    data_list.append(self._angle2int(data[idx]))
+            elif len(data) == 1:
+                data_list.append(self._angle2int(data[0]))
         else:
             raise Exception("id is not right, please input 0 or 1")
 
-        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, id, has_reply=True)
+        return self._mesg(ProtocolCode.IS_IN_POSITION, id, data_list, mode, has_reply=True)
 
     def is_moving(self, id):
         """Detect if the robot is moving
@@ -462,7 +489,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         return self._mesg(ProtocolCode.GET_ACCELERATION, id, has_reply=True)
 
     def set_acceleration(self, id, acc):
-        """Read acceleration during all moves
+        """Set acceleration during all moves
         
         Args:
             id: 1/2/3 (L/R/W)
@@ -865,7 +892,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             id: 0/1/2/3 (ALL/L/R/W)
             
         Return: 
-            [movel planning acceleration, movej planning acceleration].
+            acceleration value.
         """
         return self._mesg(ProtocolCode.GET_PLAN_ACCELERATION, id, has_reply=True)
 
@@ -1038,7 +1065,12 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         return self._mesg(ProtocolCode.COLLISION_SWITCH, state)
     
     def is_collision_on(self):
-        """Get collision detection status"""
+        """Get collision detection status
+        
+        Args:
+            0 - close
+            1 - open
+        """
         return self._mesg(ProtocolCode.IS_COLLISION_ON, 0, has_reply = True)
         
     
