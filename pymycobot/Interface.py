@@ -295,7 +295,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.STOP, id)
 
-    def is_in_position(self, id, data: list, mode):  # TODO 通信协议可能有问题，待完善
+    def is_in_position(self, id, data, mode):
         """Judge whether in the position.
 
         Args:
@@ -957,7 +957,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(0xE6, id, has_reply=True)
     
-    def get_base_coords(self, *args: int):
+    def get_base_coords(self, *args):
         """Convert coordinates to base coordinates. Pass in parameters or no parameters
         
         Args:
