@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v2.9.2 (2022-8-8)
+
+- release v2.9.2
+- fix bug jog_increment()
+
 ## v2.9.1 (2022-8-1)
 
 - release v2.9.1

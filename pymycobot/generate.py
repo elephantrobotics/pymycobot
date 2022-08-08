@@ -373,7 +373,7 @@ class MyCobotCommandGenerator(DataProcessor):
             increment: 
             speed: int (0 - 100)
         """
-        return self._mesg(ProtocolCode.JOG_INCREMENT, id, joint_id, increment, speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, increment, speed)
 
     def jog_stop(self):
         """Stop jog moving"""

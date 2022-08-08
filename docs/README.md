@@ -32,6 +32,7 @@ We support Python2, Python3.5 or later.
   - [JOG mode and operation](#jog-mode-and-operation)
     - [jog_angle](#jog_angle)
     - [jog_coord](#jog_coord)
+    - [jog_increment](#jog_increment)
     - [jog_stop](#jog_stop)
     - [pause](#pause)
     - [resume](#resume)
@@ -479,6 +480,18 @@ from pymycobot import MyCobot
 
   - `coord_id`: (`int`) 1 ~ 6
   - `direction`: `0` - decrease, `1` - increase
+  - `speed`: 0 ~ 100
+
+### jog_increment
+
+- **Prototype**: `jog_increment(coord_id, direction, speed)`
+
+- **Description**: Step mode.
+
+- **Parameters**
+
+  - `coord_id`: (`int`) 1 ~ 6
+  - `direction`: 
   - `speed`: 0 ~ 100
 
 ### jog_stop
