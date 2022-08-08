@@ -1072,6 +1072,28 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             1 - open
         """
         return self._mesg(ProtocolCode.IS_COLLISION_ON, 0, has_reply = True)
+    
+    def get_servo_speeds(self, id):
+        """Get joint speed
+        
+        Args:
+            id: 1/2 (L/R)
+        
+        Return: 
+            unit step/s
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_SPEED, id, has_reply=True)
+    
+    def set_encoders_drag(self, id, encoders, speeds):
+        """Send all potential values and speeds
+        
+        Args:
+            id: 1/2 (L/R)
+            encoders: encoder value ,list len 6
+            speeds: from get_servo_speeds()
+        
+        """
+        return self._mesg(ProtocolCode.JOG_INC_COORD, id, encoders, speeds)
         
     
     # def init_iic(self):

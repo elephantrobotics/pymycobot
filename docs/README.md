@@ -143,6 +143,7 @@ We support Python2, Python3.5 or later.
     - [get_servo_currents(id)](#get_servo_currentsid)
     - [get_servo_data(id, servo_no, data_id)](#get_servo_dataid-servo_no-data_id)
     - [get_servo_status(id)](#get_servo_statusid)
+    - [get_servo_spees(id)](#get_servo_speesid)
     - [get_servo_temps(id)](#get_servo_tempsid)
     - [get_servo_voltages(id)](#get_servo_voltagesid)
     - [get_speed(id)](#get_speedid)
@@ -183,6 +184,7 @@ We support Python2, Python3.5 or later.
     - [set_encoder(id, joint_id, encoder, speed)](#set_encoderid-joint_id-encoder-speed)
     - [set_encoders(id, encoders, speed)](#set_encodersid-encoders-speed)
     - [set_end_type(id, end)](#set_end_typeid-end)
+    - [set_encoders_drag(id, encoders, speeds)](#set_encoders_dragid-encoders-speeds)
     - [set_free_mode(id, value)](#set_free_modeid-value)
     - [set_fresh_mode(id, mode)](#set_fresh_modeid-mode)
     - [set_gripper_calibration(id)](#set_gripper_calibrationid)
@@ -1579,6 +1581,18 @@ Get joint status
 
     [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error
 
+### get_servo_spees(id)
+
+Get joint speed
+
+* **Parameters**
+
+    **id** – 1/2/ (L/R)
+
+* **Returns**
+
+    list len 6
+
 ### get_servo_temps(id)
 
 Get joint temperature
@@ -2034,6 +2048,15 @@ Set end coordinate system
   * **id** – 0/1/2 (ALL/L/R)
 
   * **end** – 0 - flange, 1 - tool
+
+### set_encoders_drag(id, encoders, speeds)
+
+Send all encoders and speeds
+
+- **Parameters**
+
+  * **encoders** - (`list`) : encoders list.
+  * **speeds** - Obtained by the get_servo_speeds() method
 
 ### set_free_mode(id, value)
 
