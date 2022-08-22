@@ -162,19 +162,31 @@ class ProtocolCode(object):
     
     # mypalletizer lite
     END = "\r"
-    COORDS_SET = "g0"
-    BACK_ZERO = "g28"
-    SLEEP_TIME = "g4"
-    ABS_CARTESIAN = "g90"
-    REL_CARTESIAN = "g91"
-    SET_JOINT = "g92"
-    GIRPPER_OPEN = "M3"
-    GIRPPER_CLOSE = "M4"
+    COORDS_SET = "G0"
+    SLEEP_TIME = "G4"
+    BACK_ZERO = "G28"  
+    ABS_CARTESIAN = "G90"
+    REL_CARTESIAN = "G91"
+    SET_JOINT = "G92"
+    SET_PWM = "M1"
+    GPIO_CLOSE = "M2"
+    GPIO_ON = "M3"
+    GRIPPER_ZERO = "M4"
+    GIRPPER_OPEN = "M5"
+    GIRPPER_CLOSE = "M6"
+    FAN_ON = "M7"
+    FAN_CLOSE = "M8"
+    SET_ANGLE = "M10"
+    SET_ANGLES = "M11"
+    GET_CURRENT_ANGLE_INFO = "M12"
+    JOG_ANGLE = "M13"
+    JOG_COORD = "M14"
+    JOG_STOP = "M15"
     RELEASE_SERVOS = "M17"
     LOCK_SERVOS = "M18"
-    GET_CURRENT_JOINT_INFO = "M114"
+    GET_CURRENT_COORD_INFO = "M114"
     GET_BACK_ZERO_STATUS = "M119"
-    # SET_POINT
+    
 
 class DataProcessor(object):
     # Functional approach
