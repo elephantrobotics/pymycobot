@@ -1062,7 +1062,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Args:
             state (int): 0 - close 1 - open (Off by default)
         """
-        return self._mesg(ProtocolCode.COLLISION_SWITCH, state)
+        return self._mesg(ProtocolCode.COLLISION_SWITCH, 0, state)
     
     def is_collision_on(self):
         """Get collision detection status
@@ -1082,7 +1082,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Return: 
             unit step/s
         """
-        return self._mesg(ProtocolCode.GET_SERVO_SPEED, id, has_reply=True)
+        return self._mesg(0xE7, id, has_reply=True)
     
     def set_encoders_drag(self, id, encoders, speeds):
         """Send all potential values and speeds
@@ -1093,7 +1093,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             speeds: from get_servo_speeds()
         
         """
-        return self._mesg(ProtocolCode.JOG_INC_COORD, id, encoders, speeds)
+        return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, id, encoders, speeds)
         
     
     # def init_iic(self):
