@@ -203,6 +203,18 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         degrees = [self._angle2int(degree) for degree in degrees]
         return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
 
+    def send_angles_auto(self, id, degrees, _time):
+        """Send all angles to the robotic arm
+
+        Args:
+            id: 1/2 (L/R).
+            degrees: [angle_list] len 6
+            _time: 1 - 100
+        """
+        # self.calibration_parameters(degrees=degrees, speed=speed)
+        degrees = [self._angle2int(degree) for degree in degrees]
+        return self._mesg(ProtocolCode.SEND_ANGLES_AUTO, id, degrees, _time)
+
     def get_coords(self, id):
         """Get the coordinates of the robotic arm
         
