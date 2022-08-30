@@ -43,6 +43,7 @@ class ProtocolCode(object):
     IS_MOVING = 0x2B
     GET_ANGLE = 0x2C
     GET_COORD = 0x2D
+    SEND_ANGLES_AUTO = 0x2E
 
     # JOG MODE AND OPERATION
     JOG_ANGLE = 0x30
