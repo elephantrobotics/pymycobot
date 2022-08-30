@@ -944,8 +944,8 @@ class MyCobotCommandGenerator(DataProcessor):
         
         Args:
             mode: int.
-                0 - Always execute the latest command first.
-                1 - Execute instructions sequentially in the form of a queue.
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue.
         """
         return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
         
