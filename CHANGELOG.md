@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v2.9.3 (2022-8-31)
+
+- release v2.9.3
+- fix jog_increment() bug
+- Fixed an incorrect description of the set_fresh_mode interface
+
 ## v2.9.2 (2022-8-8)
 
 - release v2.9.2

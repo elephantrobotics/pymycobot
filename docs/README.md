@@ -19,6 +19,7 @@ We support Python2, Python3.5 or later.
     - [is_controller_connected](#is_controller_connected)
   - [MDI mode and operation](#mdi-mode-and-operation)
     - [get_angles](#get_angles)
+    - [set_fresh_mode(mode)](#set_fresh_modemode)
     - [send_angle](#send_angle)
     - [send_angles()](#send_angles)
     - [get_radians](#get_radians)
@@ -285,6 +286,16 @@ from pymycobot import MyCobot
 - **Description**: Get the degree of all joints.
 
 - **Returns**: `list`: A float list of all degree.
+
+### set_fresh_mode(mode)
+
+Set command refresh mode
+
+* **Parameters**
+
+  * **mode** – int
+    1 - Always execute the latest command first.
+    0 - Execute instructions sequentially in the form of a queue.
 
 ### send_angle
 
@@ -2077,8 +2088,8 @@ Set command refresh mode
   * **id** – 1/2 (L/R).
 
   * **mode** – int
-    0 - Always execute the latest command first.
-    1 - Execute instructions sequentially in the form of a queue.
+    1 - Always execute the latest command first.
+    0 - Execute instructions sequentially in the form of a queue.
 
 ### set_gripper_calibration(id)
 

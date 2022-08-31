@@ -30,7 +30,7 @@ __all__ = [
     "Mira"
 ]
 
-__version__ = "2.9.3b1.333"
+__version__ = "2.9.3"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
