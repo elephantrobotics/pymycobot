@@ -373,7 +373,7 @@ class MyCobotCommandGenerator(DataProcessor):
             increment: 
             speed: int (0 - 100)
         """
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, increment, speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
     def jog_stop(self):
         """Stop jog moving"""
@@ -944,8 +944,8 @@ class MyCobotCommandGenerator(DataProcessor):
         
         Args:
             mode: int.
-                0 - Always execute the latest command first.
-                1 - Execute instructions sequentially in the form of a queue.
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue.
         """
         return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
         
