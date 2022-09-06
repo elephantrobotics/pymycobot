@@ -468,7 +468,8 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         _speed = speed
         encoders_data = []
         if id == 0:
-            encoders_data = (_encoders[0:6] + speed[0:6] + _encoders[6:12] + speed[6:12] + _encoders[-2:] + speed[-2:])
+            encoders_data = (_encoders[0:7] + speed[0:7] + _encoders[7:14] + speed[7:14] + _encoders[-2:] + speed[-2:])
+            print(encoders_data)
             return self._mesg(ProtocolCode.SET_ENCODERS, _id, encoders_data)
         if id == 1 or id == 2:
             return self._mesg(ProtocolCode.SET_ENCODERS, _id, _encoders, _speed)
