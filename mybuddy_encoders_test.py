@@ -20,6 +20,6 @@ mc = MyBuddy(port, baud, debug=DEBUG)
 # print(mc.get_angles(1))
 print(mc.get_encoders(0))
 
-# mc.set_encoders(0,encoders,speeds)
+mc.set_encoders(0,encoders,speeds)
 
 # mc.set_encoders(1,[1,1,1,1,1,1],[0,2,0,2,0,2])
