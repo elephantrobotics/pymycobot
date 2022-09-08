@@ -245,17 +245,51 @@ class MyBuddy(MyBuddyCommandGenerator):
         pin = self.base_io_to_gpio(pin)
         self.gpio.input(pin)
         
-    def set_gpio_pwm(self, pin_no, baud = 1000, dc = 50):
+    def set_gpio_pwm_start(self, pin_no, freq = 0.5, dc = 0.5):
         """Set GPIO PWM value.
 
         Args:
             pin_no: (int)pin number 1-16.
-            baud: (int) 10 - 1000000
-            dc: (int) 0 - 100
+            freq: (float) 0.0 - 1000000.0
+            dc: (float) 0.0 - 100.0
         """
         pin = self.base_io_to_gpio(pin_no)
-        pwm = self.gpio.PWM(pin, baud)
-        pwm.start(dc)
+        self.pwm = self.gpio.PWM(pin, freq)
+        self.pwm.start(dc)
+
+    def set_gpio_pwm_change_freq(self, freq):
+        """Reset GPIO PWM freq.
+
+        Args:
+            freq: (float) 0.0 - 1000000.0
+        """
+        self.pwm.ChangeFrequency(freq)
+
+    def set_gpio_pwm_change_dc(self, dc):
+        """Reset GPIO PWM DC.
+
+        Args:
+            dc: (float) 0.0 - 100.0
+        """
+        self.pwm.ChangeDutyCycle(dc)
+
+    def set_gpio_pwm_stop(self):
+        """Set GPIO PWM STOP OUTPUT.
+
+        Args:
+            dc: (float) 0.0 - 100.0
+        """
+        self.pwm.stop()
+
+    def set_iic_init(self, IIC_NO):
+        """import SMBUS2(link:https://pypi.org/project/smbus2/)
+            
+        Args:
+            IIC_NO(int) : 0/1 ,0 = iic0, 1=iic1
+        """
+        from smbus2 import SMBus
+        # self.iic = SMBus(IIC_NO)
+        return SMBus(IIC_NO)
 
     def base_io_to_gpio(self, pin):
         """BASE_io = GPIO.BCM:   
@@ -291,6 +325,16 @@ class MyBuddy(MyBuddyCommandGenerator):
             pin = None
         return pin
 
+    def set_gpio_clearup(self,pin_no = None):
+        """SET GPIO CLEANUP
+
+        Args:
+            pin_no :(int)pin number 1-16.
+            if pin_no = 0: cleanup all gpio
+        """
+        if pin_no:
+            pin_no = self.base_io_to_gpio(pin_no)
+        self.gpio.cleanup(pin_no)
     # Other
     def wait(self, t):
         time.sleep(t)

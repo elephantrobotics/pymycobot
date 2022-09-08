@@ -670,7 +670,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
     # Atom IO
     
 
-    def set_pin_mode(self, id, pin_no, pin_mode):
+    def set_tool_pin_mode(self, id, pin_no, pin_mode):
         """Set the state mode of the specified pin in atom.
 
         Args:
@@ -680,7 +680,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_PIN_MODE, id, pin_no, pin_mode)
 
-    def set_digital_output(self, id, pin_no, pin_signal):
+    def set_tool_digital_output(self, id, pin_no, pin_signal):
         """Set atom IO output level
 
         Args:
@@ -690,7 +690,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, id, pin_no, pin_signal)
 
-    def get_digital_input(self, id, pin_no):
+    def get_tool_digital_input(self, id, pin_no):
         """singal value
 
         Args:
@@ -699,7 +699,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, id, pin_no, has_reply=True)
 
-    def set_pwm_output(self, id, channel, frequency, pin_val):
+    def set_tool_pwm_output(self, id, channel, frequency, pin_val):
         """PWM control
 
         Args:
@@ -761,7 +761,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, id, has_reply=True)
 
-    def set_color(self, id, r=0, g=0, b=0):
+    def set_tool_led_color(self, id, r=0, g=0, b=0):
         """Set the light color on the top of the robot arm.
 
         Args:
