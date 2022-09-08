@@ -5,6 +5,7 @@ import sys
 import serial
 import serial.tools.list_ports
 import platform
+sys.path.append(os.getcwd())
 from pymycobot.mybuddy import MyBuddy
 
 #define type

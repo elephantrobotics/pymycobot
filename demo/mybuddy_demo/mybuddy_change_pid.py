@@ -5,6 +5,8 @@ import sys
 import serial
 import serial.tools.list_ports
 import platform
+
+sys.path.append(os.getcwd())
 from pymycobot.mybuddy import MyBuddy
 
 #define type
@@ -39,9 +41,9 @@ def change():
         for i in range(1,7):
             for j in range(len(data_id)):
                 _mybuddy.set_servo_data(m, i, data_id[j], data[j])
-                time.sleep(0.2)
+                time.sleep(0.1)
                 _data = _mybuddy.get_servo_data(m, i, data_id[j])
-                time.sleep(0.2)
+                time.sleep(0.1)
                 if _data == data[j]:
                     print("Servo motor :" + str(i) + "  data_id : " + str(data_id[j]) + "   data: " + str(_data) + "  modify successfully ")
                 else:
