@@ -761,7 +761,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, id, has_reply=True)
 
-    def set_tool_led_color(self, id, r=0, g=0, b=0):
+    def set_tool_color(self, id, r=0, g=0, b=0):
         """Set the light color on the top of the robot arm.
 
         Args:
