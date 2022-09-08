@@ -237,9 +237,9 @@ class MyBuddy(MyBuddyCommandGenerator):
         self.gpio = GPIO
         self.gpio.setmode(GPIO.BCM)
         if mode == 1:
-            self.gpio.setup(pin_no, self.gpio.OUT, initial=self.gpio.HIGH)
+            self.gpio.setup(pin_no, GPIO.OUT, initial = GPIO.HIGH)
         else:
-            self.gpio.setup(pin_no, self.gpio.IN, pull_up_down=self.gpio.DOWN)
+            self.gpio.setup(pin_no, GPIO.IN, pull_up_down = GPIO.DOWN)
             
     def set_gpio_output(self, pin_no, v):
         """Set GPIO output value.
