@@ -15,6 +15,7 @@ We support Python2, Python3.5 or later.
     - [power_on](#power_on)
     - [power_off](#power_off)
     - [is_power_on](#is_power_on)
+    - [read_next_error](#read_next_error)
     - [release_all_servos](#release_all_servos)
     - [is_controller_connected](#is_controller_connected)
   - [MDI mode and operation](#mdi-mode-and-operation)
@@ -258,6 +259,18 @@ from pymycobot import MyCobot
   - `1`: power on
   - `0`: power off
   - `-1`: error
+### read_next_error
+
+- **Prototype**: `read_next_error()`
+
+- **Description**: Robot Error Detection.
+
+- **Returns**
+  list len 7
+  - `0`: No abnormality
+  - `1`: Communication disconnected
+  - `2`: Unstable communication
+  - `3` : Servo abnormality
 
 ### release_all_servos
 
