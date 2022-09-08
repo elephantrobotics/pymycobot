@@ -106,8 +106,12 @@ class TeachingTest(Helper):
     def play(self):
         self.echo("Start play")
         for _encoders in self.record_list:
-            print(_encoders)
-            self.mb.set_encoders(0,_encoders)
+
+            # print(_encoders)
+            _encoders = _encoders[0:7] + _encoders[14:21] + _encoders[-2:-1]
+            _speeds = _encoders[7:14] + _encoders[21:28] + _encoders[-1:]
+
+            self.mb.set_encoders(0, _encoders, _speeds)
             time.sleep(0.05)
         self.echo("Finish play")
 
