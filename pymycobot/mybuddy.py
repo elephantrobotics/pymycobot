@@ -214,9 +214,10 @@ class MyBuddy(MyBuddyCommandGenerator):
         """Init GPIO module, and set BCM mode.
         
         Args:
-            pin_no: (int)pin number.
+            pin_no: (int)pin number 1-16.
             mode: 0 - input 1 - output
         """
+        pin_no = self.base_io_to_gpio(pin_no)
         import RPi.GPIO as GPIO  # type: ignore
         self.gpio = GPIO
         self.gpio.setmode(GPIO.BCM)
@@ -226,32 +227,69 @@ class MyBuddy(MyBuddyCommandGenerator):
             self.gpio.setup(pin_no, self.gpio.IN)
             
 
-    def set_gpio_output(self, pin, v):
+    def set_gpio_output(self, pin_no, v):
         """Set GPIO output value.
 
         Args:
-            pin: (int)pin number.
+            pin_no: (int)pin number 1-16.
             v: (int) 0 / 1
         """
+        pin = self.base_io_to_gpio(pin)
         self.gpio.output(pin, v)
         
-    def get_gpio_input(self, pin):
+    def get_gpio_input(self, pin_no):
         """Get GPIO input value.
 
         Args:
-            pin: (int)pin number.
+            pin_no: (int)pin number 1-16.
         """
+        pin = self.base_io_to_gpio(pin)
         self.gpio.input(pin)
         
-    def set_gpio_pwm(self, pin, baud, dc):
+    def set_gpio_pwm(self, pin_no, baud = 1000, dc = 50):
         """Set GPIO PWM value.
 
         Args:
-            pin: (int)pin number.
+            pin_no: (int)pin number 1-16.
             baud: (int) 10 - 1000000
             dc: (int) 0 - 100
         """
+        pin = self.base_io_to_gpio(pin_no)
         self.gpio.PWM(pin, baud, dc)
+
+    def base_io_to_gpio(self, pin):
+        """BASE_io = GPIO.BCM:   
+            1 = G7    |   7 = G11  
+            2 = G8    |   8 = G9  
+            3 = G25  |   9 = G10  
+            4 = G24  |  10 =G22  
+            5 = G23  |  11 =G27  
+            6 = G18  |  12 = G17  
+            GND       |  3V3  
+
+            Grove0:
+            SCL0 = 13 = G3  
+            SDA0 = 14 = G2  
+            5V  
+            GND  
+
+            Grove1:  
+            SCL1 = 15 = G6  
+            SDA1 = 16 = G5  
+            5V  
+            GND  
+        """
+        pin_dist = {1:7, 2:8, 3:25, 4:24, 5:23, 6:18, 
+                    7:11, 8:9, 9:10, 10:22, 11:27, 12:17,
+                    13:3, 14:2,'SCL0':3,"SDA0":2, 
+                    15:6, 16:5, 'SCL0':6,"SDA0":5}
+        if pin in pin_dist:
+            _pin = pin
+            pin = pin_dist.get(_pin)
+        else:
+            print('The IO definition exceeds the system support range, and the program exits automatically.')
+            pin = None
+        return pin
 
     # Other
     def wait(self, t):

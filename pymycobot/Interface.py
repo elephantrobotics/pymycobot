@@ -40,7 +40,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         ]
         # print("write_data: ",command)
         real_command = self._flatten(command)
-        print("write_data: ",real_command)
+        # print("write_data: ",real_command)
         has_reply = kwargs.get("has_reply", False)
         return real_command, has_reply
 

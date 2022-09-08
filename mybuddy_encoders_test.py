@@ -27,6 +27,7 @@ speeds = [500,500,500,500,500,500,500, 500,500,500,500,500,500,500, 500]        
 # Connect Robot
 mc = MyBuddy(port, baud, debug=DEBUG)
 
+mc.base_io_to_gpio(20)
 # print all encoders and speeds
 print(mc.get_encoders(0))
 
