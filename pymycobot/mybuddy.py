@@ -236,7 +236,7 @@ class MyBuddy(MyBuddyCommandGenerator):
 
         import RPi.GPIO as GPIO  # type: ignore
         self.gpio = GPIO
-        self.gpio.setmode(GPIO.BOARD)
+        self.gpio.setmode(GPIO.BCM)
         if mode == 1:
             self.gpio.setup(pin_no, GPIO.OUT)
         else:
