@@ -38,8 +38,9 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             command_data[1:],
             check_digit,
         ]
-        # print(command)
+        # print("write_data: ",command)
         real_command = self._flatten(command)
+        # print("write_data: ",real_command)
         has_reply = kwargs.get("has_reply", False)
         return real_command, has_reply
 
@@ -454,17 +455,30 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Set the six joints of the manipulator to execute synchronously to the specified position.
 
         Args:
-            id: 1/2 (L/R).
-            encoders: A encoder list, length 6.
-            speed: speed 1 ~ 100
+            id: 0/1/2 (all/L/R).
+            if id = 0:
+                encoders: A encoder list, length 13.
+                speed: A encoder list,length 13.
+            else:
+                encoders: A encoder list, length 6.
+                speed: A encoder list, length 6.
         """
-        return self._mesg(ProtocolCode.SET_ENCODERS, id, encoders, speed)
+        _id = id
+        _encoders = encoders
+        _speed = speed
+        encoders_data = []
+        if id == 0:
+            encoders_data = (_encoders[0:6] + speed[0:6] + _encoders[6:12] + speed[6:12] + _encoders[-2:] + speed[-2:])
+            return self._mesg(ProtocolCode.SET_ENCODERS, _id, encoders_data)
+        if id == 1 or id == 2:
+            return self._mesg(ProtocolCode.SET_ENCODERS, _id, _encoders, _speed)
 
     def get_encoders(self, id):
         """Get the six joints of the manipulator
 
         Args:
-            id: 1/2 (L/R).
+            id: 0/1/2 (all/L/R).
+            if id==0: return all joint encoder and speed,
             
         Return:
             The list of encoders

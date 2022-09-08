@@ -272,7 +272,7 @@ class DataProcessor(object):
 
         # process valid data
         res = []
-        if data_len in [6, 8, 12 ,24]:
+        if data_len in [6, 8, 12, 24, 60]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
