@@ -352,11 +352,12 @@ class MyBuddy(MyBuddyCommandGenerator):
 
         Args:
             pin_no :(int)pin number 1-16.
-            if pin_no = 0: cleanup all gpio
+            if pin_no = None : cleanup all gpio
         """
         if pin_no:
             pin_no = self.base_io_to_gpio(pin_no)
         self.gpio.cleanup(pin_no)
+   
     # Other
     def wait(self, t):
         time.sleep(t)
