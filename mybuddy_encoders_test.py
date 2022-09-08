@@ -26,13 +26,31 @@ speeds = [500,500,500,500,500,500,500, 500,500,500,500,500,500,500, 500]        
 
 # Connect Robot
 mc = MyBuddy(port, baud, debug=DEBUG)
+time.sleep(1)
 
-mc.base_io_to_gpio(5)
+# Test IO output
+mc.set_gpio_mode(1,1)
+mc.set_gpio_output(1,1)
+time.sleep(2)
+mc.set_gpio_output(1,0)
+time.sleep(2)
+mc.set_gpio_clearup(1)
+
+#Test io_pwm output
+mc.set_gpio_pwm_start(3,0.5,50)
+time.sleep(2)
+mc.set_gpio_pwm_change_dc(100)
+time.sleep(2)
+mc.set_gpio_pwm_change_freq(100)
+time,time.sleep(2)
+mc.set_gpio_pwm_stop()
+time.sleep(1)
+
+#
 iic = mc.set_iic_init(1)
-iic.open()
-iic.close()
 
-mc.set_gpio_clearup()
+
+
 # print all encoders and speeds
 print(mc.get_encoders(0))
 

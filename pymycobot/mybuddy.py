@@ -275,14 +275,20 @@ class MyBuddy(MyBuddyCommandGenerator):
 
     def set_gpio_pwm_stop(self):
         """Set GPIO PWM STOP OUTPUT.
-
-        Args:
-            dc: (float) 0.0 - 100.0
         """
         self.pwm.stop()
 
     def set_iic_init(self, IIC_NO):
-        """import SMBUS2(link:https://pypi.org/project/smbus2/)
+        """
+            import SMBUS2
+
+            Open IIC_NO port
+
+            (For more use, please see
+            
+            pypilink: https://pypi.org/project/smbus2/,
+             
+            githublink: https://github.com/kplindegaard/smbus2)
             
         Args:
             IIC_NO(int) : 0/1 ,0 = iic0, 1=iic1
