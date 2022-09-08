@@ -7,6 +7,7 @@ import threading
 import json
 import serial
 import serial.tools.list_ports
+sys.path.append(os.getcwd())
 
 from pymycobot.mycobot import MyCobot
 

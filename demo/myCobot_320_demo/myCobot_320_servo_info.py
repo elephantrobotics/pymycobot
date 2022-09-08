@@ -1,6 +1,11 @@
 # encoding=utf-8
+import os
+import sys
+sys.path.append(os.getcwd())
+
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
+
 from pymycobot import MyCobot
 
 mc = MyCobot("COM12", 115200)

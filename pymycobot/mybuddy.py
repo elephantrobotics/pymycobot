@@ -211,20 +211,35 @@ class MyBuddy(MyBuddyCommandGenerator):
 
     # Basic for raspberry pi.
     def set_gpio_mode(self, pin_no, mode):
-        """Init GPIO module, and set BCM mode.
-        
+        """Init GPIO module, and set BCM mode. 
+
         Args:
             pin_no: (int)pin number 1-16.
-            mode: 0 - input 1 - output
+        
+                PIN_NO = GPIO.BCM:  
+
+                |1 = G7  |  2 = G8  |  3 = G25 | 4 = G24  | 5 = G23  | 6 = G18   |
+
+                |7 = G11 |  8 = G9  |  9 = G10 | 10 =G22  | 11 =G27  | 12 = G17  |
+
+                |Grove0:   |  SCL0 = 13 = G3    |     SDA0 = 14 = G2    |
+
+                |Grove1:   |  SCL1 = 15 = G6    |     SDA1 = 16 = G5    |
+
+            mode: 
+                0 - input
+                    define: pull_up_down = DOWN
+                1 - output
+                     define: initial = HIGH
         """
         pin_no = self.base_io_to_gpio(pin_no)
         import RPi.GPIO as GPIO  # type: ignore
         self.gpio = GPIO
         self.gpio.setmode(GPIO.BCM)
         if mode == 1:
-            self.gpio.setup(pin_no, self.gpio.OUT)
+            self.gpio.setup(pin_no, self.gpio.OUT, initial=self.gpio.HIGH)
         else:
-            self.gpio.setup(pin_no, self.gpio.IN)
+            self.gpio.setup(pin_no, self.gpio.IN, pull_up_down=self.gpio.DOWN)
             
     def set_gpio_output(self, pin_no, v):
         """Set GPIO output value.
