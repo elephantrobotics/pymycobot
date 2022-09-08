@@ -260,7 +260,7 @@ class MyBuddy(MyBuddyCommandGenerator):
             pin_no: (int)pin number 1-16.
             v: (int) 0 / 1
         """
-        pin = self.base_io_to_gpio(pin)
+        pin = self.base_io_to_gpio(pin_no)
         self.gpio.output(pin, v)
         
     def get_gpio_input(self, pin_no):
@@ -269,7 +269,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         Args:
             pin_no: (int)pin number 1-16.
         """
-        pin = self.base_io_to_gpio(pin)
+        pin = self.base_io_to_gpio(pin_no)
         self.gpio.input(pin)
         
     def set_gpio_pwm_start(self, pin_no, freq = 0.5, dc = 0.5):
