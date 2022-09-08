@@ -233,13 +233,14 @@ class MyBuddy(MyBuddyCommandGenerator):
                      define: initial = HIGH
         """
         pin_no = self.base_io_to_gpio(pin_no)
+
         import RPi.GPIO as GPIO  # type: ignore
         self.gpio = GPIO
         self.gpio.setmode(GPIO.BCM)
         if mode == 1:
-            self.gpio.setup(pin_no, GPIO.OUT, initial = GPIO.HIGH)
+            self.gpio.setup(pin_no, GPIO.OUT)
         else:
-            self.gpio.setup(pin_no, GPIO.IN, pull_up_down = GPIO.DOWN)
+            self.gpio.setup(pin_no, GPIO.IN)
             
     def set_gpio_output(self, pin_no, v):
         """Set GPIO output value.
