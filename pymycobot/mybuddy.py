@@ -210,7 +210,22 @@ class MyBuddy(MyBuddyCommandGenerator):
         return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
 
     # Basic for raspberry pi.
-    def set_gpio_mode(self, pin_no, mode):
+    def set_gpio_init_mode(self, mode = 1):
+        """import RPiGPIO,Init GPIO mode
+        
+            Args:
+                mode(int):0/1
+                0 = BCM
+                1 = BOAND
+        """
+        import RPi.GPIO as GPIO  # type: ignore
+        self.gpio = GPIO
+        if mode == 0:
+            self.gpio.setmode(GPIO.BCM)
+        else:
+            self.gpio.setmode(GPIO.BOAND)
+
+    def set_gpio_setup(self, pin_no, mode):
         """Init GPIO module, and set BCM mode. 
 
         Args:
@@ -232,15 +247,11 @@ class MyBuddy(MyBuddyCommandGenerator):
                 1 - output
                      define: initial = HIGH
         """
-        pin_no = self.base_io_to_gpio(pin_no)
-
-        import RPi.GPIO as GPIO  # type: ignore
-        self.gpio = GPIO
-        self.gpio.setmode(GPIO.BCM)
+        pin_no = self.base_io_to_gpio(pin_no)       
         if mode == 1:
-            self.gpio.setup(pin_no, GPIO.OUT)
+            self.gpio.setup(pin_no, self.gpio.OUT)
         else:
-            self.gpio.setup(pin_no, GPIO.IN)
+            self.gpio.setup(pin_no, self.gpio.IN)
             
     def set_gpio_output(self, pin_no, v):
         """Set GPIO output value.
