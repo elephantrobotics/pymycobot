@@ -10,8 +10,8 @@ import json
 import serial
 import serial.tools.list_ports
 import platform
-import termios
-import tty
+
+
 sys.path.append(os.getcwd())
 from pymycobot import MyBuddy
 
@@ -44,7 +44,10 @@ def setup():
 class Raw(object):
     """Set raw input mode for device"""
 
+
     def __init__(self, stream):
+        import termios
+        import tty
         self.stream = stream
         self.fd = self.stream.fileno()
 
@@ -83,7 +86,9 @@ class TeachingTest(Helper):
             start_t = time.time()
             _id = 0
             while self.recording:
+                print("1111")
                 _encoders = self.mb.get_encoders(_id)
+                print('end')
                 if _encoders:
                     self.record_list.append(_encoders)
                     time.sleep(0.05)
