@@ -226,7 +226,6 @@ class MyBuddy(MyBuddyCommandGenerator):
         else:
             self.gpio.setup(pin_no, self.gpio.IN)
             
-
     def set_gpio_output(self, pin_no, v):
         """Set GPIO output value.
 
@@ -255,7 +254,8 @@ class MyBuddy(MyBuddyCommandGenerator):
             dc: (int) 0 - 100
         """
         pin = self.base_io_to_gpio(pin_no)
-        self.gpio.PWM(pin, baud, dc)
+        pwm = self.gpio.PWM(pin, baud)
+        pwm.start(dc)
 
     def base_io_to_gpio(self, pin):
         """BASE_io = GPIO.BCM:   
