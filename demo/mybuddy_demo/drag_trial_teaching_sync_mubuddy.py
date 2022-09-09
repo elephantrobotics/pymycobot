@@ -36,7 +36,7 @@ def setup():
         port = 'COM21'
         baud = 115200
     elif LINUX:
-        port = '/dev/ttyS0'
+        port = '/dev/ttyACM0'
         baud = 115200
     mb = MyBuddy(port, baud, debug=True)
 
@@ -90,8 +90,9 @@ class TeachingTest(Helper):
                 _encoders = self.mb.get_encoders(_id)
                 print('end')
                 if _encoders:
-                    self.record_list.append(_encoders)
-                    time.sleep(0.05)
+                    if _encoders[-2:-1]:
+                        self.record_list.append(_encoders)
+                        time.sleep(0.05)
                     # print("\r {}".format(time.time() - start_t), end="")
         self.echo("Start recording.")
         self.record_t = threading.Thread(target=_record, daemon=True)
@@ -105,13 +106,11 @@ class TeachingTest(Helper):
 
     def play(self):
         self.echo("Start play")
-        for _encoders in self.record_list:
-
-            # print(_encoders)
-            _encoders = _encoders[0:7] + _encoders[14:21] + _encoders[-2:-1]
-            _speeds = _encoders[7:14] + _encoders[21:28] + _encoders[-1:]
-
-            self.mb.set_encoders(0, _encoders, _speeds)
+        for _encoders_data in self.record_list:
+            print(_encoders_data)
+            _encoders = _encoders_data[0:7] + _encoders_data[14:21] + _encoders_data[-2:-1]
+            _speeds = _encoders_data[7:14] + _encoders_data[21:28] + _encoders_data[-1:]
+            self.mb.set_encoders(0, _encoders,_speeds)
             time.sleep(0.05)
         self.echo("Finish play")
 
@@ -124,8 +123,12 @@ class TeachingTest(Helper):
             while self.playing:
                 idx_ = i % len_
                 i += 1
-                self.mb.set_encoders(self.record_list[idx_], 80)
-                time.sleep(0.1)
+                _encoders_data = self.record_list[idx_]
+                print(_encoders_data)
+                _encoders = _encoders_data[0:7] + _encoders_data[14:21] + _encoders_data[-2:-1]
+                _speeds = _encoders_data[7:14] + _encoders_data[21:28] + _encoders_data[-1:]
+                self.mb.set_encoders(0, _encoders,_speeds)
+                time.sleep(0.05)
 
         self.echo("Start loop play.")
         self.play_t = threading.Thread(target=_loop, daemon=True)
