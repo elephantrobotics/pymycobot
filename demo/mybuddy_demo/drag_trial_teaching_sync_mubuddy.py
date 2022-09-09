@@ -86,9 +86,7 @@ class TeachingTest(Helper):
             start_t = time.time()
             _id = 0
             while self.recording:
-                print("1111")
                 _encoders = self.mb.get_encoders(_id)
-                print('end')
                 if _encoders:
                     if _encoders[-2:-1]:
                         self.record_list.append(_encoders)
