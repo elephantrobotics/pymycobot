@@ -484,7 +484,6 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Return:
             The list of encoders
         """
-        print('get_encoders')
         return self._mesg(ProtocolCode.GET_ENCODERS, id, has_reply=True)
 
     def get_speed(self, id):
