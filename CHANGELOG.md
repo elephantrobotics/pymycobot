@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v2.9.5(2022-9-13)
+
+- release v2.9.5
+- Add MyBuddy serial open(),is_open() function
+- Add MyBuddy example
+
 ## v2.9.4 (2022-9-8)
 
 - release v2.9.4
