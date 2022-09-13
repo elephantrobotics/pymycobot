@@ -1,5 +1,4 @@
 # coding=utf-8
-from re import I
 from pymycobot.common import ProtocolCode
 from pymycobot.generate import MyCobotCommandGenerator
 

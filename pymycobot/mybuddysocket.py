@@ -138,45 +138,30 @@ class MyBuddySocket(MyBuddyCommandGenerator):
                 return res
         return None
 
-    def get_radians(self):
-        """Get all angle return a list
+    def get_radians(self, id):
+        """Get the radians of all joints
 
+        Args: 
+            id: 1/2 (L/R)
+            
         Return:
-            data_list (list[radian...]):
+            list: A list of float radians [radian1, ...]
         """
-        angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
+        angles = self._mesg(ProtocolCode.GET_ANGLES, id, has_reply=True)
         return [round(angle * (math.pi / 180), 3) for angle in angles]
 
-    def send_radians(self, radians, speed):
-        """Send all angles
+    def send_radians(self, id, radians, speed):
+        """Send the radians of all joints to robot arm
 
         Args:
-            radians (list): example [0, 0, 0, 0, 0, 0]
-            speed (int): 0 ~ 100
+            id: 1/2 (L/R).
+            radians: a list of radian values( List[float]), length 6
+            speed: (int )0 ~ 100
         """
-        calibration_parameters(len6=radians, speed=speed)
+        # calibration_parameters(len6=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
-        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
-
-    def sync_send_angles(self, degrees, speed, timeout=7):
-        t = time.time()
-        self.send_angles(degrees, speed)
-        while time.time() - t < timeout:
-            f = self.is_in_position(degrees, 0)
-            if f:
-                break
-            time.sleep(0.1)
-        return self
-
-    def sync_send_coords(self, coords, speed, mode, timeout=7):
-        t = time.time()
-        self.send_coords(coords, speed, mode)
-        while time.time() - t < timeout:
-            if self.is_in_position(coords, 1):
-                break
-            time.sleep(0.1)
-        return self
+        return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
 
     def set_gpio_mode(self, mode):
         """Set pin coding method

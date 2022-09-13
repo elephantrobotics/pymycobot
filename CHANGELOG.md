@@ -1,6 +1,11 @@
 # ChangeLog for pymycobot
 
-## v2.9.5(2022-9-13)
+## v2.9.6 (2022-9-13)
+
+- release v2.9.6
+- Fix MyBuddySocket get_radians()、send_radians() BUG
+
+## v2.9.5 (2022-9-13)
 
 - release v2.9.5
 - Add MyBuddy serial open(),is_open() function
