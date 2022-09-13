@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v2.9.4 (2022-9-8)
+
+- release v2.9.4
+- fix read_next_error() bug
+- fix set_ssid_pwd() bug
+
 ## v2.9.3 (2022-8-31)
 
 - release v2.9.3

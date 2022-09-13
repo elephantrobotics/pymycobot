@@ -284,6 +284,17 @@ class DataProcessor(object):
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
+        elif data_len == 7:
+            error_list = [i for i in valid_data]
+            for i in error_list:
+                if i in range(16,23):
+                    res.append(1)
+                elif i in range(23,29):
+                    res.append(2)
+                elif i in range(32,112):
+                    res.append(3)
+                else:
+                    res.append(i)
         else:
             if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS]:
                 for i in range(data_len):
