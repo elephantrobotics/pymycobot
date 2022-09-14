@@ -24,7 +24,7 @@ class ProtocolCode(object):
     IS_CONTROLLER_CONNECTED = 0x14
     READ_NEXT_ERROR = 0x15
     SET_FRESH_MODE = 0x16
-    GET_FRESH_MODE = 0x17   
+    GET_FRESH_MODE = 0x17
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
 
@@ -86,12 +86,12 @@ class ProtocolCode(object):
     GET_GRIPPER_VALUE = 0x65
     SET_GRIPPER_STATE = 0x66
     SET_GRIPPER_VALUE = 0x67
-    SET_GRIPPER_CALIBRATION = 0x68 
+    SET_GRIPPER_CALIBRATION = 0x68
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
     SET_ELETRIC_GRIPPER = 0x6B
     INIT_ELETRIC_GRIPPER = 0x6C
-    
+
     GET_ACCEI_DATA = 0x73
 
     # Basic
@@ -113,7 +113,7 @@ class ProtocolCode(object):
 
     # Get the measured distance
     GET_TOF_DISTANCE = 0xC0
-    
+
     # Coordinate transformation
     SET_TOOL_REFERENCE = 0x81
     GET_TOOL_REFERENCE = 0x82
@@ -125,25 +125,25 @@ class ProtocolCode(object):
     GET_MOVEMENT_TYPE = 0x88
     SET_END_TYPE = 0x89
     GET_END_TYPE = 0x8A
-    
+
     # Impact checking
     SET_JOINT_CURRENT = 0x90
     GET_JOINT_CURRENT = 0x91
     SET_CURRENT_STATE = 0x92
-    
+
     # planning speed
     GET_PLAN_SPEED = 0xD0
     GET_PLAN_ACCELERATION = 0xD1
     SET_PLAN_SPEED = 0xD2
     SET_PLAN_ACCELERATION = 0xD3
-    
+
     # Motor status read
     GET_SERVO_SPEED = 0xE1
     GET_SERVO_CURRENTS = 0xE2
     GET_SERVO_VOLTAGES = 0xE3
     GET_SERVO_STATUS = 0xE4
     GET_SERVO_TEMPS = 0xE5
-    
+
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
     COLLISION = 0xF2
@@ -154,23 +154,23 @@ class ProtocolCode(object):
     JOG_INC_COORD = 0xF7
     COLLISION_SWITCH = 0xF8
     IS_COLLISION_ON = 0xF9
-    
+
     # IIC
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
-    # SET_IIC_BYTE = 0xA6 
-    
+    # SET_IIC_BYTE = 0xA6
+
     # mypalletizer lite
     END = "\r"
     COORDS_SET = "G0"
     SLEEP_TIME = "G4"
-    BACK_ZERO = "G28"  
+    BACK_ZERO = "G28"
     ABS_CARTESIAN = "G90"
     REL_CARTESIAN = "G91"
     SET_JOINT = "G92"
     SET_PWM = "M1"
-    GPIO_CLOSE = "M2"
-    GPIO_ON = "M3"
+    GPIO_CLOSE = "M3"
+    GPIO_ON = "M2"
     GRIPPER_ZERO = "M4"
     GIRPPER_OPEN = "M5"
     GIRPPER_CLOSE = "M6"
@@ -186,7 +186,7 @@ class ProtocolCode(object):
     LOCK_SERVOS = "M18"
     GET_CURRENT_COORD_INFO = "M114"
     GET_BACK_ZERO_STATUS = "M119"
-    
+
 
 class DataProcessor(object):
     # Functional approach
@@ -195,9 +195,12 @@ class DataProcessor(object):
 
     def _encode_int16(self, data):
         if isinstance(data, int):
-            return [ord(i) if isinstance(i, str) else i for i in list(struct.pack(">h", data))]
+            return [
+                ord(i) if isinstance(i, str) else i
+                for i in list(struct.pack(">h", data))
+            ]
         else:
-            return sum([list(struct.pack('>h', elem)) for elem in data], [])
+            return sum([list(struct.pack(">h", elem)) for elem in data], [])
 
     def _decode_int8(self, data):
         return struct.unpack("B", data)[0]
@@ -219,8 +222,7 @@ class DataProcessor(object):
 
     def _flatten(self, _list):
         return sum(
-            ([x] if not isinstance(x, list) else self._flatten(x)
-             for x in _list), []
+            ([x] if not isinstance(x, list) else self._flatten(x) for x in _list), []
         )
 
     def _process_data_command(self, args):
@@ -229,8 +231,7 @@ class DataProcessor(object):
 
         return self._flatten(
             [
-                [self._encode_int16(int(i))
-                 for i in x] if isinstance(x, list) else x
+                [self._encode_int16(int(i)) for i in x] if isinstance(x, list) else x
                 for x in args
             ]
         )
@@ -238,7 +239,7 @@ class DataProcessor(object):
     def _is_frame_header(self, data, pos1, pos2):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
-    def _process_received(self, data, genre, arm = 6):
+    def _process_received(self, data, genre, arm=6):
         if not data:
             return []
         if genre == 177:
@@ -250,7 +251,7 @@ class DataProcessor(object):
         data_len = len(data)
         # Get valid header: 0xfe0xfe
         header_i, header_j = 0, 1
-        while header_j < data_len-4:
+        while header_j < data_len - 4:
             if self._is_frame_header(data, header_i, header_j):
                 if arm == 6:
                     cmd_id = data[header_i + 3]
@@ -267,8 +268,7 @@ class DataProcessor(object):
             data_len = data[header_i + 2] - 2
         elif arm == 12:
             data_len = data[header_i + 3] - 2
-        unique_data = [ProtocolCode.GET_BASIC_INPUT,
-                       ProtocolCode.GET_DIGITAL_INPUT]
+        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
 
         if cmd_id in unique_data:
             data_pos = header_i + 5
@@ -278,28 +278,38 @@ class DataProcessor(object):
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
-                
-        valid_data = data[data_pos: data_pos + data_len]
+
+        valid_data = data[data_pos : data_pos + data_len]
 
         # process valid data
         res = []
-        if data_len in [6, 8, 12 ,24]:
+        if data_len in [6, 8, 12, 24]:
             for header_i in range(0, len(valid_data), 2):
-                one = valid_data[header_i: header_i + 2]
+                one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
         elif data_len == 2:
-            if genre in [ProtocolCode.GET_PLAN_SPEED, ProtocolCode.GET_PLAN_ACCELERATION]:
-                return [self._decode_int8(valid_data[0:1]), self._decode_int8(valid_data[1:])]
+            if genre in [
+                ProtocolCode.GET_PLAN_SPEED,
+                ProtocolCode.GET_PLAN_ACCELERATION,
+            ]:
+                return [
+                    self._decode_int8(valid_data[0:1]),
+                    self._decode_int8(valid_data[1:]),
+                ]
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
         else:
-            if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS]:
+            if genre in [
+                ProtocolCode.GET_SERVO_VOLTAGES,
+                ProtocolCode.GET_SERVO_STATUS,
+                ProtocolCode.GET_SERVO_TEMPS,
+            ]:
                 for i in range(data_len):
-                    data1 = self._decode_int8(valid_data[i:i+1])
-                    res.append(0xff & data1 if data1 <0 else data1)
+                    data1 = self._decode_int8(valid_data[i : i + 1])
+                    res.append(0xFF & data1 if data1 < 0 else data1)
                 return res
             res.append(self._decode_int8(valid_data))
         if genre == ProtocolCode.GET_ACCEI_DATA:
@@ -312,8 +322,8 @@ class DataProcessor(object):
 
 
 def write(self, command, method=None):
-    if len(command)>3 and command[3] == 176 and len(command) > 5:
-        command = "'"+command[4]+"'"+"("+command[5]+")"
+    if len(command) > 3 and command[3] == 176 and len(command) > 5:
+        command = "'" + command[4] + "'" + "(" + command[5] + ")"
         command = command.encode()
     if method == "socket":
         data = b""
@@ -325,7 +335,7 @@ def write(self, command, method=None):
         if len(command) > 3 and command[3] == 177:
             while True:
                 data = self.sock.recv(1024)
-                if b'password' in data:
+                if b"password" in data:
                     break
         elif len(command) > 3 and command[3] == 192:
             while True:
@@ -337,12 +347,13 @@ def write(self, command, method=None):
                 self.sock.settimeout(1)
                 data = self.sock.recv(1024)
             except:
-                data = b''
+                data = b""
         return data
     else:
         self.log.debug("_write: {}".format([hex(i) for i in command]))
         self._serial_port.write(command)
         self._serial_port.flush()
+
 
 def read(self, genre):
     datas = b""
@@ -353,34 +364,34 @@ def read(self, genre):
     wait_time = 0.1
     if genre == ProtocolCode.GET_SSID_PWD:
         time.sleep(0.1)
-        if self._serial_port.inWaiting()>0:
+        if self._serial_port.inWaiting() > 0:
             datas = self._serial_port.read(self._serial_port.inWaiting())
         return datas
     elif genre == ProtocolCode.GET_ACCEI_DATA:
         wait_time = 1
-    while True and time.time() - t < wait_time: 
+    while True and time.time() - t < wait_time:
         data = self._serial_port.read()
         # print("1:",data)
-        k+=1
-        if data_len == 1 and data == b'\xfa':
+        k += 1
+        if data_len == 1 and data == b"\xfa":
             datas += data
             break
         elif len(datas) == 2:
-            data_len = struct.unpack("b",data)[0]
+            data_len = struct.unpack("b", data)[0]
             datas += data
-        elif len(datas)>2 and data_len>0:
+        elif len(datas) > 2 and data_len > 0:
             datas += data
             data_len -= 1
-        elif data == b'\xfe':
-            if datas == b'':
+        elif data == b"\xfe":
+            if datas == b"":
                 datas += data
                 pre = k
             else:
-                if k-1 == pre:
+                if k - 1 == pre:
                     datas += data
                 else:
-                    datas = b'\xfe'
-                    pre = k  
+                    datas = b"\xfe"
+                    pre = k
     else:
         datas = None
     return datas
