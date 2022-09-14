@@ -210,53 +210,175 @@ class MyBuddy(MyBuddyCommandGenerator):
         return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
 
     # Basic for raspberry pi.
-    def set_gpio_mode(self, pin_no, mode):
-        """Init GPIO module, and set BCM mode.
+    def set_gpio_init_mode(self, mode = 1):
+        """import RPiGPIO,Init GPIO mode
         
-        Args:
-            pin_no: (int)pin number.
-            mode: 0 - input 1 - output
+            Args:
+                mode(int):0/1
+                0 = BCM
+                1 = BOAND
         """
         import RPi.GPIO as GPIO  # type: ignore
         self.gpio = GPIO
-        self.gpio.setmode(GPIO.BCM)
-        if mode == 1:
-            self.gpio.setup(pin_no, self.gpio.OUT)
+        if mode == 0:
+            self.gpio.setmode(GPIO.BCM)
         else:
-            self.gpio.setup(pin_no, self.gpio.IN)
-            
+            self.gpio.setmode(GPIO.BOAND)
 
-    def set_gpio_output(self, pin, v):
+    def set_gpio_setup(self, pin_no, mode):
+        """Init GPIO module, and set BCM mode. 
+
+        Args:
+            pin_no: (int)pin number 1-16.
+        
+                PIN_NO = GPIO.BCM:  
+
+                |1 = G7  |  2 = G8  |  3 = G25 | 4 = G24  | 5 = G23  | 6 = G18   |
+
+                |7 = G11 |  8 = G9  |  9 = G10 | 10 =G22  | 11 =G27  | 12 = G17  |
+
+                |Grove0:   |  SCL0 = 13 = G3    |     SDA0 = 14 = G2    |
+
+                |Grove1:   |  SCL1 = 15 = G6    |     SDA1 = 16 = G5    |
+
+            mode: 
+                0 - input
+                    define: pull_up_down = DOWN
+                1 - output
+                     define: initial = HIGH
+        """
+        pin_no = self.base_io_to_gpio(pin_no)       
+        if mode == 1:
+            self.gpio.setup(pin_no, self.gpio.OUT, initial=self.gpio.HIGH)
+        else:
+            self.gpio.setup(pin_no, self.gpio.IN, pull_up_down=self.gpio.DOWN)
+            
+    def set_gpio_output(self, pin_no, v):
         """Set GPIO output value.
 
         Args:
-            pin: (int)pin number.
+            pin_no: (int)pin number 1-16.
             v: (int) 0 / 1
         """
+        pin = self.base_io_to_gpio(pin_no)
         self.gpio.output(pin, v)
         
-    def get_gpio_input(self, pin):
+    def get_gpio_input(self, pin_no):
         """Get GPIO input value.
 
         Args:
-            pin: (int)pin number.
+            pin_no: (int)pin number 1-16.
         """
+        pin = self.base_io_to_gpio(pin_no)
         self.gpio.input(pin)
         
-    def set_gpio_pwm(self, pin, baud, dc):
+    def set_gpio_pwm_start(self, pin_no, freq = 0.5, dc = 0.5):
         """Set GPIO PWM value.
 
         Args:
-            pin: (int)pin number.
-            baud: (int) 10 - 1000000
-            dc: (int) 0 - 100
+            pin_no: (int)pin number 1-16.
+            freq: (float) 0.0 - 1000000.0
+            dc: (float) 0.0 - 100.0
         """
-        self.gpio.PWM(pin, baud, dc)
+        pin = self.base_io_to_gpio(pin_no)
+        self.pwm = self.gpio.PWM(pin, freq)
+        self.pwm.start(dc)
 
+    def set_gpio_pwm_change_freq(self, freq):
+        """Reset GPIO PWM freq.
+
+        Args:
+            freq: (float) 0.0 - 1000000.0
+        """
+        self.pwm.ChangeFrequency(freq)
+
+    def set_gpio_pwm_change_dc(self, dc):
+        """Reset GPIO PWM DC.
+
+        Args:
+            dc: (float) 0.0 - 100.0
+        """
+        self.pwm.ChangeDutyCycle(dc)
+
+    def set_gpio_pwm_stop(self):
+        """Set GPIO PWM STOP OUTPUT.
+        """
+        self.pwm.stop()
+
+    def set_iic_init(self, IIC_NO):
+        """
+            import SMBUS2
+
+            Open IIC_NO port
+
+            (For more use, please see
+            
+            pypilink: https://pypi.org/project/smbus2/,
+             
+            githublink: https://github.com/kplindegaard/smbus2)
+            
+        Args:
+            IIC_NO(int) : 0/1 ,0 = iic0, 1=iic1
+        """
+        from smbus2 import SMBus
+        # self.iic = SMBus(IIC_NO)
+        return SMBus(IIC_NO)
+
+    def base_io_to_gpio(self, pin):
+        """BASE_io = GPIO.BCM:   
+            1 = G7    |   7 = G11  
+            2 = G8    |   8 = G9  
+            3 = G25  |   9 = G10  
+            4 = G24  |  10 =G22  
+            5 = G23  |  11 =G27  
+            6 = G18  |  12 = G17  
+            GND       |  3V3  
+
+            Grove0:
+            SCL0 = 13 = G3  
+            SDA0 = 14 = G2  
+            5V  
+            GND  
+
+            Grove1:  
+            SCL1 = 15 = G6  
+            SDA1 = 16 = G5  
+            5V  
+            GND  
+        """
+        pin_dist = {1:7, 2:8, 3:25, 4:24, 5:23, 6:18, 
+                    7:11, 8:9, 9:10, 10:22, 11:27, 12:17,
+                    13:3, 14:2,'SCL0':3,"SDA0":2, 
+                    15:6, 16:5, 'SCL0':6,"SDA0":5}
+        if pin in pin_dist:
+            _pin = pin
+            pin = pin_dist.get(_pin)
+        else:
+            print('The IO definition exceeds the system support range, and the program exits automatically.')
+            pin = None
+        return pin
+
+    def set_gpio_clearup(self,pin_no = None):
+        """SET GPIO CLEANUP
+
+        Args:
+            pin_no :(int)pin number 1-16.
+            if pin_no = None : cleanup all gpio
+        """
+        if pin_no:
+            pin_no = self.base_io_to_gpio(pin_no)
+        self.gpio.cleanup(pin_no)
+   
     # Other
     def wait(self, t):
         time.sleep(t)
         return self
 
     def close(self):
-        self._serial_port.close()
+        self._serial_port.close()   
+            
+    def open(self):
+        self._serial_port.open()
+        
+    def is_open(self):
+        return self._serial_port.isOpen()

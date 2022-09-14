@@ -15,10 +15,12 @@ We support Python2, Python3.5 or later.
     - [power_on](#power_on)
     - [power_off](#power_off)
     - [is_power_on](#is_power_on)
+    - [read_next_error](#read_next_error)
     - [release_all_servos](#release_all_servos)
     - [is_controller_connected](#is_controller_connected)
   - [MDI mode and operation](#mdi-mode-and-operation)
     - [get_angles](#get_angles)
+    - [set_fresh_mode(mode)](#set_fresh_modemode)
     - [send_angle](#send_angle)
     - [send_angles()](#send_angles)
     - [get_radians](#get_radians)
@@ -257,6 +259,18 @@ from pymycobot import MyCobot
   - `1`: power on
   - `0`: power off
   - `-1`: error
+### read_next_error
+
+- **Prototype**: `read_next_error()`
+
+- **Description**: Robot Error Detection.
+
+- **Returns**
+  list len 7
+  - `0`: No abnormality
+  - `1`: Communication disconnected
+  - `2`: Unstable communication
+  - `3` : Servo abnormality
 
 ### release_all_servos
 
@@ -285,6 +299,16 @@ from pymycobot import MyCobot
 - **Description**: Get the degree of all joints.
 
 - **Returns**: `list`: A float list of all degree.
+
+### set_fresh_mode(mode)
+
+Set command refresh mode
+
+* **Parameters**
+
+  * **mode** – int
+    1 - Always execute the latest command first.
+    0 - Execute instructions sequentially in the form of a queue.
 
 ### send_angle
 
@@ -2077,8 +2101,8 @@ Set command refresh mode
   * **id** – 1/2 (L/R).
 
   * **mode** – int
-    0 - Always execute the latest command first.
-    1 - Execute instructions sequentially in the form of a queue.
+    1 - Always execute the latest command first.
+    0 - Execute instructions sequentially in the form of a queue.
 
 ### set_gripper_calibration(id)
 

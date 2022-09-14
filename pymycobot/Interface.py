@@ -1,5 +1,4 @@
 # coding=utf-8
-from re import I
 from pymycobot.common import ProtocolCode
 from pymycobot.generate import MyCobotCommandGenerator
 
@@ -38,8 +37,9 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             command_data[1:],
             check_digit,
         ]
-        # print(command)
+        # print("write_data: ",command)
         real_command = self._flatten(command)
+        # print("write_data: ",real_command)
         has_reply = kwargs.get("has_reply", False)
         return real_command, has_reply
 
@@ -202,6 +202,18 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         degrees = [self._angle2int(degree) for degree in degrees]
         return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
+
+    def send_angles_auto(self, id, degrees, _time):
+        """Send all angles to the robotic arm
+
+        Args:
+            id: 1/2 (L/R).
+            degrees: [angle_list] len 6
+            _time: 1 - 100
+        """
+        # self.calibration_parameters(degrees=degrees, speed=speed)
+        degrees = [self._angle2int(degree) for degree in degrees]
+        return self._mesg(ProtocolCode.SEND_ANGLES_AUTO, id, degrees, _time)
 
     def get_coords(self, id):
         """Get the coordinates of the robotic arm
@@ -442,17 +454,31 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Set the six joints of the manipulator to execute synchronously to the specified position.
 
         Args:
-            id: 1/2 (L/R).
-            encoders: A encoder list, length 6.
-            speed: speed 1 ~ 100
+            id: 0/1/2 (all/L/R).
+            if id = 0:
+                encoders: A encoder list, length 13.
+                speed: A encoder list,length 13.
+            else:
+                encoders: A encoder list, length 6.
+                speed: A encoder list, length 6.
         """
-        return self._mesg(ProtocolCode.SET_ENCODERS, id, encoders, speed)
+        _id = id
+        _encoders = encoders
+        _speed = speed
+        encoders_data = []
+        if id == 0:
+            encoders_data = (_encoders[0:7] + speed[0:7] + _encoders[7:14] + speed[7:14] + _encoders[-1:] + speed[-1:])
+            print(encoders_data)
+            return self._mesg(ProtocolCode.SET_ENCODERS, _id, encoders_data)
+        if id == 1 or id == 2:
+            return self._mesg(ProtocolCode.SET_ENCODERS, _id, _encoders, _speed)
 
     def get_encoders(self, id):
         """Get the six joints of the manipulator
 
         Args:
-            id: 1/2 (L/R).
+            id: 0/1/2 (all/L/R).
+            if id==0: return all joint encoder and speed,
             
         Return:
             The list of encoders
@@ -643,7 +669,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
     # Atom IO
     
 
-    def set_pin_mode(self, id, pin_no, pin_mode):
+    def set_tool_pin_mode(self, id, pin_no, pin_mode):
         """Set the state mode of the specified pin in atom.
 
         Args:
@@ -653,7 +679,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_PIN_MODE, id, pin_no, pin_mode)
 
-    def set_digital_output(self, id, pin_no, pin_signal):
+    def set_tool_digital_output(self, id, pin_no, pin_signal):
         """Set atom IO output level
 
         Args:
@@ -663,7 +689,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, id, pin_no, pin_signal)
 
-    def get_digital_input(self, id, pin_no):
+    def get_tool_digital_input(self, id, pin_no):
         """singal value
 
         Args:
@@ -672,7 +698,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, id, pin_no, has_reply=True)
 
-    def set_pwm_output(self, id, channel, frequency, pin_val):
+    def set_tool_pwm_output(self, id, channel, frequency, pin_val):
         """PWM control
 
         Args:
@@ -734,7 +760,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, id, has_reply=True)
 
-    def set_color(self, id, r=0, g=0, b=0):
+    def set_tool_color(self, id, r=0, g=0, b=0):
         """Set the light color on the top of the robot arm.
 
         Args:

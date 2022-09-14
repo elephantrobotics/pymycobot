@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
-import socket
+import os
+import sys
+sys.path.append(os.getcwd())
 import tkinter
 from tkinter import ttk
 import time
 import threading
-import os
-import textwrap
 import serial
 import serial.tools.list_ports
 
 from pymycobot.mycobot import MyCobot
-from pymycobot import PI_PORT, PI_BAUD
-
 
 LOG_NUM = 0
 
+multiple_angle = [[90, -90, 90, 90, 90, 90],
+        [-90, 90, -90, -90, -90, -90],
+        [-171.38, 70.57, 41.66, -24.87, -82.88, 6.76],
+        [0.43, -92.72, 92.9, 87.71, 89.56, -0.17],]
+
+multiple_angle_grip = [[79.1, -30.41, -96.85, 40, 88.85, 0],
+        [79.1, -60.41, -96.85, 80, 88.85, 0],
+        [79.1, -30.41, -96.85, 40, 88.85, 0],
+        [-27.59, -8.78, -127.26, 45.35, 88.85, 0],
+        [-27.59, -60, -90, 60.35, 88.85, 0],
+        [-27.59, -8.78, -127.26, 45.35, 88.85, 0]]
 
 class MycobotTest(object):
     def __init__(self):
@@ -22,7 +31,7 @@ class MycobotTest(object):
 
         self.win = tkinter.Tk()
         self.win.title("树莓派版 Mycobot 测试工具")
-        self.win.geometry("918x600+10+10")  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
+        self.win.geometry("918x480+10+10")  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
 
         self.port_label = tkinter.Label(self.win, text="选择串口：")
         self.port_label.grid(row=0)
@@ -139,6 +148,9 @@ class MycobotTest(object):
 
     def run(self):
         self.win.mainloop()  # run
+        self.aging_stop = False
+        if self.aging_stop:
+            self.aging.join()
 
     # ============================================================
     # Connect method
@@ -200,7 +212,7 @@ class MycobotTest(object):
         self.write_log_to_Text("Power on over.")
 
     def check_mycobot_servos(self):
-        self.connect_mycobot()
+        # self.connect_mycobot()
         if not self.has_mycobot():
             return
 
@@ -274,40 +286,35 @@ class MycobotTest(object):
     def start_aging_test(self):
         if not self.has_mycobot():
             return
-
         self.aging_stop = False
-        self.aging = threading.Thread(target=self._aging_test, daemon=True)
+        self.aging = threading.Thread(target=self.aging_test, daemon=True)
         self.aging.start()
-        # self._aging_test()
         self.write_log_to_Text("开始循环老化测试 ...")
 
     def stop_aging_test(self):
         try:
-            os.system("sudo systemctl stop aging_test.service")
-            os.system("sudo rm /home/ubuntu/Desktop/aging_test.sh")
-            os.system("sudo rm /home/ubuntu/Desktop/aging_test.py")
-            os.system("sudo rm /etc/systemd/system/aging_test.service")
-            os.system("sudo systemctl daemon-reload")
+            self.aging_stop = True
             self.write_log_to_Text("结束循环老化测试.")
+            self.aging.join()
         except:
             self.write_log_to_Text("结束老化测试失败 ！！！")
 
-    def rectify_mycobot(self):
-        if not self.has_mycobot():
-            return
-
-        data_id = [21, 22, 23, 24, 26, 27]
-        data    = [10, 0, 1, 0, 3, 3]
-        for i in range(1,7):
-            for j in range(len(data_id)):
-                self.mycobot.set_servo_data(i, data_id[j], data[j])
-                time.sleep(0.2)
-                _data = self.mycobot.get_servo_data(i, data_id[j])
-                time.sleep(0.2)
-                if _data == data[j]:
-                    self.write_log_to_Text("Servo motor :" + str(i) + "  data_id : " + str(data_id[j]) + "   data: " + str(_data) + "  modify successfully ")
-                else:
-                    self.write_log_to_Text("Servo motor :"  + str(i) + "  data_id : " + str(data_id[j]) + "   data: " + str(_data) + "  modify error ")
+    # def rectify_mycobot(self):
+    #     if not self.has_mycobot():
+    #         return
+    #
+    #     data_id = [21, 22, 23, 24, 26, 27]
+    #     data    = [10, 0, 1, 0, 3, 3]
+    #     for i in range(1,7):
+    #         for j in range(len(data_id)):
+    #             self.mycobot.set_servo_data(i, data_id[j], data[j])
+    #             time.sleep(0.2)
+    #             _data = self.mycobot.get_servo_data(i, data_id[j])
+    #             time.sleep(0.2)
+    #             if _data == data[j]:
+    #                 self.write_log_to_Text("Servo motor :" + str(i) + "  data_id : " + str(data_id[j]) + "   data: " + str(_data) + "  modify successfully ")
+    #             else:
+    #                 self.write_log_to_Text("Servo motor :"  + str(i) + "  data_id : " + str(data_id[j]) + "   data: " + str(_data) + "  modify error ")
     
     
     def test_basic(self):
@@ -362,53 +369,22 @@ class MycobotTest(object):
             return False
         return True
 
-    def _aging_test(self):
-        """
-        Aging test thread target.
-        By using in `start_aging_test()` and `stop_aging_test()`.
-        """
-        # if socket.gethostname() != "pi":
-        #     self.write_log_to_Text("老化测试支持 Raspberry OS.")
-        #     return
+    def aging_test(self):
 
-        aging_test_content_py = textwrap.dedent(
-            """\
-            #!/usr/bin/python3
+        while True:
 
-            from pymycobot.mycobot import MyCobot
-            from pymycobot import PI_PORT, PI_BAUD
-            import time
-            
             speed = [50, 100]
             joint = [1, 2, 3, 4, 5, 6]
             angle = [0, 168, 90, 130, 145, 165, 180]
             coord = ['y', 'z', 'x']
 
-            mycobot = MyCobot('%s', %s)
+            self.mycobot.set_color(0,0,255)
 
-            def aging_test():
+            self.mycobot.wait(1).send_angles([0, 0, 0, 0, 0, 0], speed[1])
 
-                mycobot.set_color(0,0,255)
-            
-                mycobot.wait(1).send_angles([0, 0, 0, 0, 0, 0], speed[1])
-
-                # 单关节运动
-                for a in range(1):
-                    for j in joint:
-                        for sp in speed:
-                            if sp == 10:
-                                t = 10
-                            elif sp == 50:
-                                t = 5
-                            elif sp == 100:
-                                t = 3
-                            mycobot.wait(t).send_angle(j, angle[j], sp)
-                            mycobot.wait(t).send_angle(j, angle[j]*(-1), sp)
-                            mycobot.wait(t).send_angle(j, angle[0], sp)
-
-                
-                # 多关节运动
-                for b in range(2):
+            # 单关节运动
+            for a in range(1):
+                for j in joint:
                     for sp in speed:
                         if sp == 10:
                             t = 10
@@ -416,115 +392,85 @@ class MycobotTest(object):
                             t = 5
                         elif sp == 100:
                             t = 3
-                        mycobot.wait(t).send_angles([90, -90, 90, 90, 90, 90], sp)
-                        mycobot.wait(t).send_angles([-90, 90, -90, -90, -90, -90], sp)
-                        mycobot.wait(t).send_angles([-171.38, 70.57, 41.66, -24.87, -82.88, 6.76], sp)
-                        mycobot.wait(t).send_angles([0.43, -92.72, 92.9, 87.71, 89.56, -0.17], sp)
-                
-                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], speed[1])
 
-                # 笛卡尔运动
-                mycobot.wait(5).send_angles([0, -25, -115, 45, -80, 0], speed[1])
-                time.sleep(2)
-                
-                for c in range(2):
-                    for sp in speed:
-                        data_list = [235.4, -117.3, 244.5, 9.14, -25.44, 85.62]
-                        mycobot.wait(5).send_coords(data_list, speed[1], 1)
-                        if sp == 10:
-                            t = 10
-                        elif sp == 50:
-                            t = 3
-                        elif sp == 100:
-                            t = 1
+                        if self.aging_stop:
+                            return
 
-                        for cd in coord:
-                            if cd == 'x':
-                                i = 0
-                            elif cd == 'y':
-                                i = 1
-                            elif cd == 'z':
-                                i = 2
-                            print(cd)
-                
-                            data_list[i] = data_list[i] + 90
-                            mycobot.wait(t).send_coords(data_list, sp, 1)
-                            print(t,data_list,sp)
-                
-                            data_list[i] = data_list[i] - 140
-                            mycobot.wait(t).send_coords(data_list, sp, 1)
-                            print(t,data_list,sp)
-                
-                mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], speed[1])
-                
-                # 典型动作（抓取）
-                for d in range(2):
-                    for sp in speed:
-                        if sp == 10:
-                            t = 10
-                        elif sp == 50:
-                            t = 3
-                        elif sp == 100:
-                            t = 2
-                        mycobot.wait(t).send_angles([79.1, -30.41, -96.85, 40, 88.85, 0], sp)
-                        mycobot.wait(t).send_angles([79.1, -60.41, -96.85, 80, 88.85, 0], sp)
-                        mycobot.wait(t).send_angles([79.1, -30.41, -96.85, 40, 88.85, 0], sp)
-                        mycobot.wait(t).send_angles([-27.59, -8.78, -127.26, 45.35, 88.85, 0], sp)
-                        mycobot.wait(t).send_angles([-27.59, -60, -90, 60.35, 88.85, 0],sp)
-                        mycobot.wait(t).send_angles([-27.59, -8.78, -127.26, 45.35, 88.85, 0], sp)
-                        
-                self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], speed[1])
+                        self.mycobot.wait(t).send_angle(j, angle[j], sp)
+                        print(self.aging_stop)
+                        self.mycobot.wait(t).send_angle(j, angle[j]*(-1), sp)
+                        print(self.aging_stop)
+                        self.mycobot.wait(t).send_angle(j, angle[0], sp)
+                        print(self.aging_stop)
 
 
-            if __name__ == '__main__':
-                while True:
-                    aging_test()
-            """
-            % (self.prot, self.baud)
-        )
-        '''
-                mycobot.set_color(0, 0, 255)
-        '''
+            # 多关节运动
+            for b in range(2):
+                for sp in speed:
+                    if sp == 10:
+                        t = 10
+                    elif sp == 50:
+                        t = 5
+                    elif sp == 100:
+                        t = 3
+                    for mul in multiple_angle:
+                        if self.aging_stop:
+                            return
+                        self.mycobot.wait(t).send_angles(mul, sp)
 
-        aging_test_content_sh = textwrap.dedent(
-            """\
-            #!/bin/bash
-            python3 /home/ubuntu/Desktop/aging_test.py
-            """
-        )
+            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], speed[1])
 
-        aging_test_content_service = textwrap.dedent(
-            """\
-            [Unit]
-            Description=aging-test
+            # 笛卡尔运动
+            self.mycobot.wait(5).send_angles([0, -25, -115, 45, -80, 0], speed[1])
+            time.sleep(2)
 
-            [Service]
-            Type=forking
-            User=ubuntu
-            Restart=on-failure
-            RestartSec=6
-            ExecStart=/home/ubuntu/Desktop/aging_test.sh
+            for c in range(2):
+                for sp in speed:
+                    data_list = [235.4, -117.3, 244.5, 9.14, -25.44, 85.62]
+                    self.mycobot.wait(5).send_coords(data_list, speed[1], 1)
+                    if sp == 10:
+                        t = 10
+                    elif sp == 50:
+                        t = 3
+                    elif sp == 100:
+                        t = 1
 
-            [Install]
-            WantedBy=multi-user.target
-            """
-        )
+                    for cd in coord:
+                        if cd == 'x':
+                            i = 0
+                        elif cd == 'y':
+                            i = 1
+                        elif cd == 'z':
+                            i = 2
+                        print(cd)
+                        if self.aging_stop:
+                            return
 
-        os.system(
-            'echo "' + aging_test_content_py + '" >> /home/ubuntu/Desktop/aging_test.py'
-        )
-        os.system('echo "' + aging_test_content_sh + '" >> /home/ubuntu/Desktop/aging_test.sh')
-        os.system("sudo chmod +x /home/ubuntu/Desktop/aging_test.sh")
-        os.system(
-            'echo "'
-            + aging_test_content_service
-            + '" >> /home/ubuntu/Desktop/aging_test.service'
-        )
-        os.system(
-            "sudo mv /home/ubuntu/Desktop/aging_test.service /etc/systemd/system/aging_test.service"
-        )
-        os.system("sudo systemctl enable aging_test.service")
-        os.system("sudo systemctl start aging_test.service")
+                        data_list[i] = data_list[i] + 90
+                        self.mycobot.wait(t).send_coords(data_list, sp, 1)
+                        print(t,data_list,sp)
+
+                        data_list[i] = data_list[i] - 140
+                        self.mycobot.wait(t).send_coords(data_list, sp, 1)
+                        print(t,data_list,sp)
+
+            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], speed[1])
+
+            # 典型动作（抓取）
+            for d in range(2):
+                for sp in speed:
+                    if sp == 10:
+                        t = 10
+                    elif sp == 50:
+                        t = 3
+                    elif sp == 100:
+                        t = 2
+                    for mulg in multiple_angle_grip:
+                        if self.aging_stop:
+                            return
+                        self.mycobot.wait(t).send_angles(mulg, sp)
+
+            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0], speed[1])
 
     def _calibration_test(self):
         self.write_log_to_Text("开始测试校准.")

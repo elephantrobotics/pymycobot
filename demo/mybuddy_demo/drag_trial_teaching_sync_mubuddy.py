@@ -1,68 +1,62 @@
 '''
 Drag and teach in windows version
 '''
+from pickle import FALSE
 import time
 import os
 import sys
-# import termios
-# import tty
 import threading
 import json
 import serial
 import serial.tools.list_ports
+import platform
 
+
+sys.path.append(os.getcwd())
 from pymycobot import MyBuddy
 
 
-port: str
-mc: MyBuddy
+mb: MyBuddy
 sp: int = 80
-
+os_version: str
+WIN = False
+LINUX = False
 
 def setup():
     print("")
-    global port, mc
-    plist = list(serial.tools.list_ports.comports())
-    idx = 1
-    for port in plist:
-        print("{} : {}".format(idx, port))
-        idx += 1
-
-    _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
-    port = str(plist[int(_in) - 1]).split(" - ")[0].strip()
-    print(port)
-    print("")
-
-    baud = 115200
-    _baud = input("Please input baud(default:115200):")
-    try:
-        baud = int(_baud)
-    except Exception:
-        pass
-    print(baud)
-    print("")
-
-    DEBUG = False
-    f = input("Wether DEBUG mode[Y/n]:")
-    if f in ["y", "Y", "yes", "Yes"]:
-        DEBUG = True
-    # mc = MyCobot(port, debug=True)
-    mc = MyBuddy(port, baud, debug=DEBUG)
+    global port, mb, baud, os_version, WIN, LINUX
+    os_version = platform.system()
+    if os_version == 'Windows':
+        WIN = True
+        LINUX = False
+    elif os_version == 'Linux':
+        WIN = False
+        LINUX = True
+    if WIN:
+        port = 'COM21'
+        baud = 115200
+    elif LINUX:
+        port = '/dev/ttyACM0'
+        baud = 115200
+    mb = MyBuddy(port, baud, debug=True)
 
 
-# class Raw(object):
-#     """Set raw input mode for device"""
+class Raw(object):
+    """Set raw input mode for device"""
 
-#     def __init__(self, stream):
-#         self.stream = stream
-#         self.fd = self.stream.fileno()
 
-#     def __enter__(self):
-#         self.original_stty = termios.tcgetattr(self.stream)
-#         tty.setcbreak(self.stream)
+    def __init__(self, stream):
+        import termios
+        import tty
+        self.stream = stream
+        self.fd = self.stream.fileno()
 
-#     def __exit__(self, type, value, traceback):
-#         termios.tcsetattr(self.stream, termios.TCSANOW, self.original_stty)
+    def __enter__(self):
+        self.original_stty = termios.tcgetattr(self.stream)
+        tty.setcbreak(self.stream)
+
+    def __exit__(self, type, value, traceback):
+        termios.tcsetattr(self.stream, termios.TCSANOW, self.original_stty)
 
 
 class Helper(object):
@@ -77,7 +71,7 @@ class Helper(object):
 class TeachingTest(Helper):
     def __init__(self, mycobot) -> None:
         super().__init__()
-        self.mc = mycobot
+        self.mb = mb
         self.recording = False
         self.playing = False
         self.record_list = []
@@ -90,15 +84,14 @@ class TeachingTest(Helper):
 
         def _record():
             start_t = time.time()
-
+            _id = 0
             while self.recording:
-                angles_1 =  self.mc.get_encoders(1)
-                angles_2 = self.mc.get_encoders(2)
-                if angles_1 and angles_2:
-                    self.record_list.append([angles_1,angles_2])
-                    time.sleep(0.1)
+                _encoders = self.mb.get_encoders(_id)
+                if _encoders:
+                    if _encoders[-2:-1]:
+                        self.record_list.append(_encoders)
+                        time.sleep(0.05)
                     # print("\r {}".format(time.time() - start_t), end="")
-
         self.echo("Start recording.")
         self.record_t = threading.Thread(target=_record, daemon=True)
         self.record_t.start()
@@ -111,12 +104,12 @@ class TeachingTest(Helper):
 
     def play(self):
         self.echo("Start play")
-        for angles in self.record_list:
-            print(angles[1])
-            self.mc.set_encoders(1,angles[0], 80, 1)
+        for _encoders_data in self.record_list:
+            print(_encoders_data)
+            _encoders = _encoders_data[0:7] + _encoders_data[14:21] + _encoders_data[-2:-1]
+            _speeds = _encoders_data[7:14] + _encoders_data[21:28] + _encoders_data[-1:]
+            self.mb.set_encoders(0, _encoders,_speeds)
             time.sleep(0.05)
-            self.mc.set_encoders(2,angles[1], 80,1)
-            time.sleep(0.1)
         self.echo("Finish play")
 
     def loop_play(self):
@@ -128,8 +121,12 @@ class TeachingTest(Helper):
             while self.playing:
                 idx_ = i % len_
                 i += 1
-                self.mc.set_encoders(self.record_list[idx_], 80)
-                time.sleep(0.1)
+                _encoders_data = self.record_list[idx_]
+                print(_encoders_data)
+                _encoders = _encoders_data[0:7] + _encoders_data[14:21] + _encoders_data[-2:-1]
+                _speeds = _encoders_data[7:14] + _encoders_data[21:28] + _encoders_data[-1:]
+                self.mb.set_encoders(0, _encoders,_speeds)
+                time.sleep(0.05)
 
         self.echo("Start loop play.")
         self.play_t = threading.Thread(target=_loop, daemon=True)
@@ -176,12 +173,14 @@ class TeachingTest(Helper):
         )
 
     def start(self):
+        global WIN, LINUX
         self.print_menu()
-
         while not False:
-            key = input()
-            # with Raw(sys.stdin):
-            #     key = sys.stdin.read(1)
+            if WIN:
+                key = input()
+            elif LINUX:
+                with Raw(sys.stdin):
+                    key = sys.stdin.read(1)
             if key == "q":
                 break
             elif key == "r":  # recorder
@@ -200,9 +199,9 @@ class TeachingTest(Helper):
             elif key == "l":  # load from local
                 self.load_from_local()
             elif key == "f":  # free move
-                self.mc.release_all_servos(0)
+                self.mb.release_all_servos(0)
                 time.sleep(0.05)
-                self.mc.release_all_servos(2)
+                self.mb.release_all_servos(2)
                 self.echo("Released")
             else:
                 print(key)
@@ -211,5 +210,5 @@ class TeachingTest(Helper):
 
 if __name__ == "__main__":
     setup()
-    recorder = TeachingTest(mc)
+    recorder = TeachingTest(mb)
     recorder.start()

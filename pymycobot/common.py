@@ -43,6 +43,7 @@ class ProtocolCode(object):
     IS_MOVING = 0x2B
     GET_ANGLE = 0x2C
     GET_COORD = 0x2D
+    SEND_ANGLES_AUTO = 0x2E
 
     # JOG MODE AND OPERATION
     JOG_ANGLE = 0x30
@@ -283,7 +284,7 @@ class DataProcessor(object):
 
         # process valid data
         res = []
-        if data_len in [6, 8, 12, 24]:
+        if data_len in [6, 8, 12, 24, 60]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
@@ -301,6 +302,17 @@ class DataProcessor(object):
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
+        elif data_len == 7:
+            error_list = [i for i in valid_data]
+            for i in error_list:
+                if i in range(16,23):
+                    res.append(1)
+                elif i in range(23,29):
+                    res.append(2)
+                elif i in range(32,112):
+                    res.append(3)
+                else:
+                    res.append(i)
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,

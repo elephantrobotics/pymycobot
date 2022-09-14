@@ -1,18 +1,21 @@
+'''
+Drag and teach in windows version
+'''
 import time
 import os
 import sys
-import termios
-import tty
+# import termios
+# import tty
 import threading
 import json
 import serial
 import serial.tools.list_ports
-
-from pymycobot.mycobot import MyCobot
+sys.path.append(os.getcwd())
+from pymycobot import MyBuddy
 
 
 port: str
-mc: MyCobot
+mc: MyBuddy
 sp: int = 80
 
 
@@ -44,22 +47,22 @@ def setup():
     if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
     # mc = MyCobot(port, debug=True)
-    mc = MyCobot(port, baud, debug=DEBUG)
+    mc = MyBuddy(port, baud, debug=DEBUG)
 
 
-class Raw(object):
-    """Set raw input mode for device"""
+# class Raw(object):
+#     """Set raw input mode for device"""
 
-    def __init__(self, stream):
-        self.stream = stream
-        self.fd = self.stream.fileno()
+#     def __init__(self, stream):
+#         self.stream = stream
+#         self.fd = self.stream.fileno()
 
-    def __enter__(self):
-        self.original_stty = termios.tcgetattr(self.stream)
-        tty.setcbreak(self.stream)
+#     def __enter__(self):
+#         self.original_stty = termios.tcgetattr(self.stream)
+#         tty.setcbreak(self.stream)
 
-    def __exit__(self, type, value, traceback):
-        termios.tcsetattr(self.stream, termios.TCSANOW, self.original_stty)
+#     def __exit__(self, type, value, traceback):
+#         termios.tcsetattr(self.stream, termios.TCSANOW, self.original_stty)
 
 
 class Helper(object):
@@ -67,8 +70,8 @@ class Helper(object):
         self.w, self.h = os.get_terminal_size()
 
     def echo(self, msg):
-        print("\r{}".format(" " * self.w), end="")
-        print("\r{}".format(msg), end="")
+        print("\r{}".format(" " * self.w))
+        print("\r{}".format(msg))
 
 
 class TeachingTest(Helper):
@@ -89,12 +92,12 @@ class TeachingTest(Helper):
             start_t = time.time()
 
             while self.recording:
-                angles = self.mc.get_encoders()
-                speeds = self.mc.get_servo_speeds()
-                if angles:
-                    self.record_list.append([angles, speeds])
-                    time.sleep(0.042)
-                    print("\r {}".format(time.time() - start_t), end="")
+                angles_1 =  self.mc.get_encoders(1)
+                angles_2 = self.mc.get_encoders(2)
+                if angles_1 and angles_2:
+                    self.record_list.append([angles_1,angles_2])
+                    time.sleep(0.1)
+                    # print("\r {}".format(time.time() - start_t), end="")
 
         self.echo("Start recording.")
         self.record_t = threading.Thread(target=_record, daemon=True)
@@ -109,9 +112,11 @@ class TeachingTest(Helper):
     def play(self):
         self.echo("Start play")
         for angles in self.record_list:
-            # print(angles)
-            self.mc.set_encoders_drag(angles[0], angles[1])
-            time.sleep(0.055)
+            print(angles[1])
+            self.mc.set_encoders(1,angles[0], 80, 1)
+            time.sleep(0.05)
+            self.mc.set_encoders(2,angles[1], 80,1)
+            time.sleep(0.1)
         self.echo("Finish play")
 
     def loop_play(self):
@@ -123,7 +128,7 @@ class TeachingTest(Helper):
             while self.playing:
                 idx_ = i % len_
                 i += 1
-                self.mc.send_encoders_drag(self.record_list[idx_][0], self.record_list[idx_][1])
+                self.mc.set_encoders(self.record_list[idx_], 80)
                 time.sleep(0.1)
 
         self.echo("Start loop play.")
@@ -158,14 +163,14 @@ class TeachingTest(Helper):
     def print_menu(self):
         print(
             """\
-        \r q: quit
-        \r r: start record
-        \r c: stop record
-        \r p: play once
-        \r P: loop play / stop loop play
-        \r s: save to local
-        \r l: load from local
-        \r f: release mycobot
+        \r q + Enter: quit
+        \r r + Enter: start record
+        \r c + Enter: stop record
+        \r p + Enter: play once
+        \r P + Enter: loop play / stop loop play
+        \r s + Enter: save to local
+        \r l + Enter: load from local
+        \r f + Enter: release mycobot
         \r----------------------------------
             """
         )
@@ -174,31 +179,34 @@ class TeachingTest(Helper):
         self.print_menu()
 
         while not False:
-            with Raw(sys.stdin):
-                key = sys.stdin.read(1)
-                if key == "q":
-                    break
-                elif key == "r":  # recorder
-                    self.record()
-                elif key == "c":  # stop recorder
-                    self.stop_record()
-                elif key == "p":  # play
-                    self.play()
-                elif key == "P":  # loop play
-                    if not self.playing:
-                        self.loop_play()
-                    else:
-                        self.stop_loop_play()
-                elif key == "s":  # save to local
-                    self.save_to_local()
-                elif key == "l":  # load from local
-                    self.load_from_local()
-                elif key == "f":  # free move
-                    self.mc.release_all_servos()
-                    self.echo("Released")
+            key = input()
+            # with Raw(sys.stdin):
+            #     key = sys.stdin.read(1)
+            if key == "q":
+                break
+            elif key == "r":  # recorder
+                self.record()
+            elif key == "c":  # stop recorder
+                self.stop_record()
+            elif key == "p":  # play
+                self.play()
+            elif key == "P":  # loop play
+                if not self.playing:
+                    self.loop_play()
                 else:
-                    print(key)
-                    continue
+                    self.stop_loop_play()
+            elif key == "s":  # save to local
+                self.save_to_local()
+            elif key == "l":  # load from local
+                self.load_from_local()
+            elif key == "f":  # free move
+                self.mc.release_all_servos(0)
+                time.sleep(0.05)
+                self.mc.release_all_servos(2)
+                self.echo("Released")
+            else:
+                print(key)
+                continue
 
 
 if __name__ == "__main__":

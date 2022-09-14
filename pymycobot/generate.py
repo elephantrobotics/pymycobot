@@ -2,6 +2,7 @@
 
 import sys
 import logging
+import time
 
 from pymycobot.log import setup_logging
 from pymycobot.error import calibration_parameters
@@ -181,7 +182,15 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
 
     def read_next_error(self):
-        """Robot Error Detection"""
+        """Robot Error Detection
+        
+        Return:
+            list len 7.
+            0 : No abnormality
+            1 : Communication disconnected
+            2 : Unstable communication
+            3 : Servo abnormality
+        """
         return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)    
     
     def set_free_mode(self, flag):
@@ -373,7 +382,7 @@ class MyCobotCommandGenerator(DataProcessor):
             increment: 
             speed: int (0 - 100)
         """
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, increment, speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
     def jog_stop(self):
         """Stop jog moving"""
@@ -706,7 +715,8 @@ class MyCobotCommandGenerator(DataProcessor):
             password: (str) new wifi password.
         """
         self._mesg(ProtocolCode.SET_SSID_PWD) # 先发指令，再发设置的账号密码
-        return self._mesg(ProtocolCode.SET_SSID_PWD, account, password)
+        time.sleep(0.02)
+        return self._mesg(ProtocolCode.SET_SSID_PWD, account, password, has_reply=True)
 
     def get_ssid_pwd(self):
         """Get connected wifi account and password. (Apply to m5 or seeed)
@@ -944,8 +954,8 @@ class MyCobotCommandGenerator(DataProcessor):
         
         Args:
             mode: int.
-                0 - Always execute the latest command first.
-                1 - Execute instructions sequentially in the form of a queue.
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue.
         """
         return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
         

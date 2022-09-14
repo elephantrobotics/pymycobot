@@ -84,6 +84,8 @@ class MyCobot(MyCobotCommandGenerator):
 
         if has_reply:
             data = self._read(genre)
+            if genre == ProtocolCode.SET_SSID_PWD:
+                return None
             res = self._process_received(data, genre)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,

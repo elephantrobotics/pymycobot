@@ -16,7 +16,7 @@ class Mira:
             timeout  : default 0.1
             debug    : whether show debug info, default: False
         """
-        import serial  # pyserial
+        import serial
 
         self._serial_port = serial.Serial()
         self._serial_port.port = port

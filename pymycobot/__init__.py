@@ -27,10 +27,10 @@ __all__ = [
     "MyBuddy",
     "MyBuddySocket",
     "MyBuddyBlueTooth",
-    "Mira"
+    "Mira",
 ]
 
-__version__ = "2.9.3b1"
+__version__ = "2.9.7b1"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
