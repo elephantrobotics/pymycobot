@@ -120,6 +120,11 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         
         Args:
             id: 0/1/2/3 (ALL/L/R/W)
+            
+        Return:
+            1: Connected
+            0: Disconnect
+            -1 : Bad data
         """
         return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, id, has_reply=True)
 
