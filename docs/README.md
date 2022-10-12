@@ -216,6 +216,15 @@ We support Python2, Python3.5 or later.
     - [set_gpio_mode(pin_no, mode)](#set_gpio_modepin_no-mode)
     - [set_gpio_output(pin, v)](#set_gpio_outputpin-v)
     - [set_gpio_pwm(pin, baud, dc)](#set_gpio_pwmpin-baud-dc)
+- [MyBuddyEmoticon](#mybuddyemoticon)
+  - [MyBuddyEmoticon(file_path: list = [], window_size: tuple = [], loop=False)](#mybuddyemoticonfile_path-list---window_size-tuple---loopfalse)
+    - [add_file_path(path_time: list)](#add_file_pathpath_time-list)
+    - [del_file_path(index: int)](#del_file_pathindex-int)
+    - [file_path](#file_path)
+    - [join()](#join)
+    - [pause()](#pause-1)
+    - [run()](#run)
+    - [start()](#start)
   
 <!-- vim-markdown-toc -->
 </details>
@@ -2405,6 +2414,88 @@ Set GPIO PWM value.
   * **baud** – (int) 10 - 1000000
 
   * **dc** – (int) 0 - 100
+
+
+# MyBuddyEmoticon
+
+## MyBuddyEmoticon(file_path: list = [], window_size: tuple = [], loop=False)
+
+API for playing emoticons
+
+* **Parameters**
+  * **file_path** - `[[path, time],...]` The absolute path of facial expression video and the length of time to play.Time in seconds.
+
+  * **window_size** - `(Length, width) `Size of the playback window (default is full screen).
+
+  * **loop** - Loop playback or not (only once by default).
+
+```python
+from pymycobot import MyBuddyEmoticon
+import time
+
+# playlist
+file_path = [
+  ['/home/er/emo/look_happy.mp4', 10],
+]
+# Initialize the object and set it to loop playback
+em = MyBuddyEmoticon(file_path, loop = True)
+# Start playing
+em.start()
+
+# Pause playback after 3 seconds
+# time.sleep(3)
+# em.pause()
+
+# Continue playing
+# em.run()
+
+# The main thread waits for the completion of playback
+em.join()
+```
+
+### add_file_path(path_time: list)
+Add Playback File
+
+
+* **Parameters**
+
+    **path_time** – [path, time] The video address to be added and the running time
+
+
+
+### del_file_path(index: int)
+Delete the element with the specified subscript in the playlist list
+
+
+* **Parameters**
+
+    **index** – The subscript of the element in the playlist to be deleted
+
+
+
+### file_path
+Get Playfile List
+
+
+* **Returns**
+
+    list
+
+
+
+### join()
+Wait for the thread playing the video to finish
+
+
+### pause()
+Pause playback
+
+### run()
+Continue playing
+
+
+### start()
+Start playing
 
 ---
 More demo can go to [here](../demo).

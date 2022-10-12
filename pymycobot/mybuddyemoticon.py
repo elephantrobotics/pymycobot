@@ -6,13 +6,14 @@ import time
 import threading
 
 
-class Emoticon:
-    def __init__(self, file_path: list = [], window_size: list = [], loop=False) -> None:
+class MyBuddyEmoticon:
+    def __init__(self, file_path: list = [], window_size: tuple = (), loop=False) -> None:
         """API for playing emoticons
 
         Args:
             file_path(list): `[[path, time]]`The absolute path of facial expression video and the length of time to play.Time in seconds.
-            window_size(list): `[Length, width] `Size of the playback window (default is full screen).
+            window_size(tuple): `(Length, width) `Size of the playback window (default is full screen).
+            loop: Loop playback or not (only once by default).
 
         """
         self.__file_path = file_path
@@ -24,15 +25,27 @@ class Emoticon:
         
     @property
     def file_path(self):
-        """Get Playfile List"""
+        """Get Playfile List
+        
+        Return:
+            list
+        """
         return self.__file_path
     
     def add_file_path(self, path_time: list):
-        """Add Playback File"""
+        """Add Playback File
+        
+        Args:
+            path_time: `[path, time]` The video address to be added and the running time
+        """
         self.__file_path.append(path_time)
         
     def del_file_path(self, index: int):
-        """Delete the element with the specified subscript in the playlist list"""
+        """Delete the element with the specified subscript in the playlist list
+        
+        Args:
+            index: The subscript of the element in the playlist to be deleted
+        """
         if index >= len(self.__file_path):
             raise IndexError("list index out of range")
         self.__file_path.pop(index)
@@ -42,7 +55,7 @@ class Emoticon:
         return self.__window_size
     
     @window_size.setter
-    def window_size(self, data):
+    def window_size(self, data: tuple):
         """Set playback window size"""
         self.__window_size = data
         
@@ -70,6 +83,7 @@ class Emoticon:
             cv.resizeWindow(out_win, self.window_size[0], self.window_size[1])
         t = time.time()
         cv.setMouseCallback(out_win, self.mouse_callback)
+        _exit = False
         while True:
             while time.time() - t < self.__file_path[index][1]:
                 if self.quit:
@@ -86,11 +100,16 @@ class Emoticon:
                 if time.time() - t >= self.__file_path[index][1]:
                         index += 1
                         if index >= len(self.__file_path):
-                            index = 0
+                            if self.loop:
+                                index = 0
+                            else:
+                                _exit = True
+                                break
                         t = time.time()
                 if cv.waitKey(1) & 0xFF == ord('q') or ret == False:
                     cap = cv.VideoCapture(self.__file_path[index][0])
-                    
+            if _exit or self.quit:
+                break
             if time.time() - t >= self.__file_path[index][1]:
                 index += 1
                 if index >= len(self.__file_path):
@@ -100,8 +119,6 @@ class Emoticon:
                         break
                 t = time.time()
             cap = cv.VideoCapture(self.__file_path[index][0])
-            if self.quit:
-                break
         cap.release()
         cv.destroyAllWindows()
         
