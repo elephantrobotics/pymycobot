@@ -14,6 +14,7 @@ from pymycobot import utils
 from pymycobot.mybuddysocket import MyBuddySocket
 from pymycobot.mira import Mira
 from pymycobot.mybuddybluetooth import MyBuddyBlueTooth
+from pymycobot.mybuddyemoticon import Emoticon
 
 __all__ = [
     "MyCobot",
@@ -28,6 +29,7 @@ __all__ = [
     "MyBuddySocket",
     "MyBuddyBlueTooth",
     "Mira",
+    "Emoticon",
 ]
 
 __version__ = "2.9.7b1"
