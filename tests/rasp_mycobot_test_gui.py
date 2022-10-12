@@ -188,7 +188,7 @@ class MycobotTest(object):
         for idx, command in enumerate(ping_commands, start=1):
             self.mycobot._write(command)
             time.sleep(0.1)
-            if not self.mycobot._read():
+            if not self.mycobot._read(1):
                 res.append(idx)
             time.sleep(0.1)
 

@@ -7,7 +7,7 @@ import threading
 
 
 class Emoticon:
-    def __init__(self, file_path: list = [], window_size: list = []) -> None:
+    def __init__(self, file_path: list = [], window_size: list = [], loop=False) -> None:
         """API for playing emoticons
 
         Args:
@@ -19,6 +19,8 @@ class Emoticon:
         self.__window_size = window_size
         self.quit = False
         self.stop_play = False
+        self.start_time = 0
+        self.loop = loop
         
     @property
     def file_path(self):
@@ -73,17 +75,31 @@ class Emoticon:
                 if self.quit:
                     break
                 while self.stop_play and self.quit == False:
-                    pass
+                    if self.start_time == 0:
+                        self.start_time = time.time() - t
+                if self.start_time>0:
+                    t = time.time() - self.start_time
+                    self.start_time = 0
                 ret, frame = cap.read()
-                # print(frame)
                 if frame is not None:
                     cv.imshow(out_win, frame)
-                if cv.waitKey(1) & 0xFF == ord('q') or ret == False:
-                    if time.time() - t >= self.__file_path[index][1]:
+                if time.time() - t >= self.__file_path[index][1]:
                         index += 1
                         if index >= len(self.__file_path):
                             index = 0
+                        t = time.time()
+                if cv.waitKey(1) & 0xFF == ord('q') or ret == False:
                     cap = cv.VideoCapture(self.__file_path[index][0])
+                    
+            if time.time() - t >= self.__file_path[index][1]:
+                index += 1
+                if index >= len(self.__file_path):
+                    if self.loop:
+                        index = 0
+                    else:
+                        break
+                t = time.time()
+            cap = cv.VideoCapture(self.__file_path[index][0])
             if self.quit:
                 break
         cap.release()
@@ -94,6 +110,6 @@ class Emoticon:
         self.t = threading.Thread(target=self.play, daemon=True)
         self.t.start()
         
-    def joint(self):
+    def join(self):
         """Wait for the thread playing the video to finish"""
-        self.t.joint()
+        self.t.join()
