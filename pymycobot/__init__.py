@@ -15,6 +15,7 @@ from pymycobot.mybuddysocket import MyBuddySocket
 from pymycobot.mira import Mira
 from pymycobot.mybuddybluetooth import MyBuddyBlueTooth
 from pymycobot.mybuddyemoticon import MyBuddyEmoticon
+from pymycobot.mypalletizersocket import MyPalletizerSocket
 
 __all__ = [
     "MyCobot",
@@ -30,9 +31,10 @@ __all__ = [
     "MyBuddyBlueTooth",
     "Mira",
     "MyBuddyEmoticon",
+    "MyPalletizerSocket"
 ]
 
-__version__ = "2.9.7b2"
+__version__ = "2.9.7b3"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
