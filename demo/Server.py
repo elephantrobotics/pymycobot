@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # coding:utf-8
 import socket
 import serial
@@ -6,6 +6,8 @@ import time
 import logging
 import logging.handlers
 import re
+import fcntl
+import struct
 import RPi.GPIO as GPIO
 
 
@@ -21,7 +23,7 @@ def get_logger(name):
     # console.setFormatter(formatter)
 
     save = logging.handlers.RotatingFileHandler(
-        "/home/ubuntu/mycobot_server.log", maxBytes=10485760, backupCount=1)
+        "server.log", maxBytes=10485760, backupCount=1)
     save.setFormatter(formatter)
 
     logger.addHandler(save)
@@ -40,19 +42,19 @@ class MycobotServer(object):
         self.mc = None
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind((host, port))
-        print "Binding succeeded!"
+        print("Binding succeeded!")
         self.s.listen(1)
         self.connect()
 
     def connect(self):
         while True:
             try:
-                print "waiting connect!------------------"
+                print("waiting connect!------------------")
                 conn, addr = self.s.accept()
                 port_baud = []
                 while True:
                     try:
-                        print "waiting data--------"
+                        print("waiting data--------")
                         data = conn.recv(1024)
                         command = data.decode('utf-8')
                         if data.decode('utf-8') == "":
@@ -120,6 +122,9 @@ class MycobotServer(object):
 
 
 if __name__ == "__main__":
-    HOST = socket.gethostbyname(socket.gethostname())
+    ifname = "wlan0"
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', bytes(ifname,encoding="utf8")))[20:24])
     PORT = 9000
+    print("ip: {} port: {}".format(HOST, PORT))
     MycobotServer(HOST, PORT)
