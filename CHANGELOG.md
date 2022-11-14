@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v2.9.7 (2022-11-14)
+
+- release v2.9.7
+- Add MechArm class: Separate mecharm from mycobot
+- Fix known bug
+
 ## v2.9.6 (2022-9-13)
 
 - release v2.9.6

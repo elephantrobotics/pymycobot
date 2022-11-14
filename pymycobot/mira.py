@@ -1,7 +1,5 @@
 # coding: utf-8
-from ctypes.wintypes import SIZE
 import time
-from tkinter import E
 from pymycobot.common import ProtocolCode
 import math
 

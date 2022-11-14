@@ -742,7 +742,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             value (int): 0 ~ 100
             speed (int): 0 - 100
         """
-        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, id, value)
+        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, id, value, speed)
 
     def set_gripper_calibration(self, id):
         """Set the current position to zero, set current position value is `2048`.

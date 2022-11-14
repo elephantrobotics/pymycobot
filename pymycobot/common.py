@@ -383,7 +383,6 @@ def read(self, genre):
         wait_time = 1
     while True and time.time() - t < wait_time:
         data = self._serial_port.read()
-        # print("1:",data)
         k += 1
         if data_len == 1 and data == b"\xfa":
             datas += data

@@ -10,7 +10,7 @@ We support Python2, Python3.5 or later.
 <!-- vim-markdown-toc GFM -->
 
 - [pymycobot](#pymycobot)
-- [MyCobot / Mypalletizer](#mycobot--mypalletizer)
+- [MyCobot / Mypalletizer / MechArm](#mycobot--mypalletizer--mecharm)
   - [Overall status](#overall-status)
     - [power_on](#power_on)
     - [power_off](#power_off)
@@ -229,7 +229,7 @@ We support Python2, Python3.5 or later.
 <!-- vim-markdown-toc -->
 </details>
 
-# MyCobot / Mypalletizer
+# MyCobot / Mypalletizer / MechArm
 
 **Import to your project**:
 
@@ -239,6 +239,15 @@ from pymycobot import MyCobot
 
 # for mypalletizer
 # from pymycobot import MyPalletizer
+
+# for MechArm
+# from pymycobot import MechArm
+
+mc = MyCobot("com10",115200)
+# mc = MyPalletizer("com10",115200)
+# mc = MechArm("com10",115200)
+
+print(mc.get_angles())
 ```
 
 > Note: If no parameter is given, there is no parameter; if no return value is given, there is no return value
@@ -381,7 +390,7 @@ Set command refresh mode
 
 - **Parameters**:
 
-  - `radians`: a list of radian value(`List[float]`), length 6.
+  - `radians`: a list of radian value(`List[float]`).
   - `speed`: (`int`) 0 ~ 100
 
 - **Example**
@@ -434,7 +443,7 @@ Set command refresh mode
 
 - **Parameters**
 
-  - `coords`: a list of coords value(`List[float]`), length 6.
+  - `coords`: a list of coords value(`List[float]`).
   - `speed`: (`int`) 0 ~ 100
   - `mode`: (`int`): `0` - angular, `1` - linear
 
@@ -457,7 +466,7 @@ Set command refresh mode
 
 - **Parameters**
 
-  - `degrees`: a list of degree value(`List[float]`), length 6.
+  - `degrees`: a list of degree value(`List[float]`).
   - `speed`: (`int`) 0 ~ 100
   - `timeout`: default 7s.
 
@@ -482,7 +491,7 @@ Set command refresh mode
 
 - **Parameters**
 
-  - `data`: A data list, angles or coords, length 6.
+  - `data`: A data list, angles or coords.
   - `flag`: Tag the data type, `0` - angles, `1` - coords.
 
 - **Returns**
@@ -593,7 +602,7 @@ Set command refresh mode
 - **Description**: Set the six joints of the manipulator to execute synchronously to the specified position.
 
 - **Parameters**:
-  - `encoders`: A encoder list, length 6.
+  - `encoders`: A encoder list.
   - `sp`: speed 0 - 100
 
 ### get_encoders
