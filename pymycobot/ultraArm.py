@@ -4,7 +4,7 @@ from pymycobot.common import ProtocolCode
 import math
 
 
-class Mira:
+class ultraArm:
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
 
         """
