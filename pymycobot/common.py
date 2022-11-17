@@ -161,7 +161,7 @@ class ProtocolCode(object):
     # GET_IIS_BYTE = 0xA5
     # SET_IIC_BYTE = 0xA6
 
-    # mypalletizer lite
+    # ultraArm
     END = "\r"
     COORDS_SET = "G0"
     SLEEP_TIME = "G4"

@@ -508,7 +508,7 @@ class ultraArm:
             command = X[i] + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
-            time.sleep(0.1)
+            time.sleep(0.02)
 
             self._debug(command)
 
