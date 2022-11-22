@@ -442,7 +442,7 @@ class ultraArm:
                 1 : negative
             speed : (int) 0-100 mm/s
         """
-        command = ProtocolCode.JOG_ANGLE
+        command = ProtocolCode.SET_JOG_ANGLE
         if id is not None:
             command += " j" + str(id)
         if direction is not None:
@@ -481,7 +481,7 @@ class ultraArm:
 
     def set_jog_stop(self):
         """Stop jog movement"""
-        command = ProtocolCode.JOG_STOP
+        command = ProtocolCode.SET_JOG_STOP
         command += ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()

@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v2.9.8 (2022-11-22)
+
+- release v2.9.8
+- Renaming mira to ultraArm
+- Fix variable name conflicts
+
 ## v2.9.7 (2022-11-14)
 
 - release v2.9.7
