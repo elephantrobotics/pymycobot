@@ -962,3 +962,29 @@ class MyCobotCommandGenerator(DataProcessor):
     def get_fresh_mode(self):
         """Query sports mode"""
         return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply = True)
+    
+    def set_gripper_mode(self, mode):
+        """Set gripper mode
+        
+        Args:
+            mode: 0 - transparent transmission. 1 - Port Mode.
+        
+        """
+        return self._mesg(ProtocolCode.SET_GRIPPER_MODE, mode)
+    
+    def get_gripper_mode(self):
+        """Get gripper mode
+        
+        Return:
+            mode: 0 - transparent transmission. 1 - Port Mode.
+        """
+        return self._mesg(ProtocolCode.GET_GRIPPER_MODE, has_reply = True)
+    
+    def get_servo_last_pdi(self, id):
+        """Obtain the pdi of a single steering gear before modification
+        
+        Args:
+            id: 1 - 6.0
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, id, has_reply = True)
+        

@@ -92,6 +92,8 @@ class ProtocolCode(object):
     SET_COLOR = 0x6A
     SET_ELETRIC_GRIPPER = 0x6B
     INIT_ELETRIC_GRIPPER = 0x6C
+    SET_GRIPPER_MODE = 0x6D
+    GET_GRIPPER_MODE = 0x6E
 
     GET_ACCEI_DATA = 0x73
 
@@ -144,6 +146,7 @@ class ProtocolCode(object):
     GET_SERVO_VOLTAGES = 0xE3
     GET_SERVO_STATUS = 0xE4
     GET_SERVO_TEMPS = 0xE5
+    GET_SERVO_LASTPDI = 0xE6
 
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
@@ -302,6 +305,9 @@ class DataProcessor(object):
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
+        elif data_len == 4:
+            for i in range(1,4):
+                res.append(valid_data[i])
         elif data_len == 7:
             error_list = [i for i in valid_data]
             for i in error_list:
