@@ -1,5 +1,13 @@
 # ChangeLog for pymycobot
 
+## v2.9.9 (2022-11-29)
+
+- release 2.9.9
+- add 320 interface:
+  - set_gripper_mode(mode)
+  - get_gripper_mode()
+  - get_servo_last_pdi(id)
+
 ## v2.9.8 (2022-11-22)
 
 - release v2.9.8
