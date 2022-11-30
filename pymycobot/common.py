@@ -44,6 +44,8 @@ class ProtocolCode(object):
     GET_ANGLE = 0x2C
     GET_COORD = 0x2D
     SEND_ANGLES_AUTO = 0x2E
+    SET_SOLUTION_ANGLES = 0x2E
+    GET_SOLUTION_ANGLES = 0x2F
 
     # JOG MODE AND OPERATION
     JOG_ANGLE = 0x30
@@ -184,7 +186,7 @@ class ProtocolCode(object):
     SET_ANGLES = "M11"
     GET_CURRENT_ANGLE_INFO = "M12"
     SET_JOG_ANGLE = "M13"
-    JOG_COORD = "M14"
+    JOG_COORD_ = "M14"
     SET_JOG_STOP = "M15"
     RELEASE_SERVOS = "M17"
     LOCK_SERVOS = "M18"

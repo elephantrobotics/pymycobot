@@ -466,7 +466,7 @@ class ultraArm:
                 1 : negative
             speed : (int) 0-100 mm/s
         """
-        command = ProtocolCode.JOG_COORD
+        command = ProtocolCode.JOG_COORD_
         if axis is not None:
             command += " j" + str(axis)
         if direction is not None:
