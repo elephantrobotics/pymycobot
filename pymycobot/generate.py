@@ -223,9 +223,10 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Args:
             id : Joint id(genre.Angle)\n
-                    For mycobot: int 1-6.\n
-                    For mypalletizer: int 1-4.
-                    For mypalletizer 340: int 1-3.
+                    for mycobot: int 1-6.\n
+                    for mypalletizer: int 1-4.
+                    for mypalletizer 340: int 1-3.
+                    for myArm: int 1 - 7.
             degree : degree value(float)(about -170 ~ 170).
             speed : (int) 0 ~ 100
         """
@@ -241,7 +242,8 @@ class MyCobotCommandGenerator(DataProcessor):
                         for mycobot: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0].\n
                         for mypalletizer: [0.0, 0.0, 0.0, 0.0]
                         for mypalletizer 340: [0.0, 0.0, 0.0]
-            speed : (int) 0 ~ 100
+                        for myArm: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0].\n
+            speed : (int) 1 ~ 100
         """
         # self.calibration_parameters(degrees=degrees, speed=speed)
         degrees = [self._angle2int(degree) for degree in degrees]
@@ -263,9 +265,9 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Args:
             id(int) : coord id(genre.Coord)\n
-                        For mycobot: int 1-6.\n
-                        For mypalletizer: int 1-4.
-                        For mypalletizer 340: int 1-3.
+                        for mycobot: int 1-6.\n
+                        for mypalletizer: int 1-4.
+                        for mypalletizer 340: int 1-3.
             coord(float) : coord value, mm
             speed(int) : 0 ~ 100
         """
@@ -341,9 +343,10 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Args:
             joint_id: int
-                    For mycobot: int 1-6.\n
-                    For mypalletizer: int 1-4.
-                    For mypalletizer 340: int 1-3.
+                    for mycobot: int 1-6.\n
+                    for mypalletizer: int 1-4.
+                    for mypalletizer 340: int 1-3.
+                    for myArm: int 1 - 7.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -354,9 +357,9 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Args:
             coord_id: int
-                    For mycobot: int 1-6.\n
-                    For mypalletizer: int 1-4.
-                    For mypalletizer 340: int 1-3.
+                    for mycobot: int 1-6.\n
+                    for mypalletizer: int 1-4.
+                    for mypalletizer 340: int 1-3.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -367,8 +370,9 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Args:
             joint_id: int
-                    For mycobot: int 1-6.\n
-                    For mypalletizer: int 1-4.
+                    for mycobot: int 1-6.\n
+                    for mypalletizer: int 1-4.
+                    for myArm: int 1 - 7.
             angle: -180 ~ 180
             speed: int (0 - 100)
         """
@@ -378,7 +382,10 @@ class MyCobotCommandGenerator(DataProcessor):
         """step mode
 
         Args:
-            joint_id: int 1-6.
+            joint_id:
+                for mycobot: int 1-6.
+                for mypalletizer: int 1-4.
+                for myArm: int 1 - 7.
             increment: 
             speed: int (0 - 100)
         """
@@ -418,6 +425,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for mycobot: Joint id 1 - 6
                 for mypalletizer: Joint id 1 - 4
                 for mycobot gripper: Joint id 7
+                for myArm: int 1 - 7.
             encoder: The value of the set encoder.
         """
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
@@ -426,7 +434,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Obtain the specified joint potential value. (mypalletizer 340 does not have this interface)
 
         Args:
-            joint_id: (int) 1 ~ 6
+            joint_id: (int) 1 ~ 7
 
         Returns:
             encoder: 0 ~ 4096
@@ -437,8 +445,8 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set the six joints of the manipulator to execute synchronously to the specified position. (mypalletizer 340 does not have this interface)
 
         Args:
-            encoders: A encoder list, length 6.
-            sp: speed 0 ~ 100
+            encoders: A encoder list.
+            sp: speed 1 ~ 100
         """
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
 
@@ -491,7 +499,11 @@ class MyCobotCommandGenerator(DataProcessor):
         """Gets the minimum movement angle of the specified joint
 
         Args: 
-            joint_id: (int)
+            joint_id:
+                for mycobot: Joint id 1 - 6
+                for mypalletizer: Joint id 1 - 4
+                for mycobot gripper: Joint id 7
+                for myArm: int 1 - 7.
 
         Return:
             angle value(float)
@@ -503,7 +515,11 @@ class MyCobotCommandGenerator(DataProcessor):
         """Gets the maximum movement angle of the specified joint
         
         Args:
-            joint_id: (int)
+            joint_id:
+                for mycobot: Joint id 1 - 6
+                for mypalletizer: Joint id 1 - 4
+                for mycobot gripper: Joint id 7
+                for myArm: int 1 - 7.
 
         Return:
             angle value(float)
@@ -513,10 +529,14 @@ class MyCobotCommandGenerator(DataProcessor):
 
     # Servo control
     def is_servo_enable(self, servo_id):
-        """Determine whether all steering gears are connected
+        """To detect the connection state of a single joint
 
         Args:
-            servo_id: (int) 1 ~ 6
+            servo_id:
+                for mycobot: Joint id 1 - 6
+                for mypalletizer: Joint id 1 - 4
+                for mycobot gripper: Joint id 7
+                for myArm: int 1 - 7.
 
         Return:
             0 - disable
@@ -526,7 +546,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.IS_SERVO_ENABLE, servo_id, has_reply=True)
 
     def is_all_servo_enable(self):
-        """Determine whether the specified steering gear is connected
+        """Detect the connection status of all joints
 
         Return:
             0 - disable
@@ -539,7 +559,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set the data parameters of the specified address of the steering gear
 
         Args:
-            servo_id: Serial number of articulated steering gear, 1 - 6.
+            servo_id: Serial number of articulated steering gear, 1 - 7.
             data_id: Data address.
             value: 0 - 4096
         """
@@ -909,9 +929,10 @@ class MyCobotCommandGenerator(DataProcessor):
         
         Args:
             id: int.
-                For mycobot: int 1-6.\n
-                For mypalletizer: int 1-4.
-                For mypalletizer 340: int 1-3.
+                for mycobot: Joint id 1 - 6
+                for mypalletizer: Joint id 1 - 4
+                for mycobot gripper: Joint id 7
+                for myArm: int 1 - 7.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
@@ -921,9 +942,10 @@ class MyCobotCommandGenerator(DataProcessor):
         
         Args:
             id: int.
-                For mycobot: int 1-6.\n
-                For mypalletizer: int 1-4.\n
-                For mypalletizer 340: int 1-3.
+                for mycobot: Joint id 1 - 6
+                for mypalletizer: Joint id 1 - 4
+                for mycobot gripper: Joint id 7
+                for myArm: int 1 - 7.
             angle: 0 ~ 180 
         """
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
@@ -944,7 +966,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Send all encoders and speeds
         
         Args:
-            encoders: encoders list
+            encoders: encoders list.
             speeds: Obtained by the get_servo_speeds() method 
         """
         return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
@@ -984,7 +1006,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Obtain the pdi of a single steering gear before modification
         
         Args:
-            id: 1 - 6.0
+            id: 1 - 6
         """
         return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, id, has_reply = True)
         

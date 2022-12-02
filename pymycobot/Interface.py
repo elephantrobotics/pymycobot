@@ -44,29 +44,20 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         return real_command, has_reply
 
     # System status
-    def get_robot_version(self, id):
+    def get_robot_version(self):
         """Get cobot version
-        
-        Args:
-            id: 0/1/2/3 (ALL/L/R/W)
         """
-        return self._mesg(ProtocolCode.ROBOT_VERSION, id, has_reply=True)
+        return self._mesg(ProtocolCode.ROBOT_VERSION, 0, has_reply=True)
 
-    def get_system_version(self, id):
+    def get_system_version(self):
         """Get cobot version
-        
-        Args:
-            id: 0/1/2/3 (ALL/L/R/W)
         """
-        return self._mesg(ProtocolCode.SOFTWARE_VERSION, id, has_reply=True)
+        return self._mesg(ProtocolCode.SOFTWARE_VERSION, 0, has_reply=True)
 
-    def get_robot_id(self, id):
+    def get_robot_id(self):
         """Detect this robot id
-        
-        Args:
-            id: 0/1/2/3 (ALL/L/R/W)
         """
-        return self._mesg(ProtocolCode.GET_ROBOT_ID, id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_ROBOT_ID, 0, has_reply=True)
 
     def set_robot_id(self, id, new_id):
         """Set this robot id
@@ -232,7 +223,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Send a single coordinate to the robotic arm
         
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             coord: 1 ~ 6 (x/y/z/rx/ry/rz)
             data: Coordinate value
             speed: 0 ~ 100
@@ -383,7 +374,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Jog control angle.
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             joint_id:int 1-6.\n
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
@@ -394,7 +385,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Absolute joint control
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             joint_id: int 1-6.
             angle: int
             speed: int (0 - 100)
@@ -407,7 +398,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Jog control coord.
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             coord_id: int 1-6 (x/y/z/rx/ry/rz).
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
@@ -418,7 +409,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """step mode
 
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
             joint_id: int 1-6.
             increment: 
             speed: int (1 - 100)
@@ -429,7 +420,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Stop jog moving
         
         Args:
-            id: 1/2/3 (L/R/W).
+            id: 1/2 (L/R).
         """
         return self._mesg(ProtocolCode.JOG_STOP, id)
 
@@ -515,7 +506,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Read acceleration during all moves
         
         Args:
-            id: 1/2/3 (L/R/W)
+            id: 1/2 (L/R)
         """
         return self._mesg(ProtocolCode.GET_ACCELERATION, id, has_reply=True)
 
@@ -523,7 +514,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Set acceleration during all moves
         
         Args:
-            id: 1/2/3 (L/R/W)
+            id: 1/2 (L/R)
             acc: 1 - 100
         """
         return self._mesg(ProtocolCode.SET_ACCELERATION, id, acc)
@@ -931,7 +922,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """Set planning speed
 
         Args:
-            id: 0/1/2/3 (ALL/L/R/W)
+            id: 0/1/2 (ALL/L/R)
             speed (int): (0 ~ 100).
         """
         return self._mesg(ProtocolCode.SET_PLAN_SPEED, id, speed)

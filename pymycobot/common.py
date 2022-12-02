@@ -44,8 +44,8 @@ class ProtocolCode(object):
     GET_ANGLE = 0x2C
     GET_COORD = 0x2D
     SEND_ANGLES_AUTO = 0x2E
-    SET_SOLUTION_ANGLES = 0x2E
-    GET_SOLUTION_ANGLES = 0x2F
+    GET_SOLUTION_ANGLES = 0x2E
+    SET_SOLUTION_ANGLES = 0x2F
 
     # JOG MODE AND OPERATION
     JOG_ANGLE = 0x30
@@ -289,7 +289,7 @@ class DataProcessor(object):
 
         # process valid data
         res = []
-        if data_len in [6, 8, 12, 24, 60]:
+        if data_len in [6, 8, 12, 14, 24, 60]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
@@ -413,4 +413,5 @@ def read(self, genre):
                     pre = k
     else:
         datas = None
+    self.log.debug("_read: {}".format(datas))
     return datas
