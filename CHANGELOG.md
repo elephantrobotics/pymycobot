@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v3.0.1 (2022-12-9)
+
+- release v3.0.1
+- Fix MyBuddy interface problems: get_base_coords()
+- Add mybuddy serial port to read logs
+
 ## v3.0.0 (2022-12-9)
 
 - release v3.0.0

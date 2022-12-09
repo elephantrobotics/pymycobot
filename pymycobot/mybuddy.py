@@ -110,6 +110,7 @@ class MyBuddy(MyBuddyCommandGenerator):
                 break
         else:
             datas = None
+        self.log.debug("_read: {}".format(datas))
         return datas
     
     def _mesg(self, genre, *args, **kwargs):
@@ -170,11 +171,18 @@ class MyBuddy(MyBuddyCommandGenerator):
                     return self._int2angle(res[0]) if res else None
             elif genre in [ProtocolCode.GET_ALL_BASE_COORDS, ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.GET_BASE_COORD, ProtocolCode.BASE_TO_SINGLE_COORDS]:
                 if res:
-                    r = []
+                    r = [] 
                     for idx in range(3):
                         r.append(self._int2coord(res[idx]))
                     for idx in range(3, 6):
                         r.append(self._int2angle(res[idx]))
+                    if len(res) == 12:
+                        r1 = []
+                        for idx in range(6, 9):
+                            r1.append(self._int2coord(res[idx]))
+                        for idx in range(9, 12):
+                            r1.append(self._int2angle(res[idx]))
+                        return [r, r1]
                     return r
                 else:
                     return res
