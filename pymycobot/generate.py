@@ -175,6 +175,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
 
     def release_all_servos(self):
+        """Relax all joints"""
         return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
 
     def is_controller_connected(self):
@@ -653,10 +654,8 @@ class MyCobotCommandGenerator(DataProcessor):
         """singal value"""
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
-    """
-    def set_pwm_mode(self, pin_no, channel):
-        self._mesg(Command.SET_PWM_MODE, pin_no, channel)
-    """
+    def set_pwm_mode(self, mode):
+        return self._mesg(ProtocolCode.SET_PWM_MODE, mode)
 
     def set_pwm_output(self, channel, frequency, pin_val):
         """ PWM control 

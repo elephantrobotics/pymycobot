@@ -716,14 +716,15 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, id, has_reply=True)
 
-    def set_gripper_state(self, id, flag):
+    def set_gripper_state(self, id, flag, sp):
         """Set gripper switch state
 
         Args:
             id: 1/2 (L/R)
-            flag  (int): 0 - close, 1 - open
+            flag  (int): 0 - open, 1 - close
+            sp: int (1 - 100)
         """
-        return self._mesg(ProtocolCode.SET_GRIPPER_STATE, id, flag)
+        return self._mesg(ProtocolCode.SET_GRIPPER_STATE, id, flag, sp)
 
     def set_gripper_value(self, id, value, speed):
         """Set gripper value

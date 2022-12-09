@@ -111,7 +111,8 @@ class MyArm(MyCobotCommandGenerator):
                 ProtocolCode.GET_JOINT_MIN_ANGLE,
                 ProtocolCode.GET_JOINT_MAX_ANGLE,
                 ProtocolCode.GET_FRESH_MODE,
-                ProtocolCode.GET_GRIPPER_MODE
+                ProtocolCode.GET_GRIPPER_MODE,
+                ProtocolCode.SET_SSID_PWD
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
@@ -222,3 +223,31 @@ class MyArm(MyCobotCommandGenerator):
     def get_solution_angles(self):
         """Get zero space deflection angle value"""
         return self._mesg(ProtocolCode.GET_SOLUTION_ANGLES, has_reply=True)
+    
+    def release_all_servos(self, data):
+        """Relax all joints
+        
+        Args:
+            data: 1 - Undamping (The default is damping)
+        """
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
+            
+    def get_transpoendr_mode(self):
+        """Obtain the configuration information of serial transmission mode
+        
+        Return:
+            mode: 0 - 1 - 2
+        """
+        return self._mesg(ProtocolCode.SET_SSID_PWD, has_reply=True)
+    
+    def set_transpoendr_mode(self, mode):
+        """Set serial port transmission mode
+        
+        Args:
+            mode: 
+                0 - Turn off transparent transmission.\n
+                1 - Turn on transparent transmission. verify all data.\n
+                2 - Turn on transparent transmission, only verify the configuration information of communication forwarding mode (default is 0)
+        """
+        return self._mesg(ProtocolCode.GET_SSID_PWD, mode)
+        

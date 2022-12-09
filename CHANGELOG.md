@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v3.0.0 (2022-12-9)
+
+- release v3.0.0
+- Fix MyBuddy interface problems: get_base_coords()、set_gripper_state()
+- Add 7-axis myArm interface
+
 ## v2.9.9 (2022-11-29)
 
 - release 2.9.9
