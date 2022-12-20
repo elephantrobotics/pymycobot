@@ -1,5 +1,13 @@
 # ChangeLog for pymycobot
 
+## v3.0.2 (2022-12-20)
+
+- release v3.0.2
+- Fix MyBuddy interface problems:
+  - Add get_fresh_mode()
+  - remove get_servo_current()
+  - get_servo_voltages()、get_servo_status()、get_servo_temps()
+
 ## v3.0.1 (2022-12-9)
 
 - release v3.0.1

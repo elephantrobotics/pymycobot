@@ -137,6 +137,14 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
                 0 - Execute instructions sequentially in the form of a queue. 
         """
         return self._mesg(ProtocolCode.SET_FRESH_MODE, id, mode)
+    
+    def get_fresh_mode(self, id):
+        """Get instruction refresh mode status
+        
+        Args:
+            id: 1/2 (L/R).
+        """
+        return self._mesg(ProtocolCode.GET_FRESH_MODE, id, has_reply=True)
 
     def set_free_mode(self, id, value):
         """set free mode
@@ -939,27 +947,26 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
             ProtocolCode.SET_PLAN_ACCELERATION, id, acceleration
         )
 
-    def get_servo_currents(self, id):
-        """Get joint current
+    # def get_servo_currents(self, id):
+    #     """Get joint current
 
-        Args:
-            id: 1/2/3 (L/R/W)
+    #     Args:
+    #         id: 1/2/3 (L/R/W)
             
-        Return: 
-            value mA
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, id, has_reply=True)
+    #     Return: 
+    #         value mA
+    #     """
+    #     return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, id, has_reply=True)
 
     def get_servo_voltages(self, id):
         """Get joint voltages
 
         Args:
             id: 1/2/3 (L/R/W)
-            
         Return: 
             volts < 24 V
         """
-        return self._mesg(ProtocolCode.GET_SERVO_STATUS, id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, id,  has_reply=True)
 
     def get_servo_status(self, id):
         """Get joint status
@@ -970,7 +977,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Return: 
             [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error
         """
-        return self._mesg(ProtocolCode.GET_SERVO_TEMPS, id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_STATUS, id, has_reply=True)
 
     def get_servo_temps(self, id):
         """Get joint temperature
@@ -978,7 +985,7 @@ class MyBuddyCommandGenerator(MyCobotCommandGenerator):
         Args:
             id: 1/2/3 (L/R/W)
         """
-        return self._mesg(0xE6, id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_TEMPS, id, has_reply=True)
     
     def get_base_coords(self, *args):
         """Convert coordinates to base coordinates. Pass in parameters or no parameters
