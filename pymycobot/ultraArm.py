@@ -58,7 +58,7 @@ class ultraArm:
                     if a != None and a != "":
                         try:
                             all = list(map(float, a[astart + 1 : aend].split(",")))
-                            return all[:3]
+                            return all
                         except Exception:
                             print("received angles is not completed! Retry receive...")
                             count += 1
@@ -71,7 +71,7 @@ class ultraArm:
                     if c != None and c != "":
                         try:
                             all = list(map(float, c[cstart + 1 : cend].split(",")))
-                            return all[:3]
+                            return all
                         except Exception:
                             print("received coords is not completed! Retry receive...")
                             count += 1
