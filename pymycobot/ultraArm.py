@@ -32,10 +32,34 @@ class ultraArm:
         data = None
         if self._serial_port.inWaiting() > 0:
             data = self._serial_port.read(self._serial_port.inWaiting())
+            queue_size = self._get_queue_size()
             if data != None:
-                data = str(data.decode())
-                if self.debug:
-                    print(data)
+                if 70 <= queue_size <= 139:
+                    data = str(data.decode())
+                    if self.debug:
+                        print(data)
+                elif 0 <= queue_size < 70:
+                    data = str(data.decode())
+                    if self.debug:
+                        print(data)
+                else:
+                    qs = 0
+                    while True:
+                        try:
+                            time.sleep(2)
+                            qs = self._get_queue_size()
+                            if self.debug:
+                                print('respone_size1:', qs)
+                            if qs < 70:
+                                time.sleep(1)
+                                qsize = self._get_queue_size()
+                                print('respone_size2:', qsize)
+                                break
+                                
+                        except Exception as e:
+                            print(e)
+                   
+               
 
     def _request(self, flag=""):
         """Get data from the robot"""
