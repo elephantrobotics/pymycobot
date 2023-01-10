@@ -237,9 +237,9 @@ class ultraArm:
 
         Args:
             degrees: a list of coords value(List[float]).
-                x : 0 ~ 270 mm
-                y : 0 ~ 270 mm
-                z : 0 ~ 125 mm
+                x : -260 ~ 300 mm
+                y : -300 ~ 300 mm
+                z : -70 ~ 135 mm
             speed : (int) 0-100 mm/s
         """
         degrees = [degree for degree in degrees]
@@ -250,6 +250,8 @@ class ultraArm:
             command += " Y" + str(degrees[1])
         if degrees[2] is not None:
             command += " Z" + str(degrees[2])
+        if degrees[3] is not None:
+            command += " E" + str(degrees[3])
         if speed > 0:
             command += " F" + str(speed)
         command += ProtocolCode.END
@@ -263,18 +265,18 @@ class ultraArm:
 
         Args:
             coord:
-                x : 0 ~ 270 mm
-                y : 0 ~ 270 mm
-                z : 0 ~ 125 mm
+                x : -260 ~ 300 mm
+                y : -300 ~ 300 mm
+                z : -70 ~ 135 mm
             speed : (int) 0-100 mm/s
         """
 
         command = ProtocolCode.COORDS_SET
         if id == "x" or id == "X":
             command += " X" + str(coord)
-        if id == "y" and id == "Y":
+        if id == "y" or id == "Y":
             command += " Y" + str(coord)
-        if id == "z" and id == "z":
+        if id == "z" or id == "Z":
             command += " Z" + str(coord)
         if speed > 0:
             command += " F" + str(speed)
@@ -338,8 +340,8 @@ class ultraArm:
 
         Args:
             state:
-                0 - close
-                1 - open
+                0 - open
+                1 - close
         """
         if state:
             command = ProtocolCode.GPIO_ON + ProtocolCode.END
@@ -395,12 +397,13 @@ class ultraArm:
         """Set single angle.
 
         Args:
-            id : joint (1/2/3)
+            id : joint (1/2/3/4)
 
             angle :
-                1 : -170° ~ +170°
-                2 : 0° ~ 90°
-                3 : 0° ~ 75°
+                1 : -150° ~ +170°
+                2 : -20° ~ 90°
+                3 : -5° ~ 60°
+                4 : -180° ~ + 180°
             speed : (int) 0-100 mm/s
         """
         command = ProtocolCode.SET_ANGLE
@@ -421,9 +424,12 @@ class ultraArm:
 
         Args:
             degrees: a list of angles value(List[float]).
-                joint1 : -170° ~ +170°
-                joint2 : 0° ~ 90°
-                joint3 : 0° ~ 75°
+            angle :
+                1 : -150° ~ +170°
+                2 : -20° ~ 90°
+                3 : -5° ~ 60°
+                4 : -180° ~ + 180°
+            speed : (int) 0-100 mm/s
             speed : (int) 0-100 mm/s
         """
         degrees = [degree for degree in degrees]
@@ -434,6 +440,8 @@ class ultraArm:
             command += " Y" + str(degrees[1])
         if degrees[2] is not None:
             command += " Z" + str(degrees[2])
+        if degrees[3] is not None:
+            command += " E" + str(degrees[3])
         if speed > 0:
             command += " F" + str(speed)
         command += ProtocolCode.END
@@ -483,7 +491,11 @@ class ultraArm:
         """Start jog movement with coord
 
         Args:
-            axis : x/y/z
+            axis : 
+            1 : x
+            2 : y
+            3 : z
+            4 : θ
 
             direction:
                 0 : positive
