@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.0.3 (2023-01-10)
+
+- release v3.0.3
+- Fix MyArm interface problems:
+  - set_solution_angles()
+- Fix ultraArm interface problems:
+  - set_jog_coord()
+  - set_gpio_state()
+  - set_coord()
+
 ## v3.0.2 (2022-12-20)
 
 - release v3.0.2

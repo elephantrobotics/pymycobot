@@ -218,7 +218,7 @@ class MyArm(MyCobotCommandGenerator):
             angle: Angle of joint 1.
             speed: 1 - 100.
         """
-        return self._mesg(ProtocolCode.SET_SOLUTION_ANGLES, self._angle2int(angle), speed)
+        return self._mesg(ProtocolCode.SET_SOLUTION_ANGLES, [self._angle2int(angle)], speed)
     
     def get_solution_angles(self):
         """Get zero space deflection angle value"""
