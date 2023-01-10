@@ -32,10 +32,34 @@ class ultraArm:
         data = None
         if self._serial_port.inWaiting() > 0:
             data = self._serial_port.read(self._serial_port.inWaiting())
+            queue_size = self._get_queue_size()
             if data != None:
-                data = str(data.decode())
-                if self.debug:
-                    print(data)
+                if 70 <= queue_size <= 139:
+                    data = str(data.decode())
+                    if self.debug:
+                        print(data)
+                elif 0 <= queue_size < 70:
+                    data = str(data.decode())
+                    if self.debug:
+                        print(data)
+                else:
+                    qs = 0
+                    while True:
+                        try:
+                            time.sleep(2)
+                            qs = self._get_queue_size()
+                            if self.debug:
+                                print('respone_size1:', qs)
+                            if qs < 70:
+                                time.sleep(1)
+                                qsize = self._get_queue_size()
+                                print('respone_size2:', qsize)
+                                break
+                                
+                        except Exception as e:
+                            print(e)
+                   
+               
 
     def _request(self, flag=""):
         """Get data from the robot"""
@@ -58,7 +82,7 @@ class ultraArm:
                     if a != None and a != "":
                         try:
                             all = list(map(float, a[astart + 1 : aend].split(",")))
-                            return all[:3]
+                            return all
                         except Exception:
                             print("received angles is not completed! Retry receive...")
                             count += 1
@@ -71,7 +95,7 @@ class ultraArm:
                     if c != None and c != "":
                         try:
                             all = list(map(float, c[cstart + 1 : cend].split(",")))
-                            return all[:3]
+                            return all
                         except Exception:
                             print("received coords is not completed! Retry receive...")
                             count += 1
