@@ -242,6 +242,7 @@ class ultraArm:
                 z : -70 ~ 135 mm
             speed : (int) 0-100 mm/s
         """
+        length = len(degrees)
         degrees = [degree for degree in degrees]
         command = ProtocolCode.COORDS_SET
         if degrees[0] is not None:
@@ -250,8 +251,9 @@ class ultraArm:
             command += " Y" + str(degrees[1])
         if degrees[2] is not None:
             command += " Z" + str(degrees[2])
-        if degrees[3] is not None:
-            command += " E" + str(degrees[3])
+        if length == 4:
+            if degrees[3] is not None:
+                command += " E" + str(degrees[3])
         if speed > 0:
             command += " F" + str(speed)
         command += ProtocolCode.END
@@ -432,6 +434,7 @@ class ultraArm:
             speed : (int) 0-100 mm/s
             speed : (int) 0-100 mm/s
         """
+        length = len(degrees)
         degrees = [degree for degree in degrees]
         command = ProtocolCode.SET_ANGLES
         if degrees[0] is not None:
@@ -440,8 +443,9 @@ class ultraArm:
             command += " Y" + str(degrees[1])
         if degrees[2] is not None:
             command += " Z" + str(degrees[2])
-        if degrees[3] is not None:
-            command += " E" + str(degrees[3])
+        if length == 4:
+            if degrees[3] is not None:
+                command += " E" + str(degrees[3])
         if speed > 0:
             command += " F" + str(speed)
         command += ProtocolCode.END
