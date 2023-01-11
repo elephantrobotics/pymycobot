@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.0.4 (2023-01-11)
+
+- release v3.0.4
+- Fix some bug
+
 ## v3.0.3 (2023-01-10)
 
 - release v3.0.3
