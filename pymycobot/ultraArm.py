@@ -34,11 +34,11 @@ class ultraArm:
             data = self._serial_port.read(self._serial_port.inWaiting())
             queue_size = self._get_queue_size()
             if data != None:
-                if 70 <= queue_size <= 139:
+                if 40 <= queue_size <= 90:
                     data = str(data.decode())
                     if self.debug:
                         print(data)
-                elif 0 <= queue_size < 70:
+                elif 0 <= queue_size < 40:
                     data = str(data.decode())
                     if self.debug:
                         print(data)
@@ -50,7 +50,7 @@ class ultraArm:
                             qs = self._get_queue_size()
                             if self.debug:
                                 print('respone_size1:', qs)
-                            if qs < 70:
+                            if qs < 40:
                                 time.sleep(1)
                                 qsize = self._get_queue_size()
                                 print('respone_size2:', qsize)
@@ -553,7 +553,7 @@ class ultraArm:
             self._debug(command)
 
             queue_size = self._request("size")
-            if 0 <= queue_size <= 139:
+            if 0 <= queue_size <= 90:
                 try:
                     if self.debug:
                         print("queue_size1: %s \n" % queue_size)
@@ -566,7 +566,7 @@ class ultraArm:
                         qs = self._get_queue_size()
                         if self.debug:
                             print("queue_size2: %s \n" % qs)
-                        if qs <= 70:
+                        if qs <= 40:
                             begin = i
                             break
                     except Exception:
