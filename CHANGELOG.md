@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.0.5 (2023-01-17)
+
+- release v3.0.5
+- Fixed the issue of coords and angles issued by the ultraArm.
+
 ## v3.0.4 (2023-01-11)
 
 - release v3.0.4
