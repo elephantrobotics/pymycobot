@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.0.6 (2023-01-29)
+
+- release v3.0.6
+- Modify the value range of ultraArm speed (100 mm/s -> 200 mm/s).
+
 ## v3.0.5 (2023-01-17)
 
 - release v3.0.5
