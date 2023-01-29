@@ -240,7 +240,7 @@ class ultraArm:
                 x : -260 ~ 300 mm
                 y : -300 ~ 300 mm
                 z : -70 ~ 135 mm
-            speed : (int) 0-100 mm/s
+            speed : (int) 0-200 mm/s
         """
         length = len(degrees)
         degrees = [degree for degree in degrees]
@@ -270,7 +270,7 @@ class ultraArm:
                 x : -260 ~ 300 mm
                 y : -300 ~ 300 mm
                 z : -70 ~ 135 mm
-            speed : (int) 0-100 mm/s
+            speed : (int) 0-200 mm/s
         """
 
         command = ProtocolCode.COORDS_SET
@@ -406,7 +406,7 @@ class ultraArm:
                 2 : -20° ~ 90°
                 3 : -5° ~ 60°
                 4 : -180° ~ + 180°
-            speed : (int) 0-100 mm/s
+            speed : (int) 0-200 mm/s
         """
         command = ProtocolCode.SET_ANGLE
         if id is not None:
@@ -431,8 +431,7 @@ class ultraArm:
                 2 : -20° ~ 90°
                 3 : -5° ~ 60°
                 4 : -180° ~ + 180°
-            speed : (int) 0-100 mm/s
-            speed : (int) 0-100 mm/s
+            speed : (int) 0-200 mm/s
         """
         length = len(degrees)
         degrees = [degree for degree in degrees]
@@ -462,7 +461,7 @@ class ultraArm:
                 rx : -2.97 ~ +2.97
                 ry : 0.0 ~ 1.57
                 rz : 0.0 ~ 1.31
-            speed : (int) 0-100 mm/s
+            speed : (int) 0-200 mm/s
         """
         degrees = [round(degree * (180 / math.pi), 2) for degree in degrees]
         self.set_angles(degrees, speed)
@@ -476,7 +475,7 @@ class ultraArm:
             direction :
                 0 : positive
                 1 : negative
-            speed : (int) 0-100 mm/s
+            speed : (int) 0-200 mm/s
         """
         command = ProtocolCode.SET_JOG_ANGLE
         if id is not None:
@@ -504,7 +503,7 @@ class ultraArm:
             direction:
                 0 : positive
                 1 : negative
-            speed : (int) 0-100 mm/s
+            speed : (int) 0-200 mm/s
         """
         command = ProtocolCode.JOG_COORD_
         if axis is not None:
