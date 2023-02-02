@@ -1,0 +1,3 @@
+pyserial
+pymycobot
+pygame
