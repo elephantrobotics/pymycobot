@@ -297,7 +297,7 @@ class ultraArm:
 
                 1 - Relative Cartesian mode
         """
-        if mode:
+        if mode == 0:
             command = ProtocolCode.ABS_CARTESIAN + ProtocolCode.END
         else:
             command = ProtocolCode.REL_CARTESIAN + ProtocolCode.END
