@@ -179,7 +179,7 @@ class ProtocolCode(object):
     GPIO_ON = "M22"
     GRIPPER_ZERO = "M24"
     GIRPPER_OPEN = "M25"
-    GIRPPER_CLOSE = "M26"
+    GIRPPER_RELEASE = "M26"
     FAN_ON = "M27"
     FAN_CLOSE = "M28"
     SET_ANGLE = "M10"

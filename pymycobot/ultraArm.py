@@ -361,18 +361,23 @@ class ultraArm:
         self._debug(command)
         self._respone()
 
-    def set_gripper_state(self, state):
+    def set_gripper_state(self, state, speed):
         """Set gripper state.
 
         Args:
-            state:
-                0 - close
-                1 - open
+            state: 0 - 100
+                0 - full close
+                100 - full open
+            speed: 0 - 1500
         """
-        if state:
-            command = ProtocolCode.GIRPPER_OPEN + ProtocolCode.END
-        else:
-            command = ProtocolCode.GIRPPER_CLOSE + ProtocolCode.END
+        command = ProtocolCode.GIRPPER_OPEN + "A" + str(state) + "F" + str(speed) + ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        self._respone()
+
+    def set_gripper_release(self):
+        command = ProtocolCode.GIRPPER_RELEASE + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
