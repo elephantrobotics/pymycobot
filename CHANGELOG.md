@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.0.7 (2023-03-06)
+
+- release v3.0.7
+- update ultraArm API
+
 ## v3.0.6 (2023-01-29)
 
 - release v3.0.6
