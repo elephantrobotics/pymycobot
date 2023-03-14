@@ -716,7 +716,7 @@ class MyCobotCommandGenerator(DataProcessor):
             pin_no: pin port number.
             pin_signal: 0 / 1
         """
-        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal, has_reply=True)
 
     def get_basic_input(self, pin_no):
         """Get basic input for M5 version.
