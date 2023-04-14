@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.0.8 (2023-04-14)
+
+- release v3.0.8
+- Fix Mybuddy GPIO control bug
+
 ## v3.0.7 (2023-03-06)
 
 - release v3.0.7
