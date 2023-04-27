@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.0.9 (2023-04-27)
+
+- release v3.0.9
+- Fix UltraArm interface set_gpio_state error issue
+
 ## v3.0.8 (2023-04-14)
 
 - release v3.0.8
