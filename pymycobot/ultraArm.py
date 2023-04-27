@@ -346,9 +346,9 @@ class ultraArm:
                 1 - close
         """
         if state:
-            command = ProtocolCode.GPIO_ON + ProtocolCode.END
-        else:
             command = ProtocolCode.GPIO_CLOSE + ProtocolCode.END
+        else:
+            command = ProtocolCode.GPIO_ON + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
