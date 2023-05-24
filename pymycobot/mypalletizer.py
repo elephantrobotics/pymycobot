@@ -242,3 +242,6 @@ class MyPalletizer(MyCobotCommandGenerator):
         """
         data_list = [[25, 21], [26, 32]]
         return self._mesg(ProtocolCode.GET_ACCEI_DATA, data_list[1] if value else data_list[0], has_reply=True)
+    
+    def close(self):
+        self._serial_port.close()

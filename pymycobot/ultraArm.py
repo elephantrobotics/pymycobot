@@ -578,3 +578,6 @@ class ultraArm:
             command = ""
 
         self.set_speed_mode(2)  # Acceleration / deceleration mode
+        
+    def close(self):
+        self._serial_port.close()

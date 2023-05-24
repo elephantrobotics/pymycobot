@@ -209,3 +209,6 @@ class MyCobot(MyCobotCommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
+    
+    def close(self):
+        self._serial_port.close()

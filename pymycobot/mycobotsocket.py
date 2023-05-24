@@ -220,3 +220,6 @@ class MyCobotSocket(MyCobotCommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
+    
+    def close(self):
+        self.sock.close()

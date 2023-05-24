@@ -250,4 +250,7 @@ class MyArm(MyCobotCommandGenerator):
                 2 - Turn on transparent transmission, only verify the configuration information of communication forwarding mode (default is 0)
         """
         return self._mesg(ProtocolCode.GET_SSID_PWD, mode)
+    
+    def close(self):
+        self._serial_port.close()
         
