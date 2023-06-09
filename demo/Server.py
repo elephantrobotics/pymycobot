@@ -10,6 +10,22 @@ import fcntl
 import struct
 import RPi.GPIO as GPIO
 
+"""
+Instructions for use:
+
+Please change the parameters passed in MycobotServer in line 141 according to your model.
+
+
+The default model is the 280PI.
+
+    The default parameters are: 
+
+        serial_num: /dev/ttyAMA0
+
+        baud: 1000000
+
+
+"""
 
 def get_logger(name):
     logger = logging.getLogger(name)
@@ -33,13 +49,24 @@ def get_logger(name):
 
 class MycobotServer(object):
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, serial_num = "/dev/ttyAMA0", baud = 1000000):
+        """Server class
+        
+        Args:
+            host: server ip address.
+            port: server port.
+            serial_num: serial number of the robot.The default is /dev/ttyAMA0.
+            baud: baud rate of the serial port.The default is 1000000.
+
+        """
         try:
             GPIO.setwarnings(False)
         except:
             pass
         self.logger = get_logger("AS")
         self.mc = None
+        self.serial_num = serial_num
+        self.baud = baud
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind((host, port))
         print("Binding succeeded!")
@@ -51,7 +78,6 @@ class MycobotServer(object):
             try:
                 print("waiting connect!------------------")
                 conn, addr = self.s.accept()
-                port_baud = []
                 while True:
                     try:
                         print("waiting data--------")
@@ -62,13 +88,9 @@ class MycobotServer(object):
                             break
                         res = b'1'
                         command = command.replace(" ", "")
-                        if len(port_baud) < 3:
-
-                            port_baud.append(command)
-                            if len(port_baud) == 3:
-                                self.mc = serial.Serial(
-                                    port_baud[0], port_baud[1], timeout=float(port_baud[1]))
-                                port_baud.append(1)
+                        if self.mc is None:
+                            self.mc = serial.Serial(
+                                self.serial_num, self.baud, timeout=0.1)
                         else:
                             self.logger.info(command)
                             command = self.re_data_2(command)
@@ -101,6 +123,7 @@ class MycobotServer(object):
             except Exception as e:
                 self.logger.error(str(e))
                 conn.close()
+                self.mc.close()
 
     def write(self, command):
         self.mc.write(command)
@@ -127,4 +150,4 @@ if __name__ == "__main__":
     HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', bytes(ifname,encoding="utf8")))[20:24])
     PORT = 9000
     print("ip: {} port: {}".format(HOST, PORT))
-    MycobotServer(HOST, PORT)
+    MycobotServer(HOST, PORT, "/dev/ttyAMA0", 1000000)
