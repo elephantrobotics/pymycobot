@@ -59,22 +59,8 @@ class MyCobotSocket(MyCobotCommandGenerator):
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
-        self.rasp = False
-        self.sock = self.connect_socket()
-
-    def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
-        """Connect the robot arm through the serial port and baud rate (Use only when connecting the pi version)
-        
-        Args:
-            serialport: (str) default /dev/ttyAMA0
-            baudrate: default 1000000
-            timeout: default 0.1
-        
-        """
         self.rasp = True
-        self._write(serialport, "socket")
-        self._write(baudrate, "socket")
-        self._write(timeout, "socket")
+        self.sock = self.connect_socket()
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -115,12 +101,18 @@ class MyCobotSocket(MyCobotCommandGenerator):
                 ProtocolCode.GET_SPEED,
                 ProtocolCode.GET_ENCODER,
                 ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE
+                ProtocolCode.GET_TOF_DISTANCE,
+                ProtocolCode.GET_END_TYPE,
+                ProtocolCode.GET_MOVEMENT_TYPE,
+                ProtocolCode.GET_REFERENCE_FRAME,
+                ProtocolCode.GET_FRESH_MODE,
+                ProtocolCode.GET_GRIPPER_MODE,
+                ProtocolCode.GET_ERROR_INFO
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS]:
+            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
                 if res:
                     r = []
                     for idx in range(3):
@@ -130,11 +122,10 @@ class MyCobotSocket(MyCobotCommandGenerator):
                     return r
                 else:
                     return res
-            elif genre in [
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ]:
-                return self._int2angle(res[0]) if res else 0
+            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+                return [self._int2coord(angle) for angle in res]
+            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                return self._int2coord(res[0])
             else:
                 return res
         return None
