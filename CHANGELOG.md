@@ -1,5 +1,13 @@
 # ChangeLog for pymycobot
 
+## v3.1.0 (2023-06-09)
+
+- release v3.1.0
+- Fix get_joint_min_angle() and get_joint_max_angle() interface bug.
+- Remove the connect function in mycobotsocket
+- update demo/Server.py file
+- Add new interface: get_error_information(),clear_error_information()
+
 ## v3.0.9 (2023-04-27)
 
 - release v3.0.9
