@@ -15,6 +15,9 @@ class ProtocolCode(object):
     SOFTWARE_VERSION = 0x02
     GET_ROBOT_ID = 0x03
     SET_ROBOT_ID = 0x04
+    
+    GET_ERROR_INFO = 0x07
+    CLEAR_ERROR_INFO = 0x08
 
     # Overall status
     POWER_ON = 0x10
@@ -306,8 +309,10 @@ class DataProcessor(object):
                     self._decode_int8(valid_data[0:1]),
                     self._decode_int8(valid_data[1:]),
                 ]
-            if genre in [ProtocolCode.IS_SERVO_ENABLE]:
+            elif genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
+            elif genre in [ProtocolCode.GET_ERROR_INFO]:
+                return [self._decode_int8(valid_data[1:])]
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
