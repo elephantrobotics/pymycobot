@@ -13,6 +13,10 @@ import RPi.GPIO as GPIO
 """
 Instructions for use:
 
+Please update pymycobot to the latest version before use.
+
+`pip install pymycobot --upgrade`
+
 Please change the parameters passed in MycobotServer in line 141 according to your model.
 
 
@@ -71,6 +75,7 @@ class MycobotServer(object):
         self.s.bind((host, port))
         print("Binding succeeded!")
         self.s.listen(1)
+        self.mc = serial.Serial(self.serial_num, self.baud, timeout=0.1)
         self.connect()
 
     def connect(self):
@@ -88,9 +93,8 @@ class MycobotServer(object):
                             break
                         res = b'1'
                         command = command.replace(" ", "")
-                        if self.mc is None:
-                            self.mc = serial.Serial(
-                                self.serial_num, self.baud, timeout=0.1)
+                        if self.mc.closed() == True:
+                            self.mc.open()
                         else:
                             self.logger.info(command)
                             command = self.re_data_2(command)
