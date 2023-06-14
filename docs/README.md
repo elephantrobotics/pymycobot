@@ -92,6 +92,7 @@ We support Python2, Python3.5 or later.
     - [get\_plan\_acceleration](#get_plan_acceleration)
     - [set\_plan\_speed](#set_plan_speed)
     - [set\_plan\_acceleration](#set_plan_acceleration)
+    - [set\_gservo\_round](#set_gservo_round)
     - [get\_servo\_speeds](#get_servo_speeds)
     - [get\_servo\_currents](#get_servo_currents)
     - [get\_servo\_voltages](#get_servo_voltages)
@@ -200,7 +201,7 @@ We support Python2, Python3.5 or later.
     - [set\_pin\_mode(id, pin\_no, pin\_mode)](#set_pin_modeid-pin_no-pin_mode)
     - [set\_plan\_acceleration(id, acceleration)](#set_plan_accelerationid-acceleration)
     - [set\_plan\_speed(id, speed)](#set_plan_speedid-speed)
-    - [set\_pwm\_output(id, channel, frequency, pin\_val)](#set_pwm_outputid-channel-frequency-pin_val)
+    - [set\_pwm\_output()](#set_pwm_output-1)
     - [set\_reference\_frame(id, rftype)](#set_reference_frameid-rftype)
     - [set\_robot\_id(id, new\_id)](#set_robot_idid-new_id)
     - [set\_servo\_calibration(id, servo\_no)](#set_servo_calibrationid-servo_no)
@@ -1049,6 +1050,13 @@ Set command refresh mode
 
   - `acceleration` (`int`) 0 - 100.
   - `is_linear` (`int`): 0 / 1 (0 ->joint, 1 -> line)
+
+
+### set_gservo_round
+
+- **Prototype**: `set_gservo_round()`
+
+- **Description**: Drive the 9g steering gear clockwise for one revolution.
 
 ### get_servo_speeds
 
@@ -2235,19 +2243,9 @@ Set planning speed
 
   * **speed** (_int_) – (0 ~ 100).
 
-### set_pwm_output(id, channel, frequency, pin_val)
+### set_pwm_output()
 
-PWM control
-
-* **Parameters**
-
-  * **id** – 1/2 (L/R)
-
-  * **channel** (_int_) – IO number (1 - 5).
-
-  * **frequency** (_int_) – clock frequency (0/1: 0 - 1Mhz 1 - 10Mhz)
-
-  * **pin_val** (_int_) – Duty cycle 0 ~ 100: 0 ~ 100%
+Set PWM output
 
 ### set_reference_frame(id, rftype)
 

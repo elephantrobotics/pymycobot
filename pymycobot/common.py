@@ -144,6 +144,7 @@ class ProtocolCode(object):
     GET_PLAN_ACCELERATION = 0xD1
     SET_PLAN_SPEED = 0xD2
     SET_PLAN_ACCELERATION = 0xD3
+    SET_GSERVO_ROUND = 0xD4
 
     # Motor status read
     GET_SERVO_SPEED = 0xE1

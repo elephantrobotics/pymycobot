@@ -108,8 +108,6 @@ class MyArm(MyCobotCommandGenerator):
                 ProtocolCode.GET_END_TYPE,
                 ProtocolCode.GET_MOVEMENT_TYPE,
                 ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
                 ProtocolCode.GET_FRESH_MODE,
                 ProtocolCode.GET_GRIPPER_MODE,
                 ProtocolCode.SET_SSID_PWD
@@ -129,6 +127,8 @@ class MyArm(MyCobotCommandGenerator):
                     return res
             elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
                 return [self._int2coord(angle) for angle in res]
+            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                return self._int2coord(res[0])
             else:
                 return res
         return None
@@ -149,7 +149,6 @@ class MyArm(MyCobotCommandGenerator):
             radians: a list of radian values( List[float]), length 6
             speed: (int )0 ~ 100
         """
-        calibration_parameters(len6=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
@@ -224,13 +223,16 @@ class MyArm(MyCobotCommandGenerator):
         """Get zero space deflection angle value"""
         return self._mesg(ProtocolCode.GET_SOLUTION_ANGLES, has_reply=True)
     
-    def release_all_servos(self, data):
+    def release_all_servos(self, data=None):
         """Relax all joints
         
         Args:
             data: 1 - Undamping (The default is damping)
         """
-        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
+        if data is None:
+            return super().release_all_servos()
+        else:
+            return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
             
     def get_transpoendr_mode(self):
         """Obtain the configuration information of serial transmission mode

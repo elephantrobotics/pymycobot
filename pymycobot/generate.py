@@ -679,7 +679,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set gripper switch state
 
         Args:
-            flag  (int): 0 - open, 1 - close
+            flag  (int): 0 - open, 1 - close, 10 - release
             speed (int): 0 ~ 100
         """
         return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
@@ -1024,4 +1024,7 @@ class MyCobotCommandGenerator(DataProcessor):
     def clear_error_information(self):
         """Clear robot error message"""
         return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply = True)
-        
+    
+    def set_gservo_round(self):
+        """Drive the 9g steering gear clockwise for one revolution"""
+        return self._mesg(ProtocolCode.SET_GSERVO_ROUND)
