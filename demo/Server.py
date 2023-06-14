@@ -93,7 +93,7 @@ class MycobotServer(object):
                             break
                         res = b'1'
                         command = command.replace(" ", "")
-                        if self.mc.closed() == True:
+                        if self.mc.isOpen() == False:
                             self.mc.open()
                         else:
                             self.logger.info(command)
