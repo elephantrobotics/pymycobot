@@ -111,7 +111,7 @@ class MyCobotCommandGenerator(DataProcessor):
             command_data = self._encode_int16(command_data)
             
         elif genre in [76, 77]:
-            command_data = [command_data[0]] + self._encode_int16(command_data[1])
+            command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
         elif genre == 115:
             command_data = [command_data[1],command_data[3]]
 
@@ -642,7 +642,7 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
 
     def set_digital_output(self, pin_no, pin_signal):
-        """
+        """Set the terminal atom io status
 
         Args:
             pin_no     (int):
