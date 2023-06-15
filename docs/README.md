@@ -10,7 +10,7 @@ We support Python2, Python3.5 or later.
 <!-- vim-markdown-toc GFM -->
 
 - [pymycobot](#pymycobot)
-- [MyCobot / Mypalletizer / MechArm](#mycobot--mypalletizer--mecharm)
+- [MyCobot / Mypalletizer / MechArm / MyArm](#mycobot--mypalletizer--mecharm--myarm)
   - [Overall status](#overall-status)
     - [power\_on](#power_on)
     - [power\_off](#power_off)
@@ -23,6 +23,7 @@ We support Python2, Python3.5 or later.
   - [MDI mode and operation](#mdi-mode-and-operation)
     - [get\_angles](#get_angles)
     - [set\_fresh\_mode(mode)](#set_fresh_modemode)
+    - [get\_fresh\_mode()](#get_fresh_mode)
     - [send\_angle](#send_angle)
     - [send\_angles()](#send_angles)
     - [get\_radians](#get_radians)
@@ -33,9 +34,11 @@ We support Python2, Python3.5 or later.
     - [sync\_send\_angles](#sync_send_angles)
     - [sync\_send\_coords](#sync_send_coords)
     - [is\_in\_position](#is_in_position)
+    - [is\_moving](#is_moving)
   - [JOG mode and operation](#jog-mode-and-operation)
     - [jog\_angle](#jog_angle)
     - [jog\_coord](#jog_coord)
+    - [jog\_absolute](#jog_absolute)
     - [jog\_increment](#jog_increment)
     - [jog\_stop](#jog_stop)
     - [pause](#pause)
@@ -67,10 +70,10 @@ We support Python2, Python3.5 or later.
     - [set\_digital\_output()](#set_digital_output)
     - [get\_digital\_input()](#get_digital_input)
     - [set\_pwm\_output()](#set_pwm_output)
+    - [set\_gripper\_calibration](#set_gripper_calibration)
     - [get\_gripper\_value](#get_gripper_value)
     - [set\_gripper\_state](#set_gripper_state)
     - [set\_gripper\_value](#set_gripper_value)
-    - [set\_gripper\_ini](#set_gripper_ini)
     - [is\_gripper\_moving](#is_gripper_moving)
     - [get\_basic\_input](#get_basic_input)
     - [set\_basic\_output](#set_basic_output)
@@ -100,8 +103,14 @@ We support Python2, Python3.5 or later.
     - [get\_servo\_temps](#get_servo_temps)
     - [init\_eletric\_gripper](#init_eletric_gripper)
     - [set\_eletric\_gripper](#set_eletric_gripper)
+    - [set\_gripper\_mode](#set_gripper_mode)
+    - [get\_gripper\_mode](#get_gripper_mode)
     - [set\_encoders\_drag](#set_encoders_drag)
-    - [set\_refresh\_mode](#set_refresh_mode)
+    - [get\_solution\_angles](#get_solution_angles)
+    - [set\_solution\_angles](#set_solution_angles)
+    - [joint\_brake](#joint_brake)
+    - [get\_transpoendr\_mode](#get_transpoendr_mode)
+    - [set\_transpoendr\_mode](#set_transpoendr_mode)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio\_init](#gpio_init)
     - [gpio\_output](#gpio_output)
@@ -231,7 +240,7 @@ We support Python2, Python3.5 or later.
 <!-- vim-markdown-toc -->
 </details>
 
-# MyCobot / Mypalletizer / MechArm
+# MyCobot / Mypalletizer / MechArm / MyArm
 
 **Import to your project**:
 
@@ -348,6 +357,14 @@ Set command refresh mode
   * **mode** – int
     1 - Always execute the latest command first.
     0 - Execute instructions sequentially in the form of a queue.
+
+### get_fresh_mode()
+
+get command refresh mode
+
+  * **return**
+      - 1 - Always execute the latest command first.
+      - 0 - Execute instructions sequentially in the form of a queue.
 
 ### send_angle
 
@@ -521,6 +538,17 @@ Set command refresh mode
   - `0` - false
   - `-1` - error
 
+### is_moving
+
+- **Prototype**: `is_moving()`
+
+- **Description**: Detect if the robot is moving.
+
+- **Returns**
+  - `1` - is moving
+  - `0` - not moving
+  - `-1` - error data
+
 ## JOG mode and operation
 
 ### jog_angle
@@ -545,6 +573,21 @@ Set command refresh mode
 
   - `coord_id`: (`int`) 1 ~ 6
   - `direction`: `0` - decrease, `1` - increase
+  - `speed`: 0 ~ 100
+
+### jog_absolute
+
+- **Prototype**: `jog_absolute(joint_id, angle, speed)`
+
+- **Description**: Jog absolute angle.
+
+- **Parameters**
+
+  - `joint_id`: (`int`) 
+    - for mycobot: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
+  - `direction`: 
   - `speed`: 0 ~ 100
 
 ### jog_increment
@@ -791,7 +834,7 @@ Set command refresh mode
   - `pin_mode` (int): 0 - input, 1 - output, 2 - input_pullup
 
 ### set_digital_output()
-
+Set the terminal atom io status
 - **Parameters**
 
   - `pin_no` (int):
@@ -819,6 +862,13 @@ Set command refresh mode
   - `channel` (`int`): IO number.
   - `frequency` (`int`): clock frequency
   - `pin_val` (`int`): Duty cycle 0 ~ 256; 128 means 50%
+
+### set_gripper_calibration
+
+- **Prototype**: `set_gripper_calibration()`
+
+- **Description**: Set the current position to zero, set current position value is `2048`.
+
 
 ### get_gripper_value
 
@@ -850,11 +900,11 @@ Set command refresh mode
   - `value` (int): 0 ~ 100
   - `speed` (int): 0 ~ 100
 
-### set_gripper_ini
+<!-- ### set_gripper_ini
 
 - **Prototype**: `set_gripper_ini()`
 
-- **Description**: Set the current position to zero, set current position value is `2048`.
+- **Description**: Set the current position to zero, set current position value is `2048`. -->
 
 ### is_gripper_moving
 
@@ -1114,6 +1164,26 @@ Set command refresh mode
 
   - `status` (`int`): 0 - open, 1 - close.
 
+### set_gripper_mode
+
+- **Prototype**: `set_gripper_mode(status)`
+
+- **Description**: Set gripper mode.
+
+- **Parameters**
+
+  - `status` (`int`): 0 - transparent transmission. 1 - Port Mode.
+
+### get_gripper_mode
+
+- **Prototype**: `get_gripper_mode()`
+
+- **Description**: Get gripper mode.
+
+- **Return**
+
+  - `status` (`int`): 0 - transparent transmission. 1 - Port Mode.
+
 ### set_encoders_drag
 
 - **Prototype**: `set_encoders_drag(encoders, speeds)`
@@ -1125,15 +1195,56 @@ Set command refresh mode
   - `encoders` (`list`) : encoders list.
   - `speeds`: Obtained by the get_servo_speeds() method
 
-### set_refresh_mode
 
-- **Prototype**: `set_refresh_mode(mode)`
+### get_solution_angles
 
-- **Description**: Set command refresh mode
+- **Prototype**: `get_solution_angles()`
+
+- **Description**: Get zero space deflection angle value.(`This interface is only applicable to MyArm`)
+
+### set_solution_angles
+
+- **Prototype**: `set_solution_angles(angle, speed)`
+
+- **Description**: Set zero space deflection angle value.(`This interface is only applicable to MyArm`)
 
 - **Parameters**
 
-  - `mode`: 0 - with interpolation  1 - No interpolation
+  - `angle`: Angle of joint 1.
+  - `speed`: 1 - 100.
+
+### joint_brake
+
+- **Prototype**: `joint_brake(joint_id)`
+
+- **Description**: Make it stop when the joint is in motion, and the buffer distance is positively related to the existing speed
+
+- **Parameters**
+
+  - `joint_id`: 1 - 7.
+
+### get_transpoendr_mode
+
+- **Prototype**: `get_transpoendr_mode()`
+
+- **Description**: Obtain the configuration information of serial transmission mode.(`This interface is only applicable to MyArm`)
+
+- **Return**
+  - `0`: Turn off transparent transmission
+  - `1`: Turn on transparent transmission, verify all data
+  - `2`: Turn on transparent transmission, only verify communication forwarding mode configuration information (default is 0)
+
+### set_transpoendr_mode
+
+- **Prototype**: `set_transpoendr_mode(mode)`
+
+- **Description**: Set serial port transmission mode.(`This interface is only applicable to MyArm`)
+
+- **Parameters**
+  - `mode`:
+    - `0`: Turn off transparent transmission
+    - `1`: Turn on transparent transmission, verify all data
+    - `2`: Turn on transparent transmission, only verify communication forwarding mode configuration information
 
 ## Raspberry pi -- GPIO
 

@@ -531,7 +531,7 @@ class MycobotTest(object):
 
     def _calibration_test(self):
         self.write_log_to_Text("开始测试校准.")
-        self.mycobot.set_refresh_mode(1)
+        self.mycobot.set_fresh_mode(1)
         time.sleep(0.5)
         angles = [0, 0, 0, 0, 0, 0]
         test_angle = [-20, 20, 0]

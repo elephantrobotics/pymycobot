@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.1.2 (2023-06-15)
+
+- release v3.1.2
+- Fix set_joint_min(),set_joint_max() interface issue
+
 ## v3.1.1 (2023-06-14)
 
 - release v3.1.1
