@@ -179,7 +179,13 @@ class MyCobotCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
 
     def is_controller_connected(self):
-        """Wether connected with Atom."""
+        """Wether connected with Atom.
+        
+        Return:
+            1 - succeed
+            0 - failed
+            -1 - error data
+        """
         return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
 
     def read_next_error(self):

@@ -395,4 +395,4 @@ class MyBuddy(MyBuddyCommandGenerator):
         self._serial_port.open()
         
     def is_open(self):
-        return self._serial_port.isOpen()
+        return self._serial_port.is_open

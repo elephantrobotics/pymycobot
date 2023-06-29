@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.1.3 (2023-06-29)
+
+- release v3.1.3
+- Add open/close serial function
+
 ## v3.1.2 (2023-06-15)
 
 - release v3.1.2

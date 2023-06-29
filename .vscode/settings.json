@@ -17,5 +17,9 @@
         "zhang"
     ],
     "restructuredtext.confPath": "",
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "files.associations": {
+        "ccomplex": "cpp",
+        "iosfwd": "cpp"
+    }
 }

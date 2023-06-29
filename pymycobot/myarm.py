@@ -256,3 +256,6 @@ class MyArm(MyCobotCommandGenerator):
     def close(self):
         self._serial_port.close()
         
+    def open(self):
+        self._serial_port.open()
+        

@@ -17,7 +17,7 @@ Please update pymycobot to the latest version before use.
 
 `pip install pymycobot --upgrade`
 
-Please change the parameters passed in MycobotServer in line 141 according to your model.
+Please change the parameters passed in the last line of the Server.py file, MycobotServer, based on your model.
 
 
 The default model is the 280PI.
