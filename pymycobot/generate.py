@@ -1031,6 +1031,13 @@ class MyCobotCommandGenerator(DataProcessor):
         """Clear robot error message"""
         return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply = True)
     
-    def set_gservo_round(self):
-        """Drive the 9g steering gear clockwise for one revolution"""
-        return self._mesg(ProtocolCode.SET_GSERVO_ROUND)
+    def set_gservo_round(self, angle):
+        """Drive the 9g steering gear clockwise for one revolution
+        
+        Args:
+            angle (int): 0 ~ 255
+                0 : stop
+                255 : Keep turning
+                1 ~ 254: Based on 30° (1->30°, 2->60°)
+        """
+        return self._mesg(ProtocolCode.SET_GSERVO_ROUND, angle)
