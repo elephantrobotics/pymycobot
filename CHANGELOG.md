@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v3.1.4 (2023-07-05)
+
+- release v3.1.4
+- Update set_gservo_round() function.
+- Add pro 600 interface
+
 ## v3.1.3 (2023-06-29)
 
 - release v3.1.3

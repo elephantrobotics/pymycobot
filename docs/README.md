@@ -1104,9 +1104,16 @@ Set the terminal atom io status
 
 ### set_gservo_round
 
-- **Prototype**: `set_gservo_round()`
+- **Prototype**: `set_gservo_round(angle)`
 
 - **Description**: Drive the 9g steering gear clockwise for one revolution.
+
+- **Parameters**
+
+  - `angle` (`int`) 0 - 255.
+      0 : stop
+      255 : Keep turning
+      1 ~ 254: Based on 30° (1->30°, 2->60°)
 
 ### get_servo_speeds
 
