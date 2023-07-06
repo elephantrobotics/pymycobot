@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.1.5 (2023-07-06)
+
+- release v3.1.5
+- Add mycobot interface：get_basic_version(),set_communicate_mode()
+
 ## v3.1.4 (2023-07-05)
 
 - release v3.1.4

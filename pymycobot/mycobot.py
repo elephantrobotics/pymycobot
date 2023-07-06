@@ -129,6 +129,8 @@ class MyCobot(MyCobotCommandGenerator):
                 return [self._int2coord(angle) for angle in res]
             elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
                 return self._int2coord(res[0])
+            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION]:
+                return self._int2coord(self._process_single(res))
             else:
                 return res
         return None

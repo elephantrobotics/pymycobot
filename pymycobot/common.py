@@ -121,6 +121,8 @@ class ProtocolCode(object):
 
     # Get the measured distance
     GET_TOF_DISTANCE = 0xC0
+    GET_BASIC_VERSION = 0xC1
+    SET_COMMUNICATE_MODE = 0xC2
 
     # Coordinate transformation
     SET_TOOL_REFERENCE = 0x81

@@ -96,6 +96,8 @@ We support Python2, Python3.5 or later.
     - [set\_plan\_speed](#set_plan_speed)
     - [set\_plan\_acceleration](#set_plan_acceleration)
     - [set\_gservo\_round](#set_gservo_round)
+    - [get\_basic\_version](#get_basic_version)
+    - [set\_communicate\_mode](#set_communicate_mode)
     - [get\_servo\_speeds](#get_servo_speeds)
     - [get\_servo\_currents](#get_servo_currents)
     - [get\_servo\_voltages](#get_servo_voltages)
@@ -1114,6 +1116,27 @@ Set the terminal atom io status
       0 : stop
       255 : Keep turning
       1 ~ 254: Based on 30° (1->30°, 2->60°)
+
+### get_basic_version
+
+- **Prototype**: `get_basic_version()`
+
+- **Description**: Get basic firmware version.
+
+- **Return**
+
+  - `version` (`float`)
+
+### set_communicate_mode
+
+- **Prototype**: `set_communicate_mode(mode)`
+
+- **Description**: Set basic communication mode.
+
+- **Parameters**
+
+  - `mode` (`int`) 0 -  Turn off transparent transmission. 1 - Open transparent transmission
+
 
 ### get_servo_speeds
 

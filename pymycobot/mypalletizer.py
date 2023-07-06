@@ -163,6 +163,8 @@ class MyPalletizer(MyCobotCommandGenerator):
                 ProtocolCode.GET_JOINT_MAX_ANGLE,
             ]:
                 return self._int2angle(res[0]) if res else 0
+            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION]:
+                return self._int2coord(self._process_single(res))
             else:
                 return res
         return None

@@ -1041,3 +1041,16 @@ class MyCobotCommandGenerator(DataProcessor):
                 1 ~ 254: Based on 30° (1->30°, 2->60°)
         """
         return self._mesg(ProtocolCode.SET_GSERVO_ROUND, angle)
+
+
+    def get_basic_version(self):
+        """Get basic firmware version"""
+        return self._mesg(ProtocolCode.GET_BASIC_VERSION, has_reply = True)
+    
+    def set_communicate_mode(self, mode):
+        """Set basic communication mode
+        
+        Args:
+            mode: 0 - Turn off transparent transmission，1 - Open transparent transmission
+        """
+        return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode)
