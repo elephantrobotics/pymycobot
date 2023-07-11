@@ -5,9 +5,9 @@ API for playing emoticons
 
 * **Parameters**
 
-    **file_path(list)**: `[[path, time]]`The absolute path of facial expression video and the length of time to play.Time in seconds.
-    **window_size(tuple)**: `(Length, width) `Size of the playback window (default is full screen).
-    loop: Loop playback or not (only once by default).
+    **file_path (list)**: `[[path, time]]`The absolute path of facial expression video and the length of time to play.Time in seconds.
+    **window_size (tuple)**: `(Length, width) `Size of the playback window (default is full screen).
+    **loop (bool)**: Loop playback or not (default False. only once by default).
 
 ### file_path()
 Get Playfile List
