@@ -95,6 +95,7 @@ class ProtocolCode(object):
     SET_GRIPPER_CALIBRATION = 0x68
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
+    SET_COLOR_MYARM = 0x70
     SET_ELETRIC_GRIPPER = 0x6B
     INIT_ELETRIC_GRIPPER = 0x6C
     SET_GRIPPER_MODE = 0x6D
@@ -382,6 +383,7 @@ def write(self, command, method=None):
                 data = b""
         return data
     else:
+        # with self.lock:
         self.log.debug("_write: {}".format([hex(i) for i in command]))
         self._serial_port.write(command)
         self._serial_port.flush()

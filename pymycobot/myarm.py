@@ -157,7 +157,7 @@ class MyArm(MyCobotCommandGenerator):
         """Send the angle in synchronous state and return when the target point is reached
             
         Args:
-            degrees: a list of degree values(List[float]), length 6.
+            degrees: a list of degree values(List[float]), length 7.
             speed: (int) 0 ~ 100
             timeout: default 7s.
         """
@@ -165,7 +165,7 @@ class MyArm(MyCobotCommandGenerator):
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
-            if f:
+            if f == 1:
                 break
             time.sleep(0.1)
         return self
@@ -182,7 +182,7 @@ class MyArm(MyCobotCommandGenerator):
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
-            if self.is_in_position(coords, 1):
+            if self.is_in_position(coords, 1) == 1:
                 break
             time.sleep(0.1)
         return self
@@ -259,3 +259,12 @@ class MyArm(MyCobotCommandGenerator):
     def open(self):
         self._serial_port.open()
         
+    def set_color(self, r, g, b):
+        """Set the color of the LED
+        
+        Args:
+            r: Red
+            g: Green
+            b: Blue
+        """
+        return self._mesg(ProtocolCode.SET_COLOR_MYARM, r, g, b)

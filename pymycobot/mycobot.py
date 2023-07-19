@@ -168,7 +168,7 @@ class MyCobot(MyCobotCommandGenerator):
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
-            if f:
+            if f == 1:
                 break
             time.sleep(0.1)
         return self
@@ -185,7 +185,7 @@ class MyCobot(MyCobotCommandGenerator):
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
-            if self.is_in_position(coords, 1):
+            if self.is_in_position(coords, 1) == 1:
                 break
             time.sleep(0.1)
         return self
