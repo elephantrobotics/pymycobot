@@ -1054,3 +1054,6 @@ class MyCobotCommandGenerator(DataProcessor):
             mode: 0 - Turn off transparent transmission，1 - Open transparent transmission
         """
         return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode)
+    
+    def get_angles_coords(self):
+        return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply = True)

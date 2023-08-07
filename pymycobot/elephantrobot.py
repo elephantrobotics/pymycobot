@@ -253,6 +253,10 @@ class ElephantRobot(object):
     def get_variable(self, var_name):
         command = 'get_variable("' + str(var_name) + '")\n'
         return self.send_command(command)
+    
+    def jog_relative(self, joint_id, angle, speed):
+        command = 'SendJogIncrement("' + str(var_name) + '")\n'
+        return self.send_command(command)
 
 
 if __name__ == "__main__":

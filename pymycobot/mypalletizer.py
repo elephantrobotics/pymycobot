@@ -165,6 +165,16 @@ class MyPalletizer(MyCobotCommandGenerator):
                 return self._int2angle(res[0]) if res else 0
             elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION]:
                 return self._int2coord(self._process_single(res))
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+                r = []
+                for index in range(len(res)):
+                    if index < 4:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 7:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
+                return r
             else:
                 return res
         return None

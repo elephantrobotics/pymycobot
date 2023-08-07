@@ -59,7 +59,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
-        self.rasp = True
+        self.rasp = False
         self.sock = self.connect_socket()
 
     def connect_socket(self):

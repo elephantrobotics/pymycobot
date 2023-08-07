@@ -131,6 +131,16 @@ class MyCobot(MyCobotCommandGenerator):
                 return self._int2coord(res[0])
             elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION]:
                 return self._int2coord(self._process_single(res))
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+                r = []
+                for index in range(len(res)):
+                    if index < 6:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 9:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
+                return r
             else:
                 return res
         return None
@@ -168,6 +178,7 @@ class MyCobot(MyCobotCommandGenerator):
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
+            print(f)
             if f == 1:
                 break
             time.sleep(0.1)

@@ -56,6 +56,10 @@ class ProtocolCode(object):
     JOG_COORD = 0x32
     JOG_INCREMENT = 0x33
     JOG_STOP = 0x34
+    
+    COBOTX_GET_SOLUTION_ANGLES = 0x35
+    COBOTX_SET_SOLUTION_ANGLES = 0x36
+    
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
     SET_ENCODERS = 0x3C
@@ -148,6 +152,7 @@ class ProtocolCode(object):
     SET_PLAN_SPEED = 0xD2
     SET_PLAN_ACCELERATION = 0xD3
     SET_GSERVO_ROUND = 0xD4
+    GET_ANGLES_COORDS = 0xD5
 
     # Motor status read
     GET_SERVO_SPEED = 0xE1
@@ -284,7 +289,10 @@ class DataProcessor(object):
         unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
 
         if cmd_id in unique_data:
-            data_pos = header_i + 5
+            if arm == 12:
+                data_pos = header_i + 6
+            else:
+                data_pos = header_i + 5
             data_len -= 1
         else:
             if arm == 6:

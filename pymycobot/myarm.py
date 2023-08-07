@@ -129,6 +129,16 @@ class MyArm(MyCobotCommandGenerator):
                 return [self._int2coord(angle) for angle in res]
             elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
                 return self._int2coord(res[0])
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+                r = []
+                for index in range(len(res)):
+                    if index < 7:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 10:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
+                return r
             else:
                 return res
         return None
@@ -234,7 +244,7 @@ class MyArm(MyCobotCommandGenerator):
         else:
             return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
             
-    def get_transpoendr_mode(self):
+    def get_transponder_mode(self):
         """Obtain the configuration information of serial transmission mode
         
         Return:
@@ -242,7 +252,7 @@ class MyArm(MyCobotCommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_SSID_PWD, has_reply=True)
     
-    def set_transpoendr_mode(self, mode):
+    def set_transponder_mode(self, mode):
         """Set serial port transmission mode
         
         Args:
@@ -268,3 +278,33 @@ class MyArm(MyCobotCommandGenerator):
             b: Blue
         """
         return self._mesg(ProtocolCode.SET_COLOR_MYARM, r, g, b)
+    
+    def is_in_position(self, data, id=0):
+        """Judge whether in the position. (mypalletizer 340 does not have this interface)
+
+        Args:
+            data: A data list, angles or coords.
+                    for mycobot: len 6.
+                    for mypalletizer: len 4
+            id: 1 - coords, 0 - angles
+
+        Return:
+            1 - True\n
+            0 - False\n
+            -1 - Error
+        """
+        if id == 1:
+            # self.calibration_parameters(coords=data)
+            data_list = []
+            for idx in range(3):
+                data_list.append(self._coord2int(data[idx]))
+            for idx in range(3, 6):
+                data_list.append(self._angle2int(data[idx]))
+        elif id == 0:
+            # self.calibration_parameters(degrees=data)
+            data_list = [self._angle2int(i) for i in data]
+        else:
+            raise Exception("id is not right, please input 0 or 1")
+        return self._mesg(ProtocolCode.IS_IN_POSITION, id, data_list, has_reply=True)
+    
+    
