@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.1.7 (2023-8-8)
+
+- release v3.1.6
+- Fix myArm interface error
+
+## v3.1.6 (2023-6-19)
+
+- release v3.1.6
+- Update synchronization control interface
+
 ## v3.1.5 (2023-07-06)
 
 - release v3.1.5

@@ -184,13 +184,13 @@ class MyCobot(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    def sync_send_coords(self, coords, speed, mode, timeout=7):
+    def sync_send_coords(self, coords, speed, mode=0, timeout=7):
         """Send the coord in synchronous state and return when the target point is reached
             
         Args:
             coords: a list of coord values(List[float])
             speed: (int) 0 ~ 100
-            mode: (int): 0 - angular, 1 - linear
+            mode: (int): 0 - angular（default）, 1 - linear
             timeout: default 7s.
         """
         t = time.time()

@@ -156,7 +156,7 @@ class MyArm(MyCobotCommandGenerator):
         """Send the radians of all joints to robot arm
 
         Args:
-            radians: a list of radian values( List[float]), length 6
+            radians: a list of radian values( List[float]), length 7
             speed: (int )0 ~ 100
         """
         degrees = [self._angle2int(radian * (180 / math.pi))
@@ -180,7 +180,7 @@ class MyArm(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    def sync_send_coords(self, coords, speed, mode, timeout=7):
+    def sync_send_coords(self, coords, speed, mode=0, timeout=7):
         """Send the coord in synchronous state and return when the target point is reached
             
         Args:
@@ -280,12 +280,10 @@ class MyArm(MyCobotCommandGenerator):
         return self._mesg(ProtocolCode.SET_COLOR_MYARM, r, g, b)
     
     def is_in_position(self, data, id=0):
-        """Judge whether in the position. (mypalletizer 340 does not have this interface)
+        """Judge whether in the position.
 
         Args:
             data: A data list, angles or coords.
-                    for mycobot: len 6.
-                    for mypalletizer: len 4
             id: 1 - coords, 0 - angles
 
         Return:

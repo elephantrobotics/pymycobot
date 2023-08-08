@@ -478,7 +478,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set speed value
 
         Args:
-            speed (int) - 0 ~ 100
+            speed (int): 0 ~ 100
         """
         # self.calibration_parameters(speed=speed)
         return self._mesg(ProtocolCode.SET_SPEED, speed)
@@ -490,6 +490,7 @@ class MyCobotCommandGenerator(DataProcessor):
         )
     """
     def get_acceleration(self):
+        """get acceleration"""
         return self._process_single(
             self._mesg(ProtocolCode.GET_ACCELERATION, has_reply=True)
         )

@@ -111,8 +111,8 @@ We support Python2, Python3.5 or later.
     - [get\_solution\_angles](#get_solution_angles)
     - [set\_solution\_angles](#set_solution_angles)
     - [joint\_brake](#joint_brake)
-    - [get\_transpoendr\_mode](#get_transpoendr_mode)
-    - [set\_transpoendr\_mode](#set_transpoendr_mode)
+    - [get\_transponder\_mode](#get_transponder_mode)
+    - [set\_transponder\_mode](#set_transponder_mode)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio\_init](#gpio_init)
     - [gpio\_output](#gpio_output)
@@ -1253,9 +1253,9 @@ Set the terminal atom io status
 
   - `joint_id`: 1 - 7.
 
-### get_transpoendr_mode
+### get_transponder_mode
 
-- **Prototype**: `get_transpoendr_mode()`
+- **Prototype**: `get_transponder_mode()`
 
 - **Description**: Obtain the configuration information of serial transmission mode.(`This interface is only applicable to MyArm`)
 
@@ -1264,9 +1264,9 @@ Set the terminal atom io status
   - `1`: Turn on transparent transmission, verify all data
   - `2`: Turn on transparent transmission, only verify communication forwarding mode configuration information (default is 0)
 
-### set_transpoendr_mode
+### set_transponder_mode
 
-- **Prototype**: `set_transpoendr_mode(mode)`
+- **Prototype**: `set_transponder_mode(mode)`
 
 - **Description**: Set serial port transmission mode.(`This interface is only applicable to MyArm`)
 
