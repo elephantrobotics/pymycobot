@@ -376,7 +376,7 @@ get command refresh mode
 
 - **Parameters**
 
-  - `id`: Joint id(`genre.Angle`) / int 1-6
+  - `id`: Joint id(`genre.Angle`) / int 1-7
   - `degree`: degree value(`float`) (about -170 ～ 170)
   - `speed`: (`int`) 0 ~ 100
 
@@ -399,7 +399,7 @@ get command refresh mode
 
 - **Parameters**
 
-  - `degrees`: a list of degree value(`List[float]`), length 6.
+  - `degrees`: a list of degree value(`List[float]`), length 7.
 
   - `speed`: (`int`) 0 ~ 100
 
@@ -586,7 +586,7 @@ get command refresh mode
 - **Parameters**
 
   - `joint_id`: (`int`) 
-    - for mycobot: int 1-6.
+    - for mycobot / mecharm: int 1-6.
     - for mypalletizer: int 1-4.
     - for myArm: int 1 - 7.
   - `direction`: 
@@ -600,7 +600,10 @@ get command refresh mode
 
 - **Parameters**
 
-  - `coord_id`: (`int`) 1 ~ 6
+  - `coord_id`: (`int`)
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
   - `direction`: 
   - `speed`: 0 ~ 100
 
@@ -648,7 +651,10 @@ get command refresh mode
 
 - **Parameters**
 
-  - `joint_id`: (`int`) 1 ~ 6
+  - `joint_id`: (`int`)
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
   - `encoder`: 0 ~ 4096
 
 ### get_encoder
@@ -657,7 +663,11 @@ get command refresh mode
 
 - **Description**:Obtain the specified joint potential value.
 
-- **Parameters**: `joint_id`: (`int`) 1 ~ 6
+- **Parameters**: 
+  - `joint_id`: (`int`)
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
 
 - **Returns**: `encoder`: 0 ~ 4096
 
@@ -703,7 +713,10 @@ get command refresh mode
 - **Description**: Sets the minimum angle for the specified joint.
 
 - **Parameters**:
-  - `id`: (`int`) joint id 1-6.
+  - `id`: (`int`)
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
   - `angle`: 0 - 180.
 
 ### set_joint_max
@@ -712,7 +725,10 @@ get command refresh mode
 - **Description**: Sets the maximum angle of the specified joint.
 
 - **Parameters**:
-  - `id`: (`int`) joint id 1-6.
+  - `id`: (`int`) joint id
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
   - `angle`: 0 - 180.
 
 ### get_joint_min_angle
@@ -720,7 +736,11 @@ get command refresh mode
 - **Prototype**: `get_joint_min_angle()`
 - **Description**: Gets the minimum movement angle of the specified joint
 
-- **Parameters**: `joint_id`: (`int`)
+- **Parameters**: 
+  - `joint_id`: (`int`)
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
 
 - **Returns**: angle value (`float`)
 
@@ -730,7 +750,11 @@ get command refresh mode
 
 - **Description**: Gets the maximum movement angle of the specified joint
 
-- **Parameters**: `joint_id`: (`int`)
+- **Parameters**: 
+  - `joint_id`: (`int`)
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
 
 - **Returns**: angle value (`float`)
 
@@ -742,7 +766,11 @@ get command refresh mode
 
 - **Description**: Determine whether all steering gears are connected
 
-- **Parameters**: `servo_id` (`int`) 1 ~ 6
+- **Parameters**: 
+  - `servo_id` (`int`)
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
 
 - **Returns**
 
@@ -768,7 +796,10 @@ get command refresh mode
 - **Description**: Set the data parameters of the specified address of the steering gear.
 
 - **Parameters**:
-  - `servo_no`: Serial number of articulated steering gear, 1 - 6.
+  - `servo_no (int)`: Serial number of articulated steering gear.
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
   - `data_id`: Data address.
   - `value`: 0 - 4096
 
@@ -779,7 +810,10 @@ get command refresh mode
 
 - **Parameters**:
 
-  - `servo_no`: Serial number of articulated steering gear, 1 - 6.
+  - `servo_no`: Serial number of articulated steering gear.
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
   - `data_id`: Data address.
 
 - **Returns**: `value`: 0 - 4096
@@ -794,7 +828,10 @@ get command refresh mode
 - **Description**: The current position of the calibration joint actuator is the angle zero point, and the corresponding potential value is 2048.
 
 - **Parameters**:
-  - `servo_no`: Serial number of articulated steering gear, 1 - 6.
+  - `servo_no`: Serial number of articulated steering gear.
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
 
 ### release_servo
 
@@ -802,7 +839,11 @@ get command refresh mode
 
 - **Description**: Power off designated servo
 
-- **Parameters**: `servo_id`: 1 ~ 6
+- **Parameters**: 
+  - `servo_id`: 
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
 
 ### focus_servo
 
@@ -810,7 +851,11 @@ get command refresh mode
 
 - **Description**: Power on designated servo
 
-- **Parameters**: `servo_id`: 1 ~ 6
+- **Parameters**: 
+  - `servo_id`: 
+    - for mycobot / mecharm: int 1-6.
+    - for mypalletizer: int 1-4.
+    - for myArm: int 1 - 7.
 
 ## Atom IO
 
