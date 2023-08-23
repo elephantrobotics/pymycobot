@@ -80,19 +80,25 @@ class TeachingTest(Helper):
         self.record_list = []
         self.record_t = None
         self.play_t = None
+        self.path = os.path.dirname(os.path.abspath(__file__)) + "/record.txt"
 
     def record(self):
         self.record_list = []
         self.recording = True
-        self.mc.set_fresh_mode(0)
+        #self.mc.set_fresh_mode(0)
         def _record():
-            start_t = time.time()
+            
 
             while self.recording:
+                start_t = time.time()
                 angles = self.mc.get_encoders()
+                speeds = self.mc.get_servo_speeds()
+                gripper_value = self.mc.get_encoder(7)
+                interval_time = time.time() - start_t
+                #print(angles)
                 if angles:
-                    self.record_list.append(angles)
-                    time.sleep(0.1)
+                    self.record_list.append([angles, speeds, gripper_value, interval_time])
+                    # time.sleep(0.1)
                     print("\r {}".format(time.time() - start_t), end="")
 
         self.echo("Start recording.")
@@ -107,10 +113,14 @@ class TeachingTest(Helper):
 
     def play(self):
         self.echo("Start play")
+        i = 0
         for angles in self.record_list:
-            # print(angles)
-            self.mc.set_encoders(angles, 80)
-            time.sleep(0.1)
+            #print(angles)
+            self.mc.set_encoders_drag(angles[0],angles[1])
+            self.mc.set_encoder(7, angles[2])
+            if i == 0:
+                time.sleep(3)
+            time.sleep(angles[-1])
         self.echo("Finish play")
 
     def loop_play(self):
@@ -122,8 +132,11 @@ class TeachingTest(Helper):
             while self.playing:
                 idx_ = i % len_
                 i += 1
-                self.mc.set_encoders(self.record_list[idx_], 80)
-                time.sleep(0.1)
+                self.mc.set_encoders_drag(self.record_list[idx_][0],self.record_list[idx_][1])
+                self.mc.set_encoder(7, self.record_list[idx_])
+                if idx_ == 0:
+                    time.sleep(3)
+                time.sleep(self.record_list[idx_][-1])
 
         self.echo("Start loop play.")
         self.play_t = threading.Thread(target=_loop, daemon=True)
@@ -139,14 +152,12 @@ class TeachingTest(Helper):
         if not self.record_list:
             self.echo("No data should save.")
             return
-
-        with open(os.path.dirname(__file__) + "/record.txt", "w") as f:
+        with open(self.path, "w") as f:
             json.dump(self.record_list, f, indent=2)
-            self.echo("save dir:  {}".format(os.path.dirname(__file__)))
+            self.echo("save dir:  {}\n".format(self.path))
 
     def load_from_local(self):
-
-        with open(os.path.dirname(__file__) + "/record.txt", "r") as f:
+        with open(self.path, "r") as f:
             try:
                 data = json.load(f)
                 self.record_list = data
