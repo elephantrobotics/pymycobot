@@ -30,8 +30,8 @@ def setup():
     print(port)
     print("")
 
-    baud = 115200
-    _baud = input("Please input baud(default:115200):")
+    baud = 1000000
+    _baud = input("Please input baud(default:1000000):")
     try:
         baud = int(_baud)
     except Exception:
@@ -40,7 +40,7 @@ def setup():
     print("")
 
     DEBUG = False
-    f = input("Wether DEBUG mode[Y/n]:")
+    f = input("Wether DEBUG mode[Y/n](default:n):")
     if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
     # mc = MyCobot(port, debug=True)
