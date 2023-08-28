@@ -6,40 +6,40 @@ import math
 import logging
 
 from pymycobot.log import setup_logging
-from pymycobot.generate import MyCobotCommandGenerator
+from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MyArm(MyCobotCommandGenerator):
+class MyArm(CommandGenerator):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
 
         # Overall status
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # MDI mode and operation
             get_radians()
             send_radians()
             sync_send_angles() *
             sync_send_coords() *
-            Other look at parent class: `MyCobotCommandGenerator`.
+            Other look at parent class: `CommandGenerator`.
 
         # JOG mode and operation
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Running status and Settings
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Servo control
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Atom IO
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Basic
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Other
             wait() *
@@ -163,7 +163,7 @@ class MyArm(MyCobotCommandGenerator):
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
-    def sync_send_angles(self, degrees, speed, timeout=7):
+    def sync_send_angles(self, degrees, speed, timeout=15):
         """Send the angle in synchronous state and return when the target point is reached
             
         Args:
@@ -180,7 +180,7 @@ class MyArm(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    def sync_send_coords(self, coords, speed, mode=0, timeout=7):
+    def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
             
         Args:

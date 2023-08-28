@@ -7,41 +7,42 @@ import socket
 import logging
 
 from pymycobot.log import setup_logging
-from pymycobot.generate import MyCobotCommandGenerator
+from pymycobot.generate import CommandGenerator
+from pymycobot.mycobot import MyCobot
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MyCobotSocket(MyCobotCommandGenerator):
+class MyCobotSocket(CommandGenerator):
     """MyCobot Python API Serial communication class.
     Note: Please use this class under the same network
 
     Supported methods:
 
         # Overall status
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # MDI mode and operation
             get_radians()
             send_radians()
             sync_send_angles() *
             sync_send_coords() *
-            Other look at parent class: `MyCobotCommandGenerator`.
+            Other look at parent class: `CommandGenerator`.
 
         # JOG mode and operation
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Running status and Settings
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Servo control
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Atom IO
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Basic
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Other
             wait() *
@@ -49,17 +50,16 @@ class MyCobotSocket(MyCobotCommandGenerator):
     _write = write
     _read = read
 
-    def __init__(self, ip, netport=9000):
+    def __init__(self, ip, netport=9000, debug=False):
         """
         Args:
             ip: Server ip
             netport: Server port
         """
-        super(MyCobotSocket, self).__init__()
+        super(MyCobotSocket, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
-        self.rasp = False
         self.sock = self.connect_socket()
 
     def connect_socket(self):
@@ -83,7 +83,10 @@ class MyCobotSocket(MyCobotCommandGenerator):
             MyCobotSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         data = self._write(self._flatten(real_command), "socket")
-        if data:
+        if has_reply:
+            data = self._read(genre, method='socket')
+            if genre == ProtocolCode.SET_SSID_PWD:
+                return None
             res = self._process_received(data, genre)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
@@ -107,7 +110,8 @@ class MyCobotSocket(MyCobotCommandGenerator):
                 ProtocolCode.GET_REFERENCE_FRAME,
                 ProtocolCode.GET_FRESH_MODE,
                 ProtocolCode.GET_GRIPPER_MODE,
-                ProtocolCode.GET_ERROR_INFO
+                ProtocolCode.GET_ERROR_INFO,
+                ProtocolCode.GET_GPIO_IN
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
@@ -126,6 +130,18 @@ class MyCobotSocket(MyCobotCommandGenerator):
                 return [self._int2coord(angle) for angle in res]
             elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
                 return self._int2coord(res[0])
+            elif genre in [ProtocolCode.SOFTWARE_VERSION]:
+                return self._int2coord(self._process_single(res))
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+                r = []
+                for index in range(len(res)):
+                    if index < 6:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 9:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
+                return r
             else:
                 return res
         return None
@@ -151,7 +167,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
-    def sync_send_angles(self, degrees, speed, timeout=7):
+    def sync_send_angles(self, degrees, speed, timeout=15):
         t = time.time()
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
@@ -161,7 +177,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    def sync_send_coords(self, coords, speed, mode, timeout=7):
+    def sync_send_coords(self, coords, speed, mode, timeout=15):
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
@@ -205,7 +221,7 @@ class MyCobotSocket(MyCobotCommandGenerator):
         Args:
             pin_no: (int) pin id.
         """
-        return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no)
+        return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no, has_reply=True)
 
     # Other
     def wait(self, t):

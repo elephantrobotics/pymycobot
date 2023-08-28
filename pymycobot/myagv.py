@@ -1,0 +1,250 @@
+
+import enum
+import serial
+import time
+import struct
+import logging
+from pymycobot.log import setup_logging
+from pymycobot.common import DataProcessor
+from pymycobot.error import calibration_parameters
+
+class ProtocolCode(enum.Enum):
+    HEADER = 0xFE
+    SET_LED = [0x01, 0x02]
+    GET_FIRMWARE_VERSION = [0x01, 0x03]
+    GET_MOTORS_CURRENT = [0x01, 0x04]
+    GET_BATTERY_INFO = [0x01, 0x05]
+
+class MyAgv(DataProcessor):
+    def __init__(self, port="/dev/ttyAMA0", baudrate="115200", timeout=0.1, debug=False):
+        self.debug = debug
+        setup_logging(self.debug)
+        self.log = logging.getLogger(__name__)
+        self._serial_port = serial.Serial()
+        self._serial_port.port = port
+        self._serial_port.baudrate = baudrate
+        self._serial_port.timeout = timeout
+        self._serial_port.rts = False
+        self._serial_port.open()
+        
+    def _write(self, command):
+        self._serial_port.reset_input_buffer()
+        self.log.debug("_write: {}".format([hex(i) for i in command]))
+        self._serial_port.write(command)
+        self._serial_port.flush()
+        
+    def _read(self, command):
+        datas = b''
+        k = 0
+        pre = 0
+        end = 5
+        t = time.time()
+        while time.time() - t < 0.2:
+            data = self._serial_port.read()
+            k += 1
+            # print("data_len:",end)
+            # print(data, len(datas), k, end)
+            if len(datas) == 4:
+                # print("------:",datas, command, k, end)
+                if datas[-2] == 0x01 and datas[-1] == 0x05:
+                    end = 7
+                datas += data
+            
+                
+            elif len(datas) == end:
+                datas += data
+                break
+            elif len(datas) > 4:
+                datas += data
+            
+            elif len(datas) >= 2:
+                data_len = struct.unpack("b", data)[0]
+                # print("``````:",datas, command, k, data_len)
+                if data_len == command[k-1]:
+                    datas += data
+                else:
+                    datas = b''
+                    k = 0
+                    pre = 0
+            elif data == b"\xfe":
+                if datas == b'':
+                    datas += data
+                    if k != 1:
+                        k = 1
+                    pre = k
+                else:
+                    if k - 1 == pre:
+                        datas += data
+                    else:
+                        datas = b"\xfe"
+                        k = 1
+                        pre = 0
+        else:
+            datas = b''
+        self.log.debug("_read: {}".format([hex(data) for data in datas]))
+        return datas
+            
+        
+        
+    def _mesg(self, genre, *args, **kwargs):
+        """
+
+        Args:
+            genre: command type (Command)
+            *args: other data.
+                   It is converted to octal by default.
+                   If the data needs to be encapsulated into hexadecimal,
+                   the array is used to include them. (Data cannot be nested)
+            **kwargs: support `has_reply`
+                has_reply: Whether there is a return value to accept.
+        """
+        has_reply = kwargs.get("has_reply", None)
+        real_command = self._process_data_command(genre, args)
+        command = [
+            ProtocolCode.HEADER.value,
+            ProtocolCode.HEADER.value,
+        ]
+        if isinstance(genre, list):
+            for data in genre:
+                command.append(data)
+        else:
+            command.append(genre)
+        command.append(real_command)
+        command = self._flatten(command)
+        if genre == ProtocolCode.SET_LED.value:
+            command.append(sum(command[2:]) & 0xff)
+        elif genre == ProtocolCode.GET_FIRMWARE_VERSION.value:
+            command.append(4)
+        elif genre == ProtocolCode.GET_MOTORS_CURRENT.value:
+            command.append(5)
+        elif genre == ProtocolCode.GET_BATTERY_INFO.value:
+            command.append(6)
+        else:
+            # del command[2]
+            command.append(sum(command[2:]) & 0xff)
+        self._write(command)
+        if has_reply:
+            data = self._read(command)
+            if data:
+                if genre == ProtocolCode.GET_FIRMWARE_VERSION.value:
+                    return self._int2coord(data[4])
+                elif genre == ProtocolCode.GET_MOTORS_CURRENT.value:
+                    return self._decode_int16(data[4:6])
+                elif ProtocolCode.GET_BATTERY_INFO.value:
+                    byte_1 = bin(data[4])
+                    return [byte_1[2:], self._int2coord(data[5]), self._int2coord(data[6])]
+            # print(res)
+        return None
+    
+    def set_led(self, mode, R, G, B):
+        """Set up LED lights
+
+        Args:
+            mode (int): 1 - Set LED light color. 2 - Set the LED light to blink
+            R (int): 0 ~ 255
+            G (int): 0 ~ 255
+            B (int): 0 ~ 255
+        """
+        calibration_parameters(class_name = self.__class__.__name__, rgb=[R,G,B], led_mode=mode)
+        return self._mesg(ProtocolCode.SET_LED.value, mode, R, G, B)
+    
+    def get_firmware_version(self):
+        """Get firmware version number
+        """
+        return self._mesg(ProtocolCode.GET_FIRMWARE_VERSION.value, has_reply = True)
+    
+    def get_motors_current(self):
+        """Get the total current of the motor
+        """
+        return self._mesg(ProtocolCode.GET_MOTORS_CURRENT.value, has_reply = True)
+    
+    def get_battery_info(self):
+        """Read battery information
+        
+        Return:
+            list : [battery_data, battery_1_voltage, battery_2_voltage].
+                battery_data:
+                    A string of length 6, represented from left to right: 
+                    bit5, bit4, bit3, bit2, bit1, bit0.
+
+                    bit5 : Battery 2 is inserted into the interface 1 means inserted, 0 is not inserted.
+                    bit4 : Battery 1 is inserted into the interface, 1 means inserted, 0 is not inserted.
+                    bit3 : The adapter is plugged into the interface 1 means plugged in, 0 not plugged in.
+                    bit2 : The charging pile is inserted into the interface, 1 means plugged in, 0 is not plugged in.
+                    bit1 : Battery 2 charging light 0 means off, 1 means on.
+                    bit0 : Battery 1 charging light, 0 means off, 1 means on.
+                battery_1_voltage : Battery 1 voltage in volts.
+                battery_2_voltage : Battery 2 voltage in volts.
+        """
+        return self._mesg(ProtocolCode.GET_BATTERY_INFO.value, has_reply = True)
+    
+    def move_control(self, direction_1, direction_2, direction_3):
+        """Control the car to rotate forward, backward, left, right and forward/counterclockwise
+
+        Args:
+            direction_1 (int): Control forward or backward: 0 ~ 127 is backward, 129 ~ 255 is forward, 128 is stop.
+            direction_2 (int): control left and right movement: 0 ~ 127 is right, 129 ~ 255 is left, 128 is stop.
+            direction_3 (int): control rotation: 0 ~ 127 is clockwise, 129 ~ 255 is counterclockwise, 128 is stop.
+        """
+        calibration_parameters(class_name = self.__class__.__name__, direction_1=direction_1, direction_2=direction_2,direction_3=direction_3)
+        return self._mesg(direction_1, direction_2, direction_3)
+    
+    def go_ahead(self, go_speed):
+        """Control the car to move forward
+
+        Args:
+            go_speed (int): 129 ~ 255 is forward
+        """
+        calibration_parameters(class_name = self.__class__.__name__, go_speed=go_speed)
+        self._mesg(go_speed, 128, 128)
+        
+    def retreat(self, back_speed):
+        """Control the car back
+
+        Args:
+            back_speed (int): 0 ~ 127 is backward
+        """
+        calibration_parameters(class_name = self.__class__.__name__, back_speed=back_speed)
+        self._mesg(back_speed, 128, 128)
+        
+    def pan_left(self, pan_left_speed):
+        """Control the car to pan to the left
+
+        Args:
+            pan_left_speed (int): 129 ~ 255
+        """
+        calibration_parameters(class_name = self.__class__.__name__, pan_left_speed=pan_left_speed)
+        self._mesg(128, pan_left_speed, 128)
+        
+    def pan_right(self, pan_right_speed):
+        """Control the car to pan to the right
+
+        Args:
+            pan_right_speed (int): 0 ~ 127
+        """
+        calibration_parameters(class_name = self.__class__.__name__, pan_right_speed=pan_right_speed)
+        self._mesg(128, pan_right_speed, 128)
+        
+    def clockwise_rotation(self, rotate_right_speed):
+        """Control the car to rotate clockwise
+
+        Args:
+            clockwise_rotation_speed (int): 0 ~ 127
+        """
+        calibration_parameters(class_name = self.__class__.__name__, rotate_right_speed=rotate_right_speed)
+        self._mesg(128, 128, rotate_right_speed)
+        
+    def counterclockwise_rotation(self, rotate_left_speed):
+        """Control the car to rotate counterclockwise
+
+        Args:
+            clockwise_rotation_speed (int): 129 ~ 255
+        """
+        calibration_parameters(class_name = self.__class__.__name__, rotate_left_speed=rotate_left_speed)
+        self._mesg(128, 128, rotate_left_speed)
+        
+    def stop(self):
+        """stop motion
+        """
+        self._mesg(128, 128, 128)
+    

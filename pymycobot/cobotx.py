@@ -1,21 +1,191 @@
 # coding=utf-8
-from pymycobot import MyArm
+
+import time
+
+from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
+from pymycobot.error import calibration_parameters
 
 
-class CobotX(MyArm):
+class CobotX(CommandGenerator):
+    _write = write
+    _read = read
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
-        super().__init__(port, baudrate, timeout, debug)
+        """
+        Args:
+            port     : port string
+            baudrate : baud rate string, default '115200'
+            timeout  : default 0.1
+            debug    : whether show debug info
+        """
+        super(CobotX, self).__init__(debug)
+        self.calibration_parameters = calibration_parameters
+        import serial
+
+        self._serial_port = serial.Serial()
+        self._serial_port.port = port
+        self._serial_port.baudrate = baudrate
+        self._serial_port.timeout = timeout
+        self._serial_port.rts = False
+        self._serial_port.open()
         
+
+    def _mesg(self, genre, *args, **kwargs):
+        """
+
+        Args:
+            genre: command type (Command)
+            *args: other data.
+                   It is converted to octal by default.
+                   If the data needs to be encapsulated into hexadecimal,
+                   the array is used to include them. (Data cannot be nested)
+            **kwargs: support `has_reply`
+                has_reply: Whether there is a return value to accept.
+        """
+        real_command, has_reply = super(CobotX, self)._mesg(genre, *args, **kwargs)
+        self._write(self._flatten(real_command))
+
+        if has_reply:
+            data = self._read(genre)
+            if genre == ProtocolCode.SET_SSID_PWD:
+                return None
+            res = self._process_received(data, genre)
+            if genre in [
+                ProtocolCode.ROBOT_VERSION,
+                ProtocolCode.GET_ROBOT_ID,
+                ProtocolCode.IS_POWER_ON,
+                ProtocolCode.IS_CONTROLLER_CONNECTED,
+                ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+                ProtocolCode.IS_IN_POSITION,
+                ProtocolCode.IS_MOVING,
+                ProtocolCode.IS_SERVO_ENABLE,
+                ProtocolCode.IS_ALL_SERVO_ENABLE,
+                ProtocolCode.GET_SERVO_DATA,
+                ProtocolCode.GET_DIGITAL_INPUT,
+                ProtocolCode.GET_GRIPPER_VALUE,
+                ProtocolCode.IS_GRIPPER_MOVING,
+                ProtocolCode.GET_SPEED,
+                ProtocolCode.GET_ENCODER,
+                ProtocolCode.GET_BASIC_INPUT,
+                ProtocolCode.GET_TOF_DISTANCE,
+                ProtocolCode.GET_END_TYPE,
+                ProtocolCode.GET_MOVEMENT_TYPE,
+                ProtocolCode.GET_REFERENCE_FRAME,
+                ProtocolCode.GET_FRESH_MODE,
+                ProtocolCode.GET_GRIPPER_MODE,
+                ProtocolCode.SET_SSID_PWD,
+                ProtocolCode.COBOTX_IS_GO_ZERO,
+            ]:
+                return self._process_single(res)
+            elif genre in [ProtocolCode.GET_ANGLES]:
+                return [self._int2angle(angle) for angle in res]
+            elif genre in [
+                ProtocolCode.GET_COORDS,
+                ProtocolCode.GET_TOOL_REFERENCE,
+                ProtocolCode.GET_WORLD_REFERENCE,
+            ]:
+                if res:
+                    r = []
+                    for idx in range(3):
+                        r.append(self._int2coord(res[idx]))
+                    for idx in range(3, 6):
+                        r.append(self._int2angle(res[idx]))
+                    return r
+                else:
+                    return res
+            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+                return [self._int2coord(angle) for angle in res]
+            elif genre in [
+                ProtocolCode.GET_JOINT_MAX_ANGLE,
+                ProtocolCode.GET_JOINT_MIN_ANGLE,
+            ]:
+                return self._int2coord(res[0])
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+                r = []
+                for index in range(len(res)):
+                    if index < 7:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 10:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
+                return r
+            else:
+                return res
+        return None
+
     def set_solution_angles(self, angle, speed):
         """Set zero space deflection angle value
-        
+
         Args:
-            angle: Angle of joint 1.
+            angle: Angle of joint 1. The angle range is -90 ~ 90
             speed: 1 - 100.
         """
-        return self._mesg(ProtocolCode.COBOTX_SET_SOLUTION_ANGLES, [self._angle2int(angle)], speed)
-    
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, speed=speed, solution_angle=angle
+        )
+        return self._mesg(
+            ProtocolCode.COBOTX_SET_SOLUTION_ANGLES, [self._angle2int(angle)], speed
+        )
+
     def get_solution_angles(self):
         """Get zero space deflection angle value"""
         return self._mesg(ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, has_reply=True)
+
+    def write_move_c(self, transpoint, endpoint, speed):
+        """_summary_
+
+        Args:
+            transpoint (list): Arc passing point coordinates
+            endpoint (list): Arc end point coordinates
+            speed (int): 1 ~ 100
+        """
+        start = []
+        end = []
+        for index in range(6):
+            if index < 3:
+                start.append(self._coord2int(transpoint[index]))
+                end.append(self._coord2int(endpoint[index]))
+            else:
+                start.append(self._angle2int(transpoint[index]))
+                end.append(self._angle2int(endpoint[index]))
+        return self._mesg(ProtocolCode.WRITE_MOVE_C, start, end, speed)
+
+    def focus_all_servos(self):
+        """Lock all joints"""
+        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
+
+    def go_zero(self):
+        """go zero"""
+        return self._mesg(ProtocolCode.GO_ZERO)
+
+    def get_angle(self, joint_id):
+        """Get single joint angle
+
+        Args:
+            joint_id (int): 1 ~ 7 or 11 ~ 13.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
+        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id, has_reply=True)
+
+    def is_gone_zero(self):
+        """Check if it has returned to zero
+
+        Return:
+            1 : Return to zero successfully.
+            0 : Returning to zero.
+        """
+        return self._mesg(ProtocolCode.COBOTX_IS_GO_ZERO, has_reply=True)
+
+    def set_encoder(self, joint_id, encoder):
+        """Set a single joint rotation to the specified potential value.
+
+        Args:
+            joint_id (int): Joint id 1 - 7.
+            encoder: The value of the set encoder.
+        """
+        # TODO CobotX此接口待定
+        # self.calibration_parameters(
+        #     class_name=self.__class__.__name__, id=joint_id, encoder=encoder
+        # )
+        return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])

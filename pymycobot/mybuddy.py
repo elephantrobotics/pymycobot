@@ -18,29 +18,29 @@ class MyBuddy(MyBuddyCommandGenerator):
     Supported methods:
 
         # Overall status
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # MDI mode and operation
             get_radians()
             send_radians()
             sync_send_angles() *
             sync_send_coords() *
-            Other look at parent class: `MyCobotCommandGenerator`.
+            Other look at parent class: `CommandGenerator`.
 
         # JOG mode and operation
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Running status and Settings
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Servo control
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Atom IO
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Basic
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Other
             wait() *

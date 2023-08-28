@@ -7,13 +7,14 @@ import socket
 import logging
 
 from pymycobot.log import setup_logging
-from pymycobot.Interface import MyBuddyCommandGenerator
+from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MyBuddySocket(MyBuddyCommandGenerator):
+class MechArmSocket(CommandGenerator):
     """MyCobot Python API Serial communication class.
+    Note: Please use this class under the same network
 
     Supported methods:
 
@@ -48,31 +49,17 @@ class MyBuddySocket(MyBuddyCommandGenerator):
     _write = write
     _read = read
 
-    def __init__(self, ip, netport=9000):
+    def __init__(self, ip, netport=9000, debug=False):
         """
         Args:
             ip: Server ip
             netport: Server port
         """
-        super(MyBuddySocket, self).__init__()
+        super(MechArmSocket, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
-        self.rasp = False
         self.sock = self.connect_socket()
-        
-    def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
-        """Connect the robot arm through the serial port and baud rate
-        Args:
-            serialport: (str) default /dev/ttyAMA0
-            baudrate: default 1000000
-            timeout: default 0.1
-        
-        """
-        self.rasp = True
-        self._write(serialport, "socket")
-        self._write(baudrate, "socket")
-        self._write(timeout, "socket")
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -92,15 +79,19 @@ class MyBuddySocket(MyBuddyCommandGenerator):
                 has_reply: Whether there is a return value to accept.
         """
         real_command, has_reply = super(
-            MyBuddySocket, self)._mesg(genre, *args, **kwargs)
+            MechArmSocket, self)._mesg(genre, *args, **kwargs)
+        # [254,...,255]
         data = self._write(self._flatten(real_command), "socket")
-        if data:
-            res = self._process_received(data, genre, arm=12)
+        if has_reply:
+            data = self._read(genre, method='socket')
+            if genre == ProtocolCode.SET_SSID_PWD:
+                return None
+            res = self._process_received(data, genre)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.IS_POWER_ON,
                 ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+                ProtocolCode.IS_PAUSED,
                 ProtocolCode.IS_IN_POSITION,
                 ProtocolCode.IS_MOVING,
                 ProtocolCode.IS_SERVO_ENABLE,
@@ -116,8 +107,10 @@ class MyBuddySocket(MyBuddyCommandGenerator):
                 ProtocolCode.GET_END_TYPE,
                 ProtocolCode.GET_MOVEMENT_TYPE,
                 ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE
+                ProtocolCode.GET_FRESH_MODE,
+                ProtocolCode.GET_GRIPPER_MODE,
+                ProtocolCode.GET_ERROR_INFO,
+                ProtocolCode.GET_GPIO_IN
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
@@ -134,34 +127,63 @@ class MyBuddySocket(MyBuddyCommandGenerator):
                     return res
             elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
                 return [self._int2coord(angle) for angle in res]
+            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                return self._int2coord(res[0])
+            elif genre in [ProtocolCode.SOFTWARE_VERSION]:
+                return self._int2coord(self._process_single(res))
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+                r = []
+                for index in range(len(res)):
+                    if index < 6:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 9:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
+                return r
             else:
                 return res
         return None
 
-    def get_radians(self, id):
-        """Get the radians of all joints
+    def get_radians(self):
+        """Get all angle return a list
 
-        Args: 
-            id: 1/2 (L/R)
-            
         Return:
-            list: A list of float radians [radian1, ...]
+            data_list (list[radian...]):
         """
-        angles = self._mesg(ProtocolCode.GET_ANGLES, id, has_reply=True)
+        angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
         return [round(angle * (math.pi / 180), 3) for angle in angles]
 
-    def send_radians(self, id, radians, speed):
-        """Send the radians of all joints to robot arm
+    def send_radians(self, radians, speed):
+        """Send all angles
 
         Args:
-            id: 1/2 (L/R).
-            radians: a list of radian values( List[float]), length 6
-            speed: (int )0 ~ 100
+            radians (list): example [0, 0, 0, 0, 0, 0]
+            speed (int): 0 ~ 100
         """
-        # calibration_parameters(len6=radians, speed=speed)
+        calibration_parameters(len6=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
-        return self._mesg(ProtocolCode.SEND_ANGLES, id, degrees, speed)
+        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
+
+    def sync_send_angles(self, degrees, speed, timeout=15):
+        t = time.time()
+        self.send_angles(degrees, speed)
+        while time.time() - t < timeout:
+            f = self.is_in_position(degrees, 0)
+            if f:
+                break
+            time.sleep(0.1)
+        return self
+
+    def sync_send_coords(self, coords, speed, mode, timeout=15):
+        t = time.time()
+        self.send_coords(coords, speed, mode)
+        while time.time() - t < timeout:
+            if self.is_in_position(coords, 1):
+                break
+            time.sleep(0.1)
+        return self
 
     def set_gpio_mode(self, mode):
         """Set pin coding method
@@ -198,7 +220,7 @@ class MyBuddySocket(MyBuddyCommandGenerator):
         Args:
             pin_no: (int) pin id.
         """
-        return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no)
+        return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no, has_reply=True)
 
     # Other
     def wait(self, t):

@@ -30,6 +30,10 @@ class ProtocolCode(object):
     GET_FRESH_MODE = 0x17
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
+    COBOTX_GET_ANGLE = 0x1C
+    COBOTX_IS_GO_ZERO = 0x1D
+    FOCUS_ALL_SERVOS = 0x18
+    GO_ZERO = 0x19
 
     # MDI MODE AND OPERATION
     GET_ANGLES = 0x20
@@ -140,6 +144,7 @@ class ProtocolCode(object):
     GET_MOVEMENT_TYPE = 0x88
     SET_END_TYPE = 0x89
     GET_END_TYPE = 0x8A
+    WRITE_MOVE_C = 0x8C
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
@@ -151,7 +156,7 @@ class ProtocolCode(object):
     GET_PLAN_ACCELERATION = 0xD1
     SET_PLAN_SPEED = 0xD2
     SET_PLAN_ACCELERATION = 0xD3
-    SET_GSERVO_ROUND = 0xD4
+    move_round = 0xD4
     GET_ANGLES_COORDS = 0xD5
 
     # Motor status read
@@ -238,21 +243,49 @@ class DataProcessor(object):
     def _int2coord(self, _int):
         return round(_int / 10.0, 2)
 
-    def _flatten(self, _list):
-        return sum(
-            ([x] if not isinstance(x, list) else self._flatten(x) for x in _list), []
-        )
+    # def encode_int16(self, data):
+    #     encoded_data = []
 
-    def _process_data_command(self, args):
+    #     if isinstance(data, int):
+    #         encoded_data.extend(struct.pack(">h", data))
+    #     else:
+    #         for elem in data:
+    #             encoded_data.extend(struct.pack(">h", elem))
+
+    #     return [byte for byte in encoded_data]
+
+    def _flatten(self, lst):
+        flat_list = []
+        for item in lst:
+            if not isinstance(item, list):
+                flat_list.append(item)
+            else:
+                flat_list.extend(self._flatten(item))
+        return flat_list
+
+    def _process_data_command(self, genre, args):
         if not args:
             return []
 
-        return self._flatten(
-            [
-                [self._encode_int16(int(i)) for i in x] if isinstance(x, list) else x
-                for x in args
-            ]
-        )
+        processed_args = []
+        for index in range(len(args)):
+            if isinstance(args[index], list):
+                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and __class__.__name__ == "CobotX":
+                    for data in args[index]:
+                        byte_value = data.to_bytes(4, byteorder='big', signed=True)
+                        res = []
+                        for i in range(4):
+                           res.append(byte_value[i])
+                        processed_args.extend(res)
+                else:
+                    processed_args.extend(self._encode_int16(args[index]))
+            else:
+                if isinstance(args[index], str):
+                    processed_args.append(ord(args[index]))
+                else:
+                    processed_args.append(args[index])
+
+        return processed_args
 
     def _is_frame_header(self, data, pos1, pos2):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
@@ -368,72 +401,76 @@ def write(self, command, method=None):
         command = command.encode()
     if method == "socket":
         data = b""
-        if self.rasp:
-            self.sock.send(str(command).encode())
-        else:
-            self.sock.sendall(bytes(command))
+        # if self.rasp:
+        #     self.sock.send(str(command).encode())
+        # else:
+        self.log.debug("_write: {}".format([hex(i) for i in command]))
+        self.sock.sendall(bytes(command))
+        
+    else:
+        self._serial_port.reset_input_buffer()
+        self.log.debug("_write: {}".format([hex(i) for i in command]))
+        self._serial_port.write(command)
+        self._serial_port.flush()
 
-        if len(command) > 3 and command[3] == 177:
+
+def read(self, genre, method=None):
+    datas = b""
+    data_len = -1
+    k = 0
+    pre = 0
+    t = time.time()
+    wait_time = 0.1    
+    if method is not None:
+        if genre == 177:
             while True:
                 data = self.sock.recv(1024)
                 if b"password" in data:
                     break
-        elif len(command) > 3 and command[3] == 192:
+        elif genre == 192:
             while True:
                 data += self.sock.recv(1024)
                 if len(data) == 6:
                     break
         else:
             try:
-                self.sock.settimeout(1)
+                self.sock.settimeout(0.5)
                 data = self.sock.recv(1024)
             except:
                 data = b""
+        self.log.debug("_read: {}".format([hex(d) for d in data]))
         return data
     else:
-        # with self.lock:
-        self.log.debug("_write: {}".format([hex(i) for i in command]))
-        self._serial_port.write(command)
-        self._serial_port.flush()
-
-
-def read(self, genre):
-    datas = b""
-    data_len = -1
-    k = 0
-    pre = 0
-    t = time.time()
-    wait_time = 0.1
-    if genre == ProtocolCode.GET_SSID_PWD:
-        time.sleep(0.1)
-        if self._serial_port.inWaiting() > 0:
-            datas = self._serial_port.read(self._serial_port.inWaiting())
-        return datas
-    elif genre == ProtocolCode.GET_ACCEI_DATA:
-        wait_time = 1
-    while True and time.time() - t < wait_time:
-        data = self._serial_port.read()
-        k += 1
-        if data_len == 1 and data == b"\xfa":
-            datas += data
-            break
-        elif len(datas) == 2:
-            data_len = struct.unpack("b", data)[0]
-            datas += data
-        elif len(datas) > 2 and data_len > 0:
-            datas += data
-            data_len -= 1
-        elif data == b"\xfe":
-            if datas == b"":
+        if genre == ProtocolCode.GET_SSID_PWD:
+            time.sleep(0.1)
+            if self._serial_port.inWaiting() > 0:
+                datas = self._serial_port.read(self._serial_port.inWaiting())
+            return datas
+        elif genre == ProtocolCode.GET_ACCEI_DATA:
+            wait_time = 1
+        while True and time.time() - t < wait_time:
+            data = self._serial_port.read()
+            k += 1
+            if data_len == 1 and data == b"\xfa":
                 datas += data
-                pre = k
-            else:
-                if k - 1 == pre:
+                break
+            elif len(datas) == 2:
+                data_len = struct.unpack("b", data)[0]
+                datas += data
+            elif len(datas) > 2 and data_len > 0:
+                datas += data
+                data_len -= 1
+            elif data == b"\xfe":
+                if datas == b"":
                     datas += data
-                else:
-                    datas = b"\xfe"
                     pre = k
-    else:
-        datas = None
-    self.log.debug("_read: {}".format(datas))
-    return datas
+                else:
+                    if k - 1 == pre:
+                        datas += data
+                    else:
+                        datas = b"\xfe"
+                        pre = k
+        else:
+            datas = b''
+        self.log.debug("_read: {}".format([hex(data) for data in datas]))
+        return datas

@@ -95,7 +95,7 @@ We support Python2, Python3.5 or later.
     - [get\_plan\_acceleration](#get_plan_acceleration)
     - [set\_plan\_speed](#set_plan_speed)
     - [set\_plan\_acceleration](#set_plan_acceleration)
-    - [set\_gservo\_round](#set_gservo_round)
+    - [set\_gservo\_round](#move_round)
     - [get\_basic\_version](#get_basic_version)
     - [set\_communicate\_mode](#set_communicate_mode)
     - [get\_servo\_speeds](#get_servo_speeds)
@@ -500,7 +500,7 @@ get command refresh mode
 
 ### sync_send_angles
 
-- **Prototype**: `sync_send_angles(degrees, speed, timeout=7)`
+- **Prototype**: `sync_send_angles(degrees, speed, timeout=15)`
 
 - **Description**: Send the angle in synchronous state and return when the target point is reached
 
@@ -512,7 +512,7 @@ get command refresh mode
 
 ### sync_send_coords
 
-- **Prototype**: `sync_send_coords(coords, speed, mode, timeout=7)`
+- **Prototype**: `sync_send_coords(coords, speed, mode, timeout=15)`
 
 - **Description**: Send the coord in synchronous state and return when the target point is reached
 
@@ -1149,9 +1149,9 @@ Set the terminal atom io status
   - `is_linear` (`int`): 0 / 1 (0 ->joint, 1 -> line)
 
 
-### set_gservo_round
+### move_round
 
-- **Prototype**: `set_gservo_round(angle)`
+- **Prototype**: `move_round(angle)`
 
 - **Description**: Drive the 9g steering gear clockwise for one revolution.
 

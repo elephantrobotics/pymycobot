@@ -7,41 +7,41 @@ import socket
 import logging
 
 from pymycobot.log import setup_logging
-from pymycobot.generate import MyCobotCommandGenerator
+from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MyPalletizerSocket(MyCobotCommandGenerator):
+class MyPalletizerSocket(CommandGenerator):
     """MyCobot Python API Serial communication class.
     Note: Please use this class under the same network
 
     Supported methods:
 
         # Overall status
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # MDI mode and operation
             get_radians()
             send_radians()
             sync_send_angles() *
             sync_send_coords() *
-            Other look at parent class: `MyCobotCommandGenerator`.
+            Other look at parent class: `CommandGenerator`.
 
         # JOG mode and operation
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Running status and Settings
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Servo control
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Atom IO
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Basic
-            Look at parent class: `MyCobotCommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Other
             wait() *
@@ -49,32 +49,17 @@ class MyPalletizerSocket(MyCobotCommandGenerator):
     _write = write
     _read = read
 
-    def __init__(self, ip, netport=9000):
+    def __init__(self, ip, netport=9000, debug=False):
         """
         Args:
             ip: Server ip
             netport: Server port
         """
-        super(MyPalletizerSocket, self).__init__()
+        super(MyPalletizerSocket, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
-        self.rasp = False
         self.sock = self.connect_socket()
-
-    def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
-        """Connect the robot arm through the serial port and baud rate (Use only when connecting the pi version)
-        
-        Args:
-            serialport: (str) default /dev/ttyAMA0
-            baudrate: default 1000000
-            timeout: default 0.1
-        
-        """
-        self.rasp = True
-        self._write(serialport, "socket")
-        self._write(baudrate, "socket")
-        self._write(timeout, "socket")
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -97,7 +82,10 @@ class MyPalletizerSocket(MyCobotCommandGenerator):
             MyPalletizerSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         data = self._write(self._flatten(real_command), "socket")
-        if data:
+        if has_reply:
+            data = self._read(genre, method='socket')
+            if genre == ProtocolCode.SET_SSID_PWD:
+                return None
             res = self._process_received(data, genre)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
@@ -115,26 +103,38 @@ class MyPalletizerSocket(MyCobotCommandGenerator):
                 ProtocolCode.GET_SPEED,
                 ProtocolCode.GET_ENCODER,
                 ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE
+                ProtocolCode.GET_TOF_DISTANCE,
+                ProtocolCode.GET_GPIO_IN
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS]:
+            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
                 if res:
                     r = []
                     for idx in range(3):
                         r.append(self._int2coord(res[idx]))
-                    if len(res)>3:
-                        r.append(self._int2angle(res[3]))
+                    for idx in range(3, 6):
+                        r.append(self._int2angle(res[idx]))
                     return r
                 else:
                     return res
-            elif genre in [
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ]:
-                return self._int2angle(res[0]) if res else 0
+            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+                return [self._int2coord(angle) for angle in res]
+            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                return self._int2coord(res[0])
+            elif genre in [ ProtocolCode.SOFTWARE_VERSION]:
+                return self._int2coord(self._process_single(res))
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+                r = []
+                for index in range(len(res)):
+                    if index < 6:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 9:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
+                return r
             else:
                 return res
         return None
@@ -160,7 +160,7 @@ class MyPalletizerSocket(MyCobotCommandGenerator):
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
-    def sync_send_angles(self, degrees, speed, timeout=7):
+    def sync_send_angles(self, degrees, speed, timeout=15):
         t = time.time()
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
@@ -170,7 +170,7 @@ class MyPalletizerSocket(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    def sync_send_coords(self, coords, speed, mode, timeout=7):
+    def sync_send_coords(self, coords, speed, mode, timeout=15):
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:

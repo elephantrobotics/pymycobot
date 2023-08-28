@@ -276,10 +276,10 @@
 ## v2.5.1 (2021-06-10)
 
 - improved parameter checking.
-- new class `MycobotCommandGenerator` that generate binary real command.
+- new class `CommandGenerator` that generate binary real command.
 - can import needed class from `pymycobot`, like:
   ```python
-  from pymycobot import Mycobot, Angle, Coord, MycobotCommandGenerator
+  from pymycobot import Mycobot, Angle, Coord, CommandGenerator
   ```
 
 ---

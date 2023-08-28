@@ -5,7 +5,7 @@ import math
 import time
 
 from .log import setup_logging
-from .generate import MyCobotCommandGenerator
+from .generate import CommandGenerator
 from .common import ProtocolCode, read, write
 
 
@@ -80,7 +80,7 @@ def calibration_parameters(**kwargs):
                 )
 
 
-class MyPalletizer(MyCobotCommandGenerator):
+class MyPalletizer(CommandGenerator):
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
         """
         Args:
@@ -200,7 +200,7 @@ class MyPalletizer(MyCobotCommandGenerator):
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
-    def sync_send_angles(self, degrees, speed, timeout=7):
+    def sync_send_angles(self, degrees, speed, timeout=15):
         t = time.time()
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
@@ -210,7 +210,7 @@ class MyPalletizer(MyCobotCommandGenerator):
             time.sleep(0.1)
         return self
 
-    def sync_send_coords(self, coords, speed, mode, timeout=7):
+    def sync_send_coords(self, coords, speed, mode, timeout=15):
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:

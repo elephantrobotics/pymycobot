@@ -1,9 +1,9 @@
 # coding=utf-8
 from pymycobot.common import ProtocolCode
-from pymycobot.generate import MyCobotCommandGenerator
+from pymycobot.generate import CommandGenerator
 
 
-class MyBuddyCommandGenerator(MyCobotCommandGenerator):
+class MyBuddyCommandGenerator(CommandGenerator):
     """MyBuddy Python API"""
 
     def _mesg(self, genre, *args, **kwargs):

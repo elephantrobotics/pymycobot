@@ -9,7 +9,7 @@ from pymycobot.error import calibration_parameters
 from pymycobot.common import ProtocolCode, DataProcessor
 
 
-class MyCobotCommandGenerator(DataProcessor):
+class CommandGenerator(DataProcessor):
     """MyCobot Python API
     Annotations:
         * = Chain operation
@@ -92,6 +92,7 @@ class MyCobotCommandGenerator(DataProcessor):
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
+        self.calibration_parameters = calibration_parameters
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -104,7 +105,7 @@ class MyCobotCommandGenerator(DataProcessor):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        command_data = self._process_data_command(args)
+        command_data = self._process_data_command(genre, args)
 
         if genre == 178:
             # 修改wifi端口
@@ -206,6 +207,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             flag: 0/1
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, flag = flag)
         return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
 
     def is_free_mode(self):
@@ -218,41 +220,41 @@ class MyCobotCommandGenerator(DataProcessor):
 
     # MDI mode and operation
     def get_angles(self):
-        """ Get the degree of all joints.
+        """ Get the angle of all joints.
 
         Return:
-            list: A float list of all degree.
+            list: A float list of all angle.
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
-    def send_angle(self, id, degree, speed):
-        """Send one degree of joint to robot arm.
+    def send_angle(self, id, angle, speed):
+        """Send one angle of joint to robot arm.
 
         Args:
             id : Joint id(genre.Angle)
                     for mycobot / mecharm: int 1-6.
                     for mypalletizer: int 1-4.
                     for myArm: Joint id 1 - 7.
-            degree : degree value(float)(about -170 ~ 170).
-            speed : (int) 0 ~ 100
+            angle : angle value(float)(about -170 ~ 170).
+            speed : (int) 1 ~ 100
         """
-        # self.calibration_parameters(id=id, degree=degree, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=angle, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(angle)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
-    def send_angles(self, degrees, speed):
-        """Send the degrees of all joints to robot arm.
+    def send_angles(self, angles, speed):
+        """Send the angles of all joints to robot arm.
 
         Args:
-            degrees: a list of degree values(List[float]).
+            angles: a list of angle values(List[float]).
                         for mycobot / mecharm: len 6.
                         for mypalletizer: len 4.
                         for myArm: len 7.
             speed : (int) 1 ~ 100
         """
-        # self.calibration_parameters(degrees=degrees, speed=speed)
-        degrees = [self._angle2int(degree) for degree in degrees]
-        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed)
 
     def get_coords(self):
         """Get the coords from robot arm, coordinate system based on base.
@@ -274,9 +276,9 @@ class MyCobotCommandGenerator(DataProcessor):
                         for mycobot / mecharm / myArm: int 1-6.\n
                         for mypalletizer: int 1-4.
             coord(float) : coord value, mm
-            speed(int) : 0 ~ 100
+            speed(int) : 1 ~ 100
         """
-        # self.calibration_parameters(id=id, speed=speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, coord = coord, speed=speed)
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
@@ -287,16 +289,15 @@ class MyCobotCommandGenerator(DataProcessor):
             coords: a list of coords value(List[float]).
                         for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
                         for mypalletizer: [x, y, z, θ]
-            speed : (int) 0 ~ 100
+            speed : (int) 1 ~ 100
             mode : (int) 0 - angluar, 1 - linear (mypalletizer 340 does not require this parameter)
         """
-        # self.calibration_parameters(coords=coords, speed=speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords, speed=speed)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
-        # print(coord_list)
         if mode is not None:
             return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
         else:
@@ -318,14 +319,14 @@ class MyCobotCommandGenerator(DataProcessor):
             -1 - Error
         """
         if id == 1:
-            # self.calibration_parameters(coords=data)
+            self.calibration_parameters(class_name = self.__class__.__name__, coords=data)
             data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
                 data_list.append(self._angle2int(data[idx]))
         elif id == 0:
-            # self.calibration_parameters(degrees=data)
+            self.calibration_parameters(class_name = self.__class__.__name__, angles=data)
             data_list = [self._angle2int(i) for i in data]
         else:
             raise Exception("id is not right, please input 0 or 1")
@@ -354,6 +355,7 @@ class MyCobotCommandGenerator(DataProcessor):
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id = joint_id, direction = direction)
         return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed)
 
     def jog_coord(self, coord_id, direction, speed):
@@ -364,8 +366,9 @@ class MyCobotCommandGenerator(DataProcessor):
                     for mycobot / mecharm / myArm: int 1-6.\n
                     for mypalletizer: int 1-4.
             direction: 0 - decrease, 1 - increase
-            speed: int (0 - 100)
+            speed: int (1 - 100)
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, coord_id = coord_id, direction = direction)
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
     
     def jog_absolute(self, joint_id, angle, speed):
@@ -377,8 +380,9 @@ class MyCobotCommandGenerator(DataProcessor):
                     for mypalletizer: int 1-4.
                     for myArm: Joint id 1 - 7.
             angle: -180 ~ 180
-            speed: int (0 - 100)
+            speed: int (1 - 100)
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id = joint_id, angle = angle, speed = speed)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, joint_id, [self._angle2int(angle)], speed)
     
     def jog_increment(self, joint_id, increment, speed):
@@ -392,6 +396,7 @@ class MyCobotCommandGenerator(DataProcessor):
             increment: 
             speed: int (0 - 100)
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id = joint_id, speed = speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
     def jog_stop(self):
@@ -431,6 +436,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for myArm: Joint id 1 - 7.
             encoder: The value of the set encoder.
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, encode_id = joint_id, encoder = encoder)
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
 
     def get_encoder(self, joint_id):
@@ -443,6 +449,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for mycobot gripper: Joint id 7
                 for myArm: Joint id 1 - 7.
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, encode_id = joint_id)
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
 
     def set_encoders(self, encoders, sp):
@@ -478,9 +485,9 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set speed value
 
         Args:
-            speed (int): 0 ~ 100
+            speed (int): 1 ~ 100
         """
-        # self.calibration_parameters(speed=speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, speed=speed)
         return self._mesg(ProtocolCode.SET_SPEED, speed)
 
     """
@@ -489,19 +496,7 @@ class MyCobotCommandGenerator(DataProcessor):
             self._mesg(Command.GET_FEED_OVERRIDE, has_reply=True)
         )
     """
-    def get_acceleration(self):
-        """get acceleration"""
-        return self._process_single(
-            self._mesg(ProtocolCode.GET_ACCELERATION, has_reply=True)
-        )
 
-    def set_acceleration(self, acc):
-        """Set speed for all moves
-        
-        Args:
-            acc: int
-        """
-        return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
 
     def get_joint_min_angle(self, joint_id):
         """Gets the minimum movement angle of the specified joint
@@ -515,7 +510,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Return:
             angle value(float)
         """
-        # self.calibration_parameters(id=joint_id)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
 
     def get_joint_max_angle(self, joint_id):
@@ -530,7 +525,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Return:
             angle value(float)
         """
-        # self.calibration_parameters(id=joint_id)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
 
     # Servo control
@@ -548,6 +543,7 @@ class MyCobotCommandGenerator(DataProcessor):
             1 - enable
             -1 - error
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.IS_SERVO_ENABLE, servo_id, has_reply=True)
 
     def is_all_servo_enable(self):
@@ -571,6 +567,7 @@ class MyCobotCommandGenerator(DataProcessor):
             data_id: Data address.
             value: 0 - 4096
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, value=value)
         return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
 
     def get_servo_data(self, servo_id, data_id):
@@ -586,6 +583,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Return:
             values 0 - 4096
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
         return self._mesg(
             ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
         )
@@ -600,6 +598,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for mypalletizer: Joint id 1 - 4
                 for myArm: joint id 1 - 7
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
     
     def joint_brake(self, joint_id):
@@ -611,6 +610,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for mypalletizer: Joint id 1 - 4
                 for myArm: joint id 1 - 7
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.JOINT_BRAKE, joint_id)
 
     def release_servo(self, servo_id):
@@ -622,6 +622,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for mypalletizer: Joint id 1 - 4
                 for myArm: joint id 1 - 7
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
 
     def focus_servo(self, servo_id):
@@ -633,6 +634,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for mypalletizer: Joint id 1 - 4
                 for myArm: joint id 1 - 7
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
     # Atom IO
@@ -645,7 +647,7 @@ class MyCobotCommandGenerator(DataProcessor):
             b (int): 0 ~ 255
 
         """
-        self.calibration_parameters(rgb=[r, g, b])
+        self.calibration_parameters(class_name = self.__class__.__name__, rgb=[r, g, b])
         return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
 
     def set_pin_mode(self, pin_no, pin_mode):
@@ -655,6 +657,7 @@ class MyCobotCommandGenerator(DataProcessor):
             pin_no   (int): pin number.
             pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_mode=pin_mode)
         return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
 
     def set_digital_output(self, pin_no, pin_signal):
@@ -664,14 +667,17 @@ class MyCobotCommandGenerator(DataProcessor):
             pin_no     (int):
             pin_signal (int): 0 / 1
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
     def get_digital_input(self, pin_no):
         """singal value"""
+        # TODO pin_no范围未知
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
-    def set_pwm_mode(self, mode):
-        return self._mesg(ProtocolCode.SET_PWM_MODE, mode)
+    # def set_pwm_mode(self, mode):
+    #     # TODO 280协议中无
+    #     return self._mesg(ProtocolCode.SET_PWM_MODE, mode)
 
     def set_pwm_output(self, channel, frequency, pin_val):
         """ PWM control 
@@ -696,19 +702,20 @@ class MyCobotCommandGenerator(DataProcessor):
 
         Args:
             flag  (int): 0 - open, 1 - close, 10 - release
-            speed (int): 0 ~ 100
+            speed (int): 1 ~ 100
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed)
         return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
 
-    def set_gripper_value(self, value, speed):
+    def set_gripper_value(self, gripper_value, speed):
         """Set gripper value
 
         Args:
-            value (int): 0 ~ 100
-            speed (int): 0 ~ 100
+            gripper_value (int): 0 ~ 100
+            speed (int): 1 ~ 100
         """
-        self.calibration_parameters(speed=speed)
-        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, value, speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed)
+        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
 
     def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
@@ -732,6 +739,7 @@ class MyCobotCommandGenerator(DataProcessor):
             pin_no: pin port number.
             pin_signal: 0 / 1
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal, has_reply=True)
 
     def get_basic_input(self, pin_no):
@@ -749,6 +757,8 @@ class MyCobotCommandGenerator(DataProcessor):
             account: (str) new wifi account.
             password: (str) new wifi password.
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, account=account, password=password)
+        
         self._mesg(ProtocolCode.SET_SSID_PWD) # 先发指令，再发设置的账号密码
         time.sleep(0.02)
         return self._mesg(ProtocolCode.SET_SSID_PWD, account, password, has_reply=True)
@@ -785,7 +795,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for mycobot / mecharm:[x(mm), y, z, rx(angle), ry, rz]
                 for mypalletizer 340: [x, y, z]
         """
-        # self.calibration_parameters(coords=coords)
+        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -804,7 +814,7 @@ class MyCobotCommandGenerator(DataProcessor):
             coords: a list of coords value(List[float])
                 for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
         """
-        # self.calibration_parameters(coords=coords)
+        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -822,6 +832,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             rftype: 0 - base 1 - tool.
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, rftype=rftype)
         return self._mesg(ProtocolCode.SET_REFERENCE_FRAME, rftype)
     
     def get_reference_frame(self):
@@ -838,6 +849,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             move_type: 1 - movel, 0 - moveJ
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, move_type=move_type)
         return self._mesg(ProtocolCode.SET_MOVEMENT_TYPE, move_type)
 
     def get_movement_type(self):
@@ -855,6 +867,7 @@ class MyCobotCommandGenerator(DataProcessor):
             end: int
                 0 - flange, 1 - tool
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, end=end)
         return self._mesg(ProtocolCode.SET_END_TYPE, end)
     
     def get_end_type(self):
@@ -888,7 +901,7 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set planning speed
         
         Args:
-            speed (int): (0 ~ 100).
+            speed (int): (1 ~ 100).
             is_linear: 0 -> joint 1 -> straight line
         """
         return self._mesg(ProtocolCode.SET_PLAN_SPEED, speed, is_linear)
@@ -897,9 +910,10 @@ class MyCobotCommandGenerator(DataProcessor):
         """Set planning acceleration
         
         Args:
-            acceleration (int): (0 ~ 100).
+            acceleration (int): (1 ~ 100).
             is_linear: 0 -> joint 1 -> straight line
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, acceleration=acceleration, is_linear=is_linear)
         return self._mesg(ProtocolCode.SET_PLAN_ACCELERATION, acceleration, is_linear)
     
     def get_servo_speeds(self):
@@ -949,6 +963,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for myArm: Joint id 1 - 7.
             angle: 0 ~ 180 
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=angle)
         return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
     
     def set_joint_min(self, id, angle):
@@ -962,6 +977,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 for myArm: Joint id 1 - 7.
             angle: 0 ~ 180 
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=angle)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
     
     def init_eletric_gripper(self): # TODO 22-5-19 need test
@@ -974,6 +990,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             status: 0 - open, 1 - close.
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, status=status)
         return self._mesg(ProtocolCode.SET_ELETRIC_GRIPPER, status)
     
     def set_encoders_drag(self, encoders, speeds):  # TODO 22-5-19 need test
@@ -983,6 +1000,7 @@ class MyCobotCommandGenerator(DataProcessor):
             encoders: encoders list.
             speeds: Obtained by the get_servo_speeds() method 
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, encoders=encoders, speeds=speeds)
         return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
     
     def set_fresh_mode(self, mode):   # TODO 22-5-19 need test
@@ -993,6 +1011,7 @@ class MyCobotCommandGenerator(DataProcessor):
                 1 - Always execute the latest command first.
                 0 - Execute instructions sequentially in the form of a queue.
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
         
     def get_fresh_mode(self):
@@ -1006,6 +1025,7 @@ class MyCobotCommandGenerator(DataProcessor):
             mode: 0 - transparent transmission. 1 - Port Mode.
         
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_GRIPPER_MODE, mode)
     
     def get_gripper_mode(self):
@@ -1022,6 +1042,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             id: 1 - 6
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, servo_id_pdi=id)
         return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, id, has_reply = True)
     
     def get_error_information(self):
@@ -1040,16 +1061,10 @@ class MyCobotCommandGenerator(DataProcessor):
         """Clear robot error message"""
         return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply = True)
     
-    def set_gservo_round(self, angle):
+    def move_round(self):
         """Drive the 9g steering gear clockwise for one revolution
-        
-        Args:
-            angle (int): 0 ~ 255
-                0 : stop
-                255 : Keep turning
-                1 ~ 254: Based on 30° (1->30°, 2->60°)
         """
-        return self._mesg(ProtocolCode.SET_GSERVO_ROUND, angle)
+        return self._mesg(ProtocolCode.move_round)
 
 
     def get_basic_version(self):
@@ -1062,6 +1077,7 @@ class MyCobotCommandGenerator(DataProcessor):
         Args:
             mode: 0 - Turn off transparent transmission，1 - Open transparent transmission
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode)
     
     def get_angles_coords(self):
