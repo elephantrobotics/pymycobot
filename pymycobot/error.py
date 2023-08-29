@@ -60,8 +60,8 @@ def check_coords(value, robot_limit, class_name, exception_class):
     for idx, coord in enumerate(value):
         if not robot_limit[class_name]["coords_min"][idx] <= coord <= robot_limit[class_name]["coords_max"][idx]:
             raise exception_class(
-                "Has invalid coord value, error on index {0}. angle should be {1} ~ {2}.".format(
-                    idx, robot_limit[class_name]["coords_min"][idx], robot_limit[class_name]["coords_max"][idx]
+                "Has invalid coord value, error on index {0}. received {3} .but angle should be {1} ~ {2}.".format(
+                    idx, robot_limit[class_name]["coords_min"][idx], robot_limit[class_name]["coords_max"][idx], coord
                 )
             )
             
@@ -132,11 +132,11 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                 )
         elif parameter == 'angle':
             id = kwargs.get('id', None)
-            index = robot_limit[class_name]['id'][id-1]
-            if index < robot_limit[class_name]["angles_min"][index] or index > robot_limit[class_name]["angles_max"][index]:
+            index = robot_limit[class_name]['id'][id-1] - 1
+            if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                 raise exception_class(
                     "angle value not right, should be {0} ~ {1}, but received {2}".format(
-                        robot_limit[class_name]["angles_min"], robot_limit[class_name]["angles_max"][index], value
+                        robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index], value
                     )
                 )
         elif parameter == 'encoders':
@@ -193,11 +193,11 @@ def calibration_parameters(**kwargs):
                 check_id(value, robot_limit[class_name][parameter], CobotXDataException)
             elif parameter == 'angle':
                 id = kwargs.get('id', None)
-                index = robot_limit[class_name]['id'][id-1]
-                if index < robot_limit[class_name]["angles_min"][index] or index > robot_limit[class_name]["angles_max"][index]:
+                index = robot_limit[class_name]['id'][id-1] - 1
+                if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                     raise CobotXDataException(
                         "angle value not right, should be {0} ~ {1}, but received {2}".format(
-                            robot_limit[class_name]["angles_min"], robot_limit[class_name]["angles_max"][index], value
+                            robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index], value
                         )
                     )
             # elif parameter == 'angles':
@@ -212,11 +212,12 @@ def calibration_parameters(**kwargs):
             #             )
 
             elif parameter == 'coord':
-                index = robot_limit[class_name][kwargs.get('id', None)-1]
-                if index < robot_limit[class_name]["coords_min"][index] or index > robot_limit[class_name]["coords_max"][index]:
+                
+                index = kwargs.get('id', None) - 1
+                if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
                     raise CobotXDataException(
                         "coord value not right, should be {0} ~ {1}, but received {2}".format(
-                            robot_limit[class_name]["coords_min"], robot_limit[class_name]["coords_max"][index], value
+                            robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index], value
                         )
                     )
             elif parameter == 'coords':
