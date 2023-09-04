@@ -104,7 +104,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             check_0_or_1(parameter, value, [0, 1], value_type, exception_class, int)
         elif parameter == 'speed':
             check_value_type(parameter, value_type, exception_class, int)
-            if not 1 <= value <= 100:
+            if not 1 <= value <= 100: 
                 raise exception_class(
                     "speed value not right, should be 1 ~ 100, the received speed is %s"
                     % value

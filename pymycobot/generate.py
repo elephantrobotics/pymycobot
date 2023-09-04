@@ -1080,5 +1080,17 @@ class CommandGenerator(DataProcessor):
         self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode)
     
+    def get_communicate_mode(self):
+        self._mesg(ProtocolCode.GET_COMMUNICATE_MODE, has_reply = True)
+    
     def get_angles_coords(self):
+        """Get basic communication mode"""
         return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply = True)
+    
+    def get_atom_version(self):
+        """Get atom firmware version.
+
+        Returns:
+            float: version number.
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply = True)

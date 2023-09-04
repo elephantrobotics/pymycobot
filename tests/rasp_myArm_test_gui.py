@@ -175,23 +175,27 @@ class MycobotTest(object):
         if not self.has_mycobot():
             return
 
-        ping_commands = [
-            [255, 255, 1, 2, 1, 251],
-            [255, 255, 2, 2, 1, 250],
-            [255, 255, 3, 2, 1, 249],
-            [255, 255, 4, 2, 1, 248],
-            [255, 255, 5, 2, 1, 247],
-            [255, 255, 6, 2, 1, 246],
-            [255, 255, 7, 2, 1, 246],
-        ]
+        # ping_commands = [
+        #     [255, 255, 1, 2, 1, 251],
+        #     [255, 255, 2, 2, 1, 250],
+        #     [255, 255, 3, 2, 1, 249],
+        #     [255, 255, 4, 2, 1, 248],
+        #     [255, 255, 5, 2, 1, 247],
+        #     [255, 255, 6, 2, 1, 246],
+        #     [255, 255, 7, 2, 1, 246],
+        # ]
         res = []
-        for idx, command in enumerate(ping_commands, start=1):
-            self.mycobot._write(command)
+        # for idx, command in enumerate(ping_commands, start=1):
+        #     self.mycobot._write(command)
+        #     time.sleep(0.1)
+        #     if not self.mycobot._read(1):
+        #         res.append(idx)
+        #     time.sleep(0.1)
+        for i in range(1,8):
+            r = self.mycobot.is_servo_enable(i)
+            if r != 1:
+                res.append(i)
             time.sleep(0.1)
-            if not self.mycobot._read(1):
-                res.append(idx)
-            time.sleep(0.1)
-
         if res:
             self.write_log_to_Text("关节 {} 无法通信！！！".format(res))
         else:

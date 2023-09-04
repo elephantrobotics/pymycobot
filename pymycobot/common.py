@@ -18,6 +18,7 @@ class ProtocolCode(object):
     
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
+    GET_ATOM_VERSION = 0x09
 
     # Overall status
     POWER_ON = 0x10
@@ -132,6 +133,7 @@ class ProtocolCode(object):
     GET_TOF_DISTANCE = 0xC0
     GET_BASIC_VERSION = 0xC1
     SET_COMMUNICATE_MODE = 0xC2
+    GET_COMMUNICATE_MODE = 0xC3
 
     # Coordinate transformation
     SET_TOOL_REFERENCE = 0x81
