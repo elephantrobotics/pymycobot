@@ -211,7 +211,7 @@ class ElephantRobot(object):
         print(command)
         self.send_command(command)
 
-    def get_joint_current(self, joint_number: int):
+    def get_joint_current(self, joint_number):
         command = "get_joint_current(" + str(joint_number) + ")\n"
         print(command)
         self.send_command(command)
@@ -255,7 +255,7 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def jog_relative(self, joint_id, angle, speed):
-        command = 'SendJogIncrement("' + str(var_name) + '")\n'
+        command = 'SendJogIncrement("{}","{}","{}")\n'.format(joint_id, angle, speed)
         return self.send_command(command)
 
 

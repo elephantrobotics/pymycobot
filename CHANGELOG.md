@@ -1,8 +1,14 @@
 # ChangeLog for pymycobot
 
+## v3.1.8 (2023-09-04)
+
+- release v3.1.8
+- Add myAGV interface.
+- Increase interface robustness.
+
 ## v3.1.7 (2023-8-8)
 
-- release v3.1.6
+- release v3.1.7
 - Fix myArm interface error
 
 ## v3.1.6 (2023-6-19)
