@@ -47,7 +47,7 @@ def check_rgb_value(value, exception_class, class_name):
     for i, v in enumerate(value):
         if not (0 <= v <= 255):
             raise exception_class(
-                f"The RGB value for {class_name} needs to be 0 ~ 255, but received the {rgb_str[i]} is {v}"
+                "The RGB value for {} needs to be 0 ~ 255, but received the {} is {}".format(class_name, rgb_str[i], v)
             )
 
 def check_value_type(parameter, value_type, exception_class, _type):
