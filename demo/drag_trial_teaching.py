@@ -133,7 +133,7 @@ class TeachingTest(Helper):
                 idx_ = i % len_
                 i += 1
                 self.mc.set_encoders_drag(self.record_list[idx_][0],self.record_list[idx_][1])
-                self.mc.set_encoder(7, self.record_list[idx_])
+                self.mc.set_encoder(7, self.record_list[idx_][2])
                 if idx_ == 0:
                     time.sleep(3)
                 time.sleep(self.record_list[idx_][-1])

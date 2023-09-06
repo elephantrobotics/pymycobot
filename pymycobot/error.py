@@ -168,16 +168,16 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                 data_type = type(data)
                 check_value_type(parameter, data_type, exception_class, int)
                 if data < 0 or data > 3400:
-                    raise exception_class("The range of encoder is 0 ~ 3400, but the received value is {}".format(data))
+                    raise exception_class("The range of speed is 0 ~ 3400, but the received value is {}".format(data))
         elif parameter in ['servo_id_pdi', 'encode_id']:
             check_value_type(parameter, value_type, exception_class, int)
-            if  "MyCobot" in class_name or "MechArm" in class_name:
-                if value < 1 or value > 6:
-                        raise exception_class("The range of id is 1 ~ 6, but the received is {}".format(value))
-            elif "MyPalletizer" in class_name:
+            # if  "MyCobot" in class_name or "MechArm" in class_name:
+            #     if value < 1 or value > 6:
+            #             raise exception_class("The range of id is 1 ~ 6, but the received is {}".format(value))
+            if "MyPalletizer" in class_name:
                 if value < 1 or value > 4:
                         raise exception_class("The range of id is 1 ~ 4, but the received is {}".format(value))
-            elif "MyArm" in class_name:
+            elif "MyArm" in class_name or "MyCobot" in class_name or "MechArm" in class_name:
                 if value < 1 or value > 7:
                         raise exception_class("The range of id is 1 ~ 7, but the received is {}".format(value))
 
@@ -193,7 +193,10 @@ def calibration_parameters(**kwargs):
                 check_id(value, robot_limit[class_name][parameter], CobotXDataException)
             elif parameter == 'angle':
                 id = kwargs.get('id', None)
-                index = robot_limit[class_name]['id'][id-1] - 1
+                if id in [11,12,13]:
+                    index = robot_limit[class_name]['id'][id-4] - 4
+                else:
+                    index = robot_limit[class_name]['id'][id-1] - 1
                 if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                     raise CobotXDataException(
                         "angle value not right, should be {0} ~ {1}, but received {2}".format(
@@ -243,6 +246,13 @@ def calibration_parameters(**kwargs):
             elif parameter == 'solution_angle':
                 if value > 90 or value < -90:
                     raise CobotXDataException("The angle range is -90° ~ 90°, but received {}".format(value))
+            elif parameter == 'servo_id':
+                if value < 20 or value > 22:
+                    raise CobotXDataException("The angle servo_id is 20 ~ 22, but received {}".format(value))
+            elif parameter == 'value':
+                if value < 1 or value > 32000:
+                    raise CobotXDataException("The angle value is 1 ~ 32000, but received {}".format(value))
+                    
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
