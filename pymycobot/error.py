@@ -247,8 +247,8 @@ def calibration_parameters(**kwargs):
                 if value > 90 or value < -90:
                     raise CobotXDataException("The angle range is -90° ~ 90°, but received {}".format(value))
             elif parameter == 'address':
-                if value < 20 or value > 22:
-                    raise CobotXDataException("The angle address is 20 ~ 22, but received {}".format(value))
+                if value < 32 or value > 34:
+                    raise CobotXDataException("The angle address is 32 ~ 34, but received {}".format(value))
             elif parameter == 'value':
                 if value < 1 or value > 32000:
                     raise CobotXDataException("The angle value is 1 ~ 32000, but received {}".format(value))

@@ -418,7 +418,6 @@ def write(self, command, method=None):
         
     else:
         self._serial_port.reset_input_buffer()
-        print(command)
         self.log.debug("_write: {}".format([hex(i) for i in command]))
         self._serial_port.write(command)
         self._serial_port.flush()
