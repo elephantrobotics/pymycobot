@@ -105,7 +105,7 @@ class CommandGenerator(DataProcessor):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        command_data = self._process_data_command(genre, args)
+        command_data = self._process_data_command(genre, self.__class__.__name__, args)
 
         if genre == 178:
             # 修改wifi端口
@@ -567,7 +567,7 @@ class CommandGenerator(DataProcessor):
             data_id: Data address.
             value: 0 - 4096
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id, value=value)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id, value=value)
         return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
 
     def get_servo_data(self, servo_id, data_id):
@@ -583,7 +583,7 @@ class CommandGenerator(DataProcessor):
         Return:
             values 0 - 4096
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id)
         return self._mesg(
             ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
         )

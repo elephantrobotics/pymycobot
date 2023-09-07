@@ -265,18 +265,18 @@ class DataProcessor(object):
                 flat_list.extend(self._flatten(item))
         return flat_list
 
-    def _process_data_command(self, genre, args):
+    def _process_data_command(self, genre, _class, args):
         if not args:
             return []
 
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and __class__.__name__ == "CobotX":
+                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and _class == "CobotX":
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
-                        for i in range(4):
+                        for i in range(len(byte_value)):
                            res.append(byte_value[i])
                         processed_args.extend(res)
                 else:
@@ -285,7 +285,14 @@ class DataProcessor(object):
                 if isinstance(args[index], str):
                     processed_args.append(ord(args[index]))
                 else:
-                    processed_args.append(args[index])
+                    if genre == ProtocolCode.SET_SERVO_DATA and _class == "CobotX" and index == 2:
+                        byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
+                        res = []
+                        for i in range(len(byte_value)):
+                           res.append(byte_value[i])
+                        processed_args.extend(res)
+                    else:
+                        processed_args.append(args[index])
 
         return processed_args
 
@@ -411,6 +418,7 @@ def write(self, command, method=None):
         
     else:
         self._serial_port.reset_input_buffer()
+        print(command)
         self.log.debug("_write: {}".format([hex(i) for i in command]))
         self._serial_port.write(command)
         self._serial_port.flush()
