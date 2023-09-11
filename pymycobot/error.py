@@ -270,12 +270,10 @@ def calibration_parameters(**kwargs):
             elif parameter == 'direction_3':
                 if value < 0 or value > 255:
                     raise MyAgvDataException("The range of direction_3 is 0 ~ 255, but the received value is {}".format(value))
-            elif parameter in ['go_speed', 'pan_left_speed', 'counterclockwise_rotation']:
-                if value < 129 or value > 255:
-                    raise MyAgvDataException("The range of {} is 129 ~ 255, but the received value is {}".format(parameter, value))
-            elif parameter in ['back_speed', 'pan_right_speed', 'clockwise_rotation']:
-                if value < 0 or value > 127:
-                    raise MyAgvDataException("The range of {} is 0 ~ 127, but the received value is {}".format(parameter, value))
+            elif parameter == 'data':
+                if value < 1 or value > 127:
+                    raise MyAgvDataException("The range of {} is 1 ~ 127, but the received value is {}".format(parameter, value))
+    
     elif class_name in ["MyCobot", "MyCobotSocket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MyCobotDataException)
     elif class_name in ["MechArm", "MechArmSocket"]:

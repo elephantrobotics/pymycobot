@@ -131,8 +131,10 @@ class MyAgv(DataProcessor):
                 elif genre == ProtocolCode.GET_MOTORS_CURRENT.value:
                     return self._decode_int16(data[4:6])
                 elif ProtocolCode.GET_BATTERY_INFO.value:
-                    byte_1 = bin(data[4])
-                    return [byte_1[2:], self._int2coord(data[5]), self._int2coord(data[6])]
+                    byte_1 = bin(data[4])[2:]
+                    while len(byte_1) != 6:
+                        byte_1 = "0"+byte_1
+                    return [byte_1, self._int2coord(data[5]), self._int2coord(data[6])]
             # print(res)
         return None
     
@@ -193,55 +195,57 @@ class MyAgv(DataProcessor):
         """Control the car to move forward
 
         Args:
-            go_speed (int): 129 ~ 255 is forward
+            go_speed (int): 1 ~ 127 is forward
         """
-        calibration_parameters(class_name = self.__class__.__name__, go_speed=go_speed)
-        self._mesg(go_speed, 128, 128)
+        # go_speed (int): 129 ~ 255 is forward
+        calibration_parameters(class_name = self.__class__.__name__, data=go_speed)
+        self._mesg(128+go_speed, 128, 128)
         
     def retreat(self, back_speed):
         """Control the car back
 
         Args:
-            back_speed (int): 0 ~ 127 is backward
+            back_speed (int): 1 ~ 127 is backward
         """
-        calibration_parameters(class_name = self.__class__.__name__, back_speed=back_speed)
-        self._mesg(back_speed, 128, 128)
+        calibration_parameters(class_name = self.__class__.__name__, data=back_speed)
+        self._mesg(128-back_speed, 128, 128)
         
     def pan_left(self, pan_left_speed):
         """Control the car to pan to the left
 
         Args:
-            pan_left_speed (int): 129 ~ 255
+            pan_left_speed (int): 1 ~ 127
         """
-        calibration_parameters(class_name = self.__class__.__name__, pan_left_speed=pan_left_speed)
-        self._mesg(128, pan_left_speed, 128)
+        # pan_left_speed (int): 129 ~ 255
+        calibration_parameters(class_name = self.__class__.__name__, data=pan_left_speed)
+        self._mesg(128, 128+pan_left_speed, 128)
         
     def pan_right(self, pan_right_speed):
         """Control the car to pan to the right
 
         Args:
-            pan_right_speed (int): 0 ~ 127
+            pan_right_speed (int): 1 ~ 127
         """
         calibration_parameters(class_name = self.__class__.__name__, pan_right_speed=pan_right_speed)
-        self._mesg(128, pan_right_speed, 128)
+        self._mesg(128, 128-pan_right_speed, 128)
         
     def clockwise_rotation(self, rotate_right_speed):
         """Control the car to rotate clockwise
 
         Args:
-            clockwise_rotation_speed (int): 0 ~ 127
+            clockwise_rotation_speed (int): 1 ~ 127
         """
         calibration_parameters(class_name = self.__class__.__name__, rotate_right_speed=rotate_right_speed)
-        self._mesg(128, 128, rotate_right_speed)
+        self._mesg(128, 128, 128-rotate_right_speed)
         
     def counterclockwise_rotation(self, rotate_left_speed):
         """Control the car to rotate counterclockwise
 
         Args:
-            clockwise_rotation_speed (int): 129 ~ 255
+            clockwise_rotation_speed (int): 1 ~ 127
         """
         calibration_parameters(class_name = self.__class__.__name__, rotate_left_speed=rotate_left_speed)
-        self._mesg(128, 128, rotate_left_speed)
+        self._mesg(128, 128, 128+rotate_left_speed)
         
     def stop(self):
         """stop motion
