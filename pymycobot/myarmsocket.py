@@ -5,6 +5,7 @@ import time
 import math
 import socket
 import logging
+import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
@@ -60,6 +61,7 @@ class MyArmSocket(CommandGenerator):
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
+        self.lock = threading.Lock()
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -81,69 +83,70 @@ class MyArmSocket(CommandGenerator):
         real_command, has_reply = super(
             MyArmSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        data = self._write(self._flatten(real_command), "socket")
-        if has_reply:
-            data = self._read(genre, method='socket')
-            if genre == ProtocolCode.SET_SSID_PWD:
-                return None
-            res = self._process_received(data, genre)
-            if genre in [
-                ProtocolCode.ROBOT_VERSION,
-                ProtocolCode.IS_POWER_ON,
-                ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,
-                ProtocolCode.IS_IN_POSITION,
-                ProtocolCode.IS_MOVING,
-                ProtocolCode.IS_SERVO_ENABLE,
-                ProtocolCode.IS_ALL_SERVO_ENABLE,
-                ProtocolCode.GET_SERVO_DATA,
-                ProtocolCode.GET_DIGITAL_INPUT,
-                ProtocolCode.GET_GRIPPER_VALUE,
-                ProtocolCode.IS_GRIPPER_MOVING,
-                ProtocolCode.GET_SPEED,
-                ProtocolCode.GET_ENCODER,
-                ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE,
-                ProtocolCode.GET_END_TYPE,
-                ProtocolCode.GET_MOVEMENT_TYPE,
-                ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_FRESH_MODE,
-                ProtocolCode.GET_GRIPPER_MODE,
-                ProtocolCode.GET_ERROR_INFO,
-                ProtocolCode.GET_GPIO_IN
-            ]:
-                return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES]:
-                return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
-                if res:
+        with self.lock:
+            data = self._write(self._flatten(real_command), "socket")
+            if has_reply:
+                data = self._read(genre, method='socket')
+                if genre == ProtocolCode.SET_SSID_PWD:
+                    return None
+                res = self._process_received(data, genre)
+                if genre in [
+                    ProtocolCode.ROBOT_VERSION,
+                    ProtocolCode.IS_POWER_ON,
+                    ProtocolCode.IS_CONTROLLER_CONNECTED,
+                    ProtocolCode.IS_PAUSED,
+                    ProtocolCode.IS_IN_POSITION,
+                    ProtocolCode.IS_MOVING,
+                    ProtocolCode.IS_SERVO_ENABLE,
+                    ProtocolCode.IS_ALL_SERVO_ENABLE,
+                    ProtocolCode.GET_SERVO_DATA,
+                    ProtocolCode.GET_DIGITAL_INPUT,
+                    ProtocolCode.GET_GRIPPER_VALUE,
+                    ProtocolCode.IS_GRIPPER_MOVING,
+                    ProtocolCode.GET_SPEED,
+                    ProtocolCode.GET_ENCODER,
+                    ProtocolCode.GET_BASIC_INPUT,
+                    ProtocolCode.GET_TOF_DISTANCE,
+                    ProtocolCode.GET_END_TYPE,
+                    ProtocolCode.GET_MOVEMENT_TYPE,
+                    ProtocolCode.GET_REFERENCE_FRAME,
+                    ProtocolCode.GET_FRESH_MODE,
+                    ProtocolCode.GET_GRIPPER_MODE,
+                    ProtocolCode.GET_ERROR_INFO,
+                    ProtocolCode.GET_GPIO_IN
+                ]:
+                    return self._process_single(res)
+                elif genre in [ProtocolCode.GET_ANGLES]:
+                    return [self._int2angle(angle) for angle in res]
+                elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+                    if res:
+                        r = []
+                        for idx in range(3):
+                            r.append(self._int2coord(res[idx]))
+                        for idx in range(3, 6):
+                            r.append(self._int2angle(res[idx]))
+                        return r
+                    else:
+                        return res
+                elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+                    return [self._int2coord(angle) for angle in res]
+                elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                    return self._int2coord(res[0])
+                elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+                    return self._int2coord(self._process_single(res))
+                elif genre == ProtocolCode.GET_ANGLES_COORDS:
                     r = []
-                    for idx in range(3):
-                        r.append(self._int2coord(res[idx]))
-                    for idx in range(3, 6):
-                        r.append(self._int2angle(res[idx]))
+                    for index in range(len(res)):
+                        if index < 7:
+                            r.append(self._int2angle(res[index]))
+                        elif index < 10:
+                            r.append(self._int2coord(res[index]))
+                        else:
+                            r.append(self._int2angle(res[index]))
                     return r
                 else:
                     return res
-            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-                return [self._int2coord(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
-                return self._int2coord(res[0])
-            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
-                return self._int2coord(self._process_single(res))
-            elif genre == ProtocolCode.GET_ANGLES_COORDS:
-                r = []
-                for index in range(len(res)):
-                    if index < 7:
-                        r.append(self._int2angle(res[index]))
-                    elif index < 10:
-                        r.append(self._int2coord(res[index]))
-                    else:
-                        r.append(self._int2angle(res[index]))
-                return r
-            else:
-                return res
-        return None
+            return None
 
     def get_radians(self):
         """Get all angle return a list

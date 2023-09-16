@@ -131,11 +131,17 @@ class MyAgv(DataProcessor):
                 elif genre == ProtocolCode.GET_MOTORS_CURRENT.value:
                     return self._decode_int16(data[4:6])
                 elif ProtocolCode.GET_BATTERY_INFO.value:
+                    res = []
                     byte_1 = bin(data[4])[2:]
                     while len(byte_1) != 6:
                         byte_1 = "0"+byte_1
-                    return [byte_1, self._int2coord(data[5]), self._int2coord(data[6])]
-            # print(res)
+                    res.append(byte_1)
+                    for i in range(4,6):
+                        if byte_1[i] == '0':
+                            res.append(0)
+                        else:
+                            res.append(self._int2coord(data[i]))
+                    return res
         return None
     
     def set_led(self, mode, R, G, B):
@@ -251,4 +257,7 @@ class MyAgv(DataProcessor):
         """stop motion
         """
         self._mesg(128, 128, 128)
+        
+    def get_mcu_info(self):
+        pass
     
