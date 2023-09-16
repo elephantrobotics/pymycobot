@@ -99,7 +99,7 @@ class MyAgv(DataProcessor):
                 has_reply: Whether there is a return value to accept.
         """
         has_reply = kwargs.get("has_reply", None)
-        real_command = self._process_data_command(genre, args)
+        real_command = self._process_data_command(genre, self.__class__.__name__, args)
         command = [
             ProtocolCode.HEADER.value,
             ProtocolCode.HEADER.value,

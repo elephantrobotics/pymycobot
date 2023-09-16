@@ -125,6 +125,11 @@ class ultraArm:
                         print(e)
                         count += 1
                         continue
+                elif flag == 'isStop':
+                    if "Moving end" in data:
+                        return 1
+                    else:
+                        return 0
                 elif flag == None:
                     return 0
 
@@ -584,3 +589,11 @@ class ultraArm:
         
     def open(self):
         self._serial_port.open()
+        
+    def is_moving_end(self):
+        """Get the current state of all home switches."""
+        command = ProtocolCode.IS_MOVING_END + ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        return self._request("isStop")

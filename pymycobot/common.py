@@ -168,6 +168,7 @@ class ProtocolCode(object):
     GET_SERVO_STATUS = 0xE4
     GET_SERVO_TEMPS = 0xE5
     GET_SERVO_LASTPDI = 0xE6
+    SERVO_RESTORE = 0xE7
 
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
@@ -211,6 +212,7 @@ class ProtocolCode(object):
     LOCK_SERVOS = "M18"
     GET_CURRENT_COORD_INFO = "M114"
     GET_BACK_ZERO_STATUS = "M119"
+    IS_MOVING_END = "M9"
 
 
 class DataProcessor(object):
@@ -313,7 +315,7 @@ class DataProcessor(object):
         header_i, header_j = 0, 1
         while header_j < data_len - 4:
             if self._is_frame_header(data, header_i, header_j):
-                if arm == 6:
+                if arm in [6, 7]:
                     cmd_id = data[header_i + 3]
                 elif arm == 12:
                     cmd_id = data[header_i + 4]
@@ -324,7 +326,7 @@ class DataProcessor(object):
             header_j += 1
         else:
             return []
-        if arm == 6:
+        if arm in [6, 7]:
             data_len = data[header_i + 2] - 2
         elif arm == 12:
             data_len = data[header_i + 3] - 2
@@ -337,7 +339,7 @@ class DataProcessor(object):
                 data_pos = header_i + 5
             data_len -= 1
         else:
-            if arm == 6:
+            if arm in [6, 7]:
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
@@ -346,11 +348,11 @@ class DataProcessor(object):
 
         # process valid data
         res = []
-        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS]:
+        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
             for i in valid_data:
                 res.append(i)
-            return res
-        if data_len in [6, 8, 12, 14, 24, 60]:
+            return res            
+        if data_len in [6, 8, 12, 14, 24, 26, 60]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
@@ -423,13 +425,15 @@ def write(self, command, method=None):
         self._serial_port.flush()
 
 
-def read(self, genre, method=None):
+def read(self, genre, method=None, command=None):
     datas = b""
     data_len = -1
     k = 0
     pre = 0
     t = time.time()
     wait_time = 0.1    
+    if genre == ProtocolCode.GO_ZERO:
+        wait_time = 120
     if method is not None:
         if genre == 177:
             while True:
@@ -462,6 +466,12 @@ def read(self, genre, method=None):
             k += 1
             if data_len == 1 and data == b"\xfa":
                 datas += data
+                if [i for i in datas] == command:
+                    datas = b''
+                    data_len = -1
+                    k = 0
+                    pre = 0
+                    continue
                 break
             elif len(datas) == 2:
                 data_len = struct.unpack("b", data)[0]

@@ -80,13 +80,12 @@ class MyArm(CommandGenerator):
         """
         real_command, has_reply = super(
             MyArm, self)._mesg(genre, *args, **kwargs)
-        self._write(self._flatten(real_command))
+        command = self._flatten(real_command)
+        self._write(command)
 
         if has_reply:
-            data = self._read(genre)
-            if genre == ProtocolCode.SET_SSID_PWD:
-                return None
-            res = self._process_received(data, genre)
+            data = self._read(genre, command=command)
+            res = self._process_received(data, genre, arm=7)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.GET_ROBOT_ID,
@@ -141,6 +140,8 @@ class MyArm(CommandGenerator):
                     else:
                         r.append(self._int2angle(res[index]))
                 return r
+            elif genre == ProtocolCode.GET_SOLUTION_ANGLES:
+                return self._int2angle(res[0])
             else:
                 return res
         return None

@@ -425,7 +425,7 @@ class CommandGenerator(DataProcessor):
         """Stop moving"""
         return self._mesg(ProtocolCode.STOP)
 
-    def set_encoder(self, joint_id, encoder):
+    def set_encoder(self, joint_id, encoder, speed):
         """Set a single joint rotation to the specified potential value.
 
         Args:
@@ -435,9 +435,10 @@ class CommandGenerator(DataProcessor):
                 for mycobot gripper: Joint id 7
                 for myArm: Joint id 1 - 7.
             encoder: The value of the set encoder.
+            speed : 1 - 100
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, encode_id = joint_id, encoder = encoder)
-        return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
+        self.calibration_parameters(class_name = self.__class__.__name__, encode_id = joint_id, encoder = encoder, speed=speed)
+        return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder], speed)
 
     def get_encoder(self, joint_id):
         """Obtain the specified joint potential value.

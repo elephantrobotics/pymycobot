@@ -252,6 +252,9 @@ def calibration_parameters(**kwargs):
             elif parameter == 'value':
                 if value < 1 or value > 32000:
                     raise CobotXDataException("The angle value is 1 ~ 32000, but received {}".format(value))
+            elif parameter == "servo_restore":
+                if value not in [1,2,3,4,5,6,7,13,254]:
+                    raise CobotXDataException("The joint_id should be in [1,2,3,4,5,6,7,13,254], but received {}".format(value))
                     
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:

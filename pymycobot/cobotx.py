@@ -112,6 +112,15 @@ class CobotX(CommandGenerator):
                     else:
                         r.append(self._int2angle(res[index]))
                 return r
+            elif genre == ProtocolCode.GO_ZERO:
+                r = []
+                if 1 not in res[1:]:
+                    return res[0]
+                else:
+                    for i in range(1, len(res)):
+                        if res[i] == 1:
+                            r.append(i)
+                return r
             else:
                 return res
         return None
@@ -158,8 +167,13 @@ class CobotX(CommandGenerator):
         return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
 
     def go_zero(self):
-        """go zero"""
-        return self._mesg(ProtocolCode.GO_ZERO)
+        """Control the machine to return to the zero position.
+        
+        Return:
+            1 : All motors return to zero position.
+            list : Motor with corresponding ID failed to return to zero.
+        """
+        return self._mesg(ProtocolCode.GO_ZERO, has_reply=True)
 
     def get_angle(self, joint_id):
         """Get single joint angle
@@ -191,3 +205,17 @@ class CobotX(CommandGenerator):
         #     class_name=self.__class__.__name__, id=joint_id, encoder=encoder
         # )
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
+    
+    def servo_restore(self, joint_id):
+        """Abnormal recovery of joints
+
+        Args:
+            joint_id (int): Joint ID.
+                arm : 1 ~ 7 
+                waist : 13
+                All joints: 254
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, servo_restore=joint_id
+        )
+        self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
