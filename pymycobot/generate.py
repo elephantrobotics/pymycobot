@@ -227,7 +227,7 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
-    def send_angle(self, id, angle, speed):
+    def send_angle(self, id, degree, speed):
         """Send one angle of joint to robot arm.
 
         Args:
@@ -238,8 +238,8 @@ class CommandGenerator(DataProcessor):
             angle : angle value(float)(about -170 ~ 170).
             speed : (int) 1 ~ 100
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=angle, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(angle)], speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=degree, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, angles, speed):
