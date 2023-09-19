@@ -114,12 +114,13 @@ class CobotX(CommandGenerator):
                 return r
             elif genre == ProtocolCode.GO_ZERO:
                 r = []
-                if 1 not in res[1:]:
-                    return res[0]
-                else:
-                    for i in range(1, len(res)):
-                        if res[i] == 1:
-                            r.append(i)
+                if res:
+                    if 1 not in res[1:]:
+                        return res[0]
+                    else:
+                        for i in range(1, len(res)):
+                            if res[i] == 1:
+                                r.append(i)
                 return r
             elif genre == ProtocolCode.COBOTX_GET_ANGLE:
                     return self._int2angle(res)
