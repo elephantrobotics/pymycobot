@@ -9,7 +9,7 @@ import textwrap
 import serial
 import serial.tools.list_ports
 
-from pymycobot import MyArm
+from pymycobot import MyPalletizer
 
 
 LOG_NUM = 0
@@ -20,7 +20,7 @@ class MycobotTest(object):
         self.mycobot = None
 
         self.win = tkinter.Tk()
-        self.win.title("树莓派版 myArm 测试工具")
+        self.win.title("树莓派版 MyPalletizer 测试工具")
         self.win.geometry("918x511+10+10")  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
 
         self.port_label = tkinter.Label(self.win, text="选择串口：")
@@ -87,10 +87,10 @@ class MycobotTest(object):
             self.win, text="开始", command=self.start_aging_test
         )
         self.start_btn.grid(row=9)
-        # self.stop_btn = tkinter.Button(
-        #     self.win, text="停止", command=self.stop_aging_test
-        # )
-        # self.stop_btn.grid(row=9, column=1)
+        self.stop_btn = tkinter.Button(
+            self.win, text="停止", command=self.stop_aging_test
+        )
+        self.stop_btn.grid(row=9, column=1)
 
         # Release
         self.release_btn = tkinter.Button(
@@ -103,6 +103,11 @@ class MycobotTest(object):
             self.win, text="使能所有电机", command=self.rectify_mycobot
         )
         self.rectify_btn.grid(row=10, column=1)
+        
+        self.set_data= tkinter.Button(
+            self.win, text="校准电机参数", command=self.set_servo_data
+        )
+        self.set_data.grid(row=11, column=0)
 
         # Log output.
         self.log_label = tkinter.Label(self.win, text="日志：")
@@ -137,7 +142,7 @@ class MycobotTest(object):
 
         try:
             # self.mycobot = MyCobot(PI_PORT, PI_BAUD)
-            self.mycobot = MyArm(port, baud)
+            self.mycobot = MyPalletizer(port, baud)
             # self.mycobot = MyCobot("/dev/cu.usbserial-0213245D", 115200)
             self.write_log_to_Text("连接成功 !")
         except Exception as e:
@@ -160,7 +165,7 @@ class MycobotTest(object):
             self.mycobot = None
             self.write_log_to_Text("断开连接成功 !")
         except AttributeError:
-            self.write_log_to_Text("还没有连接mycobot！！！")
+            self.write_log_to_Text("还没有连接myPalletizer！！！")
 
     # ============================================================
     #  Function method
@@ -191,7 +196,7 @@ class MycobotTest(object):
         #     if not self.mycobot._read(1):
         #         res.append(idx)
         #     time.sleep(0.1)
-        for i in range(1,8):
+        for i in range(1,5):
             r = self.mycobot.is_servo_enable(i)
             if r != 1:
                 res.append(i)
@@ -217,14 +222,14 @@ class MycobotTest(object):
 
         self.mycobot.set_servo_calibration(self.calibration_num)
         time.sleep(0.1)
-        self.mycobot.send_angle(self.calibration_num, 0, 30)
+        self.mycobot.send_angle(self.calibration_num, 0, 0)
         time.sleep(0.1)
         self.write_log_to_Text("校准电机 %s 结束." % self.calibration_num)
 
-        if self.calibration_num == 7:
+        if self.calibration_num == 4:
             self.write_log_to_Text("全部校准完成.")
             self.calibration_num = None
-            self.rectify_mycobot()
+            # self.rectify_mycobot()
             self._calibration_test()
 
     def send_color(self, color: str):
@@ -238,11 +243,45 @@ class MycobotTest(object):
         }
         self.mycobot.set_color(*color_dict[color])
         self.write_log_to_Text("发送颜色: {}.".format(color))
+        
+    def set_servo_data(self):
+        if not self.has_mycobot():
+            return
+        address = [21, 22, 23, 24, 26, 27]
+        joint_1 = [25,25,0,0,3,3]
+        joint_other = [32,8,0,0,1,1]
+        for i in range(1,5):
+            if i == 1:
+                for j in range(len(address)):
+                    self.mycobot.set_servo_data(i, address[j], joint_1[j])
+                    time.sleep(0.1)
+            else:
+                for j in range(len(address)):
+                    self.mycobot.set_servo_data(i, address[j], joint_other[j])
+                    time.sleep(0.1)
+        for i in range(1, 5):
+            for j in range(len(address)):
+                res = "设置电机{}参数 {} ".format(i, address[j])
+                if i == 1:
+                    data = self.mycobot.get_servo_data(i, address[j])
+                    if data == joint_1[j]:
+                        res += "成功"
+                    else:
+                        res += "失败{}".format(data)
+                else:
+                    data = self.mycobot.get_servo_data(i, address[j])
+                    if data == joint_other[j]:
+                        res += "成功"
+                    else:
+                        res += "失败{}".format(data)
+                time.sleep(0.1)
+                self.write_log_to_Text(res)
+        
 
     def start_aging_test(self):
         if not self.has_mycobot():
             return
-        self.write_log_to_Text("循环老化测试需要持续30分钟，30分钟以后会自动停下")
+
         self.aging_stop = False
         self.aging = threading.Thread(target=self._aging_test, daemon=True)
         self.aging.start()
@@ -264,7 +303,7 @@ class MycobotTest(object):
     def rectify_mycobot(self):
         if not self.has_mycobot():
             return
-        for i in range(1,8):
+        for i in range(1,5):
             self.mycobot.focus_servo(i)
             time.sleep(0.1)
         self.write_log_to_Text("使能所有电机完成.")
@@ -275,7 +314,7 @@ class MycobotTest(object):
     def has_mycobot(self):
         """Check whether it is connected on mycobot"""
         if not self.mycobot:
-            self.write_log_to_Text("还没有连接myArm！！！")
+            self.write_log_to_Text("还没有连接机器！！！")
             return False
         return True
 
@@ -291,76 +330,49 @@ class MycobotTest(object):
         self.stop_test = False
         while True and time.time() - start < 60*30 and self.stop_test == False:
             self.mycobot.set_color(255, 0, 0)
-            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([-160, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([160, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 80, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, -80, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 165, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, -165, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 80, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, -100, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 165, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, -165, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 110, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, -110, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, -165], 95)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 165], 95)
+            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0], 95)
+            self.mycobot.wait(3).send_angles([-160, 0, 0, 0], 95)
+            self.mycobot.wait(3).send_angles([160, 0, 0, 0], 95)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 95)
+            self.mycobot.wait(3).send_angles([0, 80, 0, 0], 95)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 95)
+            self.mycobot.wait(3).send_angles([0, 0, -90, 0], 95)
+            self.mycobot.wait(3).send_angles([0, 0, -60, 0], 95)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 95)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 180], 95)
+            self.mycobot.wait(3).send_angles([0, 0, 0, -180], 95)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 95)
 
             # middle
             self.mycobot.set_color(0, 255, 0)
-            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([-160, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([160, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 80, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, -80, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 165, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, -165, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 80, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, -100, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 165, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, -165, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 110, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, -110, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, -165], 55)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 165], 55)
+            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0], 55)
+            self.mycobot.wait(3).send_angles([-160, 0, 0, 0], 55)
+            self.mycobot.wait(3).send_angles([160, 0, 0, 0], 55)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 55)
+            self.mycobot.wait(3).send_angles([0, 80, 0, 0], 55)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 55)
+            self.mycobot.wait(3).send_angles([0, 0, -90, 0], 55)
+            self.mycobot.wait(3).send_angles([0, 0, -60, 0], 55)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 55)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 180], 55)
+            self.mycobot.wait(3).send_angles([0, 0, 0, -180], 55)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 55)
 
             # slow
             self.mycobot.set_color(0, 0, 255)
-            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([-160, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([160, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 80, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, -80, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 165, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, -165, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 80, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, -100, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 165, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, -165, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 110, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, -110, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 0], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, -165], 15)
-            self.mycobot.wait(3).send_angles([0, 0, 0, 0, 0, 0, 165], 15)
-        self.mycobot.send_angles([0, 0, 0, 0, 0, 0, 0], 35)
+            self.mycobot.wait(5).send_angles([0, 0, 0, 0, 0], 15)
+            self.mycobot.wait(3).send_angles([-160, 0, 0, 0], 15)
+            self.mycobot.wait(3).send_angles([160, 0, 0, 0], 15)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 15)
+            self.mycobot.wait(3).send_angles([0, 80, 0, 0], 15)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 15)
+            self.mycobot.wait(3).send_angles([0, 0, -90, 0], 15)
+            self.mycobot.wait(3).send_angles([0, 0, -60, 0], 15)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 15)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 180], 15)
+            self.mycobot.wait(3).send_angles([0, 0, 0, -180], 15)
+            self.mycobot.wait(3).send_angles([0, 0, 0, 0], 15)
+        self.mycobot.send_angles([0, 0, 0, 0], 35)
         self.write_log_to_Text("老化测试结束。")
         # aging_test_content_py = textwrap.dedent(
         #     """\
@@ -428,12 +440,14 @@ class MycobotTest(object):
 
     def _calibration_test(self):
         self.write_log_to_Text("开始测试校准.")
-        angles = [0, 0, 0, 0, 0, 0]
+        angles = [0, 0, 0, 0]
         test_angle = [-20, 20, 0]
         for i in range(6):
             for j in range(3):
                 angles[i] = test_angle[j]
-                self.mycobot.send_angles(angles, 30)
+                if i == 1 and angles[i] < 0:
+                    angles[i] = 40
+                self.mycobot.send_angles(angles, 50)
                 time.sleep(0.7)
         self.write_log_to_Text("测试校准结束.")
 
