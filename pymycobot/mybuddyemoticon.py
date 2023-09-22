@@ -7,7 +7,7 @@ import threading
 
 
 class MyBuddyEmoticon:
-    def __init__(self, file_path: list = [], window_size: tuple = (), loop=False) -> None:
+    def __init__(self, file_path, window_size, loop=False):
         """API for playing emoticons
 
         Args:
@@ -32,7 +32,7 @@ class MyBuddyEmoticon:
         """
         return self.__file_path
     
-    def add_file_path(self, path_time: list):
+    def add_file_path(self, path_time):
         """Add Playback File
         
         Args:
@@ -40,7 +40,7 @@ class MyBuddyEmoticon:
         """
         self.__file_path.append(path_time)
         
-    def del_file_path(self, index: int):
+    def del_file_path(self, index):
         """Delete the element with the specified subscript in the playlist list
         
         Args:
@@ -55,7 +55,7 @@ class MyBuddyEmoticon:
         return self.__window_size
     
     @window_size.setter
-    def window_size(self, data: tuple):
+    def window_size(self, data):
         """Set playback window size"""
         self.__window_size = data
         

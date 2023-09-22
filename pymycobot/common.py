@@ -3,6 +3,7 @@
 from __future__ import division
 import time
 import struct
+import sys
 
 
 class ProtocolCode(object):
@@ -405,19 +406,26 @@ class DataProcessor(object):
     def _process_single(self, data):
         return data[0] if data else -1
 
+def check_python_version():
+    if sys.version_info.major == 2:
+        return 2
+    elif sys.version_info.major == 3:
+        return 3
+    else:
+        return -1
+
 
 def write(self, command, method=None):
     if len(command) > 3 and command[3] == 176 and len(command) > 5:
         command = "'" + command[4] + "'" + "(" + command[5] + ")"
         command = command.encode()
     if method == "socket":
-        data = b""
-        # if self.rasp:
-        #     self.sock.send(str(command).encode())
-        # else:
         self.log.debug("_write: {}".format([hex(i) for i in command]))
-        self.sock.sendall(bytes(command))
-        
+        py_version = check_python_version()
+        if py_version == 2:
+            self.sock.sendall("".join([chr(b) for b in command]))
+        else:
+            self.sock.sendall(bytes(command))
     else:
         self._serial_port.reset_input_buffer()
         self.log.debug("_write: {}".format([hex(i) for i in command]))
@@ -449,9 +457,16 @@ def read(self, genre, method=None, command=None):
             try:
                 self.sock.settimeout(0.5)
                 data = self.sock.recv(1024)
+                if isinstance(data, str):
+                    datas = bytearray()
+                    for i in data:   
+                        datas += hex(ord(i))
             except:
                 data = b""
-        self.log.debug("_read: {}".format([hex(d) for d in data]))
+        if check_python_version() == 2:
+            self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+        else:
+            self.log.debug("_read: {}".format([hex(d) for d in data]))
         return data
     else:
         if genre == ProtocolCode.GET_SSID_PWD:
@@ -491,5 +506,5 @@ def read(self, genre, method=None, command=None):
                         pre = k
         else:
             datas = b''
-        self.log.debug("_read: {}".format([hex(data) for data in datas]))
+        self.log.debug("_read: {}".format([hex(ord(data)) for data in datas]))
         return datas

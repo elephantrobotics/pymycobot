@@ -78,6 +78,8 @@ def check_0_or_1(parameter, value, range_data, value_type, exception_class, _typ
         raise exception_class(error)
     
 def check_id(value, id_list, exception_class):
+    if value == 7:
+        return
     raise exception_class(
         "The id not right, should be in {0}, but received {1}.".format(
         id_list, value
@@ -139,6 +141,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                         robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index], value
                     )
                 )
+        # elif parameter == 'angles':
         elif parameter == 'encoders':
             if  "MyCobot" in class_name or "MechArm" in class_name:
                 if len(value) != 6:
