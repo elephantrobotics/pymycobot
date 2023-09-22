@@ -506,5 +506,9 @@ def read(self, genre, method=None, command=None):
                         pre = k
         else:
             datas = b''
-        self.log.debug("_read: {}".format([hex(ord(data)) for data in datas]))
+        if check_python_version() == 2:
+            self.log.debug("_read: {}".format([hex(ord(data)) for data in datas]))
+        else:
+            self.log.debug("_read: {}".format([hex(data) for data in datas]))
+            
         return datas

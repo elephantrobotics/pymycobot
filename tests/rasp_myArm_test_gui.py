@@ -428,9 +428,9 @@ class MycobotTest(object):
 
     def _calibration_test(self):
         self.write_log_to_Text("开始测试校准.")
-        angles = [0, 0, 0, 0, 0, 0]
+        angles = [0, 0, 0, 0, 0, 0, 0]
         test_angle = [-20, 20, 0]
-        for i in range(6):
+        for i in range(7):
             for j in range(3):
                 angles[i] = test_angle[j]
                 self.mycobot.send_angles(angles, 30)
