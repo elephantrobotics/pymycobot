@@ -228,7 +228,11 @@ class DataProcessor(object):
                 for i in list(struct.pack(">h", data))
             ]
         else:
-            return sum([list(struct.pack(">h", elem)) for elem in data], [])
+            res = []
+            for v in data:
+                t = self._encode_int16(v)
+                res.extend(t)
+        return res
 
     def _decode_int8(self, data):
         return struct.unpack("B", data)[0]
