@@ -78,7 +78,8 @@ class CobotX(CommandGenerator):
                     ProtocolCode.GET_GRIPPER_MODE,
                     ProtocolCode.SET_SSID_PWD,
                     ProtocolCode.COBOTX_IS_GO_ZERO,
-                ]:
+                    ProtocolCode.GET_ERROR_DETECT_MODE
+            ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
                     return [self._int2angle(angle) for angle in res]
@@ -117,16 +118,19 @@ class CobotX(CommandGenerator):
                     return r
                 elif genre == ProtocolCode.GO_ZERO:
                     r = []
-                    if 1 not in res[1:]:
-                        return res[0]
-                    else:
-                        for i in range(1, len(res)):
-                            if res[i] == 1:
-                                r.append(i)
+                    if res:
+                        if 1 not in res[1:]:
+                                return res[0]
+                        else:
+                            for i in range(1, len(res)):
+                                if res[i] == 1:
+                                    r.append(i)
                     return r
                 elif genre == ProtocolCode.COBOTX_GET_ANGLE:
                     return self._int2angle(res)
-                else:
+                elif genre == ProtocolCode.COBOTX_GET_ANGLE:
+                    return self._int2angle(res[0])
+            else:
                     return res
             return None
 
@@ -223,4 +227,18 @@ class CobotX(CommandGenerator):
         self.calibration_parameters(
             class_name=self.__class__.__name__, servo_restore=joint_id
         )
-        self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+        
+    def set_error_detect_mode(self, mode):
+        """Set error detection mode. Turn off without saving, default to open state
+        
+        Return:
+            mode : 0 - close 1 - open.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, mode=mode
+        )
+        self._mesg(ProtocolCode.SET_ERROR_DETECT_MODE, mode)
+        
+    def get_error_detect_mode(self):
+        """Set error detection mode"""
+        return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
