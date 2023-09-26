@@ -4,6 +4,7 @@ from __future__ import division
 import time
 import math
 import logging
+import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
@@ -46,7 +47,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             wait() *
     """
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=False):
         """
         Args:
             port     : port string
@@ -56,6 +57,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         """
         super(MyCobot, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
+        self.thread_lock = thread_lock
+        if thread_lock:
+            self.lock = threading.Lock()
         import serial
         self._serial_port = serial.Serial()
         self._serial_port.port = port
@@ -63,6 +67,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
+        
 
     _write = write
     _read = read
@@ -81,8 +86,14 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         """
         real_command, has_reply = super(
             MyCobot, self)._mesg(genre, *args, **kwargs)
+        if self.thread_lock:
+            with self.lock:
+                return self._res(real_command, has_reply, genre)
+        else:
+            return self._res(real_command, has_reply, genre)
+            
+    def _res(self, real_command, has_reply, genre):
         self._write(self._flatten(real_command))
-
         if has_reply:
             data = self._read(genre)
             if genre == ProtocolCode.SET_SSID_PWD:

@@ -689,37 +689,58 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
-    def get_gripper_value(self):
-        """Get the value of gripper.
+    def get_gripper_value(self, gripper_type=None):
+        """Get the value of gripper. 
+
+        Args:
+            gripper_type (int): 
+                1 - Adaptive gripper.\n
+                3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
 
         Return: 
             gripper value (int)
         """
-        return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_type=gripper_type)
+        if gripper_type is None:
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
+            
 
-    def set_gripper_state(self, flag, speed):
+    def  set_gripper_state(self, flag, speed, _type=None):
         """Set gripper switch state
 
         Args:
-            flag  (int): 0 - open, 1 - close, 10 - release
+            flag  (int): 0 - open, 1 - close, 254 - release
             speed (int): 1 ~ 100
+            _type (int): 1- Adaptive gripper, 2 - 5 finger dexterous hand, 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed)
-        return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, _type=_type)
+        if _type is None:
+            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
+        else:
+            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, _type)
+            
 
-    def set_gripper_value(self, gripper_value, speed):
+    def set_gripper_value(self, gripper_value, speed, gripper_type):
         """Set gripper value
 
         Args:
             gripper_value (int): 0 ~ 100
-            speed (int): 1 ~ 100
+            speed (int): 1 ~ 100\n
+            gripper_type (int): 
+                1 - Adaptive gripper\n
+                3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed)
-        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
+        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
 
     def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
         return self._mesg(ProtocolCode.SET_GRIPPER_CALIBRATION)
+    
+    def set_gripper_torque(self, torque, gripper_type_1):
+        return self._mesg(ProtocolCode.SET_GRIPPER_TORQUE, [torque], gripper_type_1)
 
     def is_gripper_moving(self):
         """Judge whether the gripper is moving or not
