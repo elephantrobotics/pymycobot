@@ -43,7 +43,8 @@ __all__ = [
     "ElephantRobot",
     "CobotX",
     "MyAgv",
-    "MechArmSocket"
+    "MechArmSocket",
+    "MyArmSocket"
 ]
 
 
