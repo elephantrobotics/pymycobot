@@ -3,15 +3,10 @@ import pygame
 import time
 from pymycobot import MyArm
 import threading
-import RPi.GPIO as GPIO
 
 mc = MyArm("/dev/ttyAMA0", debug=True)
 
 # The default initial point can be changed, if you want to change, you should change 'command' and 'zero' at the same time
-# command = [144.8, -66.9, 185.3, 178.47, 0.87, -115.07]
-# zero = [144.8, -66.9, 185.3, 178.47, 0.87, -115.07]
-#command = [127.7, 0.8, 234.5, -179.9, 1.05, 0.52]
-#zero = [127.7, 0.8, 234.5, -179.9, 1.05, 0.52]
 command = [111.8, -63.8, 236.3, -179.82, -0.35, -29.18]
 zero = [111.8, -63.8, 236.3, -179.82, -0.35, -29.18]
 
@@ -20,30 +15,6 @@ speed = 80
 is_enable = False
 is_zero = False
 gripper_value = 1
-print('start handle_control')
-# 初始化
-#GPIO.setmode(GPIO.BCM)
-# 引脚20/21分别控制电磁阀和泄气阀门
-#GPIO.setup(20, GPIO.OUT)
-#GPIO.setup(21, GPIO.OUT)
-
-
-# 开启吸泵
-def pump_on():
-    # 打开电磁阀
-    GPIO.output(20, 0)
-
-
-# 停止吸泵
-def pump_off():
-    # 关闭电磁阀
-    GPIO.output(20, 1)
-    time.sleep(0.05)
-    # 打开泄气阀门
-    GPIO.output(21, 0)
-    time.sleep(1)
-    GPIO.output(21, 1)
-    time.sleep(0.05)
 
 
 def control():
@@ -54,37 +25,30 @@ def control():
                 command[0] += 2
                 if command[0] > 285:
                     command[0] = 280
-                # mc.send_coords(command, speed)
                 print('x + coords---->:', command[0])
                 mc.send_coord(1, command[0], speed)
-                #mc.send_angles([0, -30, 0, -90, 0, -60, 0], 30)
             elif action == 2:
                 command[0] -= 2
                 if command[0] < -285:
                     command[0] = -280
                 print('x - coords---->:', command[0])
-                # mc.send_coords(command, speed)
                 mc.send_coord(1, command[0], speed)
-                #mc.send_angles([0, 30, 0, -90, 0, -60, 0], 30)
             elif action == 3:
                 command[1] += 2
                 if command[1] > 285:
                     command[1] = 280
                 print('y + coords---->:', command[1])
                 mc.send_coord(2, command[1], speed)
-                #mc.send_angles([60, -30, 0, -90, 0, -60, 0], 30)
             elif action == 4:
                 command[1] -= 2
                 if command[1] < -285:
                     command[1] = -280
                 print('y - coords---->:', command[1])
                 mc.send_coord(2, command[1], speed)
-                #mc.send_angles([-60, -30, 0, -90, 0, -60, 0], 30)
             elif action == 5:
                 command[2] += 2
                 if command[2] > 450:
                     command[2] = 445
-                print('z1111')
                 mc.send_coord(3, command[2], speed)
             elif action == 6:
                 command[2] -= 2
@@ -92,7 +56,6 @@ def control():
                     command[2] = -118
                 mc.send_coord(3, command[2], speed)
             elif action == 7:
-                #is_enable = True
                 if mc.is_all_servo_enable() != 1:
                     mc.set_color(0, 0, 0)
                     time.sleep(0.5)
@@ -107,7 +70,6 @@ def control():
                     mc.set_color(255, 0, 0)
                     is_enable = False
                 else:
-                    #is_enable = True
                     mc.set_color(0, 0, 0)
                     time.sleep(0.5)
                     mc.set_color(0, 255, 0)
@@ -122,30 +84,26 @@ def control():
                     is_enable = True
                 action = 0
             elif action == 8:
-                #gripper_value += 5
-                #if gripper_value > 100:
-                  #  gripper_value = 100
-                #mc.set_gripper_value(gripper_value, speed)
+                gripper_value = 95
+                mc.set_gripper_value(gripper_value, speed, 1)
                 command[2] += 2
                 if command[2] > 450:
                     command[2] = 445
                 print('z + coords---->:', command[2])
                 mc.send_coord(3, command[2], speed)
             elif action == 9:
-                #gripper_value -= 5
-                #if gripper_value < 0:
-                 #   gripper_value = 0
-                #mc.set_gripper_value(gripper_value, speed)
                 command[2] -= 2
                 if command[2] < -120:
                     command[2] = -118
                 print('z - coords---->:', command[2])
                 mc.send_coord(3, command[2], speed)
             elif action == 10:
-                pump_on()
+                gripper_value = 95
+                mc.set_gripper_value(gripper_value, speed)
                 action = 0
             elif action == 11:
-                pump_off()
+                gripper_value = 5
+                mc.set_gripper_value(gripper_value, speed)
                 action = 0
             elif action == 12:
                 command[3] += 10
@@ -172,13 +130,12 @@ def control():
                 command[5] += 10
                 if command[5] > 450:
                     command[5] = 440
-                print('z222')
-                #mc.send_coord(6, command[5], speed)
+                # mc.send_coord(6, command[5], speed)
             elif action == 17:
                 command[5] -= 10
                 if command[5] < -120:
                     command[5] = -118
-                #mc.send_coord(6, command[5], speed)
+                # mc.send_coord(6, command[5], speed)
             elif action == 18:
                 # start_time = time.time()
                 time.sleep(2)
@@ -200,11 +157,8 @@ def control():
             elif action == 21:
                 time.sleep(2)
                 if action == 21:
-                    print('isisisisiisisisisisisisisiis:', is_enable)
                     mc.send_angles([-30, 0, 0, -90, 0, -90, 0], 30)
                     time.sleep(3)
-                    # print('init_coords:', mc.get_coords())
-                    # mc.send_coords(zero, 20)
                     command = zero.copy()
                     print('command', command)
                     action = 0
@@ -213,7 +167,7 @@ def control():
         else:
             # print(action)
             if action == 7:
-                #is_enable = True
+                # is_enable = True
                 statue = 0
                 for _ in range(3):
                     statue = mc.is_all_servo_enable()
@@ -286,7 +240,6 @@ def main():
                 # 获取所有按键状态信息
                 for i in range(buttons):
                     button = joystick.get_button(i)
-                    print('*' * 30)
                     print('i value:', i)
                     print('button---------->', button)
 
@@ -344,8 +297,6 @@ def main():
                                 action = 0
                     print("button " + str(i) + ": " + str(button))
                     print('action--->', action)
-                    print('*' * 30)
-                    print('\n')
             # 轴转动事件
             elif event_.type == pygame.JOYAXISMOTION:
                 axes = joystick.get_numaxes()
@@ -353,9 +304,7 @@ def main():
                 # while True:
                 for i in range(axes):
                     axis = joystick.get_axis(i)
-                    print('*' * 30)
-                    print('i value:', i)
-                    print('axis---------->', axis)
+                    print('i value: {}  axis value: {}'.format(i, axis))
                     # res[i] = axis
                     if i == 1:
                         if axis < -3.0517578125e-05:
@@ -418,9 +367,6 @@ def main():
                                 start_time = 0
                                 action = 0
                     print("axis " + str(i) + ": " + str(axis))
-                    print('action--->', action)
-                    print('*' * 30)
-                    print('\n')
             # 方向键改变事件
             elif event_.type == pygame.JOYHATMOTION:
                 # hats = joystick.get_numhats()
