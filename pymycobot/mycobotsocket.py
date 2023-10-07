@@ -63,6 +63,7 @@ class MyCobotSocket(CommandGenerator):
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -192,7 +193,7 @@ class MyCobotSocket(CommandGenerator):
     def set_gpio_mode(self, mode):
         """Set pin coding method
         Args:
-            mode: (str) BCM or BOARD 
+            mode: (str) BCM or BOARD
         """
         self.calibration_parameters(gpiomode=mode)
         if mode == "BCM":
@@ -230,6 +231,13 @@ class MyCobotSocket(CommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
-    
+
     def close(self):
         self.sock.close()
+        
+    def open(self):
+        # 关闭之后需要重新连接
+        self.sock = self.connect_socket()
+        # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # print("====open=",self.sock)
+        # self.sock.connect((self.SERVER_IP, self.SERVER_PORT))

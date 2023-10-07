@@ -10,9 +10,9 @@ from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
-
-class MyArm(CommandGenerator):
+class MyArm(CommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -64,6 +64,7 @@ class MyArm(CommandGenerator):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
     _read = read

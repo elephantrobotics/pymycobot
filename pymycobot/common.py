@@ -3,7 +3,6 @@
 from __future__ import division
 import time
 import struct
-import sys
 
 
 class ProtocolCode(object):
@@ -105,7 +104,6 @@ class ProtocolCode(object):
     SET_GRIPPER_CALIBRATION = 0x68
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
-    SET_GRIPPER_TORQUE = 0x6F
     SET_COLOR_MYARM = 0x70
     SET_ELETRIC_GRIPPER = 0x6B
     INIT_ELETRIC_GRIPPER = 0x6C
@@ -171,9 +169,6 @@ class ProtocolCode(object):
     GET_SERVO_TEMPS = 0xE5
     GET_SERVO_LASTPDI = 0xE6
     SERVO_RESTORE = 0xE7
-    SET_ERROR_DETECT_MODE = 0xE8
-    GET_ERROR_DETECT_MODE = 0xE9
-    
 
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
@@ -232,11 +227,7 @@ class DataProcessor(object):
                 for i in list(struct.pack(">h", data))
             ]
         else:
-            res = []
-            for v in data:
-                t = self._encode_int16(v)
-                res.extend(t)
-        return res
+            return sum([list(struct.pack(">h", elem)) for elem in data], [])
 
     def _decode_int8(self, data):
         return struct.unpack("B", data)[0]
@@ -414,26 +405,19 @@ class DataProcessor(object):
     def _process_single(self, data):
         return data[0] if data else -1
 
-def check_python_version():
-    if sys.version_info.major == 2:
-        return 2
-    elif sys.version_info.major == 3:
-        return 3
-    else:
-        return -1
-
 
 def write(self, command, method=None):
     if len(command) > 3 and command[3] == 176 and len(command) > 5:
         command = "'" + command[4] + "'" + "(" + command[5] + ")"
         command = command.encode()
     if method == "socket":
+        data = b""
+        # if self.rasp:
+        #     self.sock.send(str(command).encode())
+        # else:
         self.log.debug("_write: {}".format([hex(i) for i in command]))
-        py_version = check_python_version()
-        if py_version == 2:
-            self.sock.sendall("".join([chr(b) for b in command]))
-        else:
-            self.sock.sendall(bytes(command))
+        self.sock.sendall(bytes(command))
+        
     else:
         self._serial_port.reset_input_buffer()
         self.log.debug("_write: {}".format([hex(i) for i in command]))
@@ -465,16 +449,9 @@ def read(self, genre, method=None, command=None):
             try:
                 self.sock.settimeout(0.5)
                 data = self.sock.recv(1024)
-                if isinstance(data, str):
-                    datas = bytearray()
-                    for i in data:   
-                        datas += hex(ord(i))
             except:
                 data = b""
-        if check_python_version() == 2:
-            self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-        else:
-            self.log.debug("_read: {}".format([hex(d) for d in data]))
+        self.log.debug("_read: {}".format([hex(d) for d in data]))
         return data
     else:
         if genre == ProtocolCode.GET_SSID_PWD:
@@ -514,9 +491,5 @@ def read(self, genre, method=None, command=None):
                         pre = k
         else:
             datas = b''
-        if check_python_version() == 2:
-            self.log.debug("_read: {}".format([hex(ord(data)) for data in datas]))
-        else:
-            self.log.debug("_read: {}".format([hex(data) for data in datas]))
-            
+        self.log.debug("_read: {}".format([hex(data) for data in datas]))
         return datas

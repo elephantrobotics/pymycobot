@@ -11,9 +11,9 @@ from pymycobot.log import setup_logging
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
-
-class MyBuddy(MyBuddyCommandGenerator):
+class MyBuddy(MyBuddyCommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -65,6 +65,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
     

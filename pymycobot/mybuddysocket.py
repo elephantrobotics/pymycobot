@@ -11,9 +11,9 @@ from pymycobot.log import setup_logging
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
-
-class MyBuddySocket(MyBuddyCommandGenerator):
+class MyBuddySocket(MyBuddyCommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -62,6 +62,7 @@ class MyBuddySocket(MyBuddyCommandGenerator):
         self.rasp = False
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
         
     def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
         """Connect the robot arm through the serial port and baud rate
