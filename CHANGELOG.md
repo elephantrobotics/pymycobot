@@ -5,7 +5,6 @@
 - release v3.1.9
 - Fix bug
 
-
 ## v3.1.8 (2023-09-04)
 
 - release v3.1.8
