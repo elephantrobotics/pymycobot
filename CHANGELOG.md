@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.2.0 (2023-10-09)
+
+- release v3.2.0
+- Fix bug
+
 ## v3.1.9 (2023-09-19)
 
 - release v3.1.9
@@ -24,7 +29,7 @@
 ## v3.1.5 (2023-07-06)
 
 - release v3.1.5
-- Add mycobot interface：get_basic_version(),set_communicate_mode()
+- Add mycobot interface：get_basic_version(),set_transponder_mode()
 
 ## v3.1.4 (2023-07-05)
 

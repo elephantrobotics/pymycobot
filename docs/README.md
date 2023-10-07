@@ -97,7 +97,7 @@ We support Python2, Python3.5 or later.
     - [set\_plan\_acceleration](#set_plan_acceleration)
     - [set\_gservo\_round](#move_round)
     - [get\_basic\_version](#get_basic_version)
-    - [set\_communicate\_mode](#set_communicate_mode)
+    - [set\_communicate\_mode](#set_transponder_mode)
     - [get\_servo\_speeds](#get_servo_speeds)
     - [get\_servo\_currents](#get_servo_currents)
     - [get\_servo\_voltages](#get_servo_voltages)
@@ -1172,9 +1172,9 @@ Set the terminal atom io status
 
   - `version` (`float`)
 
-### set_communicate_mode
+### set_transponder_mode
 
-- **Prototype**: `set_communicate_mode(mode)`
+- **Prototype**: `set_transponder_mode(mode)`
 
 - **Description**: Set basic communication mode.
 

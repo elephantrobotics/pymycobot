@@ -1072,17 +1072,17 @@ class CommandGenerator(DataProcessor):
         """Get basic firmware version"""
         return self._mesg(ProtocolCode.GET_BASIC_VERSION, has_reply = True)
     
-    def set_communicate_mode(self, mode):
+    def set_transponder_mode(self, mode):
         """Set basic communication mode
         
         Args:
             mode: 0 - Turn off transparent transmission，1 - Open transparent transmission
         """
         self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode)
+        return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode, has_reply = True)
     
-    def get_communicate_mode(self):
-        self._mesg(ProtocolCode.GET_COMMUNICATE_MODE, has_reply = True)
+    def get_transponder_mode(self):
+        return self._mesg(ProtocolCode.GET_COMMUNICATE_MODE, has_reply = True)
     
     def get_angles_coords(self):
         """Get basic communication mode"""

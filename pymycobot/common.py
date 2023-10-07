@@ -352,7 +352,7 @@ class DataProcessor(object):
             for i in valid_data:
                 res.append(i)
             return res            
-        if data_len in [6, 8, 12, 14, 24, 26, 60]:
+        if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
@@ -396,6 +396,7 @@ class DataProcessor(object):
                     data1 = self._decode_int8(valid_data[i : i + 1])
                     res.append(0xFF & data1 if data1 < 0 else data1)
                 return res
+            print(valid_data)
             res.append(self._decode_int8(valid_data))
         if genre == ProtocolCode.GET_ACCEI_DATA:
             for i in range(len(res)):

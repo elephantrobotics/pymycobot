@@ -63,7 +63,6 @@ class MyCobotSocket(CommandGenerator):
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
-        super(sms_sts, self).__init__(self._serial_port, 0)
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -115,7 +114,9 @@ class MyCobotSocket(CommandGenerator):
                     ProtocolCode.GET_FRESH_MODE,
                     ProtocolCode.GET_GRIPPER_MODE,
                     ProtocolCode.GET_ERROR_INFO,
-                    ProtocolCode.GET_GPIO_IN
+                    ProtocolCode.GET_GPIO_IN,
+                    ProtocolCode.GET_COMMUNICATE_MODE,
+                    ProtocolCode.SET_COMMUNICATE_MODE
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
