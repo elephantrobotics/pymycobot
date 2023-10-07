@@ -405,6 +405,7 @@ class DataProcessor(object):
                     data1 = self._decode_int8(valid_data[i : i + 1])
                     res.append(0xFF & data1 if data1 < 0 else data1)
                 return res
+            print(valid_data)
             res.append(self._decode_int8(valid_data))
         if genre == ProtocolCode.GET_ACCEI_DATA:
             for i in range(len(res)):

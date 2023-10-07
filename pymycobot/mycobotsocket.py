@@ -111,7 +111,9 @@ class MyCobotSocket(CommandGenerator):
                 ProtocolCode.GET_FRESH_MODE,
                 ProtocolCode.GET_GRIPPER_MODE,
                 ProtocolCode.GET_ERROR_INFO,
-                ProtocolCode.GET_GPIO_IN
+                ProtocolCode.GET_GPIO_IN,
+                ProtocolCode.GET_COMMUNICATE_MODE,
+                ProtocolCode.SET_COMMUNICATE_MODE
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
