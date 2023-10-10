@@ -238,3 +238,37 @@ class CobotX(CommandGenerator):
     def get_error_detect_mode(self):
         """Set error detection mode"""
         return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
+    
+    def sync_send_angles(self, degrees, speed, timeout=15):
+        """Send the angle in synchronous state and return when the target point is reached
+            
+        Args:
+            degrees: a list of degree values(List[float]), length 6.
+            speed: (int) 0 ~ 100
+            timeout: default 7s.
+        """
+        t = time.time()
+        self.send_angles(degrees, speed)
+        while time.time() - t < timeout:
+            f = self.is_in_position(degrees, 0)
+            if f == 1:
+                break
+            time.sleep(0.1)
+        return self
+
+    def sync_send_coords(self, coords, speed, mode=0, timeout=15):
+        """Send the coord in synchronous state and return when the target point is reached
+            
+        Args:
+            coords: a list of coord values(List[float])
+            speed: (int) 0 ~ 100
+            mode: (int): 0 - angular（default）, 1 - linear
+            timeout: default 7s.
+        """
+        t = time.time()
+        self.send_coords(coords, speed, mode)
+        while time.time() - t < timeout:
+            if self.is_in_position(coords, 1) == 1:
+                break
+            time.sleep(0.1)
+        return self
