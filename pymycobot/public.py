@@ -35,7 +35,6 @@ class PublicCommandGenerator(DataProcessor):
     #     command_data = self._process_data_command(genre, args)
 
     #     if genre == 178:
-    #         # 修改wifi端口
     #         command_data = self._encode_int16(command_data)
             
     #     elif genre in [76, 77]:
