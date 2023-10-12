@@ -9,6 +9,8 @@ import serial
 import serial.tools.list_ports
 
 from pymycobot.mycobot import MyCobot
+from pymycobot.mecharm import MechArm
+from pymycobot.myarm import MyArm
 
 
 port: str
@@ -17,8 +19,29 @@ sp: int = 80
 
 
 def setup():
-    print("")
     global port, mc
+
+    print("")
+    
+    print("1 - MyCobot")
+    print("2 - MechArm")
+    print("3 - MyArm")
+    _in = input("Please input 1 - 3 to choose:")
+    robot_model = None
+    if _in == "1":
+        robot_model = MyCobot
+        print("MyCobot\n")
+    elif _in == "2":
+        robot_model = MechArm
+        print("MechArm\n")
+    elif _in == "3":
+        robot_model = MyArm
+        print("MyArm\n")
+    else:
+        print("Please choose from 1 - 3.")
+        print("Exiting...")
+        exit()
+
     plist = list(serial.tools.list_ports.comports())
     idx = 1
     for port in plist:
@@ -44,7 +67,8 @@ def setup():
     if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
     # mc = MyCobot(port, debug=True)
-    mc = MyCobot(port, baud, debug=DEBUG)
+    mc = robot_model(port, baud, debug=DEBUG)
+    mc.power_on()
 
 
 class Raw(object):
@@ -87,17 +111,15 @@ class TeachingTest(Helper):
         self.recording = True
         #self.mc.set_fresh_mode(0)
         def _record():
-            
-
             while self.recording:
                 start_t = time.time()
                 angles = self.mc.get_encoders()
                 speeds = self.mc.get_servo_speeds()
                 gripper_value = self.mc.get_encoder(7)
                 interval_time = time.time() - start_t
-                #print(angles)
                 if angles:
-                    self.record_list.append([angles, speeds, gripper_value, interval_time])
+                    record = [angles, speeds, gripper_value, interval_time]
+                    self.record_list.append(record)
                     # time.sleep(0.1)
                     print("\r {}".format(time.time() - start_t), end="")
 
@@ -114,29 +136,24 @@ class TeachingTest(Helper):
     def play(self):
         self.echo("Start play")
         i = 0
-        for angles in self.record_list:
+        for record in self.record_list:
+            angles, speeds, gripper_value, interval_time = record
             #print(angles)
-            self.mc.set_encoders_drag(angles[0],angles[1])
-            self.mc.set_encoder(7, angles[2])
+            self.mc.set_encoders_drag(angles, speeds)
+            if len(record) == 7:
+                self.mc.set_encoder(7, record[2])
             if i == 0:
                 time.sleep(3)
-            time.sleep(angles[-1])
+            i+=1
+            time.sleep(record[-1])
         self.echo("Finish play")
 
     def loop_play(self):
         self.playing = True
 
         def _loop():
-            len_ = len(self.record_list)
-            i = 0
             while self.playing:
-                idx_ = i % len_
-                i += 1
-                self.mc.set_encoders_drag(self.record_list[idx_][0],self.record_list[idx_][1])
-                self.mc.set_encoder(7, self.record_list[idx_][2])
-                if idx_ == 0:
-                    time.sleep(3)
-                time.sleep(self.record_list[idx_][-1])
+                self.play()
 
         self.echo("Start loop play.")
         self.play_t = threading.Thread(target=_loop, daemon=True)
@@ -193,7 +210,10 @@ class TeachingTest(Helper):
                 elif key == "c":  # stop recorder
                     self.stop_record()
                 elif key == "p":  # play
-                    self.play()
+                    if not self.playing:
+                        self.play()
+                    else:
+                        print("Already playing. Please wait till current play stop or stop loop play.")
                 elif key == "P":  # loop play
                     if not self.playing:
                         self.loop_play()
