@@ -7,7 +7,7 @@ import threading
 
 
 class MyBuddyEmoticon:
-    def __init__(self, file_path: list = [], window_size: tuple = (), loop=False) -> None:
+    def __init__(self, file_path, window_size=None, loop=False):
         """API for playing emoticons
 
         Args:

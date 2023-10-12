@@ -156,8 +156,8 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     raise exception_class("The range of encoder is 0 ~ 4096, but the received value is {}".format(data))
         elif parameter == 'speeds':
             if  "MyCobot" in class_name or "MechArm" in class_name:
-                if len(value) != 6:
-                    raise exception_class("The length of `speeds` must be 6.")
+                if len(value) not in [6, 7]:
+                    raise exception_class("The length of `speeds` must be 6. but the received value is {}".format(value))
             elif "MyPalletizer" in class_name:
                 if len(value) != 4:
                     raise exception_class("The length of `speeds` must be 4.")
