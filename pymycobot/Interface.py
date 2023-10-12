@@ -18,7 +18,7 @@ class MyBuddyCommandGenerator(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        command_data = self._process_data_command(args)
+        command_data = self._process_data_command(genre, self.__class__.__name__, args)
 
         if genre == 178:
             # 修改wifi端口
