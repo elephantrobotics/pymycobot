@@ -123,7 +123,7 @@ class CobotX(CommandGenerator):
                             if res[i] == 1:
                                 r.append(i)
                 return r
-            elif genre == ProtocolCode.COBOTX_GET_ANGLE:
+            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_SOLUTION_ANGLES]:
                     return self._int2angle(res[0])
             else:
                 return res
@@ -256,7 +256,7 @@ class CobotX(CommandGenerator):
             time.sleep(0.1)
         return self
 
-    def sync_send_coords(self, coords, speed, mode=0, timeout=15):
+    def sync_send_coords(self, coords, speed, mode=None, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
             
         Args:

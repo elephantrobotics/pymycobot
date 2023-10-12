@@ -207,3 +207,37 @@ class MyBuddySocket(MyBuddyCommandGenerator):
     
     def close(self):
         self.sock.close()
+        
+    def sync_send_angles(self, id, degrees, speed, timeout=15):
+        """Send the angle in synchronous state and return when the target point is reached
+            
+        Args:
+            degrees: a list of degree values(List[float]), length 6.
+            speed: (int) 0 ~ 100
+            timeout: default 7s.
+        """
+        t = time.time()
+        self.send_angles(id, degrees, speed)
+        while time.time() - t < timeout:
+            f = self.is_in_position(id, degrees, 0)
+            if f == 1:
+                break
+            time.sleep(0.1)
+        return self
+
+    def sync_send_coords(self, id, coords, speed, mode=0, timeout=15):
+        """Send the coord in synchronous state and return when the target point is reached
+            
+        Args:
+            coords: a list of coord values(List[float])
+            speed: (int) 0 ~ 100
+            mode: (int): 0 - angular（default）, 1 - linear
+            timeout: default 7s.
+        """
+        t = time.time()
+        self.send_coords(id, coords, speed, mode)
+        while time.time() - t < timeout:
+            if self.is_in_position(id, coords, 1) == 1:
+                break
+            time.sleep(0.1)
+        return self
