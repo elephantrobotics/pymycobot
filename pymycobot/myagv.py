@@ -63,7 +63,7 @@ class MyAgv(DataProcessor):
             elif len(datas) >= 2:
                 data_len = struct.unpack("b", data)[0]
                 # print("``````:",datas, command, k, data_len)
-                if data_len == command[k-1] or command[k-1] == 29:
+                if data_len == command[k-1] or command[-1] == 29:
                     datas += data
                 else:
                     datas = b''
@@ -255,22 +255,30 @@ class MyAgv(DataProcessor):
         """
         self._mesg(128, 128, 128)
         
-    def get_muc_info(self):
+    def get_mcu_info(self):
         """"""
         datas = self._read([0xfe, 0xfe, 29])
         res = []
-        for index in range(2, len(datas)):
+        index = 2
+        while index < len(datas) - 2:
             if index < 5:
                 res.append(datas[index])
+                index+=1
             elif index < 17 or index >= 20:
                 res.append(self._decode_int16(datas[index:index+2]))
+                index+=2
+                
             elif index == 17:
-                byte_1 = bin(datas[index])
+                byte_1 = bin(datas[index])[2:]
                 while len(byte_1) != 6:
                         byte_1 = "0"+byte_1
                 res.append(byte_1)
+                index+=1
+                
             elif index < 20:
                 res.append(self._int2coord(datas[index]))
+                index+=1
+                
         return res
     
     def restore(self):
