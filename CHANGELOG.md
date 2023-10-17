@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.2.2 (2023-10-17)
+
+- release v3.2.2
+- Add threading lock
+
 ## v3.2.0 (2023-10-09)
 
 - release v3.2.0
