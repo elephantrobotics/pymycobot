@@ -274,6 +274,6 @@ class MyAgv(DataProcessor):
         return res
     
     def restore(self):
-        """"""
+        """Motor stall recovery"""
         self._mesg(ProtocolCode.RESTORE.value, 1)
     

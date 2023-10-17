@@ -407,6 +407,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         """
         t = time.time()
         self.send_angles(id, degrees, speed)
+        time.sleep(0.5)
         while time.time() - t < timeout:
             f = self.is_in_position(id, degrees, 0)
             if f == 1:
@@ -425,6 +426,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         """
         t = time.time()
         self.send_coords(id, coords, speed, mode)
+        time.sleep(0.5)
         while time.time() - t < timeout:
             if self.is_in_position(id, coords, 1) == 1:
                 break
