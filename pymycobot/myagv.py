@@ -135,9 +135,17 @@ class MyAgv(DataProcessor):
                     return self._decode_int16(data[4:6])
                 elif ProtocolCode.GET_BATTERY_INFO.value:
                     byte_1 = bin(data[4])[2:]
+                    res =[]
                     while len(byte_1) != 6:
                         byte_1 = "0"+byte_1
-                    return [byte_1, self._int2coord(data[5]), self._int2coord(data[6])]
+                    res.append(byte_1)
+                    res.append(self._int2coord(data[5]))
+                    res.append(self._int2coord(data[6]))
+                    if byte_1[0] == "0":
+                        res[-1] = 0
+                    elif byte_1[1] == "0":
+                        res[1] = 0
+                    return res
             # print(res)
         return None
     

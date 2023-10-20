@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.2.3 (2023-10-20)
+
+- release v3.2.3
+- Optimize myagv interface get_battery_info
+
 ## v3.2.2 (2023-10-17)
 
 - release v3.2.2
