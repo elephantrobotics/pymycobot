@@ -4,7 +4,7 @@ import time
 from pymycobot import MyCobot
 import threading
 
-mc = MyCobot("com7")
+mc = MyCobot("/dev/ttyAMA0")
 
 # The default initial point can be changed, if you want to change, you should change 'command' and 'zero' at the same time
 command = [144.8, -66.9, 185.3, 178.47, 0.87, -115.07]
@@ -370,6 +370,7 @@ def main():
                     action = 0
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     # pass
