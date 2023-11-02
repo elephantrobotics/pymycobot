@@ -21,6 +21,8 @@ from pymycobot.myarm import MyArm
 from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
+from pymycobot.myarmsocket import MyArmSocket
+from pymycobot.mecharmsocket import MechArmSocket
 
 __all__ = [
     "MyCobot",
