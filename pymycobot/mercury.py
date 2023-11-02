@@ -315,6 +315,18 @@ class Mercury(CommandGenerator):
             speed (_type_): _description_
         """
         return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed)
+    
+    def drag_tech_save(self):
+        """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 90 seconds."""
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE)
+    
+    def drag_tech_execute(self):
+        """Start dragging the teaching point and only execute it once."""
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE)
+    
+    def drag_tech_pause(self):
+        """Pause recording of dragging teaching point"""
+        self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
         
         
 
