@@ -115,16 +115,22 @@ class CommandGenerator(DataProcessor):
             command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
         elif genre == 115:
             command_data = [command_data[1],command_data[3]]
-
         LEN = len(command_data) + 2
+        
         command = [
-            ProtocolCode.HEADER,
-            ProtocolCode.HEADER,
-            LEN,
-            genre,
-            command_data,
-            ProtocolCode.FOOTER,
-        ]
+                ProtocolCode.HEADER,
+                ProtocolCode.HEADER,
+                LEN,
+                genre,
+            ]
+        if command_data:
+            command.extend(command_data)
+        if self.__class__.__name__ == "Mercury":
+            command[2] += 1
+            command.extend(self.crc_check(command))
+
+        else:
+            command.append(ProtocolCode.FOOTER)
 
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
@@ -741,7 +747,7 @@ class CommandGenerator(DataProcessor):
             pin_signal: 0 / 1
         """
         self.calibration_parameters(class_name = self.__class__.__name__, pin_signal=pin_signal)
-        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal, has_reply=True)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_basic_input(self, pin_no):
         """Get basic input for M5 version.

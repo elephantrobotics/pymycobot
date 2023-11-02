@@ -636,3 +636,7 @@ class ultraArm:
             self._serial_port.flush()
             self._debug(command)
             return self._request("isStop", timeout=10)
+
+    def sync(self):
+        while self.is_moving_end() != 1:
+            pass

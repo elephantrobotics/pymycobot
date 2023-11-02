@@ -19,7 +19,7 @@ from pymycobot.mybuddybluetooth import MyBuddyBlueTooth
 from pymycobot.mypalletizersocket import MyPalletizerSocket
 from pymycobot.myarm import MyArm
 from pymycobot.elephantrobot import ElephantRobot
-from pymycobot.cobotx import CobotX
+from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
 
 __all__ = [
@@ -39,8 +39,10 @@ __all__ = [
     "MechArm",
     "MyArm",
     "ElephantRobot",
-    "CobotX",
-    "MyAgv"
+    "Mercury",
+    "MyAgv",
+    "MechArmSocket",
+    "MyArmSocket"
 ]
 
 
@@ -48,7 +50,7 @@ if sys.platform == "linux":
     from pymycobot.mybuddyemoticon import MyBuddyEmoticon
     __all__.append("MyBuddyEmoticon")
 
-__version__ = "3.2.1"
+__version__ = "3.2.4"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
