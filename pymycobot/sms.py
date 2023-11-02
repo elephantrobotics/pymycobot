@@ -114,7 +114,7 @@ class sms_sts(protocol_packet_handler):
         res_d = self.read1ByteTxRx(id, SERVO_D)
         return [res_p[0] if res_p[1] != -2 else None, res_i[0] if res_i[1] != -2 else None, res_d[0] if res_d[1] != -2 else None]
     
-    def set_servo_pid(self, id:int, pid: list[int]):
+    def set_servo_pid(self, id, pid):
         """设置舵机pid"""
         self.write1ByteTxRx(id, SERVO_P, pid[0])
         self.write1ByteTxRx(id, SERVO_I, pid[1])
