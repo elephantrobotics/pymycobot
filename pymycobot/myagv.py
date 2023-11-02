@@ -202,61 +202,92 @@ class MyAgv(DataProcessor):
         calibration_parameters(class_name = self.__class__.__name__, direction_1=direction_1, direction_2=direction_2,direction_3=direction_3)
         return self._mesg(direction_1, direction_2, direction_3)
     
-    def go_ahead(self, go_speed):
-        """Control the car to move forward
+    def go_ahead(self, go_speed, timeout=5):
+        """Control the car to move forward. Send control commands every 100ms. with a default motion time of 5 seconds.
 
         Args:
-            go_speed (int): 1 ~ 127 is forward
+            go_speed (int): 1 ~ 127 is forward.
+            timeout (int): default 5 s.
         """
         # go_speed (int): 129 ~ 255 is forward
         calibration_parameters(class_name = self.__class__.__name__, data=go_speed)
-        self._mesg(128+go_speed, 128, 128)
+        t = time.time()
+        while time.time() - t < timeout:
+            self._mesg(128+go_speed, 128, 128)
+            time.sleep(0.1)
+        self.stop()
         
-    def retreat(self, back_speed):
-        """Control the car back
+    def retreat(self, back_speed, timeout=5):
+        """Control the car back. Send control commands every 100ms. with a default motion time of 5 seconds
 
         Args:
             back_speed (int): 1 ~ 127 is backward
+            timeout (int): default 5 s.
         """
         calibration_parameters(class_name = self.__class__.__name__, data=back_speed)
-        self._mesg(128-back_speed, 128, 128)
+        t = time.time()
+        while time.time() - t < timeout:
+            self._mesg(128-back_speed, 128, 128)
+            time.sleep(0.1)
+        self.stop()
         
-    def pan_left(self, pan_left_speed):
-        """Control the car to pan to the left
+    def pan_left(self, pan_left_speed, timeout=5):
+        """Control the car to pan to the left. Send control commands every 100ms. with a default motion time of 5 seconds
 
         Args:
             pan_left_speed (int): 1 ~ 127
+            timeout (int): default 5 s.
         """
         # pan_left_speed (int): 129 ~ 255
         calibration_parameters(class_name = self.__class__.__name__, data=pan_left_speed)
-        self._mesg(128, 128+pan_left_speed, 128)
+        t = time.time()
+        while time.time() - t < timeout:
+            self._mesg(128, 128+pan_left_speed, 128)
+            time.sleep(0.1)
+        self.stop()
         
-    def pan_right(self, pan_right_speed):
-        """Control the car to pan to the right
+    def pan_right(self, pan_right_speed, timeout=5):
+        """Control the car to pan to the right. Send control commands every 100ms. with a default motion time of 5 seconds
 
         Args:
             pan_right_speed (int): 1 ~ 127
+            timeout (int): default 5 s.
         """
         calibration_parameters(class_name = self.__class__.__name__, pan_right_speed=pan_right_speed)
-        self._mesg(128, 128-pan_right_speed, 128)
+        t = time.time()
+        while time.time() - t < timeout:
+            self._mesg(128, 128-pan_right_speed, 128)
+            time.sleep(0.1)
+        self.stop()
         
-    def clockwise_rotation(self, rotate_right_speed):
-        """Control the car to rotate clockwise
+    def clockwise_rotation(self, rotate_right_speed, timeout=5):
+        """Control the car to rotate clockwise. Send control commands every 100ms. with a default motion time of 5 seconds
 
         Args:
             clockwise_rotation_speed (int): 1 ~ 127
+            timeout (int): default 5 s.
         """
         calibration_parameters(class_name = self.__class__.__name__, rotate_right_speed=rotate_right_speed)
-        self._mesg(128, 128, 128-rotate_right_speed)
+        t = time.time()
+        while time.time() - t < timeout:
+            self._mesg(128, 128, 128-rotate_right_speed)
+            time.sleep(0.1)
+        self.stop()
         
-    def counterclockwise_rotation(self, rotate_left_speed):
-        """Control the car to rotate counterclockwise
+        
+    def counterclockwise_rotation(self, rotate_left_speed, timeout=5):
+        """Control the car to rotate counterclockwise. Send control commands every 100ms. with a default motion time of 5 seconds
 
         Args:
             clockwise_rotation_speed (int): 1 ~ 127
+            timeout (int): default 5 s.
         """
         calibration_parameters(class_name = self.__class__.__name__, rotate_left_speed=rotate_left_speed)
-        self._mesg(128, 128, 128+rotate_left_speed)
+        t = time.time()
+        while time.time() - t < timeout:
+            self._mesg(128, 128, 128+rotate_left_speed)
+            time.sleep(0.1)
+        self.stop()
         
     def stop(self):
         """stop motion

@@ -7,7 +7,7 @@ from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class CobotX(CommandGenerator):
+class Mercury(CommandGenerator):
     _write = write
     _read = read
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
@@ -18,7 +18,7 @@ class CobotX(CommandGenerator):
             timeout  : default 0.1
             debug    : whether show debug info
         """
-        super(CobotX, self).__init__(debug)
+        super(Mercury, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
 
@@ -42,14 +42,14 @@ class CobotX(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(CobotX, self)._mesg(genre, *args, **kwargs)
+        real_command, has_reply = super(Mercury, self)._mesg(genre, *args, **kwargs)
         self._write(self._flatten(real_command))
 
         if has_reply:
-            data = self._read(genre)
+            data = self._read(genre, _class=self.__class__.__name__)
             if genre == ProtocolCode.SET_SSID_PWD:
                 return None
-            res = self._process_received(data, genre)
+            res = self._process_received(data, genre, arm=14)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.GET_ROBOT_ID,
@@ -82,6 +82,7 @@ class CobotX(CommandGenerator):
                 return [self._int2angle(angle) for angle in res]
             elif genre in [
                 ProtocolCode.GET_COORDS,
+                ProtocolCode.MERCURY_GET_BASE_COORDS,
                 ProtocolCode.GET_TOOL_REFERENCE,
                 ProtocolCode.GET_WORLD_REFERENCE,
             ]:
@@ -123,7 +124,7 @@ class CobotX(CommandGenerator):
                             if res[i] == 1:
                                 r.append(i)
                 return r
-            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_SOLUTION_ANGLES]:
+            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES]:
                     return self._int2angle(res[0])
             else:
                 return res
@@ -204,7 +205,7 @@ class CobotX(CommandGenerator):
             joint_id (int): Joint id 1 - 7.
             encoder: The value of the set encoder.
         """
-        # TODO CobotX此接口待定
+        # TODO Mercury此接口待定
         # self.calibration_parameters(
         #     class_name=self.__class__.__name__, id=joint_id, encoder=encoder
         # )
@@ -272,3 +273,49 @@ class CobotX(CommandGenerator):
                 break
             time.sleep(0.1)
         return self
+        
+    def get_base_coords(self):
+        """get base coords"""
+        return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS, has_reply=True)
+    
+    def send_base_coord(self, axis, coord, speed):
+        """_summary_
+
+        Args:
+            axis (_type_): _description_
+            coord (_type_): _description_
+            speed (_type_): _description_
+        """
+        if axis < 4:
+            coord = self._coord2int(coord)
+        else:
+            coord = self._angle2int(coord)
+        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed)
+    
+    def send_base_coords(self, coords, speed):
+        """_summary_
+
+        Args:
+            coords (_type_): _description_
+            speed (_type_): _description_
+        """
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed)
+    
+    def jog_base_coord(self, axis, direction, speed):
+        """_summary_
+
+        Args:
+            axis (_type_): _description_
+            direction (_type_): _description_
+            speed (_type_): _description_
+        """
+        return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed)
+        
+        
+
+        

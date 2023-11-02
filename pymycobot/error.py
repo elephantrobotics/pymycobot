@@ -16,7 +16,7 @@ MAX_ANGLE = 190.0
 class MyCobotDataException(Exception):
     pass
 
-class CobotXDataException(Exception):
+class MercuryDataException(Exception):
     pass
 
 class MyAgvDataException(Exception):
@@ -196,11 +196,11 @@ def calibration_parameters(**kwargs):
         robot_limit = json.load(f)
     parameter_list = list(kwargs.keys())
     class_name =  kwargs.get("class_name", None)
-    if class_name == "CobotX":
+    if class_name == "Mercury":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
-                check_id(value, robot_limit[class_name][parameter], CobotXDataException)
+                check_id(value, robot_limit[class_name][parameter], MercuryDataException)
             elif parameter == 'angle':
                 id = kwargs.get('id', None)
                 if id in [11,12,13]:
@@ -208,17 +208,17 @@ def calibration_parameters(**kwargs):
                 else:
                     index = robot_limit[class_name]['id'][id-1] - 1
                 if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
-                    raise CobotXDataException(
+                    raise MercuryDataException(
                         "angle value not right, should be {0} ~ {1}, but received {2}".format(
                             robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index], value
                         )
                     )
             # elif parameter == 'angles':
             #     if len(value) not in [7, 10]:
-            #         raise CobotXDataException("The length of `angles` must be 7 or 10.")
+            #         raise MercuryDataException("The length of `angles` must be 7 or 10.")
             #     for idx, angle in enumerate(value):
             #         if not MIN_ANGLE <= angle <= MAX_ANGLE:
-            #             raise CobotXDataException(
+            #             raise MercuryDataException(
             #                 "Has invalid angle value, error on index {0}. angle should be {1} ~ {2}.".format(
             #                     idx, MIN_ANGLE, MAX_ANGLE
             #                 )
@@ -228,43 +228,43 @@ def calibration_parameters(**kwargs):
                 
                 index = kwargs.get('id', None) - 1
                 if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
-                    raise CobotXDataException(
+                    raise MercuryDataException(
                         "coord value not right, should be {0} ~ {1}, but received {2}".format(
                             robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index], value
                         )
                     )
             elif parameter == 'coords':
-                check_coords(value, robot_limit, class_name, CobotXDataException)
+                check_coords(value, robot_limit, class_name, MercuryDataException)
 
             elif parameter == 'speed' and not 1 <= value <= 100:
-                raise CobotXDataException(
+                raise MercuryDataException(
                     "speed value not right, should be 1 ~ 100, the error speed is %s"
                     % value
                 )
 
             elif parameter == 'rgb':
-                check_rgb_value(value, CobotXDataException, class_name)
+                check_rgb_value(value, MercuryDataException, class_name)
             # if direction is not None:
             elif parameter in ['direction', 'flag', 'mode']:
                 if value not in [0, 1]:
-                    raise CobotXDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
+                    raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
                 
             elif parameter == 'coord_id':
                 if value < 1 or value > 6:
-                    raise CobotXDataException("coord_id only supports 1 ~ 6, but received {}".format(value))
+                    raise MercuryDataException("coord_id only supports 1 ~ 6, but received {}".format(value))
                 
             elif parameter == 'solution_angle':
                 if value > 90 or value < -90:
-                    raise CobotXDataException("The angle range is -90° ~ 90°, but received {}".format(value))
+                    raise MercuryDataException("The angle range is -90° ~ 90°, but received {}".format(value))
             elif parameter == 'address':
                 if value < 32 or value > 34:
-                    raise CobotXDataException("The angle address is 32 ~ 34, but received {}".format(value))
+                    raise MercuryDataException("The angle address is 32 ~ 34, but received {}".format(value))
             elif parameter == 'value':
                 if value < 1 or value > 32000:
-                    raise CobotXDataException("The angle value is 1 ~ 32000, but received {}".format(value))
+                    raise MercuryDataException("The angle value is 1 ~ 32000, but received {}".format(value))
             elif parameter == "servo_restore":
                 if value not in [1,2,3,4,5,6,7,13,254]:
-                    raise CobotXDataException("The joint_id should be in [1,2,3,4,5,6,7,13,254], but received {}".format(value))
+                    raise MercuryDataException("The joint_id should be in [1,2,3,4,5,6,7,13,254], but received {}".format(value))
                     
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:

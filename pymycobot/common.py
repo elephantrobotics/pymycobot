@@ -174,6 +174,10 @@ class ProtocolCode(object):
     SET_ERROR_DETECT_MODE = 0xE8
     GET_ERROR_DETECT_MODE = 0xE9
     
+    MERCURY_GET_BASE_COORDS = 0xF0
+    MERCURY_SET_BASE_COORD = 0xF1
+    MERCURY_SET_BASE_COORDS = 0xF2
+    MERCURY_JOG_BASE_COORD = 0xF3
 
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
@@ -229,7 +233,7 @@ class DataProcessor(object):
         if isinstance(data, int):
             return [
                 ord(i) if isinstance(i, str) else i
-                for i in list(struct.pack(">h", data))
+                for i in list(struct.pack(">H", data))
             ]
         else:
             res = []
@@ -255,7 +259,19 @@ class DataProcessor(object):
 
     def _int2coord(self, _int):
         return round(_int / 10.0, 2)
-
+    
+    @classmethod
+    def crc_check(cls, command):
+        crc = 0xffff
+        for index in range(len(command)):
+            crc ^= command[index]
+            for _ in range(8):
+                if crc & 1 == 1:
+                    crc >>=  1
+                    crc ^= 0xA001
+                else:
+                    crc >>= 1
+        return cls._encode_int16(_, crc)
     # def encode_int16(self, data):
     #     encoded_data = []
 
@@ -283,7 +299,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and _class == "CobotX":
+                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and _class == "Mercury":
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -296,7 +312,7 @@ class DataProcessor(object):
                 if isinstance(args[index], str):
                     processed_args.append(ord(args[index]))
                 else:
-                    if genre == ProtocolCode.SET_SERVO_DATA and _class == "CobotX" and index == 2:
+                    if genre == ProtocolCode.SET_SERVO_DATA and _class == "Mercury" and index == 2:
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
@@ -324,7 +340,7 @@ class DataProcessor(object):
         header_i, header_j = 0, 1
         while header_j < data_len - 4:
             if self._is_frame_header(data, header_i, header_j):
-                if arm in [6, 7]:
+                if arm in [6, 7, 14]:
                     cmd_id = data[header_i + 3]
                 elif arm == 12:
                     cmd_id = data[header_i + 4]
@@ -339,6 +355,9 @@ class DataProcessor(object):
             data_len = data[header_i + 2] - 2
         elif arm == 12:
             data_len = data[header_i + 3] - 2
+        elif arm == 14:
+            data_len = data[header_i + 2] - 3
+            
         unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
 
         if cmd_id in unique_data:
@@ -348,7 +367,7 @@ class DataProcessor(object):
                 data_pos = header_i + 5
             data_len -= 1
         else:
-            if arm in [6, 7]:
+            if arm in [6, 7, 14]:
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
@@ -360,7 +379,7 @@ class DataProcessor(object):
         if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
             for i in valid_data:
                 res.append(i)
-            return res            
+            return res    
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
@@ -405,7 +424,6 @@ class DataProcessor(object):
                     data1 = self._decode_int8(valid_data[i : i + 1])
                     res.append(0xFF & data1 if data1 < 0 else data1)
                 return res
-            print(valid_data)
             res.append(self._decode_int8(valid_data))
         if genre == ProtocolCode.GET_ACCEI_DATA:
             for i in range(len(res)):
@@ -442,7 +460,7 @@ def write(self, command, method=None):
         self._serial_port.flush()
 
 
-def read(self, genre, method=None, command=None):
+def read(self, genre, method=None, command=None, _class=None):
     datas = b""
     data_len = -1
     k = 0
@@ -488,6 +506,13 @@ def read(self, genre, method=None, command=None):
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
             k += 1
+            if _class == "Mercury":
+                if data_len == 3:
+                    datas += data
+                    crc = self._serial_port.read(2)
+                    if DataProcessor.crc_check(datas) == [v for v in crc]:
+                        datas+=crc
+                        break
             if data_len == 1 and data == b"\xfa":
                 datas += data
                 if [i for i in datas] == command:

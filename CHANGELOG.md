@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.2.4 (2023-11-1)
+
+- release v3.2.4
+- ultraArm add sync function
+
 ## v3.2.3 (2023-10-20)
 
 - release v3.2.3
