@@ -235,7 +235,7 @@ class DataProcessor(object):
         if isinstance(data, int):
             return [
                 ord(i) if isinstance(i, str) else i
-                for i in list(struct.pack(">H", data))
+                for i in list(struct.pack(">h", data))
             ]
         else:
             return sum([list(struct.pack(">h", elem)) for elem in data], [])

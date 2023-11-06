@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.2.5 (2023-11-3)
+
+- release v3.2.6
+- fix bug
+
+## v3.2.5 (2023-11-3)
+
+- release v3.2.5
+- ultraArm angle limit update
+
 ## v3.2.4 (2023-11-1)
 
 - release v3.2.4
