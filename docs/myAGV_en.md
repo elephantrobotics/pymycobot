@@ -8,7 +8,6 @@
   - [get\_firmware\_version](#get_firmware_version)
   - [get\_motors\_current](#get_motors_current)
   - [get\_battery\_info](#get_battery_info)
-  - [move\_control(direction\_1, direction\_2, direction\_3)](#move_controldirection_1-direction_2-direction_3)
   - [go\_ahead(go\_speed)](#go_aheadgo_speed)
   - [retreat(back\_speed)](#retreatback_speed)
   - [pan\_left(pan\_left\_speed)](#pan_leftpan_left_speed)
@@ -58,7 +57,7 @@ Read battery information
   `battery_1_voltage` : Battery 1 voltage in volts.
   `battery_2_voltage` : Battery 2 voltage in volts.
 
-## move_control(direction_1, direction_2, direction_3)
+<!-- ## move_control(direction_1, direction_2, direction_3)
 
 Control the car to rotate forward, backward, left, right and forward/counterclockwise.
 
@@ -68,7 +67,7 @@ Control the car to rotate forward, backward, left, right and forward/countercloc
 
   - **direction_2** – (int) control left and right movement: 0 ~ 127 is right, 129 ~ 255 is left, 128 is stop.
 
-  - **direction_3** – (int) control rotation: 0 ~ 127 is clockwise, 129 ~ 255 is counterclockwise, 128 is stop.
+  - **direction_3** – (int) control rotation: 0 ~ 127 is clockwise, 129 ~ 255 is counterclockwise, 128 is stop. -->
 
 ## go_ahead(go_speed)
 

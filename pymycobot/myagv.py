@@ -191,16 +191,16 @@ class MyAgv(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_BATTERY_INFO.value, has_reply = True)
     
-    def move_control(self, direction_1, direction_2, direction_3):
-        """Control the car to rotate forward, backward, left, right and forward/counterclockwise
+    # def move_control(self, direction_1, direction_2, direction_3):
+    #     """Control the car to rotate forward, backward, left, right and forward/counterclockwise
 
-        Args:
-            direction_1 (int): Control forward or backward: 0 ~ 127 is backward, 129 ~ 255 is forward, 128 is stop.
-            direction_2 (int): control left and right movement: 0 ~ 127 is right, 129 ~ 255 is left, 128 is stop.
-            direction_3 (int): control rotation: 0 ~ 127 is clockwise, 129 ~ 255 is counterclockwise, 128 is stop.
-        """
-        calibration_parameters(class_name = self.__class__.__name__, direction_1=direction_1, direction_2=direction_2,direction_3=direction_3)
-        return self._mesg(direction_1, direction_2, direction_3)
+    #     Args:
+    #         direction_1 (int): Control forward or backward: 0 ~ 127 is backward, 129 ~ 255 is forward, 128 is stop.
+    #         direction_2 (int): control left and right movement: 0 ~ 127 is right, 129 ~ 255 is left, 128 is stop.
+    #         direction_3 (int): control rotation: 0 ~ 127 is clockwise, 129 ~ 255 is counterclockwise, 128 is stop.
+    #     """
+    #     calibration_parameters(class_name = self.__class__.__name__, direction_1=direction_1, direction_2=direction_2,direction_3=direction_3)
+    #     return self._mesg(direction_1, direction_2, direction_3)
     
     def go_ahead(self, go_speed, timeout=5):
         """Control the car to move forward. Send control commands every 100ms. with a default motion time of 5 seconds.

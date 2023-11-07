@@ -8,7 +8,6 @@
   - [get\_firmware\_version](#get_firmware_version)
   - [get\_motors\_current](#get_motors_current)
   - [get\_battery\_info](#get_battery_info)
-  - [move\_control(direction\_1, direction\_2, direction\_3)](#move_controldirection_1-direction_2-direction_3)
   - [go\_ahead(go\_speed)](#go_aheadgo_speed)
   - [retreat(back\_speed)](#retreatback_speed)
   - [pan\_left(pan\_left\_speed)](#pan_leftpan_left_speed)
@@ -58,7 +57,7 @@
   `battery_1_voltage` : 电池1电压.
   `battery_2_voltage` : 电池2电压.
 
-## move_control(direction_1, direction_2, direction_3)
+<!-- ## move_control(direction_1, direction_2, direction_3)
 
 运动控制接口，控制小车前进、后退、平移、旋转.
 
@@ -68,7 +67,7 @@
 
   - **direction_2** – (int) 控制左右平移: 0 ~ 127 表示向右平移, 129 ~ 255 表示向左平移, 128 表示停止.
 
-  - **direction_3** – (int) 控制旋转: 0 ~ 127 表示顺时针旋转, 129 ~ 255 表示逆时针旋转, 128 表示停止.
+  - **direction_3** – (int) 控制旋转: 0 ~ 127 表示顺时针旋转, 129 ~ 255 表示逆时针旋转, 128 表示停止. -->
 
 ## go_ahead(go_speed)
 

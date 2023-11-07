@@ -728,7 +728,7 @@ class CommandGenerator(DataProcessor):
             return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, _type)
             
 
-    def set_gripper_value(self, gripper_value, speed, gripper_type):
+    def set_gripper_value(self, gripper_value, speed, gripper_type=None):
         """Set gripper value
 
         Args:
@@ -738,8 +738,12 @@ class CommandGenerator(DataProcessor):
                 1 - Adaptive gripper\n
                 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
-        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
+        if gripper_type is not None:
+            self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
+        else:
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+            
 
     def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
