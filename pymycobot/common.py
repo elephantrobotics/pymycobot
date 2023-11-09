@@ -275,6 +275,8 @@ class DataProcessor(object):
                     crc ^= 0xA001
                 else:
                     crc >>= 1
+        if crc > 0x7FFF:
+            return struct.pack(">H", crc)
         return cls._encode_int16(_, crc)
     # def encode_int16(self, data):
     #     encoded_data = []
