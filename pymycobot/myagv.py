@@ -62,8 +62,7 @@ class MyAgv(DataProcessor):
             
             elif len(datas) >= 2:
                 data_len = struct.unpack("b", data)[0]
-                # print("``````:",datas, command, k, data_len)
-                if data_len == command[k-1] or command[-1] == 29:
+                if command[-1] == 29 or data_len == command[k-1]:
                     datas += data
                 else:
                     datas = b''
