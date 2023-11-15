@@ -122,14 +122,14 @@ class CommandGenerator(DataProcessor):
                 LEN,
                 genre,
             ]
-        if command_data:
-            command.extend(command_data)
-        if self.__class__.__name__ == "Mercury":
-            command[2] += 1
-            command.extend(self.crc_check(command))
-
-        else:
-            command.append(ProtocolCode.FOOTER)
+        # if command_data:
+        #     command.extend(command_data)
+        # if self.__class__.__name__ == "Mercury":
+        #     command[2] += 1
+        #     command.extend(self.crc_check(command))
+        command.extend(command_data)
+        # else:
+        command.append(ProtocolCode.FOOTER)
 
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
@@ -1125,3 +1125,28 @@ class CommandGenerator(DataProcessor):
             float: version number.
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply = True)
+    
+    def set_HTS_gripper_torque(self, torque):
+        """_summary_
+
+        Args:
+            torque (_type_): _description_
+        """
+        return  self._mesg(ProtocolCode.SetHTSGripperTorque, torque, has_reply = True)
+    
+    def get_HTS_gripper_torque(self):
+        return self._mesg(ProtocolCode.GetHTSGripperTorque, has_reply = True)
+    
+    def get_gripper_protect_current(self):
+        return self._mesg(ProtocolCode.GetGripperProtectCurrent, has_reply = True)
+    
+    def init_gripper(self):
+        return self._mesg(ProtocolCode.InitGripper, has_reply = True)
+    
+    def set_gripper_protect_current(self, current):
+        """_summary_
+
+        Args:
+            current (_type_): _description_
+        """
+        return self._mesg(ProtocolCode.InitGripper, current)
