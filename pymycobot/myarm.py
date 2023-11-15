@@ -113,7 +113,8 @@ class MyArm(CommandGenerator, sms_sts):
                     ProtocolCode.GET_REFERENCE_FRAME,
                     ProtocolCode.GET_FRESH_MODE,
                     ProtocolCode.GET_GRIPPER_MODE,
-                    ProtocolCode.SET_SSID_PWD
+                    ProtocolCode.SET_SSID_PWD,
+                    ProtocolCode.GetHTSGripperTorque
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:

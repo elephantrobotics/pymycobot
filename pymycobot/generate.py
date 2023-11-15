@@ -123,14 +123,14 @@ class CommandGenerator(DataProcessor):
                 LEN,
                 genre,
             ]
-        if command_data:
-            command.extend(command_data)
-        if self.__class__.__name__ == "Mercury":
-            command[2] += 1
-            command.extend(self.crc_check(command))
-
-        else:
-            command.append(ProtocolCode.FOOTER)
+        # if command_data:
+        #     command.extend(command_data)
+        # if self.__class__.__name__ == "Mercury":
+        #     command[2] += 1
+        #     command.extend(self.crc_check(command))
+        command.extend(command_data)
+        # else:
+        command.append(ProtocolCode.FOOTER)
 
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
@@ -711,18 +711,26 @@ class CommandGenerator(DataProcessor):
             flag  (int): 0 - open, 1 - close, 10 - release
             speed (int): 1 ~ 100
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed)
-        return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, _type=_type)
+        if _type is None:
+            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
+        else:
+            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, _type)
+            
 
-    def set_gripper_value(self, gripper_value, speed):
+    def set_gripper_value(self, gripper_value, speed, gripper_type=None):
         """Set gripper value
 
         Args:
             gripper_value (int): 0 ~ 100
             speed (int): 1 ~ 100
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed)
-        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+        if gripper_type is not None:
+            self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
+        else:
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+            
 
     def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
@@ -1101,3 +1109,28 @@ class CommandGenerator(DataProcessor):
             float: version number.
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply = True)
+    
+    def set_HTS_gripper_torque(self, torque):
+        """_summary_
+
+        Args:
+            torque (_type_): _description_
+        """
+        return  self._mesg(ProtocolCode.SetHTSGripperTorque, torque, has_reply = True)
+    
+    def get_HTS_gripper_torque(self):
+        return self._mesg(ProtocolCode.GetHTSGripperTorque, has_reply = True)
+    
+    def get_gripper_protect_current(self):
+        return self._mesg(ProtocolCode.GetGripperProtectCurrent, has_reply = True)
+    
+    def init_gripper(self):
+        return self._mesg(ProtocolCode.InitGripper, has_reply = True)
+    
+    def set_gripper_protect_current(self, current):
+        """_summary_
+
+        Args:
+            current (_type_): _description_
+        """
+        return self._mesg(ProtocolCode.InitGripper, current)

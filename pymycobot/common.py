@@ -19,6 +19,12 @@ class ProtocolCode(object):
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
+    
+    SetHTSGripperTorque = 0x35
+    GetHTSGripperTorque = 0x36
+    GetGripperProtectCurrent = 0x37
+    InitGripper = 0x38
+    SetGripperProtectCurrent = 0x39
 
     # Overall status
     POWER_ON = 0x10
@@ -269,6 +275,8 @@ class DataProcessor(object):
                     crc ^= 0xA001
                 else:
                     crc >>= 1
+        if crc > 0x7FFF:
+            return list(struct.pack(">H", crc))
         return cls._encode_int16(_, crc)
     # def encode_int16(self, data):
     #     encoded_data = []
@@ -494,13 +502,13 @@ def read(self, genre, method=None, command=None, _class=None):
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
             k += 1
-            if _class == "Mercury":
-                if data_len == 3:
-                    datas += data
-                    crc = self._serial_port.read(2)
-                    if DataProcessor.crc_check(datas) == [v for v in crc]:
-                        datas+=crc
-                        break
+            # if _class == "Mercury":
+            #     if data_len == 3:
+            #         datas += data
+            #         crc = self._serial_port.read(2)
+            #         if DataProcessor.crc_check(datas) == [v for v in crc]:
+            #             datas+=crc
+            #             break
             if data_len == 1 and data == b"\xfa":
                 datas += data
                 if [i for i in datas] == command:

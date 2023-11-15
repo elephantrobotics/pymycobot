@@ -52,7 +52,7 @@ class Mercury(CommandGenerator):
                 data = self._read(genre, _class=self.__class__.__name__)
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
-                res = self._process_received(data, genre, arm=14)
+                res = self._process_received(data, genre)
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.GET_ROBOT_ID,
@@ -132,6 +132,12 @@ class Mercury(CommandGenerator):
                 else:
                     return res
             return None
+    
+    def open(self):
+        self._serial_port.open()
+        
+    def close(self):
+        self._serial_port.close()
 
     def set_solution_angles(self, angle, speed):
         """Set zero space deflection angle value
