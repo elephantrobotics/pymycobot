@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
-from socket import *
+from socket import socket, AF_INET, SOCK_STREAM
 import sys
+import base64
+import hashlib
 from multiprocessing import Lock
 import logging
 from pymycobot.log import setup_logging
@@ -117,6 +119,27 @@ class ElephantRobot(object):
         command = "state_check()\n"
         res = self.send_command(command)
         return res == "1"
+
+    def upload_file(self, local_filename, remote_filename):
+        """Base64 encode local file, send it over socket and save it on robot
+           as remote_filename.
+
+        Args:
+            local_filename (str): file to send
+            remote_filename (str): save remote file name
+
+        Returns:
+            str: ok if success or error message otherwise
+        """
+        with open(local_filename, "rb") as f:
+            content = f.read().encode()
+        content_base64 = base64.b64encode(content).decode()
+        content_sha256 = hashlib.sha256(content).hexdigest()
+        command = "upload_file({},{},{})".format(
+            content_base64, remote_filename, content_sha256
+        )
+        res = self.send_command(command)
+        return res
 
     def program_open(self, file_path):
         command = "program_open(" + file_path + ")\n"
@@ -253,7 +276,7 @@ class ElephantRobot(object):
     def get_variable(self, var_name):
         command = 'get_variable("' + str(var_name) + '")\n'
         return self.send_command(command)
-    
+
     def jog_relative(self, joint_id, angle, speed):
         command = 'SendJogIncrement("{}","{}","{}")\n'.format(joint_id, angle, speed)
         return self.send_command(command)
@@ -261,9 +284,9 @@ class ElephantRobot(object):
 
 if __name__ == "__main__":
     ep = ElephantRobot("192.168.124.28", 5001)
-    res = ep.start_client()
-    if res != "":
-        print(res)
+    resp = ep.start_client()
+    if resp != "":
+        print(resp)
         sys.exit(1)
     print(ep.wait(5))
     print(ep.get_angles())
