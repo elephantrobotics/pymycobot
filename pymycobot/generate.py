@@ -704,7 +704,7 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
 
-    def set_gripper_state(self, flag, speed):
+    def set_gripper_state(self, flag, speed, _type):
         """Set gripper switch state
 
         Args:
