@@ -84,8 +84,6 @@ def control():
                     is_enable = True
                 action = 0
             elif action == 8:
-                gripper_value = 95
-                mc.set_gripper_value(gripper_value, speed, 1)
                 command[2] += 2
                 if command[2] > 450:
                     command[2] = 445
