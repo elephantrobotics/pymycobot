@@ -696,13 +696,17 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
-    def get_gripper_value(self):
+    def get_gripper_value(self, _type=None):
         """Get the value of gripper.
 
         Return: 
             gripper value (int)
         """
-        return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
+        if _type is None:
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, _type, has_reply=True)
+            
 
     def set_gripper_state(self, flag, speed, _type):
         """Set gripper switch state
