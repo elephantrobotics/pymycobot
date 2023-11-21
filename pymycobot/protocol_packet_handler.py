@@ -52,7 +52,7 @@ class protocol_packet_handler(object):
         self.scs_end = protocol_end
         
     def save_command(self):
-        save_command = [255, 255, 254, 4, 3, 55, 2]
+        save_command = [255, 255, 254, 4, 3, 55, 0]
         save_command.append((sum(save_command[2:]) & 0xFF) ^ 0xFF)
         self.portHandler.write(save_command)
         self.portHandler.flush()
@@ -243,6 +243,8 @@ class protocol_packet_handler(object):
         return self.writeTxRx(scs_id, address, 1, data_write)
     
     def writeTxRx(self, scs_id, address, length, data):
+        if address in [6,7,18,13,14,21,22,23,26,27,81,24]:
+            self.save_command()
         txpacket = [0] * (length + 7)
 
         txpacket[PKT_ID] = scs_id
@@ -252,8 +254,7 @@ class protocol_packet_handler(object):
 
         txpacket[PKT_PARAMETER0 + 1: PKT_PARAMETER0 + 1 + length] = data[0: length]
         rxpacket, result, error = self.txRxPacket(txpacket)
-        if address in [6,7,18,13,14,21,22,23,26,27,81,24]:
-            self.save_command()
+        
         return result, error
     
     def write2ByteTxRx(self, scs_id, address, data):
