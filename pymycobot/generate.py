@@ -1127,26 +1127,52 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply = True)
     
     def set_HTS_gripper_torque(self, torque):
-        """_summary_
+        """Clamp torque control
 
         Args:
-            torque (_type_): _description_
+            torque (int): 150-980 (the setting cannot exceed the current protection current)
         """
         return  self._mesg(ProtocolCode.SetHTSGripperTorque, torque, has_reply = True)
     
     def get_HTS_gripper_torque(self):
+        """Get gripper torque
+
+        Returns:
+            int: 150-980
+        """
         return self._mesg(ProtocolCode.GetHTSGripperTorque, has_reply = True)
     
     def get_gripper_protect_current(self):
+        """Get the gripper protection current
+
+        Returns:
+            int: _description_
+        """
         return self._mesg(ProtocolCode.GetGripperProtectCurrent, has_reply = True)
     
     def init_gripper(self):
+        """Initialize gripper
+
+        Returns:
+            int: 0 or 1 (1 - success)
+        """
         return self._mesg(ProtocolCode.InitGripper, has_reply = True)
     
     def set_gripper_protect_current(self, current):
-        """_summary_
+        """Set the gripper protection current
 
         Args:
             current (_type_): _description_
         """
         return self._mesg(ProtocolCode.InitGripper, current)
+    
+    def set_four_pieces_zero(self):
+        """Set the zero position of the four-piece motor
+
+        Returns:
+            int: 0 or 1 (1 - success)
+        """
+        return self._mesg(ProtocolCode.SET_FOUR_PIECES_ZERO, has_reply = True)
+    
+    def 
+        

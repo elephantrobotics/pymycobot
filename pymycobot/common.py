@@ -168,6 +168,8 @@ class ProtocolCode(object):
     SET_PLAN_ACCELERATION = 0xD3
     move_round = 0xD4
     GET_ANGLES_COORDS = 0xD5
+    GET_QUICK_INFO = 0xD6
+    SET_FOUR_PIECES_ZERO = 0xD7
 
     # Motor status read
     GET_SERVO_SPEED = 0xE1
@@ -322,7 +324,7 @@ class DataProcessor(object):
                     processed_args.extend(self._encode_int16(args[index]))
             else:
                 if isinstance(args[index], str):
-                    processed_args.append(ord(args[index]))
+                    processed_args.append(args[index])
                 else:
                     if genre == ProtocolCode.SET_SERVO_DATA and _class == "Mercury" and index == 2:
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
