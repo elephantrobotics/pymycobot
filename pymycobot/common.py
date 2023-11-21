@@ -316,7 +316,7 @@ class DataProcessor(object):
                     processed_args.extend(self._encode_int16(args[index]))
             else:
                 if isinstance(args[index], str):
-                    processed_args.append(ord(args[index]))
+                    processed_args.append(args[index])
                 else:
                     if genre == ProtocolCode.SET_SERVO_DATA and _class == "Mercury" and index == 2:
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
