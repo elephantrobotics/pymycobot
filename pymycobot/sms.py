@@ -1,6 +1,10 @@
 
 from .protocol_packet_handler import *
 # 1 byte
+FIRMWARE_MAJOR = 0x00
+FIRMWARE_MINOR = 0x01
+SERVO_MAJOR = 0x03
+SERVO_MINOR = 0x04
 BAUD = 6
 RETURN_DELAY = 7
 PHASE = 18
@@ -214,3 +218,19 @@ class sms_sts(protocol_packet_handler):
             return None
         return res[0]
         
+    def get_servo_firmware_version(self, id):
+        """获取电机固件版本信息
+        
+        Return:
+            list: [固件主版本号, 固件次版本号, 舵机主版本号, 舵机次版本号], -1 表示获取失败
+        """
+        res = []
+        command = [FIRMWARE_MAJOR, FIRMWARE_MINOR, SERVO_MAJOR, SERVO_MINOR]
+        for add in command:
+            r = self.read1ByteTxRx(id, add)
+            if r[1] == -2:
+                res.append(-1)
+            else:
+                res.append(r[0])
+        return res
+                
