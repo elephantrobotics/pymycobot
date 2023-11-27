@@ -69,17 +69,15 @@ def check_0_or_1(parameter, value, range_data, value_type, exception_class, _typ
     check_value_type(parameter, value_type, exception_class, _type)
     if value not in range_data:
         error = "The data supported by parameter {} is ".format(parameter)
-        lens = len(range_data)
-        for idx in range(lens):
+        len = len(range_data)
+        for idx in range(len):
             error += str(range_data[idx])
-            if idx != lens - 1:
+            if idx != len - 1:
                 error += " or "
         error += ", but the received value is {}".format(value)
         raise exception_class(error)
     
 def check_id(value, id_list, exception_class):
-    if value == 7:
-        return
     raise exception_class(
         "The id not right, should be in {0}, but received {1}.".format(
         id_list, value
@@ -112,7 +110,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     % value
                 )
         elif parameter == 'flag':
-            check_0_or_1(parameter, value, [0, 1, 254], value_type, exception_class, int)
+            check_0_or_1(parameter, value, [0, 1, 10], value_type, exception_class, int)
             # if value not in [0, 1, 10]:
             #     raise exception_class("The data supported by parameter {} is 0 or 1 or 10, but the received value is {}".format(parameter, value))
         elif parameter == 'gripper_value':
@@ -141,7 +139,6 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                         robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index], value
                     )
                 )
-        # elif parameter == 'angles':
         elif parameter == 'encoders':
             if  "MyCobot" in class_name or "MechArm" in class_name:
                 if len(value) != 6:
@@ -183,13 +180,16 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             elif "MyArm" in class_name or "MyCobot" in class_name or "MechArm" in class_name:
                 if value < 1 or value > 7:
                         raise exception_class("The range of id is 1 ~ 7, but the received is {}".format(value))
-        elif parameter == '_type':
-            if value not in [None, 1, 2, 3]:
-                raise exception_class("The range of {} is 1 or 2 or 3, but the received is {}".format(parameter, value))
-        elif parameter == 'gripper_type':
-            if value not in [None, 1, 3]:
-                raise exception_class("The range of {} is 1 or 3, but the received is {}".format(parameter, value))
-                
+        elif parameter == "torque":
+            torque_min = 150
+            torque_max = 980
+            if value < torque_min or value > torque_max:
+                raise exception_class("The range of torque is {} ~ {}, but the received is {}".format(torque_min, torque_max, value))
+        elif parameter == "current":
+            current_min = 1
+            current_max = 500
+            if value < current_min or value > current_max:
+                raise exception_class("The range of current is {} ~ {}, but the received is {}".format(current_min, current_max, value))
 
 def calibration_parameters(**kwargs):
     with open(os.path.dirname(os.path.abspath(__file__))+"/robot_limit.json") as f:
@@ -245,7 +245,7 @@ def calibration_parameters(**kwargs):
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
             # if direction is not None:
-            elif parameter in ['direction', 'flag', 'mode']:
+            elif parameter in ['direction', 'flag']:
                 if value not in [0, 1]:
                     raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
                 

@@ -428,6 +428,10 @@ class DataProcessor(object):
                     res.append(3)
                 else:
                     res.append(i)
+        elif data_len == 28:
+            for i in range(0, data_len, 4):
+                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                res.append(byte_value)
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
