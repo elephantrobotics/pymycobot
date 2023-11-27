@@ -180,6 +180,16 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             elif "MyArm" in class_name or "MyCobot" in class_name or "MechArm" in class_name:
                 if value < 1 or value > 7:
                         raise exception_class("The range of id is 1 ~ 7, but the received is {}".format(value))
+        elif parameter == "torque":
+            torque_min = 150
+            torque_max = 980
+            if value < torque_min or value > torque_max:
+                raise exception_class("The range of torque is {} ~ {}, but the received is {}".format(torque_min, torque_max, value))
+        elif parameter == "current":
+            current_min = 1
+            current_max = 500
+            if value < current_min or value > current_max:
+                raise exception_class("The range of current is {} ~ {}, but the received is {}".format(current_min, current_max, value))
 
 def calibration_parameters(**kwargs):
     with open(os.path.dirname(os.path.abspath(__file__))+"/robot_limit.json") as f:

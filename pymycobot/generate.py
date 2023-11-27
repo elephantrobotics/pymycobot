@@ -1115,26 +1115,44 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply = True)
     
     def set_HTS_gripper_torque(self, torque):
-        """_summary_
+        """Set new adaptive gripper torque
 
         Args:
-            torque (_type_): _description_
+            torque (int): 150 ~ 980
+            
+        Return:
+            0: Set failed
+            1: Set successful
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, torque=torque)
         return  self._mesg(ProtocolCode.SetHTSGripperTorque, torque, has_reply = True)
     
     def get_HTS_gripper_torque(self):
+        """Get gripper torque
+
+        Returns:
+            int: 150 ~ 980
+        """
         return self._mesg(ProtocolCode.GetHTSGripperTorque, has_reply = True)
     
     def get_gripper_protect_current(self):
+        """Get the gripper protection current
+
+        Returns:
+            int: 1 ~ 500
+        """
         return self._mesg(ProtocolCode.GetGripperProtectCurrent, has_reply = True)
     
     def init_gripper(self):
+        """Gripper initialization"""
         return self._mesg(ProtocolCode.InitGripper, has_reply = True)
     
     def set_gripper_protect_current(self, current):
-        """_summary_
+        """Set the gripper protection current
 
         Args:
-            current (_type_): _description_
+            current (int): 1 ~ 500
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, current=current)
+        
         return self._mesg(ProtocolCode.InitGripper, current)

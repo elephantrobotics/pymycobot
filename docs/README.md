@@ -113,6 +113,11 @@ We support Python2, Python3.5 or later.
     - [joint\_brake](#joint_brake)
     - [get\_transponder\_mode](#get_transponder_mode)
     - [set\_transponder\_mode](#set_transponder_mode-1)
+    - [set\_HTS\_gripper\_torque](#set_hts_gripper_torque)
+    - [get\_HTS\_gripper\_torque](#get_hts_gripper_torque)
+    - [get\_gripper\_protect\_current](#get_gripper_protect_current)
+    - [init\_gripper](#init_gripper)
+    - [set\_gripper\_protect\_current](#set_gripper_protect_current)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio\_init](#gpio_init)
     - [gpio\_output](#gpio_output)
@@ -1333,6 +1338,55 @@ Set the terminal atom io status
     - `0`: Turn off transparent transmission
     - `1`: Turn on transparent transmission, verify all data
     - `2`: Turn on transparent transmission, only verify communication forwarding mode configuration information
+
+### set_HTS_gripper_torque
+
+- **Prototype**: `set_HTS_gripper_torque(torque)`
+
+- **Description**: Set new adaptive gripper torque.
+
+- **Parameters**
+  - `torque (int)`: 150 ~ 980
+
+- **Return**
+  - `int`: 0 - Set failed. 1 - Set successful
+  
+### get_HTS_gripper_torque
+
+- **Prototype**: `get_HTS_gripper_torque()`
+
+- **Description**: Get gripper torque
+
+- **Return**
+  - `int`: 150 ~ 980
+
+### get_gripper_protect_current
+
+- **Prototype**: `get_gripper_protect_current()`
+
+- **Description**: Get the gripper protection current.
+
+- **Return**
+  - `int`: 1 ~ 500
+
+### init_gripper
+
+- **Prototype**: `init_gripper()`
+
+- **Description**: Gripper initialization.
+
+- **Return**
+  - `0`: init failed
+  - `1`: init successful
+
+### set_gripper_protect_current
+
+- **Prototype**: `set_gripper_protect_current(current)`
+
+- **Description**: Set the gripper protection current.
+
+- **Parameters**
+  - `torque (int)`: 1 ~ 500
 
 ## Raspberry pi -- GPIO
 
