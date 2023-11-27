@@ -106,6 +106,7 @@ class CommandGenerator(DataProcessor):
                 has_reply: Whether there is a return value to accept.
         """
         command_data = self._process_data_command(genre, self.__class__.__name__, args)
+
         if genre == 178:
             # 修改wifi端口
             command_data = self._encode_int16(command_data)
@@ -232,7 +233,7 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
-    def send_angle(self, id, angle, speed):
+    def send_angle(self, id, degree, speed):
         """Send one angle of joint to robot arm.
 
         Args:
@@ -243,8 +244,8 @@ class CommandGenerator(DataProcessor):
             angle : angle value(float)(about -170 ~ 170).
             speed : (int) 1 ~ 100
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=angle, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(angle)], speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=degree, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
 
     # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, angles, speed):
@@ -695,31 +696,24 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
-    def get_gripper_value(self, gripper_type=None):
-        """Get the value of gripper. 
-
-        Args:
-            gripper_type (int): 
-                1 - Adaptive gripper.\n
-                3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+    def get_gripper_value(self, _type=None):
+        """Get the value of gripper.
 
         Return: 
             gripper value (int)
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, gripper_type=gripper_type)
-        if gripper_type is None:
+        if _type is None:
             return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
         else:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, _type, has_reply=True)
             
 
-    def  set_gripper_state(self, flag, speed, _type=None):
+    def set_gripper_state(self, flag, speed, _type):
         """Set gripper switch state
 
         Args:
-            flag  (int): 0 - open, 1 - close, 254 - release
+            flag  (int): 0 - open, 1 - close, 10 - release
             speed (int): 1 ~ 100
-            _type (int): 1- Adaptive gripper, 2 - 5 finger dexterous hand, 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
         """
         self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, _type=_type)
         if _type is None:
@@ -733,10 +727,7 @@ class CommandGenerator(DataProcessor):
 
         Args:
             gripper_value (int): 0 ~ 100
-            speed (int): 1 ~ 100\n
-            gripper_type (int): 
-                1 - Adaptive gripper\n
-                3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+            speed (int): 1 ~ 100
         """
         if gripper_type is not None:
             self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
@@ -748,9 +739,6 @@ class CommandGenerator(DataProcessor):
     def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
         return self._mesg(ProtocolCode.SET_GRIPPER_CALIBRATION)
-    
-    def set_gripper_torque(self, torque, gripper_type_1):
-        return self._mesg(ProtocolCode.SET_GRIPPER_TORQUE, [torque], gripper_type_1)
 
     def is_gripper_moving(self):
         """Judge whether the gripper is moving or not
@@ -1127,18 +1115,23 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply = True)
     
     def set_HTS_gripper_torque(self, torque):
-        """Clamp torque control
+        """Set new adaptive gripper torque
 
         Args:
-            torque (int): 150-980 (the setting cannot exceed the current protection current)
+            torque (int): 150 ~ 980
+            
+        Return:
+            0: Set failed
+            1: Set successful
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, torque=torque)
         return  self._mesg(ProtocolCode.SetHTSGripperTorque, torque, has_reply = True)
     
     def get_HTS_gripper_torque(self):
         """Get gripper torque
 
         Returns:
-            int: 150-980
+            int: 150 ~ 980
         """
         return self._mesg(ProtocolCode.GetHTSGripperTorque, has_reply = True)
     
@@ -1146,7 +1139,7 @@ class CommandGenerator(DataProcessor):
         """Get the gripper protection current
 
         Returns:
-            int: _description_
+            int: 1 ~ 500
         """
         return self._mesg(ProtocolCode.GetGripperProtectCurrent, has_reply = True)
     
@@ -1162,8 +1155,10 @@ class CommandGenerator(DataProcessor):
         """Set the gripper protection current
 
         Args:
-            current (_type_): _description_
+            current (int): 1 ~ 500
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, current=current)
+        
         return self._mesg(ProtocolCode.InitGripper, current)
     
     def set_four_pieces_zero(self):
@@ -1173,6 +1168,4 @@ class CommandGenerator(DataProcessor):
             int: 0 or 1 (1 - success)
         """
         return self._mesg(ProtocolCode.SET_FOUR_PIECES_ZERO, has_reply = True)
-    
-    def 
         

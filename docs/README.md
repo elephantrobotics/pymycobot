@@ -118,6 +118,7 @@ We support Python2, Python3.5 or later.
     - [get\_gripper\_protect\_current](#get_gripper_protect_current)
     - [init\_gripper](#init_gripper)
     - [set\_gripper\_protect\_current](#set_gripper_protect_current)
+    - [set\_four\_pieces\_zero](#set_four_pieces_zero)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio\_init](#gpio_init)
     - [gpio\_output](#gpio_output)
@@ -1387,6 +1388,15 @@ Set the terminal atom io status
 
 - **Parameters**
   - `torque (int)`: 1 ~ 500
+
+### set_four_pieces_zero
+
+- **Prototype**: `set_four_pieces_zero()`
+
+- **Description**: Set the zero position of the four-piece motor.
+
+- **Return**
+  - `int`: 1 - Set successful. 0 - Set failed.
 
 ## Raspberry pi -- GPIO
 
