@@ -465,7 +465,14 @@ def write(self, command, method=None):
         command = "'" + command[4] + "'" + "(" + command[5] + ")"
         command = command.encode()
     if method == "socket":
-        self.log.debug("_write: {}".format([hex(i) for i in command]))
+        log_command = []
+        for i in command:
+            if isinstance(i, str):
+                log_command.append(i)
+            else:
+                log_command.append(hex(i))
+        self.log.debug("_write: {}".format(log_command))
+                
         py_version = check_python_version()
         if py_version == 2:
             self.sock.sendall("".join([chr(b) for b in command]))
