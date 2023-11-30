@@ -123,14 +123,14 @@ class CommandGenerator(DataProcessor):
                 LEN,
                 genre,
             ]
-        # if command_data:
-        #     command.extend(command_data)
-        # if self.__class__.__name__ == "Mercury":
-        #     command[2] += 1
-        #     command.extend(self.crc_check(command))
-        command.extend(command_data)
-        # else:
-        command.append(ProtocolCode.FOOTER)
+        if command_data:
+            command.extend(command_data)
+        if self.__class__.__name__ == "Mercury":
+            command[2] += 1
+            command.extend(self.crc_check(command))
+            command.extend(command_data)
+        else:
+            command.append(ProtocolCode.FOOTER)
 
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
