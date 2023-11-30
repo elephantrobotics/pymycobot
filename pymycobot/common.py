@@ -426,8 +426,8 @@ class DataProcessor(object):
                 for header_i in range(0, len(valid_data)-2, 2):
                     one = valid_data[header_i : header_i + 2]
                     res.append(self._decode_int16(one))
-                res.append(self._decode_int8(valid_data[-2]))
-                res.append(self._decode_int8(valid_data[-1]))
+                res.append(valid_data[-2])
+                res.append(valid_data[-1])
             else:
                 for i in range(0, data_len, 4):
                     byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
