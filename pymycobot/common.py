@@ -422,9 +422,16 @@ class DataProcessor(object):
                 else:
                     res.append(i)
         elif data_len == 28:
-            for i in range(0, data_len, 4):
-                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                res.append(byte_value)
+            if genre == ProtocolCode.GET_ANGLES_COORDS_END:
+                for header_i in range(0, len(valid_data)-2, 2):
+                    one = valid_data[header_i : header_i + 2]
+                    res.append(self._decode_int16(one))
+                res.append(self._decode_int8(valid_data[-2]))
+                res.append(self._decode_int8(valid_data[-1]))
+            else:
+                for i in range(0, data_len, 4):
+                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    res.append(byte_value)
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
