@@ -145,6 +145,18 @@ class MyArm(CommandGenerator, sms_sts):
                         else:
                             r.append(self._int2angle(res[index]))
                     return r
+                elif genre == ProtocolCode.GET_ANGLES_COORDS_END:
+                    r = []
+                    for index in range(len(res)):
+                        if index < 7:
+                            r.append(self._int2angle(res[index]))
+                        elif index < 10:
+                            r.append(self._int2coord(res[index]))
+                        elif index < 13:
+                            r.append(self._int2angle(res[index]))
+                        else:
+                            r.append(self._process_single(res))
+                    return r
                 elif genre == ProtocolCode.GET_SOLUTION_ANGLES:
                     return self._int2angle(res[0])
                 else:
@@ -313,4 +325,9 @@ class MyArm(CommandGenerator, sms_sts):
             raise Exception("id is not right, please input 0 or 1")
         return self._mesg(ProtocolCode.IS_IN_POSITION, id, data_list, has_reply=True)
     
+    def get_quick_move_info(self):
+        """_summary_
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES_COORDS_END, has_reply=True)
+        
     

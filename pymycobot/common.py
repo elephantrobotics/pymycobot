@@ -166,6 +166,7 @@ class ProtocolCode(object):
     SET_PLAN_ACCELERATION = 0xD3
     move_round = 0xD4
     GET_ANGLES_COORDS = 0xD5
+    GET_ANGLES_COORDS_END = 0xD6
 
     # Motor status read
     GET_SERVO_SPEED = 0xE1
