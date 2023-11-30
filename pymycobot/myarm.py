@@ -155,7 +155,7 @@ class MyArm(CommandGenerator, sms_sts):
                         elif index < 13:
                             r.append(self._int2angle(res[index]))
                         else:
-                            r.append(self._process_single(res))
+                            r.append(self._process_single(res[index]))
                     return r
                 elif genre == ProtocolCode.GET_SOLUTION_ANGLES:
                     return self._int2angle(res[0])
