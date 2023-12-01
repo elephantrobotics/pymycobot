@@ -467,7 +467,9 @@ def write(self, command, method=None):
     if method == "socket":
         log_command = []
         for i in command:
-            if isinstance(i, str):
+            if isinstance(command, str):
+                log_command.append(command)
+            elif isinstance(i, str):
                 log_command.append(i)
             else:
                 log_command.append(hex(i))
@@ -477,7 +479,11 @@ def write(self, command, method=None):
         if py_version == 2:
             self.sock.sendall("".join([chr(b) for b in command]))
         else:
-            self.sock.sendall(bytes(command))
+            if isinstance(command, str):
+                command = command.encode()
+            else:
+                command = bytes(command)
+            self.sock.sendall(command)
     else:
         self._serial_port.reset_input_buffer()
         self.log.debug("_write: {}".format([hex(i) for i in command]))

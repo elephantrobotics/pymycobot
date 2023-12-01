@@ -93,8 +93,9 @@ class MyBuddySocket(MyBuddyCommandGenerator):
         """
         real_command, has_reply = super(
             MyBuddySocket, self)._mesg(genre, *args, **kwargs)
-        data = self._write(self._flatten(real_command), "socket")
-        if data:
+        self._write(self._flatten(real_command), "socket")
+        if has_reply:
+            data = self._read(genre, 'socket')
             res = self._process_received(data, genre, arm=12)
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
