@@ -128,7 +128,7 @@ class CommandGenerator(DataProcessor):
         if self.__class__.__name__ == "Mercury":
             command[2] += 1
             command.extend(self.crc_check(command))
-            command.extend(command_data)
+            # command.extend(command_data)
         else:
             command.append(ProtocolCode.FOOTER)
 
