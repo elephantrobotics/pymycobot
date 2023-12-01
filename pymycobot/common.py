@@ -3,7 +3,7 @@
 from __future__ import division
 import time
 import struct
-
+import sys
 
 class ProtocolCode(object):
     # BASIC
@@ -451,19 +451,36 @@ class DataProcessor(object):
     def _process_single(self, data):
         return data[0] if data else -1
 
+def check_python_version():
+    if sys.version_info.major == 2:
+        return 2
+    elif sys.version_info.major == 3:
+        return 3
+    else:
+        return -1
 
 def write(self, command, method=None):
     if len(command) > 3 and command[3] == 176 and len(command) > 5:
         command = "'" + command[4] + "'" + "(" + command[5] + ")"
         command = command.encode()
     if method == "socket":
-        data = b""
-        # if self.rasp:
-        #     self.sock.send(str(command).encode())
-        # else:
-        self.log.debug("_write: {}".format([hex(i) for i in command]))
-        self.sock.sendall(bytes(command))
-        
+        log_command = []
+        for i in command:
+            if isinstance(command, str):
+                log_command.append(command)
+            else:
+                log_command.append(hex(i))
+        self.log.debug("_write: {}".format(log_command))
+                
+        py_version = check_python_version()
+        if py_version == 2:
+            self.sock.sendall("".join([chr(b) for b in command]))
+        else:
+            # print(command)
+            if isinstance(command, str):
+                self.sock.sendall(str(command).encode())
+            else:
+                self.sock.sendall(bytes(command))
     else:
         self._serial_port.reset_input_buffer()
         self.log.debug("_write: {}".format([hex(i) for i in command]))
@@ -493,8 +510,13 @@ def read(self, genre, method=None, command=None, _class=None):
                     break
         else:
             try:
-                self.sock.settimeout(0.5)
+                self.sock.settimeout(2)
                 data = self.sock.recv(1024)
+                print('111:',data)
+                if isinstance(data, str):
+                    datas = bytearray()
+                    for i in data:   
+                        datas += hex(ord(i))
             except:
                 data = b""
         self.log.debug("_read: {}".format([hex(d) for d in data]))

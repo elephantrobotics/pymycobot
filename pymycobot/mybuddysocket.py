@@ -11,9 +11,9 @@ from pymycobot.log import setup_logging
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
-from pymycobot.sms import sms_sts
+# from pymycobot.sms import sms_sts
 
-class MyBuddySocket(MyBuddyCommandGenerator, sms_sts):
+class MyBuddySocket(MyBuddyCommandGenerator):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -62,7 +62,7 @@ class MyBuddySocket(MyBuddyCommandGenerator, sms_sts):
         self.rasp = False
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
-        super(sms_sts, self).__init__(self._serial_port, 0)
+        # super(sms_sts, self).__init__(self._serial_port, 0)
         
     def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
         """Connect the robot arm through the serial port and baud rate
@@ -97,33 +97,36 @@ class MyBuddySocket(MyBuddyCommandGenerator, sms_sts):
         real_command, has_reply = super(
             MyBuddySocket, self)._mesg(genre, *args, **kwargs)
         with self.lock:
-            data = self._write(self._flatten(real_command), "socket")
-            if data:
+            self._write(self._flatten(real_command), "socket")
+            if has_reply:
+                data = self._read(genre, 'socket')
                 res = self._process_received(data, genre, arm=12)
+            # if data:
+        #     res = self._process_received(data, genre, arm=12)
                 if genre in [
-                    ProtocolCode.ROBOT_VERSION,
-                    ProtocolCode.IS_POWER_ON,
-                    ProtocolCode.IS_CONTROLLER_CONNECTED,
-                    ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
-                    ProtocolCode.IS_IN_POSITION,
-                    ProtocolCode.IS_MOVING,
-                    ProtocolCode.IS_SERVO_ENABLE,
-                    ProtocolCode.IS_ALL_SERVO_ENABLE,
-                    ProtocolCode.GET_SERVO_DATA,
-                    ProtocolCode.GET_DIGITAL_INPUT,
-                    ProtocolCode.GET_GRIPPER_VALUE,
-                    ProtocolCode.IS_GRIPPER_MOVING,
-                    ProtocolCode.GET_SPEED,
-                    ProtocolCode.GET_ENCODER,
-                    ProtocolCode.GET_BASIC_INPUT,
-                    ProtocolCode.GET_TOF_DISTANCE,
-                    ProtocolCode.GET_END_TYPE,
-                    ProtocolCode.GET_MOVEMENT_TYPE,
-                    ProtocolCode.GET_REFERENCE_FRAME,
-                    ProtocolCode.GET_JOINT_MIN_ANGLE,
-                    ProtocolCode.GET_JOINT_MAX_ANGLE
-                ]:
-                    return self._process_single(res)
+                        ProtocolCode.ROBOT_VERSION,
+                        ProtocolCode.IS_POWER_ON,
+                        ProtocolCode.IS_CONTROLLER_CONNECTED,
+                        ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+                        ProtocolCode.IS_IN_POSITION,
+                        ProtocolCode.IS_MOVING,
+                        ProtocolCode.IS_SERVO_ENABLE,
+                        ProtocolCode.IS_ALL_SERVO_ENABLE,
+                        ProtocolCode.GET_SERVO_DATA,
+                        ProtocolCode.GET_DIGITAL_INPUT,
+                        ProtocolCode.GET_GRIPPER_VALUE,
+                        ProtocolCode.IS_GRIPPER_MOVING,
+                        ProtocolCode.GET_SPEED,
+                        ProtocolCode.GET_ENCODER,
+                        ProtocolCode.GET_BASIC_INPUT,
+                        ProtocolCode.GET_TOF_DISTANCE,
+                        ProtocolCode.GET_END_TYPE,
+                        ProtocolCode.GET_MOVEMENT_TYPE,
+                        ProtocolCode.GET_REFERENCE_FRAME,
+                        ProtocolCode.GET_JOINT_MIN_ANGLE,
+                        ProtocolCode.GET_JOINT_MAX_ANGLE
+                    ]:
+                        return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
                     return [self._int2angle(angle) for angle in res]
                 elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
