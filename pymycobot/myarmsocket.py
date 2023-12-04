@@ -110,7 +110,13 @@ class MyArmSocket(CommandGenerator):
                 ProtocolCode.GET_FRESH_MODE,
                 ProtocolCode.GET_GRIPPER_MODE,
                 ProtocolCode.GET_ERROR_INFO,
-                ProtocolCode.GET_GPIO_IN
+                ProtocolCode.GET_GPIO_IN,
+                ProtocolCode.SET_SSID_PWD,
+                ProtocolCode.SetHTSGripperTorque,
+                ProtocolCode.GetHTSGripperTorque,
+                ProtocolCode.GetGripperProtectCurrent,
+                ProtocolCode.InitGripper,
+                ProtocolCode.SET_FOUR_PIECES_ZERO
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:

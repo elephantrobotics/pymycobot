@@ -158,9 +158,12 @@ class MyBuddy(MyBuddyCommandGenerator):
                 ProtocolCode.GET_END_TYPE,
                 ProtocolCode.GET_MOVEMENT_TYPE,
                 ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
                 ProtocolCode.GET_FRESH_MODE,
+                ProtocolCode.SetHTSGripperTorque,
+                ProtocolCode.GetHTSGripperTorque,
+                ProtocolCode.GetGripperProtectCurrent,
+                ProtocolCode.InitGripper,
+                ProtocolCode.SET_FOUR_PIECES_ZERO
                 # ProtocolCode.GET_SERVO_CURRENTS
             ]:
                 return self._process_single(res)
@@ -192,6 +195,8 @@ class MyBuddy(MyBuddyCommandGenerator):
                     return r
                 else:
                     return res
+            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                return self._int2coord(res[0])
             elif genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.COLLISION]:
                 return [self._int2coord(angle) for angle in res]
             else:

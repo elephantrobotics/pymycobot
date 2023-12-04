@@ -109,8 +109,13 @@ class MyArm(CommandGenerator):
                 ProtocolCode.GET_REFERENCE_FRAME,
                 ProtocolCode.GET_FRESH_MODE,
                 ProtocolCode.GET_GRIPPER_MODE,
+                ProtocolCode.GET_ERROR_INFO,
                 ProtocolCode.SET_SSID_PWD,
-                ProtocolCode.GetHTSGripperTorque
+                ProtocolCode.SetHTSGripperTorque,
+                ProtocolCode.GetHTSGripperTorque,
+                ProtocolCode.GetGripperProtectCurrent,
+                ProtocolCode.InitGripper,
+                ProtocolCode.SET_FOUR_PIECES_ZERO
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:

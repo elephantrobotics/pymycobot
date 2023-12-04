@@ -118,7 +118,12 @@ class MyBuddySocket(MyBuddyCommandGenerator):
                 ProtocolCode.GET_MOVEMENT_TYPE,
                 ProtocolCode.GET_REFERENCE_FRAME,
                 ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE
+                ProtocolCode.GET_JOINT_MAX_ANGLE,
+                ProtocolCode.SetHTSGripperTorque,
+                ProtocolCode.GetHTSGripperTorque,
+                ProtocolCode.GetGripperProtectCurrent,
+                ProtocolCode.InitGripper,
+                ProtocolCode.SET_FOUR_PIECES_ZERO
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:

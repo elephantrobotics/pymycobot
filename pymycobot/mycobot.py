@@ -125,7 +125,11 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
                 ProtocolCode.GET_ERROR_INFO,
                 ProtocolCode.GET_COMMUNICATE_MODE,
                 ProtocolCode.SET_COMMUNICATE_MODE,
-                ProtocolCode.GetHTSGripperTorque
+                ProtocolCode.SetHTSGripperTorque,
+                ProtocolCode.GetHTSGripperTorque,
+                ProtocolCode.GetGripperProtectCurrent,
+                ProtocolCode.InitGripper,
+                ProtocolCode.SET_FOUR_PIECES_ZERO
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
