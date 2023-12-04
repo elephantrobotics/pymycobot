@@ -58,11 +58,11 @@ def setup():
         print("{} : {}".format(idx, port))
         idx += 1
 
-    if port is None:
-        _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
-        port = str(plist[int(_in) - 1]).split(" - ")[0].strip()
-        print(port)
-        print("")
+
+    _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
+    port = str(plist[int(_in) - 1]).split(" - ")[0].strip()
+    print(port)
+    print("")
 
     baud = 1000000
     _baud = input("Please input baud(default:1000000):")
