@@ -130,6 +130,8 @@ class ultraArm:
                         return 1
                     else:
                         return 0
+                elif flag in ['gripper', 'system']:
+                    return int(data[data.find("[")+1:-1])
                 elif flag == None:
                     return 0
 
@@ -601,3 +603,42 @@ class ultraArm:
     def sync(self):
         while self.is_moving_end() != 1:
             pass
+        
+    def get_gripper_angle(self):
+        """
+        
+        """
+        command = ProtocolCode.GET_GRIPPER_ANGLE + ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        return self._request("gripper")
+    
+    def set_system_value(self, id, address, value):
+        """_summary_
+
+        Args:
+            id (int): 4 or 7
+            address (int): 0 ~ 69
+            value (int): 
+        """
+        command = ProtocolCode.SET_SYSTEM_VALUE +" X{} ".format(id) + "Y{} ".format(address) +"Z{} ".format(value)+ ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        
+    def get_system_value(self, id, address):
+        """_summary_
+
+        Args:
+            id (int): 4 or 7
+            address (_type_): 0 ~ 69
+
+        Returns:
+            _type_: _description_
+        """
+        command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) +ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        return self._request("system")

@@ -234,6 +234,9 @@ class ProtocolCode(object):
     GET_CURRENT_COORD_INFO = "M114"
     GET_BACK_ZERO_STATUS = "M119"
     IS_MOVING_END = "M9"
+    GET_GRIPPER_ANGLE = "M50"
+    SET_SYSTEM_VALUE = "M51"
+    GET_SYSTEM_VALUE = "M52"
 
 
 class DataProcessor(object):
