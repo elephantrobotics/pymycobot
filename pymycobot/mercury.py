@@ -334,6 +334,20 @@ class Mercury(CommandGenerator):
         """Pause recording of dragging teaching point"""
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
         
+    def is_gripper_moving(self, mode=None):
+        """Judge whether the gripper is moving or not
+        
+        Args:
+            mode: 1 - pro gripper(default)  2 - Parallel gripper
+
+        Returns:
+            0 - not moving
+            1 - is moving
+            -1- error data
+        """
+        if mode:
+            return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
+        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
         
 
         
