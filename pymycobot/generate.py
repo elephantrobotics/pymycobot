@@ -123,14 +123,13 @@ class CommandGenerator(DataProcessor):
                 LEN,
                 genre,
             ]
-        # if command_data:
-        #     command.extend(command_data)
-        # if self.__class__.__name__ == "Mercury":
-        #     command[2] += 1
-        #     command.extend(self.crc_check(command))
-        command.extend(command_data)
-        # else:
-        command.append(ProtocolCode.FOOTER)
+        if command_data:
+            command.extend(command_data)
+        if self.__class__.__name__ == "Mercury":
+            command[2] += 1
+            command.extend(self.crc_check(command))
+        else:
+            command.append(ProtocolCode.FOOTER)
 
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
@@ -696,30 +695,42 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
-    def get_gripper_value(self, _type=None):
+    def get_gripper_value(self, gripper_type=None):
         """Get the value of gripper.
+        
+        Args:
+            gripper_type (int): default 1
+                1: Adaptive gripper
+                3: Parallel gripper
+                4: Flexible gripper
 
         Return: 
             gripper value (int)
         """
-        if _type is None:
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_type=gripper_type)
+        if gripper_type is None:
             return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
         else:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, _type, has_reply=True)
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
             
 
-    def set_gripper_state(self, flag, speed, _type):
+    def set_gripper_state(self, flag, speed, _type_1=None):
         """Set gripper switch state
 
         Args:
-            flag  (int): 0 - open, 1 - close, 10 - release
+            flag  (int): 0 - open, 1 - close, 254 - release
             speed (int): 1 ~ 100
+            _type_1 (int): default 1
+                1 : Adaptive gripper. default to adaptive gripper
+                2 : 5 finger dexterous hand
+                3 : Parallel gripper, this parameter can be omitted
+                4 : Flexible gripper
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, _type=_type)
-        if _type is None:
+        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1)
+        if _type_1 is None:
             return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
         else:
-            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, _type)
+            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, _type_1)
             
 
     def set_gripper_value(self, gripper_value, speed, gripper_type=None):
@@ -728,9 +739,13 @@ class CommandGenerator(DataProcessor):
         Args:
             gripper_value (int): 0 ~ 100
             speed (int): 1 ~ 100
+            gripper_type (int): default 1
+                1: Adaptive gripper
+                3: Parallel gripper, this parameter can be omitted
+                4: Flexible gripper
         """
         if gripper_type is not None:
-            self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
+            self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, _type=gripper_type)
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
         else:
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)

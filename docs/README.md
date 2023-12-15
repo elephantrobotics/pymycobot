@@ -934,12 +934,13 @@ Set the terminal atom io status
   - `gripper_type` (`int`):
     - 1 - Adaptive gripper.
     - 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+    - 4 - Flexible gripper
 
 - **Return**: gripper value (int)
 
 ### set_gripper_state
 
-- **Prototype**: `set_gripper_state(flag, speed, _type=None)`
+- **Prototype**: `set_gripper_state(flag, speed, _type_1=None)`
 
 - **Description**: Set gripper switch state
 
@@ -947,10 +948,11 @@ Set the terminal atom io status
 
   - `flag` (`int`): 0 - open, 1 - close
   - `speed` (`int`): 0 ~ 100
-  - `_type` (`int`): 
+  - `_type_1` (`int`): 
     - 1- Adaptive gripper, 
     - 2 - 5 finger dexterous hand, 
     - 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+    - 4 - Flexible gripper
 
 ### set_gripper_value
 
@@ -965,6 +967,7 @@ Set the terminal atom io status
   - `gripper_type` (int): 
     - 1 - Adaptive gripper
     - 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+    - 4 - Flexible gripper
 
 <!-- ### set_gripper_ini
 

@@ -23,6 +23,7 @@ from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
 from pymycobot.mecharmsocket import MechArmSocket
+from pymycobot.mercurychassis import MercuryChassis
 
 __all__ = [
     "MyCobot",
@@ -44,7 +45,8 @@ __all__ = [
     "Mercury",
     "MyAgv",
     "MechArmSocket",
-    "MyArmSocket"
+    "MyArmSocket",
+    "MercuryChassis"
 ]
 
 
@@ -52,7 +54,7 @@ if sys.platform == "linux":
     from pymycobot.mybuddyemoticon import MyBuddyEmoticon
     __all__.append("MyBuddyEmoticon")
 
-__version__ = "3.3.2"
+__version__ = "3.3.3"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

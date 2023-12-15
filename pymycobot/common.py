@@ -540,13 +540,13 @@ def read(self, genre, method=None, command=None, _class=None):
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
             k += 1
-            # if _class == "Mercury":
-            #     if data_len == 3:
-            #         datas += data
-            #         crc = self._serial_port.read(2)
-            #         if DataProcessor.crc_check(datas) == [v for v in crc]:
-            #             datas+=crc
-            #             break
+            if _class == "Mercury":
+                if data_len == 3:
+                    datas += data
+                    crc = self._serial_port.read(2)
+                    if DataProcessor.crc_check(datas) == [v for v in crc]:
+                        datas+=crc
+                        break
             if data_len == 1 and data == b"\xfa":
                 datas += data
                 if [i for i in datas] == command:
