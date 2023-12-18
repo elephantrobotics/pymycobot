@@ -149,7 +149,12 @@ class MyPalletizer(CommandGenerator, sms_sts):
                     ProtocolCode.GET_BASIC_INPUT,
                     ProtocolCode.GET_TOF_DISTANCE,
                     ProtocolCode.GET_COMMUNICATE_MODE,
-                    ProtocolCode.SET_COMMUNICATE_MODE
+                    ProtocolCode.SET_COMMUNICATE_MODE,
+                    ProtocolCode.SetHTSGripperTorque,
+                    ProtocolCode.GetHTSGripperTorque,
+                    ProtocolCode.GetGripperProtectCurrent,
+                    ProtocolCode.InitGripper,
+                    ProtocolCode.SET_FOUR_PIECES_ZERO
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:

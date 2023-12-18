@@ -166,7 +166,8 @@ class ProtocolCode(object):
     SET_PLAN_ACCELERATION = 0xD3
     move_round = 0xD4
     GET_ANGLES_COORDS = 0xD5
-    GET_ANGLES_COORDS_END = 0xD6
+    GET_QUICK_INFO = 0xD6
+    SET_FOUR_PIECES_ZERO = 0xD7
 
     # Motor status read
     GET_SERVO_SPEED = 0xE1
@@ -231,6 +232,9 @@ class ProtocolCode(object):
     GET_CURRENT_COORD_INFO = "M114"
     GET_BACK_ZERO_STATUS = "M119"
     IS_MOVING_END = "M9"
+    GET_GRIPPER_ANGLE = "M50"
+    SET_SYSTEM_VALUE = "M51"
+    GET_SYSTEM_VALUE = "M52"
 
 
 class DataProcessor(object):
@@ -422,7 +426,7 @@ class DataProcessor(object):
                 else:
                     res.append(i)
         elif data_len == 28:
-            if genre == ProtocolCode.GET_ANGLES_COORDS_END:
+            if genre == ProtocolCode.GET_QUICK_INFO:
                 for header_i in range(0, len(valid_data)-2, 2):
                     one = valid_data[header_i : header_i + 2]
                     res.append(self._decode_int16(one))
@@ -468,6 +472,8 @@ def write(self, command, method=None):
         for i in command:
             if isinstance(command, str):
                 log_command.append(command)
+            elif isinstance(i, str):
+                log_command.append(i)
             else:
                 log_command.append(hex(i))
         self.log.debug("_write: {}".format(log_command))
@@ -476,11 +482,11 @@ def write(self, command, method=None):
         if py_version == 2:
             self.sock.sendall("".join([chr(b) for b in command]))
         else:
-            # print(command)
             if isinstance(command, str):
-                self.sock.sendall(str(command).encode())
+                command = command.encode()
             else:
-                self.sock.sendall(bytes(command))
+                command = bytes(command)
+            self.sock.sendall(command)
     else:
         self._serial_port.reset_input_buffer()
         self.log.debug("_write: {}".format([hex(i) for i in command]))

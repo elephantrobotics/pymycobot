@@ -160,7 +160,7 @@ class MycobotTest(object):
             self.mycobot = None
             self.write_log_to_Text("断开连接成功 !")
         except AttributeError:
-            self.write_log_to_Text("还没有连接mycobot！！！")
+            self.write_log_to_Text("还没有连接机器！！！")
 
     # ============================================================
     #  Function method

@@ -52,7 +52,7 @@ class Mercury(CommandGenerator):
                 data = self._read(genre, _class=self.__class__.__name__)
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
-                res = self._process_received(data, genre)
+                res = self._process_received(data, genre, 14)
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.GET_ROBOT_ID,
@@ -337,6 +337,20 @@ class Mercury(CommandGenerator):
         """Pause recording of dragging teaching point"""
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
         
+    def is_gripper_moving(self, mode=None):
+        """Judge whether the gripper is moving or not
+        
+        Args:
+            mode: 1 - pro gripper(default)  2 - Parallel gripper
+
+        Returns:
+            0 - not moving
+            1 - is moving
+            -1- error data
+        """
+        if mode:
+            return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
+        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
         
 
         

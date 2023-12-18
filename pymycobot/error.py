@@ -110,7 +110,11 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     % value
                 )
         elif parameter == 'flag':
-            check_0_or_1(parameter, value, [0, 1, 10], value_type, exception_class, int)
+            check_0_or_1(parameter, value, [0, 1, 254], value_type, exception_class, int)
+        elif parameter == 'gripper_type':
+            check_0_or_1(parameter, value, [1, 3, 4], value_type, exception_class, int)
+        elif parameter == '_type_1':
+            check_0_or_1(parameter, value, [1, 2, 3, 4], value_type, exception_class, int)
             # if value not in [0, 1, 10]:
             #     raise exception_class("The data supported by parameter {} is 0 or 1 or 10, but the received value is {}".format(parameter, value))
         elif parameter == 'gripper_value':

@@ -118,6 +118,7 @@ We support Python2, Python3.5 or later.
     - [get\_gripper\_protect\_current](#get_gripper_protect_current)
     - [init\_gripper](#init_gripper)
     - [set\_gripper\_protect\_current](#set_gripper_protect_current)
+    - [set\_four\_pieces\_zero](#set_four_pieces_zero)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio\_init](#gpio_init)
     - [gpio\_output](#gpio_output)
@@ -933,12 +934,13 @@ Set the terminal atom io status
   - `gripper_type` (`int`):
     - 1 - Adaptive gripper.
     - 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+    - 4 - Flexible gripper
 
 - **Return**: gripper value (int)
 
 ### set_gripper_state
 
-- **Prototype**: `set_gripper_state(flag, speed, _type=None)`
+- **Prototype**: `set_gripper_state(flag, speed, _type_1=None)`
 
 - **Description**: Set gripper switch state
 
@@ -946,10 +948,11 @@ Set the terminal atom io status
 
   - `flag` (`int`): 0 - open, 1 - close
   - `speed` (`int`): 0 ~ 100
-  - `_type` (`int`): 
+  - `_type_1` (`int`): 
     - 1- Adaptive gripper, 
     - 2 - 5 finger dexterous hand, 
     - 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+    - 4 - Flexible gripper
 
 ### set_gripper_value
 
@@ -964,6 +967,7 @@ Set the terminal atom io status
   - `gripper_type` (int): 
     - 1 - Adaptive gripper
     - 3 - Parallel gripper, this parameter can be omitted, default to adaptive gripper
+    - 4 - Flexible gripper
 
 <!-- ### set_gripper_ini
 
@@ -1387,6 +1391,15 @@ Set the terminal atom io status
 
 - **Parameters**
   - `torque (int)`: 1 ~ 500
+
+### set_four_pieces_zero
+
+- **Prototype**: `set_four_pieces_zero()`
+
+- **Description**: Set the zero position of the four-piece motor.
+
+- **Return**
+  - `int`: 1 - Set successful. 0 - Set failed.
 
 ## Raspberry pi -- GPIO
 

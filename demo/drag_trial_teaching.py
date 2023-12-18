@@ -17,7 +17,6 @@ port: str
 mc: MyCobot
 sp: int = 80
 
-
 def setup():
     global port, mc
 
@@ -31,6 +30,17 @@ def setup():
     if _in == "1":
         robot_model = MyCobot
         print("MyCobot\n")
+        print("Please enter the model type:")
+        print("1. Pi")
+        print("2. Jetson Nano")
+        print("Default is Pi")
+        model_type = input()
+
+        if model_type == "2":
+            port = "/dev/ttyTHS1"
+        else:
+            pass
+        
     elif _in == "2":
         robot_model = MechArm
         print("MechArm\n")
@@ -47,6 +57,7 @@ def setup():
     for port in plist:
         print("{} : {}".format(idx, port))
         idx += 1
+
 
     _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
     port = str(plist[int(_in) - 1]).split(" - ")[0].strip()

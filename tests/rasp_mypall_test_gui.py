@@ -138,7 +138,7 @@ class MycobotTest(object):
         # if not baud:
         #     self.write_log_to_Text("请选择波特率")
         #     return
-        baud = 115200
+        baud = 1000000
 
         try:
             # self.mycobot = MyCobot(PI_PORT, PI_BAUD)
