@@ -50,6 +50,8 @@ class Mercury(CommandGenerator):
             if genre == ProtocolCode.SET_SSID_PWD:
                 return None
             res = self._process_received(data, genre, 14)
+            if res == []:
+                return None
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.GET_ROBOT_ID,

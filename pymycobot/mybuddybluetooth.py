@@ -54,6 +54,8 @@ class MyBuddyBlueTooth(MyBuddyCommandGenerator):
 
         if data:
             res = self._process_received(data, genre, arm=12)
+            if res == []:
+                return None
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.SOFTWARE_VERSION,

@@ -97,6 +97,8 @@ class MyBuddySocket(MyBuddyCommandGenerator):
         if has_reply:
             data = self._read(genre, 'socket')
             res = self._process_received(data, genre, arm=12)
+            if res == []:
+                return None
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.IS_POWER_ON,

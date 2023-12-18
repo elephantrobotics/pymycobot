@@ -86,6 +86,8 @@ class MyArm(CommandGenerator):
         if has_reply:
             data = self._read(genre, command=command)
             res = self._process_received(data, genre, arm=7)
+            if res == []:
+                return None
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.GET_ROBOT_ID,

@@ -136,6 +136,8 @@ class MyBuddy(MyBuddyCommandGenerator):
         if has_reply:
             data = self._read()
             res = self._process_received(data, genre, arm=12)
+            if res == []:
+                return None
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.SOFTWARE_VERSION,
