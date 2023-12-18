@@ -1140,7 +1140,7 @@ class CommandGenerator(DataProcessor):
             1: Set successful
         """
         self.calibration_parameters(class_name = self.__class__.__name__, torque=torque)
-        return  self._mesg(ProtocolCode.SetHTSGripperTorque, torque, has_reply = True)
+        return  self._mesg(ProtocolCode.SetHTSGripperTorque, [torque], has_reply = True)
     
     def get_HTS_gripper_torque(self):
         """Get gripper torque
@@ -1174,7 +1174,7 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, current=current)
         
-        return self._mesg(ProtocolCode.InitGripper, current)
+        return self._mesg(ProtocolCode.SetGripperProtectCurrent, current)
     
     def set_four_pieces_zero(self):
         """Set the zero position of the four-piece motor
