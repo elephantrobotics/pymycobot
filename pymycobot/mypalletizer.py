@@ -129,6 +129,8 @@ class MyPalletizer(CommandGenerator, sms_sts):
                 data = self._read(genre)
                 # print(data)
                 res = self._process_received(data, genre)
+                if res == []:
+                    return None
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.SOFTWARE_VERSION,

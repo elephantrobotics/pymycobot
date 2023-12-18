@@ -93,6 +93,8 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
                 res = self._process_received(data, genre)
+                if res == []:
+                    return None
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.GET_ROBOT_ID,

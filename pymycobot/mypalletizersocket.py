@@ -90,6 +90,8 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
                 res = self._process_received(data, genre)
+                if res == []:
+                    return None
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.IS_POWER_ON,
