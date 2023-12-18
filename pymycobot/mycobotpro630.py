@@ -7,7 +7,7 @@ import time
 import math
 from enum import Enum
 
-if platform.system() == "Linux":
+if platform.system() == "Linux" and platform.machine() == "aarch64":
     import linuxcnc as elerob
     import hal
     class JogMode(Enum):

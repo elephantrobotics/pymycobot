@@ -11,12 +11,20 @@ class MercuryChassis:
         self.recv.start()
         self.move_end = False
         
+    def close(self):
+        self._sock.close()
+    
+    def open(self):
+        self._sock.connect(("192.168.123.167", 9000))
+        
     def check_move_end(self):
         while True:
-            data = self._sock.recv(1024)
-            print(data)
-            data = json.loads(data)
-            self.move_end = data
+            try:
+                data = self._sock.recv(1024)
+                data = json.loads(data)
+                self.move_end = data
+            except:
+                pass
     
     # @property
     def is_move_end(self):
