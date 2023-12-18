@@ -708,10 +708,10 @@ class CommandGenerator(DataProcessor):
         Return: 
             gripper value (int)
         """
-        if _type is None:
+        if gripper_type is None:
             return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
         else:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, _type, has_reply=True)
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
             
 
     def set_gripper_state(self, flag, speed, _type_1=None):

@@ -8,7 +8,7 @@ from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class Mercury(CommandGenerator):
+class DualMercury(CommandGenerator):
     _write = write
     _read = read
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
@@ -19,7 +19,7 @@ class Mercury(CommandGenerator):
             timeout  : default 0.1
             debug    : whether show debug info
         """
-        super(Mercury, self).__init__(debug)
+        super(DualMercury, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
 
@@ -49,12 +49,10 @@ class Mercury(CommandGenerator):
             self._write(self._flatten(real_command))
 
             if has_reply:
-                data = self._read(genre, _class=self.__class__.__name__)
+                data = self._read(genre)
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
-                res = self._process_received(data, genre, 14)
-                if res == []:
-                    return None
+                res = self._process_received(data, genre)
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.GET_ROBOT_ID,
@@ -80,14 +78,12 @@ class Mercury(CommandGenerator):
                     ProtocolCode.GET_GRIPPER_MODE,
                     ProtocolCode.SET_SSID_PWD,
                     ProtocolCode.COBOTX_IS_GO_ZERO,
-                    ProtocolCode.GET_ERROR_DETECT_MODE
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
                     return [self._int2angle(angle) for angle in res]
                 elif genre in [
                     ProtocolCode.GET_COORDS,
-                    ProtocolCode.MERCURY_GET_BASE_COORDS,
                     ProtocolCode.GET_TOOL_REFERENCE,
                     ProtocolCode.GET_WORLD_REFERENCE,
                 ]:
@@ -121,25 +117,18 @@ class Mercury(CommandGenerator):
                     return r
                 elif genre == ProtocolCode.GO_ZERO:
                     r = []
-                    if res:
-                        if 1 not in res[1:]:
-                            return res[0]
-                        else:
-                            for i in range(1, len(res)):
-                                if res[i] == 1:
-                                    r.append(i)
+                    if 1 not in res[1:]:
+                        return res[0]
+                    else:
+                        for i in range(1, len(res)):
+                            if res[i] == 1:
+                                r.append(i)
                     return r
-                elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES]:
+                elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_SOLUTION_ANGLES]:
                         return self._int2angle(res[0])
                 else:
                     return res
             return None
-    
-    def open(self):
-        self._serial_port.open()
-        
-    def close(self):
-        self._serial_port.close()
 
     def set_solution_angles(self, angle, speed):
         """Set zero space deflection angle value
@@ -222,6 +211,7 @@ class Mercury(CommandGenerator):
         # )
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
     
+
     def servo_restore(self, joint_id):
         """Abnormal recovery of joints
 
@@ -235,22 +225,13 @@ class Mercury(CommandGenerator):
             class_name=self.__class__.__name__, servo_restore=joint_id
         )
         self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+
+    def close(self):
+        self._serial_port.close()
         
-    def set_error_detect_mode(self, mode):
-        """Set error detection mode. Turn off without saving, default to open state
-        
-        Return:
-            mode : 0 - close 1 - open.
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, mode=mode
-        )
-        self._mesg(ProtocolCode.SET_ERROR_DETECT_MODE, mode)
-        
-    def get_error_detect_mode(self):
-        """Set error detection mode"""
-        return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
-    
+    def open(self):
+        self._serial_port.open()
+
     def sync_send_angles(self, degrees, speed, timeout=15):
         """Send the angle in synchronous state and return when the target point is reached
             
@@ -284,75 +265,3 @@ class Mercury(CommandGenerator):
                 break
             time.sleep(0.1)
         return self
-        
-    def get_base_coords(self):
-        """get base coords"""
-        return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS, has_reply=True)
-    
-    def send_base_coord(self, axis, coord, speed):
-        """_summary_
-
-        Args:
-            axis (_type_): _description_
-            coord (_type_): _description_
-            speed (_type_): _description_
-        """
-        if axis < 4:
-            coord = self._coord2int(coord)
-        else:
-            coord = self._angle2int(coord)
-        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed)
-    
-    def send_base_coords(self, coords, speed):
-        """_summary_
-
-        Args:
-            coords (_type_): _description_
-            speed (_type_): _description_
-        """
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed)
-    
-    def jog_base_coord(self, axis, direction, speed):
-        """_summary_
-
-        Args:
-            axis (_type_): _description_
-            direction (_type_): _description_
-            speed (_type_): _description_
-        """
-        return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed)
-    
-    def drag_tech_save(self):
-        """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 90 seconds."""
-        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE)
-    
-    def drag_tech_execute(self):
-        """Start dragging the teaching point and only execute it once."""
-        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE)
-    
-    def drag_tech_pause(self):
-        """Pause recording of dragging teaching point"""
-        self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
-        
-    def is_gripper_moving(self, mode=None):
-        """Judge whether the gripper is moving or not
-        
-        Args:
-            mode: 1 - pro gripper(default)  2 - Parallel gripper
-
-        Returns:
-            0 - not moving
-            1 - is moving
-            -1- error data
-        """
-        if mode:
-            return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
-        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
-        
-
-        
