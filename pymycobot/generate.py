@@ -1174,7 +1174,7 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, current=current)
         
-        return self._mesg(ProtocolCode.SetGripperProtectCurrent, current)
+        return self._mesg(ProtocolCode.SetGripperProtectCurrent, [current])
     
     def set_four_pieces_zero(self):
         """Set the zero position of the four-piece motor
