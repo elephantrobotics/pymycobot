@@ -726,10 +726,11 @@ class CommandGenerator(DataProcessor):
                 3 : Parallel gripper, this parameter can be omitted
                 4 : Flexible gripper
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1)
         if _type_1 is None:
+            self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed)
             return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
         else:
+            self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1)
             return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, _type_1)
             
 
