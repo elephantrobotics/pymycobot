@@ -798,7 +798,7 @@ get command refresh mode
 
 ### set_servo_data
 
-- **Prototype**: `set_servo_data(servo_no, data_id, value)`
+- **Prototype**: `set_servo_data(servo_no, data_id, value, mode=None)`
 - **Description**: Set the data parameters of the specified address of the steering gear.
 
 - **Parameters**:
@@ -808,6 +808,7 @@ get command refresh mode
     - for myArm: int 1 - 7.
   - `data_id`: Data address.
   - `value`: 0 - 4096
+  - `mode`: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
 
 ### get_servo_data
 
