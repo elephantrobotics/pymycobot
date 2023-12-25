@@ -6,8 +6,31 @@ import platform
 import time
 import math
 from enum import Enum
+import subprocess
+import logging
+from pymycobot.log import setup_logging
 
-if platform.system() == "Linux" and platform.machine() == "aarch64":
+def is_debian_os():
+    try:
+        # 执行 lsb_release -a 命令，并捕获输出
+        result = subprocess.run(['lsb_release', '-a'], capture_output=True, text=True, check=True)
+
+        # 解析输出，获取 Distributor ID 的信息
+        lines = result.stdout.split('\n')
+        for line in lines:
+            if line.startswith('Distributor ID:'):
+                distributor_id = line.split(':', 1)[1].strip()
+                if distributor_id != "Debian":
+                    return False
+                return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing lsb_release -a: {e}")
+        return False
+        
+    
+    return None
+if platform.system() == "Linux" and platform.machine() == "aarch64" and is_debian_os():
     import linuxcnc as elerob
     import hal
     class JogMode(Enum):
@@ -189,7 +212,7 @@ class JointState(Enum):
 
 
 class Pro630:
-    def __init__(self):
+    def __init__(self, debug=False):
         self.c = elerob.command()
         self.s = elerob.stat()
         self.e = elerob.error_channel()
@@ -198,6 +221,7 @@ class Pro630:
         self.g = hal.component("halgpio_py", "halgpio")
         self.init_pins()
         self.g.ready()
+        setup_logging(debug)
 
     def init_pins(self):
         """Inits HAL pins in halgpio component."""
@@ -260,6 +284,7 @@ class Pro630:
         self.set_digital_out(DO.POWER_ON_RELAY_2, 0)
         self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 0)
 
+    # TODO blockly 12-18测试可用
     def get_coords(self):
         """Returns current robot coordinates.
 
@@ -269,6 +294,7 @@ class Pro630:
         c = self.get_actl_pos_float()
         return c
 
+    # TODO blockly 12-18测试可用
     def set_coords(self, coords, speed):
         """_summary_
 
@@ -279,8 +305,9 @@ class Pro630:
         if self.is_in_position(coords, True):
             return
         self.set_robot_move_state(RobotMoveState.MOVE_AXIS_STATE, 0, 0)
-        self.send_mdi("G01F" + str(speed) + self.coords_to_gcode(coords))
+        self.send_mdi("G01F" + str(speed * MAX_LINEAR_SPEED / 100) + self.coords_to_gcode(coords))
 
+    # TODO blockly 12-18测试可用
     def get_coord(self, axis):
         """_summary_
 
@@ -292,50 +319,63 @@ class Pro630:
         """
         return self.get_coords()[axis]
 
+    # TODO blockly 12-18测试可用
     def set_coord(self, axis, coord, speed):
         """_summary_
 
         Args:
-            axis (_type_): _description_
+            axis (_type_): Axis.X ~ Axis.RY
             coord (_type_): _description_
-            speed (_type_): _description_
+            speed (_type_): 1~100
         """
         coords = self.get_coords()
-        coords[axis] = coord
+        coords[axis.value] = coord
         self.set_coords(coords, speed)
 
+    # TODO blockly 12-18测试可用
     def get_angles(self):
         """_summary_"""
         return self.get_actl_joint_float()
 
+    # TODO blockly 12-18测试可用
     def set_angles(self, angles, speed):
         """_summary_
 
         Args:
             angles (_type_): _description_
-            speed (_type_): _description_
+            speed (_type_): 1~100
         """
         if self.is_in_position(angles, False):
             return
         self.set_robot_move_state(RobotMoveState.MOVE_JOINT_STATE, 0, 0)
-        self.send_mdi("G38.3F" + str(speed) + self.angles_to_gcode(angles))
-
+        self.send_mdi("G38.3F" + str(speed * MAX_ANGULAR_SPEED / 100) + self.angles_to_gcode(angles))
+    # TODO blockly 12-18测试可用
     def get_angle(self, joint):
-        """_summary_"""
-        return self.get_angles()[joint]
+        """_summary_
 
+        Args:
+            joint (int): 0 ~ 5
+
+        Returns:
+            _type_: _description_
+        """
+        return self.get_angles()[joint]
+    # TODO blockly 12-18测试可用
     def set_angle(self, joint, angle, speed):
         """_summary_
 
         Args:
-            joint (_type_): _description_
+            joint (_type_): 0 ~ 5 or Joint.J1 ~ Joint.J6
             angle (_type_): _description_
             speed (_type_): _description_
         """
         angles = self.get_angles()
-        angles[joint] = angle
+        if isinstance(joint, int):
+            angles[joint] = angle
+        elif isinstance(joint, Joint):
+            angles[joint.value] = angle
         self.set_angles(angles, speed)
-
+    # TODO blockly 12-18测试可用
     def get_speed(self):
         """_summary_"""
         return self.get_current_velocity()
@@ -379,30 +419,30 @@ class Pro630:
         """
         self.s.poll()
         return self.get_motion_enabled()
-
+    # TODO blockly 12-18测试可用
     def jog_angle(self, joint, direction, speed):
         """_summary_
 
         Args:
-            joint (Joint): _description_
-            direction (_type_): _description_
+            joint (Joint): 0 ~ 5
+            direction (_type_): -1 or 1 (1增大，-1减小)
             speed (_type_): _description_
         """
         self.set_robot_move_state(RobotMoveState.JOG_JOINT_STATE, joint, direction)
         self.command_id += 1
-        self.jog_continuous(JogMode.JOG_JOINT, joint, direction, speed, self.command_id)
-
+        self.jog_continuous(JogMode.JOG_JOINT.value, joint, direction, speed, self.command_id)
+    # TODO blockly 12-18测试可用
     def jog_coord(self, axis, direction, speed):
         """_summary_
 
         Args:
-            axis (Axis): _description_
-            direction (_type_): _description_
-            speed (_type_): _description_
+            axis (Axis): 0 ~ 5 对应 x ~ rz
+            direction (_type_): 1 增大，-1 减小
+            speed (_type_): 1 ~ 100
         """
         self.set_robot_move_state(RobotMoveState.JOG_AXIS_STATE, axis, direction)
         self.command_id += 1
-        self.jog_continuous(JogMode.JOG_TELEOP, axis, direction, speed, self.command_id)
+        self.jog_continuous(JogMode.JOG_TELEOP.value, axis, direction, speed, self.command_id)
 
     def check_running(self):
         """_summary_
@@ -411,13 +451,13 @@ class Pro630:
             bool: _description_
         """
         return not self.is_in_commanded_position()
-
+    # TODO blockly 12-18测试可用
     def is_in_position(self, coords, is_linear):
         """_summary_
 
         Args:
             coords (_type_): _description_
-            is_linear (bool): _description_
+            is_linear (bool): 0 - angles 1 - coords
         """
         if is_linear:
             return self.coords_equal(self.get_coords(), coords)
@@ -480,7 +520,7 @@ class Pro630:
         """_summary_
 
         Args:
-            joint (Joint): _description_
+            joint (Joint): Joint.J1 ~ Joint.J6
         """
         return self.get_digital_in(DI(DI.J1_SERVO_ENABLED.value + joint.value))
 
@@ -494,37 +534,37 @@ class Pro630:
             and self.is_servo_enabled(Joint.J5)
             and self.is_servo_enabled(Joint.J6)
         )
-
+    # TODO blockly 12-18测试可用
     def get_joint_min_pos_limit(self, joint):
         """_summary_
 
         Args:
-            joint_number (Joint): _description_
+            joint_number (Joint): Joint.J1 ~ Joint.J6
         """
         return self.g[str(joint.value) + ".min_limit"]
-
+    # TODO blockly 12-18测试可用
     def set_joint_min_pos_limit(self, joint, limit):
         """_summary_
 
         Args:
-            joint_number (Joint): _description_
+            joint_number (Joint): Joint.J1 ~ Joint.J6
             limit (float): _description_
         """
         self.g[str(joint.value) + ".min_limit"] = limit
-
+    # TODO blockly 12-18测试可用
     def get_joint_max_pos_limit(self, joint):
         """_summary_
 
         Args:
-            joint_number (Joint): _description_
+            joint_number (Joint): Joint.J1 ~ Joint.J6
         """
         return self.g[str(joint.value) + ".max_limit"]
-
+    # TODO blockly 12-18测试可用
     def set_joint_max_pos_limit(self, joint, limit):
         """_summary_
 
         Args:
-            joint_number (Joint): _description_
+            joint_number (Joint): Joint.J1 ~ Joint.J6
             limit (float): _description_
         """
         self.g[str(joint.value) + ".max_limit"] = limit
@@ -617,7 +657,7 @@ class Pro630:
     def get_robot_status(self):
         """_summary_"""
         return self.state_check()
-
+    # TODO blockly 12-18测试可用
     def get_robot_temperature(self):
         """Returns robot (currently CPU) temperature.
 
@@ -626,7 +666,7 @@ class Pro630:
         """
         cpu_temp = CPUTemperature()
         return cpu_temp.temperature
-
+    # TODO blockly 12-18测试可用
     def get_robot_power(self):
         """Returns robot power in Watts (W)."""
         robot_power = 17
@@ -640,7 +680,7 @@ class Pro630:
         """_summary_
 
         Args:
-            joint (Joint): _description_
+            joint (Joint): Joint.J1 ~ Joint.J6
         """
         joint_status = self.g["U32-in-" + str(joint.value).zfill(2)]
         if joint_status & (1 << 1):
@@ -656,7 +696,7 @@ class Pro630:
             joint (Joint): _description_
         """
         return self.get_analog_in(AI(AI.J1_TEMPERATURE.value + joint.value))
-
+    # TODO blockly 12-18测试可用
     def get_joint_communication(self, joint):
         """_summary_
 
@@ -825,13 +865,13 @@ class Pro630:
             print("jog_continuous cancelled: some delay: jog_id != command_id")
             return
         self.c.jog(elerob.JOG_CONTINUOUS, jog_mode, joint_or_axis, direction * speed)
-
+    #TODO blockly 12.18测试可用
     def jog_increment(self, jog_mode, joint_or_axis, incr, speed):
         """Move joint or axis by specified value.
 
         Args:
-            jogmode (_type_): move by axis or joint
-            joint_or_axis (_type_): axis or joint
+            jogmode (_type_): move by axis(0) or joint(1)
+            joint_or_axis (_type_): axis(0~5) or joint(0~5)
             incr (_type_): distance or angle to move for
             speed (_type_): speed of movement
 
@@ -896,13 +936,13 @@ class Pro630:
         else:
             print("Jog Absolute: Wrong Jog Mode.")
             return
-
+    #TODO blockly 12.18测试可用
     def jog_stop(self, joint_or_axis, jog_mode):
         """_summary_
 
         Args:
-            joint_or_axis (_type_): _description_
-            jog_mode (_type_): _description_
+            joint_or_axis (_type_): 0~5
+            jog_mode (_type_): axis(0) or joint(1)
         """
         if jog_mode and (joint_or_axis < 0 or joint_or_axis >= MAX_JOINTS):
             return False
@@ -941,13 +981,13 @@ class Pro630:
         if new_robot_state == RobotMoveState.JOG_JOINT_STATE:
             self.command_id += 1
             self.jog_continuous(
-                JogMode.JOG_JOINT, joint_or_axis, direction, 1, self.command_id
+                JogMode.JOG_JOINT.value, joint_or_axis, direction, 1, self.command_id
             )
             time.sleep(0.1)
         elif new_robot_state == RobotMoveState.JOG_AXIS_STATE:
             self.command_id += 1
             self.jog_continuous(
-                JogMode.JOG_TELEOP, joint_or_axis, direction, 1, self.command_id
+                JogMode.JOG_TELEOP.value, joint_or_axis, direction, 1, self.command_id
             )
             time.sleep(0.1)
         elif new_robot_state == RobotMoveState.MOVE_AXIS_STATE:
@@ -1062,6 +1102,7 @@ class Pro630:
         if self.s.task_mode != elerob.MODE_MDI:
             print("send_mdi error: task_mode is not MODE_MDI")
             return False
+        logging.debug(program)
         self.c.mdi(program)
         return True
 
@@ -1470,12 +1511,12 @@ class Pro630:
         """
         self.s.poll()
         return [
-            "%5.3f" % self.s.actual_position[0],
-            "%5.3f" % self.s.actual_position[1],
-            "%5.3f" % self.s.actual_position[2],
-            "%5.3f" % self.s.actual_position[3],
-            "%5.3f" % self.s.actual_position[4],
-            "%5.3f" % self.s.actual_position[5],
+            round(self.s.actual_position[0], 3),
+            round(self.s.actual_position[1], 3),
+            round(self.s.actual_position[2], 3),
+            round(self.s.actual_position[3], 3),
+            round(self.s.actual_position[4], 3),
+            round(self.s.actual_position[5], 3),
         ]
 
     def get_cmd_joint_float(self):
@@ -1502,12 +1543,12 @@ class Pro630:
         """
         self.s.poll()
         return [
-            "%5.3f" % self.s.joint_actual_position[0],
-            "%5.3f" % self.s.joint_actual_position[1],
-            "%5.3f" % self.s.joint_actual_position[2],
-            "%5.3f" % self.s.joint_actual_position[3],
-            "%5.3f" % self.s.joint_actual_position[4],
-            "%5.3f" % self.s.joint_actual_position[5],
+            round(self.s.joint_actual_position[0], 3),
+            round(self.s.joint_actual_position[1], 3),
+            round(self.s.joint_actual_position[2], 3),
+            round(self.s.joint_actual_position[3], 3),
+            round(self.s.joint_actual_position[4], 3),
+            round(self.s.joint_actual_position[5], 3),
         ]
 
     ################################
@@ -1782,12 +1823,12 @@ class Pro630:
             bool: True if coords are equal, False otherwise.
         """
         return (
-            self.float_equal(coords_1[Axis.X], coords_2[Axis.X])
-            and self.float_equal(coords_1[Axis.Y], coords_2[Axis.Y])
-            and self.float_equal(coords_1[Axis.Z], coords_2[Axis.Z])
-            and self.float_equal(coords_1[Axis.RX], coords_2[Axis.RX])
-            and self.float_equal(coords_1[Axis.RY], coords_2[Axis.RY])
-            and self.float_equal(coords_1[Axis.RZ], coords_2[Axis.RZ])
+            self.float_equal(coords_1[Axis.X.value], coords_2[Axis.X.value])
+            and self.float_equal(coords_1[Axis.Y.value], coords_2[Axis.Y.value])
+            and self.float_equal(coords_1[Axis.Z.value], coords_2[Axis.Z.value])
+            and self.float_equal(coords_1[Axis.RX.value], coords_2[Axis.RX.value])
+            and self.float_equal(coords_1[Axis.RY.value], coords_2[Axis.RY.value])
+            and self.float_equal(coords_1[Axis.RZ.value], coords_2[Axis.RZ.value])
         )
 
     def angles_equal(self, angles_1, angles_2):
@@ -1801,10 +1842,10 @@ class Pro630:
             bool: True if angles are equal, False otherwise.
         """
         return (
-            self.float_equal(angles_1[Axis.X], angles_2[Axis.X])
-            and self.float_equal(angles_1[Axis.Y], angles_2[Axis.Y])
-            and self.float_equal(angles_1[Axis.Z], angles_2[Axis.Z])
-            and self.float_equal(angles_1[Axis.RX], angles_2[Axis.RX])
-            and self.float_equal(angles_1[Axis.RY], angles_2[Axis.RY])
-            and self.float_equal(angles_1[Axis.RZ], angles_2[Axis.RZ])
+            self.float_equal(angles_1[Axis.X.value], angles_2[Axis.X.value])
+            and self.float_equal(angles_1[Axis.Y.value], angles_2[Axis.Y.value])
+            and self.float_equal(angles_1[Axis.Z.value], angles_2[Axis.Z.value])
+            and self.float_equal(angles_1[Axis.RX.value], angles_2[Axis.RX.value])
+            and self.float_equal(angles_1[Axis.RY.value], angles_2[Axis.RY.value])
+            and self.float_equal(angles_1[Axis.RZ.value], angles_2[Axis.RZ.value])
         )
