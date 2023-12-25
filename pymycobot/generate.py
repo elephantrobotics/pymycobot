@@ -581,7 +581,7 @@ class CommandGenerator(DataProcessor):
             self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id, value=value, mode=mode)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, [value], mode)
 
-    def get_servo_data(self, servo_id, data_id):
+    def get_servo_data(self, servo_id, data_id, mode=None):
         """Read the data parameter of the specified address of the steering gear.
 
         Args:
@@ -590,10 +590,16 @@ class CommandGenerator(DataProcessor):
                 for mypalletizer: Joint id 1 - 4
                 for myArm: joint id 1 - 7
             data_id: Data address.
+            mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
 
         Return:
             values 0 - 4096
         """
+        if mode is not None:
+            self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id)
+            return self._mesg(
+                ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
+            )
         self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id)
         return self._mesg(
             ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
