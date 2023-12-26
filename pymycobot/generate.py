@@ -598,7 +598,7 @@ class CommandGenerator(DataProcessor):
         if mode is not None:
             self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id, mode=mode)
             return self._mesg(
-                ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
+                ProtocolCode.GET_SERVO_DATA, servo_id, data_id, mode, has_reply=True
             )
         self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id)
         return self._mesg(
