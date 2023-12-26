@@ -718,10 +718,10 @@ class CommandGenerator(DataProcessor):
         Return: 
             gripper value (int)
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, gripper_type=gripper_type)
         if gripper_type is None:
             return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
         else:
+            self.calibration_parameters(class_name = self.__class__.__name__, gripper_type=gripper_type)
             return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
             
 
