@@ -323,3 +323,11 @@ class MyAgv(DataProcessor):
         """Motor stall recovery"""
         self._mesg(ProtocolCode.RESTORE.value, 1)
     
+    # def get_battery_voltage(self, num=1):
+    #     """Get battery voltage
+
+    #     Args:
+    #         num (int, optional): Battery ID number. Defaults to 1.
+    #     """
+    #     mcu_data = self.get_mcu_info()
+    #     return self._mesg(ProtocolCode.GET_BATTERY_INFO.value, has_reply = True)

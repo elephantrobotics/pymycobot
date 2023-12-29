@@ -122,7 +122,6 @@ class ultraArm:
                             qsize = int(q[qstart + 1 : qend])
                             return qsize
                     except Exception as e:
-                        print(e)
                         count += 1
                         continue
                 elif flag == 'isStop':
@@ -130,8 +129,17 @@ class ultraArm:
                         return 1
                     else:
                         return 0
-                elif flag in ['gripper', 'system']:
-                    return int(data[data.find("[")+1:-1])
+                elif flag == 'gripper':
+                    header = "GRIPPERANGLE["
+                    read = data.find(header)+len(header)
+                    # print(data[read:])
+                    end = data[read:].find(']')
+                    return data[read:read+end]
+                elif flag == 'system':
+                    header = "ReadSYS["
+                    read = data.find(header)+len(header)
+                    end = data[read:].find(']')
+                    return data[read:read+end]
                 elif flag == None:
                     return 0
 
