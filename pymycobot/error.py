@@ -200,7 +200,7 @@ def calibration_parameters(**kwargs):
         robot_limit = json.load(f)
     parameter_list = list(kwargs.keys())
     class_name =  kwargs.get("class_name", None)
-    if class_name == "Mercury":
+    if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
