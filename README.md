@@ -1,4 +1,4 @@
-# This is Python API for myCobot
+# This is Python API for ElephantRobotics product
 
 ![Python 2.7](https://img.shields.io/badge/Python-v2.7%5E-green?logo=python)
 ![Python 3](https://img.shields.io/badge/Python-v3%5E-green?logo=python)

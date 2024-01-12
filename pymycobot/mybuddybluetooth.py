@@ -82,33 +82,49 @@ class MyBuddyBlueTooth(MyBuddyCommandGenerator):
                     ProtocolCode.GET_END_TYPE,
                     ProtocolCode.GET_MOVEMENT_TYPE,
                     ProtocolCode.GET_REFERENCE_FRAME,
-                    ProtocolCode.GET_JOINT_MIN_ANGLE,
-                    ProtocolCode.GET_JOINT_MAX_ANGLE
+                    ProtocolCode.GET_FRESH_MODE,
+                    ProtocolCode.SetHTSGripperTorque,
+                    ProtocolCode.GetHTSGripperTorque,
+                    ProtocolCode.GetGripperProtectCurrent,
+                    ProtocolCode.InitGripper,
+                    ProtocolCode.SET_FOUR_PIECES_ZERO
+                # ProtocolCode.GET_SERVO_CURRENTS
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
                     return [self._int2angle(angle) for angle in res]
                 elif genre in [ProtocolCode.GET_ANGLE]:
-                    return self._process_single(self._int2angle(angle) for angle in res)
+                    return self._int2angle(res[0]) if res else None
                 elif genre in [ProtocolCode.GET_COORD]:
                     if real_command[5] < 4:
-                        return self._int2coord(res[0])
+                        if real_command[2] == 3:
+                            return self._int2angle(res[0]) if res else None
+                        return self._int2coord(res[0]) if res else None
                     else:
-                        return self._int2angle(res[0])
-                elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.BASE_TO_SINGLE_COORDS]:
+                        return self._int2angle(res[0]) if res else None
+                elif genre in [ProtocolCode.GET_ALL_BASE_COORDS, ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_BASE_COORDS, ProtocolCode.GET_BASE_COORD, ProtocolCode.BASE_TO_SINGLE_COORDS]:
                     if res:
-                        r = []
+                        r = [] 
                         for idx in range(3):
                             r.append(self._int2coord(res[idx]))
                         for idx in range(3, 6):
                             r.append(self._int2angle(res[idx]))
+                    if len(res) == 12:
+                        r1 = []
+                        for idx in range(6, 9):
+                            r1.append(self._int2coord(res[idx]))
+                        for idx in range(9, 12):
+                            r1.append(self._int2angle(res[idx]))
+                        return [r, r1]
                         return r
-                    else: 
+                    else:
                         return res
-                elif genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.COLLISION]:
-                    return [self._int2coord(angle) for angle in res]
-                else:
-                    return res
+            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                return self._int2coord(res[0])
+            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.COLLISION]:
+                return [self._int2coord(angle) for angle in res]
+            else:
+                return res
             return None
         
     def close(self):

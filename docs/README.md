@@ -1,6 +1,6 @@
 # pymycobot
 
-**This is python API for mycobot.**
+**This is python API for ElephantRobotics product**
 
 We support Python2, Python3.5 or later.
 
