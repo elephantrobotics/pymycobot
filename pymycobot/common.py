@@ -316,7 +316,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and _class == "Mercury":
+                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and _class in ["Mercury", "MercurySocket"]:
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -329,7 +329,7 @@ class DataProcessor(object):
                 if isinstance(args[index], str):
                     processed_args.append(args[index])
                 else:
-                    if genre == ProtocolCode.SET_SERVO_DATA and _class == "Mercury" and index == 2:
+                    if genre == ProtocolCode.SET_SERVO_DATA and _class in ["Mercury", "MercurySocket"] and index == 2:
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
@@ -540,7 +540,7 @@ def read(self, genre, method=None, command=None, _class=None):
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
             k += 1
-            if _class == "Mercury":
+            if _class in ["Mercury", "MercurySocket"]:
                 if data_len == 3:
                     datas += data
                     crc = self._serial_port.read(2)
