@@ -106,14 +106,9 @@ class MyBuddy(MyBuddyCommandGenerator):
                             datas = b'\xfe'
                             pre = k  
             except:
-                self.log.debug("_read: {}".format(datas))
-                
-                datas = None
                 break
         else:
-            self.log.debug("_read: {}".format(datas))
-
-            datas = None
+            datas = b''
         self.log.debug("_read: {}".format(datas))
         return datas
     
