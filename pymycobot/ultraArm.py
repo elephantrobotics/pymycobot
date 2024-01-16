@@ -5,7 +5,7 @@ import math
 
 
 class ultraArm:
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate=115200, timeout=0.1, debug=False):
 
         """
         Args:
@@ -357,8 +357,8 @@ class ultraArm:
 
         Args:
             state:
-                0 - open
-                1 - close
+                1 - open
+                0 - close
         """
         if state:
             command = ProtocolCode.GPIO_CLOSE + ProtocolCode.END
