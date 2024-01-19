@@ -24,7 +24,7 @@ from pymycobot.myagv import MyAgv
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
 from pymycobot.mercurychassis import MercuryChassis
-from pymycobot.mycobotpro630 import Pro630
+from pymycobot.mycobotpro630 import Phoenix
 
 __all__ = [
     "MyCobot",
@@ -48,7 +48,7 @@ __all__ = [
     "MechArmSocket",
     "MyArmSocket",
     "MercuryChassis",
-    "Pro630"
+    "Phoenix"
 ]
 
 

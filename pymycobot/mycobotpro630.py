@@ -8,8 +8,8 @@ import math
 from enum import Enum
 import subprocess
 import logging
+import os
 from pymycobot.log import setup_logging
-
 def is_debian_os():
     try:
         # 执行 lsb_release -a 命令，并捕获输出
@@ -27,8 +27,8 @@ def is_debian_os():
     except subprocess.CalledProcessError as e:
         print(f"Error executing lsb_release -a: {e}")
         return False
-        
-    
+
+
     return None
 if platform.system() == "Linux" and platform.machine() == "aarch64" and is_debian_os():
     import linuxcnc as elerob
@@ -44,8 +44,16 @@ MAX_CARTE = 3
 jog_velocity = 1.0  # 100.0/60.0
 angular_jog_velocity = 3600 / 60
 MAX_PINS = 64
+MAX_ANGULAR_SPEED = 6930
+MAX_LINEAR_SPEED = 30000
+DEFAULT_XY_TORQUE_LIMIT = 55
+DEFAULT_Z_TORQUE_LIMIT = 30
 
 
+class TaskMode(Enum):
+    MANUAL = 1
+    AUTO = 2
+    MDI = 3
 
 
 class RobotMoveState(Enum):
@@ -55,6 +63,11 @@ class RobotMoveState(Enum):
     MOVE_AXIS_STATE = 3
     MOVE_JOINT_STATE = 4
     RUN_PROGRAM_STATE = 5
+
+
+class JogDirection(Enum):
+    POSITIVE = 1
+    NEGATIVE = -1
 
 
 class Axis(Enum):
@@ -78,9 +91,42 @@ class Joint(Enum):
 class DI(Enum):
     """Available Digital Input Pins."""
 
+    PIN_0 = 0
+    PIN_1 = 1
+    PIN_2 = 2
+    PIN_3 = 3
+    PIN_4 = 4
+    PIN_5 = 5
+    PIN_6 = 6
+    PIN_7 = 7
+    PIN_8 = 8
+    PIN_9 = 9
+    PIN_10 = 10
+    PIN_11 = 11
+    PIN_12 = 12
+    PIN_13 = 13
+    PIN_14 = 14
+
     CAT_PHYSICAL_START = 15
     CAT_PHYSICAL_STOP = 16
     CAT_PHYSICAL_USER_DEFINE = 17
+
+    PIN_18 = 18
+    PIN_19 = 19
+    PIN_20 = 20
+    PIN_21 = 21
+    PIN_22 = 22
+    PIN_23 = 23
+    PIN_24 = 24
+    PIN_25 = 25
+    PIN_26 = 26
+    PIN_27 = 27
+    PIN_28 = 28
+    PIN_29 = 29
+    PIN_30 = 30
+    PIN_31 = 31
+    PIN_32 = 32
+    PIN_33 = 33
 
     J1_COMMUNICATION = 34
     J2_COMMUNICATION = 35
@@ -91,6 +137,9 @@ class DI(Enum):
 
     IO_STOP_TRIGGERED = 40
     IO_RUN_TRIGGERED = 41
+
+    PIN_42 = 42
+
     HARDWARE_PAUSE_PRESSED = 43
 
     BRAKE_ACTIVATION_RUNNING = 44
@@ -103,6 +152,10 @@ class DI(Enum):
 
     HARDWARE_FREE_MOVE = 51
     MOTION_ENABLE = 52
+
+    PIN_53 = 53
+    PIN_54 = 54
+    PIN_55 = 55
 
     J1_STATUS = 56
     J2_STATUS = 57
@@ -118,8 +171,55 @@ class DI(Enum):
 class DO(Enum):
     """Available Digital Output Pins."""
 
-    BRAKE_ACTIVE_AUTO = 47
+    PIN_0 = 0
+    PIN_1 = 1
+    PIN_2 = 2
+    PIN_3 = 3
+    PIN_4 = 4
+    PIN_5 = 5
+    PIN_6 = 6
+    PIN_7 = 7
+    PIN_8 = 8
+    PIN_9 = 9
+    PIN_10 = 10
+    PIN_11 = 11
+    PIN_12 = 12
+    PIN_13 = 13
+    PIN_14 = 14
+    PIN_15 = 15
+    PIN_16 = 16
+    PIN_17 = 17
+    PIN_18 = 18
+    PIN_19 = 19
+    PIN_20 = 20
+    PIN_21 = 21
+    PIN_22 = 22
+    PIN_23 = 23
+    PIN_24 = 24
+    PIN_25 = 25
+    PIN_26 = 26
+    PIN_27 = 27
+    PIN_28 = 28
+    PIN_29 = 29
+    PIN_30 = 30
+    PIN_31 = 31
+    PIN_32 = 32
+    PIN_33 = 33
+    PIN_34 = 34
+    PIN_35 = 35
+    PIN_36 = 36
+    PIN_37 = 37
+    PIN_38 = 38
+    PIN_39 = 39
+    PIN_40 = 40
+    PIN_41 = 41
+    PIN_42 = 42
+    PIN_43 = 43
+    PIN_44 = 44
+    PIN_45 = 45
+    PIN_46 = 46
 
+    BRAKE_ACTIVE_AUTO = 47
     BRAKE_MANUAL_MODE_ENABLE = 48
     J1_BRAKE_RELEASE = 49
     J2_BRAKE_RELEASE = 50
@@ -132,11 +232,50 @@ class DO(Enum):
     PROGRAM_AUTO_RUNNING = 56
     POWER_ON_RELAY_1 = 57
     POWER_ON_RELAY_2 = 58
+
+    PIN_59 = 59
+
     SOFTWARE_FREE_MOVE = 60
+
+    PIN_61 = 61
+    PIN_62 = 62
+    PIN_63 = 63
 
 
 class AI(Enum):
     """Available Analog Input Pins."""
+
+    PIN_0 = 0
+    PIN_1 = 1
+    PIN_2 = 2
+    PIN_3 = 3
+    PIN_4 = 4
+    PIN_5 = 5
+    PIN_6 = 6
+    PIN_7 = 7
+    PIN_8 = 8
+    PIN_9 = 9
+    PIN_10 = 10
+    PIN_11 = 11
+    PIN_12 = 12
+    PIN_13 = 13
+    PIN_14 = 14
+    PIN_15 = 15
+    PIN_16 = 16
+    PIN_17 = 17
+    PIN_18 = 18
+    PIN_19 = 19
+    PIN_20 = 20
+    PIN_21 = 21
+    PIN_22 = 22
+    PIN_23 = 23
+    PIN_24 = 24
+    PIN_25 = 25
+    PIN_26 = 26
+    PIN_27 = 27
+    PIN_28 = 28
+    PIN_29 = 29
+    PIN_30 = 30
 
     J1_VOLTAGE = 31
     J2_VOLTAGE = 32
@@ -182,9 +321,58 @@ class AI(Enum):
 class AO(Enum):
     """Available Analog Output Pins."""
 
+    PIN_0 = 0
+    PIN_1 = 1
+    PIN_2 = 2
+    PIN_3 = 3
+    PIN_4 = 4
+    PIN_5 = 5
+    PIN_6 = 6
+    PIN_7 = 7
+    PIN_8 = 8
+    PIN_9 = 9
+    PIN_10 = 10
+    PIN_11 = 11
+    PIN_12 = 12
+    PIN_13 = 13
+    PIN_14 = 14
+    PIN_15 = 15
+
     LED_LIGHT = 16
 
+    PIN_17 = 17
+    PIN_18 = 18
+    PIN_19 = 19
+    PIN_20 = 20
+    PIN_21 = 21
+    PIN_22 = 22
+    PIN_23 = 23
+    PIN_24 = 24
+    PIN_25 = 25
+    PIN_26 = 26
+    PIN_27 = 27
+    PIN_28 = 28
+    PIN_29 = 29
+    PIN_30 = 30
+    PIN_31 = 31
+    PIN_32 = 32
+    PIN_33 = 33
+    PIN_34 = 34
+    PIN_35 = 35
+    PIN_36 = 36
+    PIN_37 = 37
+    PIN_38 = 38
+    PIN_39 = 39
+    PIN_40 = 40
+
     ACCELERATION = 41
+
+    PIN_42 = 42
+    PIN_43 = 43
+    PIN_44 = 44
+    PIN_45 = 45
+    PIN_46 = 46
+    PIN_47 = 47
 
     TOOL_FORCE = 48
     TOOL_SPEED = 49
@@ -193,6 +381,9 @@ class AO(Enum):
     POWER_LIMIT = 52
 
     PAYLOAD = 53
+
+    PIN_54 = 54
+    PIN_55 = 55
 
     J1_TORQUE = 56
     J2_TORQUE = 57
@@ -205,26 +396,59 @@ class AO(Enum):
     Z_AXIS_TORQUE = 63
 
 
+class Robots(Enum):
+    ELEPHANT = 101
+    PANDA_3 = 201
+    PANDA_5 = 202
+    CAT_3 = 301
+    MY_COB = 401
+    MY_COB_PRO = 402
+    PRO_320 = 501
+    PRO_600 = 502
+
+
 class JointState(Enum):
     OK = 0
     ERROR = 1
     POWERED_OFF = 2
 
 
-class Pro630:
+class Phoenix:
+    """Interface for phoenix.
+
+    Example:
+      - Start / Stop Robot Workflow:
+        1. start_robot() or start_power_on_only()
+        2. shutdown_robot()
+        3. go to 1.
+    """
+
     def __init__(self, debug=False):
         self.c = elerob.command()
         self.s = elerob.stat()
         self.e = elerob.error_channel()
         self.robot_state = RobotMoveState.IDLE_STATE
         self.command_id = 0
-        self.g = hal.component("halgpio_py", "halgpio")
-        self.init_pins()
-        self.g.ready()
+        self.current_robot = 0
+        self.init_hal()
+        self.init_robot()
         setup_logging(debug)
 
-    def init_pins(self):
+    # def __del__(self):
+    #     self.stop_force_sensor()
+    #     self.g.unready()
+    #     self.hal_serial.unready()
+
+    def init_hal(self):
+        self.init_hal_gpio()
+        self.init_hal_serial()
+        self.apply_hal_config()
+
+    def init_hal_gpio(self):
         """Inits HAL pins in halgpio component."""
+
+        self.g = hal.component("halgpio", "halgpio")
+
         for i in range(MAX_PINS):
             self.g.newpin("digital-in-" + str(i).zfill(2), hal.HAL_BIT, hal.HAL_IN)
             self.g.newpin("digital-out-" + str(i).zfill(2), hal.HAL_BIT, hal.HAL_OUT)
@@ -240,33 +464,178 @@ class Pro630:
             self.g.newpin(str(i) + ".min_limit", hal.HAL_FLOAT, hal.HAL_OUT)
             self.g.newpin(str(i) + ".max_limit", hal.HAL_FLOAT, hal.HAL_OUT)
 
-        self.g.newpin("serial.0.xtorq", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.g.newpin("serial.0.ytorq", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.g.newpin("serial.0.ztorq", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.g.newpin("serial.0.atorq", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.g.newpin("serial.0.btorq", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.g.newpin("serial.0.ctorq", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.g.ready()
 
-        self.g.newpin("serial.0.sensor_torq_open", hal.HAL_U32, hal.HAL_OUT)
-        self.g.newpin("serial.0.sensor_error_pkgs", hal.HAL_U32, hal.HAL_OUT)
-        self.g.newpin("serial.0.sensor_recv_timeout", hal.HAL_U32, hal.HAL_OUT)
-        self.g.newpin("serial.0.motion_flexible", hal.HAL_U32, hal.HAL_OUT)
+    def init_hal_serial(self):
+        self.hal_serial = hal.component("serial", "serial")
+
+        self.hal_serial.newpin("0.xtorq", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.hal_serial.newpin("0.ytorq", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.hal_serial.newpin("0.ztorq", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.hal_serial.newpin("0.atorq", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.hal_serial.newpin("0.btorq", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.hal_serial.newpin("0.ctorq", hal.HAL_FLOAT, hal.HAL_OUT)
+
+        self.hal_serial.newpin("0.sensor_torq_open", hal.HAL_U32, hal.HAL_OUT)
+        self.hal_serial.newpin("0.sensor_error_pkgs", hal.HAL_U32, hal.HAL_OUT)
+        self.hal_serial.newpin("0.sensor_recv_timeout", hal.HAL_U32, hal.HAL_OUT)
+        self.hal_serial.newpin("0.motion_flexible", hal.HAL_U32, hal.HAL_OUT)
+
+        self.hal_serial.ready()
+
+    def apply_hal_config(self):
+        os.system(
+            "halcmd -f $(dirname $(grep LAST_CONFIG ~/.linuxcncrc | cut -d' ' -f3))/elerob_gpio.hal"
+        )
+
+    def init_robot(self):
+        self.detect_robot()
+        self._set_free_move(False)
+
+        self.set_carte_torque_limit(Axis.X, DEFAULT_XY_TORQUE_LIMIT)
+        self.set_carte_torque_limit(Axis.Y, DEFAULT_XY_TORQUE_LIMIT)
+        self.set_carte_torque_limit(Axis.Z, DEFAULT_Z_TORQUE_LIMIT)
+
+        self.set_acceleration(400)
+
+        self.joint_brake(Joint.J1, 0)
+        self.joint_brake(Joint.J2, 0)
+        self.joint_brake(Joint.J3, 0)
+        self.joint_brake(Joint.J4, 0)
+        self.joint_brake(Joint.J5, 0)
+        self.joint_brake(Joint.J6, 0)
+
+        # joint torque limits
+        self.set_joint_torque_limit(Joint.J1, 0.15)
+        self.set_joint_torque_limit(Joint.J2, 0.15)
+        self.set_joint_torque_limit(Joint.J3, 0.12)
+        self.set_joint_torque_limit(Joint.J4, 0.10)
+        self.set_joint_torque_limit(Joint.J5, 0.10)
+        self.set_joint_torque_limit(Joint.J6, 0.10)
+
+        self.set_payload(1.0)
+
+        # joint angle limits
+        self.set_joint_min_pos_limit(Joint.J1, -180)
+        self.set_joint_min_pos_limit(Joint.J2, -270)
+        self.set_joint_min_pos_limit(Joint.J3, -150)
+        self.set_joint_min_pos_limit(Joint.J4, -260)
+        self.set_joint_min_pos_limit(Joint.J5, -168)
+        self.set_joint_min_pos_limit(Joint.J6, -174)
+
+        self.set_joint_max_pos_limit(Joint.J1, 180)
+        self.set_joint_max_pos_limit(Joint.J2, 90)
+        self.set_joint_max_pos_limit(Joint.J3, 150)
+        self.set_joint_max_pos_limit(Joint.J4, 80)
+        self.set_joint_max_pos_limit(Joint.J5, 168)
+        self.set_joint_max_pos_limit(Joint.J6, 174)
+
+        self.set_motion_flexible(0)
+
+    def detect_robot(self):
+        robot = Robots(self.get_analog_in(AI.ROBOT))
+        if robot == Robots.ELEPHANT:
+            self.current_robot = 0
+        elif robot == Robots.PANDA_3:
+            self.current_robot = 1
+        elif robot == Robots.PANDA_5:
+            self.current_robot = 2
+        elif robot == Robots.CAT_3:
+            self.current_robot = 3
+        elif robot == Robots.MY_COB:
+            self.current_robot = 4
+        elif robot == Robots.MY_COB_PRO:
+            self.current_robot = 5
+        elif robot == Robots.PRO_320:
+            self.current_robot = 6
+        elif robot == Robots.PRO_600:
+            self.current_robot = 7
+
+    def start_robot(self, power_on_only=False):
+        """Start robot"""
+        self.power_off()
+        time.sleep(0.5)
+        power_on_ok = self.is_power_on()
+        power_on_retry_count = 0
+        while (not power_on_ok) and (power_on_retry_count <= 10):
+            if power_on_only:
+                self.power_on_only()
+            else:
+                self.power_on()
+            power_on_retry_count += 1
+            power_on_ok = self.is_power_on()
+            time.sleep(1)
+        power_on_ok = self.is_power_on()
+        if not power_on_ok:
+            print("power_on_ok is false")
+            return False
+        # power on ok
+        servo_enable_ok = False
+        servo_enable_retry_count = 0
+        while (not servo_enable_ok) and (servo_enable_retry_count <= 30):
+            servo_enable_ok = self.is_all_servo_enabled()
+            time.sleep(1)
+            servo_enable_retry_count += 1
+        if not servo_enable_ok:
+            print("servo_enable_ok is false")
+            return False
+        # servo motor ok
+        # self.state_on()
+        robot_type = self.get_analog_in(AI.ROBOT)
+        if (robot_type == Robots.PANDA_3) or (robot_type == Robots.PANDA_5):
+            brake_active_ok = False
+            brake_active_retry_count = 0
+            while (not brake_active_ok) and (brake_active_retry_count <= 20):
+                self.state_on()
+                brake_active_ok = not self.get_digital_in(DI.BRAKE_ACTIVATION_RUNNING)
+                time.sleep(1)
+                brake_active_retry_count += 1
+            if not brake_active_ok:
+                print("brake_active_ok is false")
+                return False
+        state_on_ok = self.state_check()
+        state_on_retry_count = 0
+        while (not state_on_ok) and (state_on_retry_count <= 5):
+            self.state_on()
+            time.sleep(2)
+            state_on_ok = self.state_check()
+            state_on_retry_count += 1
+        if not state_on_ok:
+            print("state_on_ok is false")
+            return False
+
+        return True
+
+    def start_power_on_only(self):
+        """Start robot with power on only
+
+        Returns:
+            True if success, False otherwise
+        """
+        return self.start_robot(power_on_only=True)
+
+    def shutdown_robot(self):
+        self.power_off()
 
     def power_on(self):
         """Powers on and prepares for operation the robot."""
+        self.s.poll()
         if self.s.task_state == elerob.STATE_ESTOP:
-            self.send_estop_reset()
+            self.set_estop_reset()
         self.set_digital_out(DO.POWER_ON_RELAY_1, 1)
         time.sleep(0.25)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 1)
         time.sleep(0.25)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 0)
 
-        self.set_free_move(False)
+        self._set_free_move(False)
 
-        self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 0)
-        time.sleep(0.1)
-        self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 1)
+        if self.current_robot != Robots.ELEPHANT.value:
+            self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 0)
+            time.sleep(0.1)
+            self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 1)
+
+        return True
 
     def power_on_only(self):
         """Only powers on the robot."""
@@ -275,14 +644,17 @@ class Pro630:
         self.set_digital_out(DO.POWER_ON_RELAY_2, 1)
         time.sleep(0.25)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 0)
-        self.send_estop()
-        self.set_free_move(False)
+        self.set_estop()
+        self._set_free_move(False)
+        return True
 
     def power_off(self):
         """Powers off the robot."""
         self.set_digital_out(DO.POWER_ON_RELAY_1, 0)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 0)
-        self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 0)
+        if self.current_robot != Robots.ELEPHANT.value:
+            self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 0)
+        return True
 
     # TODO blockly 12-18测试可用
     def get_coords(self):
@@ -291,42 +663,44 @@ class Pro630:
         Returns:
             list[float]: list of 6 float values for each axis
         """
-        c = self.get_actl_pos_float()
+        c = self.get_actual_position()
         return c
 
     # TODO blockly 12-18测试可用
     def set_coords(self, coords, speed):
-        """_summary_
+        """Set coords
 
         Args:
-            coords (_type_): _description_
-            speed (_type_): _description_
+            coords (list[float]): coords to set, list[float] of size 6
+            speed (float): speed percentage (0 ~ 100 %)
         """
         if self.is_in_position(coords, True):
-            return
+            return True
         self.set_robot_move_state(RobotMoveState.MOVE_AXIS_STATE, 0, 0)
-        self.send_mdi("G01F" + str(speed * MAX_LINEAR_SPEED / 100) + self.coords_to_gcode(coords))
+        return self.send_mdi(
+            "G01F" + str(speed * MAX_LINEAR_SPEED / 100) + self.coords_to_gcode(coords)
+        )
 
     # TODO blockly 12-18测试可用
     def get_coord(self, axis):
-        """_summary_
+        """Returns current coord of specified axis
 
         Args:
-            axis (_type_): _description_
+            axis (Axis): axis
 
         Returns:
-            _type_: _description_
+            float: current coord of specified axis
         """
-        return self.get_coords()[axis]
+        return self.get_coords()[axis.value]
 
     # TODO blockly 12-18测试可用
     def set_coord(self, axis, coord, speed):
-        """_summary_
+        """Set coord of axis
 
         Args:
-            axis (_type_): Axis.X ~ Axis.RY
-            coord (_type_): _description_
-            speed (_type_): 1~100
+            axis (Axis): Axis.X ~ Axis.RY
+            coord (float): coord value
+            speed (float): speed percentage (1 ~ 100 %)
         """
         coords = self.get_coords()
         coords[axis.value] = coord
@@ -334,40 +708,50 @@ class Pro630:
 
     # TODO blockly 12-18测试可用
     def get_angles(self):
-        """_summary_"""
+        """Returns current joint angles
+
+        Returns:
+            list[float]: current angles list[float] of size MAX_JOINTS
+        """
         return self.get_actl_joint_float()
 
     # TODO blockly 12-18测试可用
     def set_angles(self, angles, speed):
-        """_summary_
+        """Sets angles
 
         Args:
-            angles (_type_): _description_
-            speed (_type_): 1~100
+            angles (list[float]): joint angles, list[float] of size MAX_JOINTS
+            speed (float): speed percentage (1 ~ 100 %)
         """
         if self.is_in_position(angles, False):
             return
         self.set_robot_move_state(RobotMoveState.MOVE_JOINT_STATE, 0, 0)
-        self.send_mdi("G38.3F" + str(speed * MAX_ANGULAR_SPEED / 100) + self.angles_to_gcode(angles))
+        self.send_mdi(
+            "G38.3F"
+            + str(speed * MAX_ANGULAR_SPEED / 100)
+            + self.angles_to_gcode(angles)
+        )
+
     # TODO blockly 12-18测试可用
     def get_angle(self, joint):
-        """_summary_
+        """Returns specified joint's current angle
 
         Args:
-            joint (int): 0 ~ 5
+            joint (Joint): Joint.J1 (0) ~ Joint.J6 (5)
 
         Returns:
-            _type_: _description_
+            float: specified joint angle
         """
-        return self.get_angles()[joint]
+        return self.get_angles()[joint.value]
+
     # TODO blockly 12-18测试可用
     def set_angle(self, joint, angle, speed):
-        """_summary_
+        """Sets specified joint's angle to given value with passed speed.
 
         Args:
-            joint (_type_): 0 ~ 5 or Joint.J1 ~ Joint.J6
-            angle (_type_): _description_
-            speed (_type_): _description_
+            joint (Joint): 0 ~ 5 or Joint.J1 ~ Joint.J6
+            angle (float): angle to set
+            speed (float): speed percentage (0 ~ 100 %)
         """
         angles = self.get_angles()
         if isinstance(joint, int):
@@ -375,6 +759,7 @@ class Pro630:
         elif isinstance(joint, Joint):
             angles[joint.value] = angle
         self.set_angles(angles, speed)
+
     # TODO blockly 12-18测试可用
     def get_speed(self):
         """_summary_"""
@@ -393,19 +778,23 @@ class Pro630:
             self.c.mode(elerob.MODE_MANUAL)
             self.c.wait_complete()
             time.sleep(0.2)
+        self.s.poll()
         if self.s.motion_mode != elerob.TRAJ_MODE_FREE:
             self.c.teleop_enable(0)
             self.c.wait_complete()
+            time.sleep(0.1)
         self.c.state(elerob.STATE_ON)
         self.c.wait_complete()
+        time.sleep(0.1)
         if self.state_check():
             self.send_mdi("G64 P1")
             self.task_stop()
+            time.sleep(0.1)
         self.set_robot_move_state(RobotMoveState.IDLE_STATE, 0, 0)
         return True
 
     def state_off(self):
-        """_summary_"""
+        """Sets robot state to OFF."""
         self.c.state(elerob.STATE_OFF)
         self.c.wait_complete()
 
@@ -417,116 +806,145 @@ class Pro630:
         Returns:
             bool: True if robot state is ready for operation, False otherwise.
         """
-        self.s.poll()
         return self.get_motion_enabled()
-    # TODO blockly 12-18测试可用
-    def jog_angle(self, joint, direction, speed):
-        """_summary_
-
-        Args:
-            joint (Joint): 0 ~ 5
-            direction (_type_): -1 or 1 (1增大，-1减小)
-            speed (_type_): _description_
-        """
-        self.set_robot_move_state(RobotMoveState.JOG_JOINT_STATE, joint, direction)
-        self.command_id += 1
-        self.jog_continuous(JogMode.JOG_JOINT.value, joint, direction, speed, self.command_id)
-    # TODO blockly 12-18测试可用
-    def jog_coord(self, axis, direction, speed):
-        """_summary_
-
-        Args:
-            axis (Axis): 0 ~ 5 对应 x ~ rz
-            direction (_type_): 1 增大，-1 减小
-            speed (_type_): 1 ~ 100
-        """
-        self.set_robot_move_state(RobotMoveState.JOG_AXIS_STATE, axis, direction)
-        self.command_id += 1
-        self.jog_continuous(JogMode.JOG_TELEOP.value, axis, direction, speed, self.command_id)
 
     def check_running(self):
-        """_summary_
+        """Returns True if robot is moving, False otherwise.
 
         Returns:
-            bool: _description_
+            bool: True if robot is moving, False otherwise
         """
         return not self.is_in_commanded_position()
+
     # TODO blockly 12-18测试可用
     def is_in_position(self, coords, is_linear):
-        """_summary_
+        """Returns True if current position equals passed coords.
 
         Args:
-            coords (_type_): _description_
-            is_linear (bool): 0 - angles 1 - coords
+            coords (list[float]): coords or angles
+            is_linear (bool): False (0) - angles, True (1) - coords
+
+        Returns:
+            bool: True if robot is in passed coords, False otherwise
         """
         if is_linear:
             return self.coords_equal(self.get_coords(), coords)
         else:
             return self.angles_equal(self.get_angles(), coords)
 
-    def set_free_move(self, on):
-        """_summary_
+    def set_free_move_mode(self, on=True):
+        """Enables or disables free move mode.
 
         Args:
-            on (_type_): _description_
+            on (bool, optional): True to enable free move mode,
+                                 False to disable free move mode.
+                                 Defaults to True.
+
+        Returns:
+            bool: True if success, False otherwise
+        """
+        if on:
+            if not self.state_check():
+                return False
+        self._set_free_move(on)
+        if not on:
+            self.state_on()
+        return True
+
+    def _set_free_move(self, on=True):
+        """Sets free move.
+
+        Args:
+            on (bool): True to enable, False to disable
         """
         if on:
             self.set_jog_mode(JogMode.JOG_TELEOP)
         self.set_digital_out(DO.SOFTWARE_FREE_MOVE, on)
 
     def is_software_free_move(self):
-        """_summary_
+        """Checks if free move mode is enabled by set_free_move_mode() function
+           or other similar API.
 
         Returns:
-            bool: _description_
+            bool: True if free move mode enabled by software, False otherwise
         """
-        return self.get_digital_out(DO.SOFTWARE_FREE_MOVE)
+        return bool(self.get_digital_out(DO.SOFTWARE_FREE_MOVE))
 
     def is_hardware_free_move(self):
-        """_summary_
+        """Checks if free move mode is enabled by hardware (button).
 
         Returns:
-            bool: _description_
+            bool: True if free move mode is enabled by hardware (button)
         """
-        return self.get_digital_in(DI.HARDWARE_FREE_MOVE)
+        return bool(self.get_digital_in(DI.HARDWARE_FREE_MOVE))
 
     def set_payload(self, payload_weight):
-        """_summary_
+        """Sets current payload weight
 
         Args:
-            payload_weight (_type_): _description_
+            payload_weight (float): payload weight in kg
         """
         self.set_analog_out(AO.PAYLOAD, payload_weight)
 
     def is_program_run_finished(self):
-        """_summary_"""
+        """Checks if program run finished
+
+        Returns:
+            bool: True if program run finished, False otherwise
+        """
         return not self.is_program_running(True)
 
     def is_program_paused(self):
-        """_summary_"""
+        """Checks if program is paused
+
+        Returns:
+            bool: True if program is paused, False otherwise
+        """
         self.s.poll()
         return self.s.paused
 
-    def read_next_error(self):
-        """_summary_"""
-        self.e.poll()
-        raise NotImplementedError
+    def get_error(self):
+        """Reads next error and returns type, error code, description as tuple
+
+        Returns:
+            tuple[str, int, str]: error info
+        """
+        type, kind, text = None, None, None
+        error = self.e.poll()
+        if error:
+            kind, text = error
+            if kind in (elerob.NML_ERROR, elerob.OPERATOR_ERROR):
+                type = "error"
+            else:
+                type = "info"
+        return (type, kind, text)
 
     def is_power_on(self):
-        """_summary_"""
-        return self.get_digital_in(DI.POWER_ON_STATUS)
+        """Checks if robot is powered on
+
+        Returns:
+            bool: True if robot is powered on, False otherwise
+        """
+        return bool(self.get_digital_in(DI.POWER_ON_STATUS))
 
     def is_servo_enabled(self, joint):
-        """_summary_
+        """Checks if servo corresponding to the specified joint is enabled
 
         Args:
             joint (Joint): Joint.J1 ~ Joint.J6
+
+        Returns:
+            bool: True if servo is enabled, False otherwise
         """
-        return self.get_digital_in(DI(DI.J1_SERVO_ENABLED.value + joint.value))
+        return bool(self.get_digital_in(DI(DI.J1_SERVO_ENABLED.value + joint.value)))
 
     def is_all_servo_enabled(self):
-        """_summary_"""
-        return (
+        """Checks if all servos are enabled
+
+        Returns:
+            bool: True if all servos are enabled, False otherwise
+        """
+        return bool(
             self.is_servo_enabled(Joint.J1)
             and self.is_servo_enabled(Joint.J2)
             and self.is_servo_enabled(Joint.J3)
@@ -534,129 +952,151 @@ class Pro630:
             and self.is_servo_enabled(Joint.J5)
             and self.is_servo_enabled(Joint.J6)
         )
+
     # TODO blockly 12-18测试可用
     def get_joint_min_pos_limit(self, joint):
-        """_summary_
+        """Returns minimum position limit value of specified joint
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
+
+        Returns:
+            float: minimum position limit value of specified joint
         """
         return self.g[str(joint.value) + ".min_limit"]
+
     # TODO blockly 12-18测试可用
     def set_joint_min_pos_limit(self, joint, limit):
-        """_summary_
+        """Sets minimum position limit value of specified joint
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
-            limit (float): _description_
+            limit (float): minimum position limit value of specified joint
         """
         self.g[str(joint.value) + ".min_limit"] = limit
+
     # TODO blockly 12-18测试可用
     def get_joint_max_pos_limit(self, joint):
-        """_summary_
+        """Returns maximum position limit value of specified joint
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
+
+        Returns:
+            float: maximum position limit value of specified joint
         """
         return self.g[str(joint.value) + ".max_limit"]
+
     # TODO blockly 12-18测试可用
     def set_joint_max_pos_limit(self, joint, limit):
-        """_summary_
+        """Sets maximum position limit value of specified joint
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
-            limit (float): _description_
+            limit (float): maximum position limit value of specified joint
         """
         self.g[str(joint.value) + ".max_limit"] = limit
 
-    def set_joint_max_velocity(self, joint, limit):
-        """_summary_
+    # def set_joint_max_velocity(self, joint, limit):
+    #     """_summary_
 
-        Args:
-            joint (_type_): _description_
-            limit (_type_): _description_
-        """
-        raise NotImplementedError
+    #     Args:
+    #         joint (_type_): _description_
+    #         limit (_type_): _description_
+    #     """
+    #     raise NotImplementedError
 
     def get_current_cnc_mode(self):
-        """_summary_
+        """Returns current task mode
 
         Returns:
-            _type_: _description_
+            TaskMode: one of TaskMode enum values: AUTO, MANUAL, MDI
         """
         self.s.poll()
-        return self.s.task_mode
+        return TaskMode(self.s.task_mode)
 
-    def send_estop_reset(self):
-        """_summary_"""
+    def set_estop_reset(self):
+        """Resets E-Stop state of the robot."""
         self.c.state(elerob.STATE_ESTOP_RESET)
         self.c.wait_complete()
 
-    def send_estop(self):
-        """_summary_"""
+    def set_estop(self):
+        """Puts robot into E-Stop state."""
         self.c.state(elerob.STATE_ESTOP)
         self.c.wait_complete()
 
     def get_acceleration(self):
-        """_summary_"""
+        """Returns acceleration value of robot
+
+        Returns:
+            float: acceleration value
+        """
         return self.get_analog_out(AO.ACCELERATION)
 
-    def send_mode(self, mode):
+    def set_mode(self, mode):
         """Sets mode to mode.
 
         Args:
-            mode (_type_): one of elerob.MODE_MDI,
-                                  elerob.MODE_MANUAL,
-                                  elerob.MODE_AUTO.
+            mode (TaskMode): one of TaskMode.AUTO, TaskMode.MANUAL, TaskMode.MDI
 
         Returns:
             bool: always returns True
         """
-        if self.s.task_mode == mode:
+        self.s.poll()
+        if self.s.task_mode == mode.value:
             return True
-        self.c.mode(mode)
+        self.c.mode(mode.value)
         self.c.wait_complete()
         return True
 
     def joint_brake(self, joint, release):
-        """_summary_
+        """Releases or enables specified joint's brake.
 
         Args:
             joint (Joint): joint
-            release (bool): True or False
+            release (bool): True to release, False to enable brake
         """
-        self.set_digital_out(joint + DO.J1_BRAKE_RELEASE, release)
+        self.set_digital_out(DO(joint.value + DO.J1_BRAKE_RELEASE.value), release)
 
     def is_cnc_in_mdi_mode(self):
-        """_summary_
+        """Checks if robot is in MDI mode.
 
         Returns:
-            bool: _description_
+            bool: True if robot is in MDI mode
         """
         self.s.poll()
         return self.s.task_mode == elerob.MODE_MDI
 
     def set_cnc_in_mdi_mode(self):
-        """_summary_"""
-        self.ensure_mode(elerob.MODE_MDI)
+        """Sets robot mode to MDI."""
+        self.ensure_mode(TaskMode.MDI)
 
     def get_motion_line(self):
-        """_summary_"""
+        """Returns source line number motion is currently executing.
+
+        Returns:
+            int: motion line number
+        """
         self.s.poll()
         return self.s.motion_line
 
-    def send_teleop(self, enable):
-        """_summary_
+    def set_teleop(self, enable):
+        """Enables/disables teleop mode (cartesian movement by axes).
 
         Args:
-            enable (int): _description_
+            enable (bool): True to enable (cartesian movement), False to disable (joint movement)
         """
         self.c.teleop_enable(enable)
         self.c.wait_complete()
 
     def get_robot_status(self):
-        """_summary_"""
+        """Returns robot status
+
+        Returns:
+            bool: True if OK, False if disabled / error / cannot move
+        """
         return self.state_check()
+
     # TODO blockly 12-18测试可用
     def get_robot_temperature(self):
         """Returns robot (currently CPU) temperature.
@@ -666,9 +1106,14 @@ class Pro630:
         """
         cpu_temp = CPUTemperature()
         return cpu_temp.temperature
+
     # TODO blockly 12-18测试可用
     def get_robot_power(self):
-        """Returns robot power in Watts (W)."""
+        """Returns robot current consuming power in Watts (W).
+
+        Returns:
+            float: current consuming power
+        """
         robot_power = 17
         for i in range(MAX_JOINTS):
             robot_power += self.get_joint_voltage(Joint(i)) * math.fabs(
@@ -677,10 +1122,13 @@ class Pro630:
         return robot_power
 
     def get_joint_state(self, joint):
-        """_summary_
+        """Returns specified joint's state.
 
         Args:
             joint (Joint): Joint.J1 ~ Joint.J6
+
+        Returns:
+            JointState: joint state
         """
         joint_status = self.g["U32-in-" + str(joint.value).zfill(2)]
         if joint_status & (1 << 1):
@@ -690,130 +1138,171 @@ class Pro630:
         return JointState.POWERED_OFF
 
     def get_joint_temperature(self, joint):
-        """_summary_
+        """Returns specified joint's temperature.
 
         Args:
-            joint (Joint): _description_
+            joint (Joint): joint
+
+        Returns:
+            float: joint temperature
         """
         return self.get_analog_in(AI(AI.J1_TEMPERATURE.value + joint.value))
+
     # TODO blockly 12-18测试可用
     def get_joint_communication(self, joint):
-        """_summary_
+        """Returns True if specified joint's communication is OK.
 
         Args:
-            joint (Joint): _description_
+            joint (Joint): joint
+
+        Returns:
+            bool: True if joint communication is OK, False otherwise
         """
         return not self.get_digital_in(DI(DI.J1_COMMUNICATION.value + joint.value))
 
     def get_joint_voltage(self, joint):
-        """_summary_
+        """Returns specified joint's voltage.
 
         Args:
-            joint (Joint): _description_
+            joint (Joint): joint
+
+        Returns:
+            float: voltage
         """
         return self.get_analog_in(AI(AI.J1_VOLTAGE.value + joint.value))
 
     def get_joint_current(self, joint):
-        """_summary_
+        """Returns specified joint's current.
 
         Args:
-            joint (Joint): _description_
+            joint (Joint): joint
+
+        Returns:
+            float: current
         """
         return self.get_analog_in(AI(AI.J1_WINDING_A_CURRENT.value + joint.value))
 
     def get_joint_error_mask(self, joint):
-        """_summary_
+        """Returns specified joint's error mask
 
         Args:
-            joint (Joint): _description_
+            joint (Joint): joint
 
         Returns:
             int: error mask
         """
-        return self.g["U32-in-" + str(joint + MAX_JOINTS).zfill(2)]
+        return self.g["U32-in-" + str(joint.value + MAX_JOINTS).zfill(2)]
 
     def set_power_limit(self, power_limit):
-        """_summary_
+        """Sets robot power limit.
 
         Args:
-            power_limit (float): _description_
+            power_limit (float): power limit
         """
         self.set_analog_out(AO.POWER_LIMIT, power_limit)
 
     def get_power_limit(self):
-        """_summary_"""
+        """Returns current robot power limit.
+
+        Returns:
+            float: power limit
+        """
         return self.get_analog_out(AO.POWER_LIMIT)
 
     def set_stopping_time(self, stopping_time):
-        """_summary_
+        """Sets stopping time
 
         Args:
-            stopping_time (float): _description_
+            stopping_time (float): stopping time
         """
         self.set_analog_out(AO.STOPPING_TIME, stopping_time)
 
     def get_stopping_time(self):
-        """_summary_"""
+        """Returns stopping time.
+
+        Returns:
+            float: stopping time
+        """
         return self.get_analog_out(AO.STOPPING_TIME)
 
     def set_stopping_distance(self, stopping_distance):
-        """_summary_
+        """Sets stopping distance.
 
         Args:
-            stopping_distance (float): _description_
+            stopping_distance (float): stopping distance
         """
         self.set_analog_out(AO.STOPPING_DISTANCE, stopping_distance)
 
     def get_stopping_distance(self):
-        """_summary_"""
+        """Returns current stopping distance.
+
+        Returns:
+            float: stopping distance
+        """
         return self.get_analog_out(AO.STOPPING_DISTANCE)
 
     def set_tool_speed(self, tool_speed):
-        """_summary_
+        """Sets tool speed.
 
         Args:
-            tool_speed (float): _description_
+            tool_speed (float): tool speed
         """
         self.set_analog_out(AO.TOOL_SPEED, tool_speed)
 
     def get_tool_speed(self):
-        """_summary_"""
+        """Returns tool speed
+
+        Returns:
+            float: tool speed
+        """
         return self.get_analog_out(AO.TOOL_SPEED)
 
     def set_tool_force(self, tool_force):
-        """_summary_
+        """Sets tool force.
 
         Args:
-            tool_force (float): _description_
+            tool_force (float): tool force
         """
         self.set_analog_out(AO.TOOL_FORCE, tool_force)
 
     def get_tool_force(self):
-        """_summary_"""
+        """Returns current tool force.
+
+        Returns:
+            float: tool force
+        """
         return self.get_analog_out(AO.TOOL_FORCE)
 
-    def start_force_sensor(self):
-        """_summary_"""
-        raise NotImplementedError
+    # def start_force_sensor(self):
+    #     """Not Implemented"""
+    #     raise NotImplementedError
 
-    def stop_force_sensor(self):
-        """_summary_"""
-        raise NotImplementedError
+    # def stop_force_sensor(self):
+    #     """Not Implemented"""
+    #     return
 
     def set_motion_flexible(self, flexible):
-        """_summary_
+        """Sets motion flexible flag.
 
         Args:
-            flexible (int): _description_
+            flexible (bool): True / False
         """
-        self.g["serial.0.motion_flexible"] = flexible
+        self.hal_serial["0.motion_flexible"] = flexible
 
     def get_actual_position(self):
-        """Returns actual coord position."""
+        """Returns actual coord position.
+
+        Returns:
+            list[float]: actual coord position
+        """
         return self.get_actl_pos_float()
 
     def get_actual_joints(self):
-        """Returns actual joints angles."""
+        """Returns actual joints angles.
+
+        Returns:
+            list[float]: actual joints angles
+        """
         return self.get_actl_joint_float()
 
     def is_in_commanded_position(self):
@@ -828,60 +1317,69 @@ class Pro630:
         return self.s.inpos
 
     def set_acceleration(self, acceleration):
-        """_summary_
+        """Sets acceleration.
 
         Args:
-            acceleration (_type_): _description_
+            acceleration (float): new acceleration value
         """
         self.set_analog_out(AO.ACCELERATION, acceleration)
 
-    def jog_continuous(self, jog_mode, joint_or_axis, direction, speed, jog_id):
+    # TODO blockly 12-18测试可用
+    def jog_angle(self, joint, direction, speed):
+        """Jog joint
+
+        Args:
+            joint (Joint): Joint.J1 ~ Joint.J6
+            direction (JogDirection): JogDirection.POSITIVE (1) or
+                                      JogDirection.NEGATIVE (-1) (1增大，-1减小)
+            speed (float): speed percentage (0 ~ 100 %)
+
+        Returns:
+            bool: True if jog started successfully, False otherwise
+        """
+        self.set_robot_move_state(RobotMoveState.JOG_JOINT_STATE, joint, direction)
+        self.command_id += 1
+        return self._jog_continuous(
+            JogMode.JOG_JOINT, joint, direction, speed, self.command_id
+        )
+
+    # TODO blockly 12-18测试可用
+    def jog_coord(self, axis, direction, speed):
+        """Jog axis
+
+        Args:
+            axis (Axis): Axis.X ~ Axis.RZ, 对应 x ~ rz
+            direction (JogDirection): JogDirection.POSITIVE (1) 增大,
+                                      JogDirection.NEGATIVE (-1) 减小
+            speed (float): speed percentage (1 ~ 100 %)
+
+        Returns:
+            bool: True if jog started successfully, False otherwise
+        """
+        self.set_robot_move_state(RobotMoveState.JOG_AXIS_STATE, axis, direction)
+        self.command_id += 1
+        return self._jog_continuous(
+            JogMode.JOG_TELEOP, axis, direction, speed, self.command_id
+        )
+
+    def _jog_continuous(self, jog_mode, joint_or_axis, direction, speed, jog_id):
         """Start axis or joint jog.
 
         Args:
-            jog_mode (_type_): jog mode (axis or joint)
-            joint_or_axis (_type_): axis or joint
-            direction (_type_): direction of movement
-            speed (_type_): speed of movement
-            jog_id: jog_id
-        """
-        if not self.set_jog_mode(jog_mode):
-            return False
-        if self.s.task_state != elerob.STATE_ON:
-            return
-        if (
-            (jog_mode == JogMode.JOG_JOINT)
-            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
-        ) or (
-            (jog_mode == JogMode.JOG_TELEOP)
-            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
-        ):
-            return
-        if jog_mode and (joint_or_axis < 0 or joint_or_axis >= MAX_JOINTS):
-            return
-        if not jog_mode and (joint_or_axis < 0):
-            return
-        if jog_id != self.command_id:
-            print("jog_continuous cancelled: some delay: jog_id != command_id")
-            return
-        self.c.jog(elerob.JOG_CONTINUOUS, jog_mode, joint_or_axis, direction * speed)
-    #TODO blockly 12.18测试可用
-    def jog_increment(self, jog_mode, joint_or_axis, incr, speed):
-        """Move joint or axis by specified value.
-
-        Args:
-            jogmode (_type_): move by axis(0) or joint(1)
-            joint_or_axis (_type_): axis(0~5) or joint(0~5)
-            incr (_type_): distance or angle to move for
-            speed (_type_): speed of movement
+            jog_mode (JogMode): jog mode - axis (JogMode.JOG_TELEOP) or joint (JogMode.JOG_JOINT)
+            joint_or_axis (Joint | Axis): axis or joint
+            direction (JogDirection): direction of movement (1 or -1)
+            speed (float): speed of movement (0 ~ 100 %)
+            jog_id (int): command_id for this jog
 
         Returns:
             bool: True if jog started successfully, False otherwise
         """
         if not self.set_jog_mode(jog_mode):
             return False
+        self.s.poll()
         if self.s.task_state != elerob.STATE_ON:
-            return
+            return False
         if (
             (jog_mode == JogMode.JOG_JOINT)
             and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
@@ -889,34 +1387,135 @@ class Pro630:
             (jog_mode == JogMode.JOG_TELEOP)
             and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
-            return
-        if jog_mode and (joint_or_axis < 0 or joint_or_axis >= MAX_JOINTS):
-            return
-        if not jog_mode and (joint_or_axis < 0):
-            return
+            return False
+        if (jog_mode == JogMode.JOG_JOINT) and (
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+        ):
+            return False
+        if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
+            return False
+        if jog_id != self.command_id:
+            print("_jog_continuous cancelled: some delay: jog_id != command_id")
+            return False
+        self.c.jog(
+            elerob.JOG_CONTINUOUS,
+            jog_mode.value,
+            joint_or_axis.value,
+            direction.value * speed,
+        )
+        return True
+
+    def jog_increment_angle(self, joint, increment, speed):
+        """Move specified joint by given increment with speed.
+
+        Args:
+            joint (Joint): joint
+            increment (float): angle
+            speed (float): speed percentage (0 ~ 100 %)
+
+        Returns:
+            bool: True if jog successfully started, False otherwise
+        """
+        return self._jog_increment(JogMode.JOG_JOINT, joint, increment, speed)
+
+    def jog_increment_coord(self, axis, increment, speed):
+        """Move specified axis by given increment value with speed.
+
+        Args:
+            axis (Axis): axis
+            increment (float): increment
+            speed (float): speed percentage % (0 ~ 100)
+
+        Returns:
+            bool: True if jog successfully started, False otherwise
+        """
+        return self._jog_increment(JogMode.JOG_TELEOP, axis, increment, speed)
+
+    # TODO blockly 12.18测试可用
+    def _jog_increment(self, jog_mode, joint_or_axis, incr, speed):
+        """Move joint or axis by specified value.
+
+        Args:
+            jog_mode (JogMode): move by axis(0) or joint(1)
+            joint_or_axis (Joint | Axis): axis(0~5) or joint(0~5)
+            incr (float): distance or angle to move for
+            speed (float): speed of movement (0 ~ 100 %)
+
+        Returns:
+            bool: True if jog started successfully, False otherwise
+        """
+        if not self.set_jog_mode(jog_mode):
+            return False
+        self.s.poll()
+        if self.s.task_state != elerob.STATE_ON:
+            return False
+        if (
+            (jog_mode == JogMode.JOG_JOINT)
+            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
+        ) or (
+            (jog_mode == JogMode.JOG_TELEOP)
+            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
+        ):
+            return False
+        if (jog_mode == JogMode.JOG_JOINT) and (
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+        ):
+            return False
+        if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
+            return False
         direction = 1 if incr >= 0 else -1
         self.c.jog(
             elerob.JOG_INCREMENT,
-            jog_mode,
-            joint_or_axis,
+            jog_mode.value,
+            joint_or_axis.value,
             speed * direction,
             math.fabs(incr),
         )
         return True
 
-    def jog_absolute(self, joint_or_axis, jog_mode, pos, speed):
-        """_summary_
+    def jog_absolute_angle(self, joint, position, speed):
+        """Jog given joint to the specified position with passed speed.
 
         Args:
-            joint_or_axis (Joint): _description_
-            jog_mode (JogMode): usually JogMode.JOG_JOINT
-            pos (_type_): _description_
-            speed (_type_): _description_
+            joint (Joint): joint
+            position (float): position
+            speed (float): speed percentage (0 ~ 100 %)
+
+        Returns:
+            bool: True if jog started successfully, False otherwise
+        """
+        return self._jog_absolute(joint, JogMode.JOG_JOINT, position, speed)
+
+    def jog_absolute_coord(self, axis, position, speed):
+        """Jog given axis to the specified position with passed speed.
+
+        Args:
+            axis (Axis): axis
+            position (float): position
+            speed (float): speed percentage (0 ~ 100 %)
+
+        Returns:
+            bool: True if jog started successfully, False otherwise
+        """
+        return self._jog_absolute(axis, JogMode.JOG_TELEOP, position, speed)
+
+    def _jog_absolute(self, joint_or_axis, jog_mode, pos, speed):
+        """Jog joint or axis to specified position.
+
+        Args:
+            joint_or_axis (Joint | Axis): joint or axis
+            jog_mode (JogMode): JogMode.JOG_JOINT or JogMode.JOG_TELEOP
+            pos (float): position
+            speed (float): speed percentage (0 ~ 100 %)
+
+        Returns:
+            bool: True if jog started successfully, False otherwise
         """
         if not self.set_jog_mode(jog_mode):
-            return
+            return False
+        self.s.poll()
         if self.s.task_state != elerob.STATE_ON:
-            return
+            return False
         if (
             (jog_mode == JogMode.JOG_JOINT)
             and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
@@ -924,31 +1523,56 @@ class Pro630:
             (jog_mode == JogMode.JOG_TELEOP)
             and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
-            return
-        if jog_mode and (joint_or_axis < 0 or joint_or_axis >= MAX_JOINTS):
-            return
-        if not jog_mode and (joint_or_axis < 0):
-            return
+            return False
+        if (jog_mode == JogMode.JOG_JOINT) and (
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+        ):
+            return False
+        if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
+            return False
         if jog_mode == JogMode.JOG_JOINT:
             self.set_angle(joint_or_axis, pos, speed)
+            return True
         elif jog_mode == JogMode.JOG_TELEOP:
             self.set_coord(joint_or_axis, pos, speed)
+            return True
         else:
             print("Jog Absolute: Wrong Jog Mode.")
-            return
-    #TODO blockly 12.18测试可用
-    def jog_stop(self, joint_or_axis, jog_mode):
-        """_summary_
+            return False
+
+    # TODO blockly 12.18测试可用
+    def jog_stop(self, jog_mode, joint_or_axis):
+        """Stop specified jog
 
         Args:
-            joint_or_axis (_type_): 0~5
-            jog_mode (_type_): axis(0) or joint(1)
+            jog_mode (JogMode): JogMode.JOG_TELEOP (axis (0)) or
+                                JogMode.JOG_JOINT (joint (1))
+            joint_or_axis (Joint | Axis): Joint.J1 ~ Joint.J6 or Axis.X ~ Axis.RZ
+
+        Returns:
+            bool: True if jog stopped successfully, False otherwise
         """
-        if jog_mode and (joint_or_axis < 0 or joint_or_axis >= MAX_JOINTS):
+        if (jog_mode == JogMode.JOG_JOINT) and (
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+        ):
             return False
-        if not jog_mode and (joint_or_axis < 0):
+        if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
             return False
-        self.c.jog(elerob.JOG_STOP, jog_mode, joint_or_axis)
+        self.c.jog(elerob.JOG_STOP, jog_mode.value, joint_or_axis.value)
+        return True
+
+    def jog_stop_all(self):
+        """Stops any jogs and set angles or set coords.
+
+        Returns:
+            bool: always returns True
+        """
+        for j in range(Joint.J6.value):
+            self.jog_stop(JogMode.JOG_JOINT, Joint(j))
+        for a in range(Axis.RZ.value):
+            self.jog_stop(JogMode.JOG_TELEOP, Axis(a))
+        self.task_stop()
+        return True
 
     def is_task_idle(self):
         """Returns True if program is not running or finished.
@@ -959,35 +1583,35 @@ class Pro630:
         self.s.poll()
         return self.s.exec_state <= elerob.EXEC_DONE and not self.is_program_running()
 
-    def start_3d_mouse(self, enable):
-        """Starts movement my space nav mouse.
+    # def start_3d_mouse(self, enable):
+    #     """Starts movement my space nav mouse.
 
-        Args:
-            enable (bool): start if True, stop if False
-        """
-        raise NotImplementedError
+    #     Args:
+    #         enable (bool): start if True, stop if False
+    #     """
+    #     raise NotImplementedError
 
     def set_robot_move_state(self, new_robot_state, joint_or_axis, direction):
-        """_summary_
+        """Sets robot move state.
 
         Args:
-            new_robot_state (_type_): _description_
-            joint_or_axis (_type_): _description_
-            direction (_type_): _description_
+            new_robot_state (RobotMoveState): any value from RobotMoveState enum
+            joint_or_axis (Joint | Axis): joint or axis
+            direction (JogDirection): direction from JogDirection enum
         """
         if new_robot_state == self.robot_state:
             return
 
         if new_robot_state == RobotMoveState.JOG_JOINT_STATE:
             self.command_id += 1
-            self.jog_continuous(
-                JogMode.JOG_JOINT.value, joint_or_axis, direction, 1, self.command_id
+            self._jog_continuous(
+                JogMode.JOG_JOINT, joint_or_axis, direction, 1, self.command_id
             )
             time.sleep(0.1)
         elif new_robot_state == RobotMoveState.JOG_AXIS_STATE:
             self.command_id += 1
-            self.jog_continuous(
-                JogMode.JOG_TELEOP.value, joint_or_axis, direction, 1, self.command_id
+            self._jog_continuous(
+                JogMode.JOG_TELEOP, joint_or_axis, direction, 1, self.command_id
             )
             time.sleep(0.1)
         elif new_robot_state == RobotMoveState.MOVE_AXIS_STATE:
@@ -1029,13 +1653,13 @@ class Pro630:
             self.c.state(elerob.STATE_ESTOP_RESET)
 
     def set_feedrate(self, new_val):
-        """Set robot speed in percents.
+        """Set robot speed in percents (feedrate).
 
         Args:
-            new_val (int): speed value in percents, 0-100.
+            new_val (float): speed value in percents, 0 ~ 100.
         """
         try:
-            value = int(new_val)
+            value = float(new_val)
         except ValueError:
             return
         value = value / 100.0
@@ -1072,8 +1696,9 @@ class Pro630:
         """Returns axis limits.
 
         Returns:
-            list: axes limits.
+            list[int]: axes limits.
         """
+        self.s.poll()
         limits = []
         for i, limit in enumerate(self.s.limit):
             if self.s.axis_mask & (1 << i):
@@ -1084,55 +1709,55 @@ class Pro630:
         """Sets mode to MDI."""
         if not self.manual_ok():
             return
-        self.ensure_mode(elerob.MODE_MDI)
+        self.ensure_mode(TaskMode.MDI)
 
-    def send_mdi(self, program):
-        """Send command to robot.
+    def send_mdi(self, gcode_command):
+        """Send G-Code command to robot.
 
         Args:
-            program (str): G-code command
+            gcode_command (str): G-code command
 
         Returns:
-            bool: True if command sent successfully, false otherwise
+            bool: True if command sent successfully, False otherwise
         """
         self.s.poll()
         if self.s.task_mode != elerob.MODE_MDI:
-            self.send_mode(elerob.MODE_MDI)
+            self.set_mode(TaskMode.MDI)
         self.s.poll()
         if self.s.task_mode != elerob.MODE_MDI:
             print("send_mdi error: task_mode is not MODE_MDI")
             return False
-        logging.debug(program)
-        self.c.mdi(program)
+        logging.debug(gcode_command)
+        self.c.mdi(gcode_command)
         return True
 
-    def send_mdi_wait(self, program):
+    def send_mdi_wait(self, gcode_command):
         """Send command and wait for it to complete
 
         Args:
             program (str): G-code command
         """
-        self.c.mdi(program)
+        self.c.mdi(gcode_command)
         self.c.wait_complete()
 
-    # TODO 不明白什么意思
-    def set_optional_stop(self, on=0):
-        self.c.set_optional_stop(on)
-        self.c.wait_complete()
+    # # TODO 不明白什么意思
+    # def set_optional_stop(self, on=0):
+    #     self.c.set_optional_stop(on)
+    #     self.c.wait_complete()
 
-    # TODO 不明白什么意思
-    def set_block_delete(self, on=0):
-        self.c.set_block_delete(on)
-        self.c.wait_complete()
+    # # TODO 不明白什么意思
+    # def set_block_delete(self, on=0):
+    #     self.c.set_block_delete(on)
+    #     self.c.wait_complete()
 
     def is_program_running(self, do_poll=True):
-        """Checks if robot is moving
+        """Checks if robot is executing a program.
 
         Args:
             do_poll (bool, optional): if need to update robot state. Defaults to True.
 
         Returns:
-            bool: True if robot is moving, false otherwise
+            bool: True if robot is executing a program, False otherwise
         """
         if do_poll:
             self.s.poll()
@@ -1154,49 +1779,53 @@ class Pro630:
         the first mode: elerob.MODE_MDI, elerob.MODE_MANUAL, elerob.MODE_AUTO.
 
         Args:
-            m : mode or "STEP_MODE"
+            m (TaskMode) : TaskMode or "STEP_MODE"
 
         Returns:
             bool: True if mode is m or in p
         """
         if "STEP_MODE" == m:
-            m = elerob.MODE_MDI
+            m = TaskMode.MDI
         self.s.poll()
-        if self.s.task_mode == m or self.s.task_mode in p:
+        if self.s.task_mode == m.value or self.s.task_mode in p:
             return True
         if self.is_program_running(do_poll=False):
             return False
-        return self.send_mode(m)
+        return self.set_mode(m)
 
     def program_open(self, program_file_path):
-        """Opens g-code file.
+        """Opens g-code file. Only absolute file paths are supported.
 
         Args:
-            program_file_path (str): program to open
+            program_file_path (str): absolute path to program file (.ngc)
         """
         self.c.program_open(program_file_path)
 
-    def program_run(self, mode, start_line):
+    def program_run(self, start_line):
         """Run g-code file starting from given line.
         从给定行开始运行g-code文件
 
         Args:
-            mode (int): elerob.AUTO_RUN
             start_line (int): start line (first line is 0)
 
         Example:
             elerob.program_run(elerob.AUTO_RUN, 0)
+
+        Returns:
+            bool: True if program run started successfully, False otherwise
         """
         self.set_robot_move_state(RobotMoveState.RUN_PROGRAM_STATE, 0, 0)
         self.s.poll()
         if len(self.s.file) == 0:
             return False
-        self.send_mode(elerob.MODE_AUTO)
-        self.c.auto(mode, start_line)
+        self.set_mode(TaskMode.AUTO)
+
+        self.c.auto(elerob.AUTO_RUN, start_line)
         self.c.wait_complete()
+        return True
 
     def get_current_line(self):
-        """Returns current executing line in g-code file.
+        """Returns current executing line of g-code file.
 
         Returns:
             int: current executing line
@@ -1206,9 +1835,9 @@ class Pro630:
             elerob.INTERP_READING,
             elerob.INTERP_WAITING,
         ):
-            return
-        self.ensure_mode(elerob.MODE_AUTO)
-        return self.s.current_line
+            return -1
+        self.ensure_mode(TaskMode.AUTO)
+        return int(self.s.current_line)
 
     def get_current_gcodes(self):
         """Get current execution G-code.
@@ -1225,13 +1854,12 @@ class Pro630:
         """Sets maximum velocity.
 
         Args:
-            velocity (float): max velocity to set
+            velocity (float): max velocity to set, percentage, 0 ~ 100.
         """
-        self.c.maxvel(float(velocity) / 60.0)
+        self.c.maxvel(float(velocity) / 100.0)
 
-    def total_lines(self):
-        """Get current line.
-           Get the total of current G code lines.
+    def get_read_line(self):
+        """Get G-Code interpreter read line.
 
         Returns:
             int: line interpreter is currently reading
@@ -1241,12 +1869,12 @@ class Pro630:
             elerob.INTERP_READING,
             elerob.INTERP_WAITING,
         ):
-            return
-        self.ensure_mode(elerob.MODE_AUTO)
+            return -1
+        self.ensure_mode(TaskMode.AUTO)
         return self.s.read_line
 
     def prog_exec_status(self):
-        """Returns interpreter's current state.
+        """Returns G-Code interpreter's current state.
         返回解释器当前状态
 
         Returns:
@@ -1278,7 +1906,7 @@ class Pro630:
             return
         if self.s.task_mode not in (elerob.MODE_AUTO, elerob.MODE_MDI):
             return
-        self.ensure_mode(elerob.MODE_AUTO, elerob.MODE_MDI)
+        self.ensure_mode(TaskMode.AUTO, TaskMode.MDI)
         self.c.auto(elerob.AUTO_RESUME)
 
     def program_pause(self):
@@ -1289,14 +1917,15 @@ class Pro630:
             elerob.INTERP_WAITING,
         ):
             return
-        self.ensure_mode(elerob.MODE_AUTO)
+        self.ensure_mode(TaskMode.AUTO)
         self.c.auto(elerob.AUTO_PAUSE)
 
     def program_resume(self):
         """Resume program after pause."""
+        self.s.poll()
         if self.s.task_mode not in (elerob.MODE_AUTO, elerob.MODE_MDI):
             return
-        self.ensure_mode(elerob.MODE_AUTO, elerob.MODE_MDI)
+        self.ensure_mode(TaskMode.AUTO, TaskMode.MDI)
         self.s.poll()
         if self.s.paused:
             self.c.auto(elerob.AUTO_RESUME)
@@ -1328,9 +1957,9 @@ class Pro630:
             pin_number (DI): pin number
 
         Returns:
-            bool: pin value
+            int: pin value (0 or 1)
         """
-        return self.g["digital-in-" + str(pin_number.value).zfill(2)]
+        return int(self.g["digital-in-" + str(pin_number.value).zfill(2)])
 
     def get_digital_out(self, pin_number):
         """Returns digital output pin value. One of DO Enum.
@@ -1339,16 +1968,16 @@ class Pro630:
             pin_number (DO): pin number
 
         Returns:
-            bool: pin value
+            int: pin value (0 or 1)
         """
-        return self.g["digital-out-" + str(pin_number.value).zfill(2)]
+        return int(self.g["digital-out-" + str(pin_number.value).zfill(2)])
 
     def set_digital_out(self, pin_number, pin_value):
         """Sets digital output pin value. One of DO Enum.
 
         Args:
             pin_number (DO): pin number
-            pin_value (bool): pin value
+            pin_value (int): pin value (0 or 1)
         """
         self.g["digital-out-" + str(pin_number.value).zfill(2)] = pin_value
 
@@ -1361,7 +1990,7 @@ class Pro630:
         Returns:
             float: pin value
         """
-        return self.g["analog-in-" + str(pin_number.value).zfill(2)]
+        return float(self.g["analog-in-" + str(pin_number.value).zfill(2)])
 
     def get_analog_out(self, pin_number):
         """Returns analog output pin value. One of AO Enum.
@@ -1372,7 +2001,7 @@ class Pro630:
         Returns:
             float: pin value
         """
-        return self.g["analog-out-" + str(pin_number.value).zfill(2)]
+        return float(self.g["analog-out-" + str(pin_number.value).zfill(2)])
 
     def set_analog_out(self, pin_number, pin_value):
         """Sets analog output pin value. One of AO Enum.
@@ -1388,17 +2017,18 @@ class Pro630:
         获取单关节速度
 
         Args:
-            axis (int): axis number
+            axis (Axis): axis number
 
         Returns:
-            float: axis velocity
+            float: axis velocity or -1.0 if error
         """
-        if 0 <= axis <= 9:
-            return self.s.axis[axis]["velocity"]
-        return None
+        if 0 <= axis.value <= 6:
+            self.s.poll()
+            return self.s.axis[axis.value]["velocity"]
+        return -1.0
 
     def get_current_command(self):
-        """Returns current executing command
+        """Returns current executing command.
 
         Returns:
             str: current executing command
@@ -1406,108 +2036,100 @@ class Pro630:
         self.s.poll()
         return self.s.command
 
-    def get_error_info(self):
-        """Returns error info.
+    # def get_cmd_pos(self):
+    #     """Returns trajectory position.
+    #     返回轨迹位置
 
-        Returns:
-            _type_: Error info.
-        """
-        return self.e.poll()
+    #     Returns:
+    #         str: string of list of values
+    #     """
+    #     self.s.poll()
+    #     return str(
+    #         [
+    #             "%5.3f" % self.s.position[0],
+    #             "%5.3f" % self.s.position[1],
+    #             "%5.3f" % self.s.position[2],
+    #             "%5.3f" % self.s.position[3],
+    #             "%5.3f" % self.s.position[4],
+    #             "%5.3f" % self.s.position[5],
+    #         ]
+    #     )
 
-    def get_cmd_pos(self):
-        """Returns trajectory position.
-        返回轨迹位置
+    # def get_actl_pos(self):
+    #     """Returns current trajectory position.
 
-        Returns:
-            str: string of list of values
-        """
-        self.s.poll()
-        return str(
-            [
-                "%5.3f" % self.s.position[0],
-                "%5.3f" % self.s.position[1],
-                "%5.3f" % self.s.position[2],
-                "%5.3f" % self.s.position[3],
-                "%5.3f" % self.s.position[4],
-                "%5.3f" % self.s.position[5],
-            ]
-        )
+    #     Returns:
+    #         str: string of list of values
+    #     """
+    #     self.s.poll()
+    #     return str(
+    #         [
+    #             "%5.3f" % self.s.actual_position[0],
+    #             "%5.3f" % self.s.actual_position[1],
+    #             "%5.3f" % self.s.actual_position[2],
+    #             "%5.3f" % self.s.actual_position[3],
+    #             "%5.3f" % self.s.actual_position[4],
+    #             "%5.3f" % self.s.actual_position[5],
+    #         ]
+    #     )
 
-    def get_actl_pos(self):
-        """Returns current trajectory position.
+    # def get_cmd_joint(self):
+    #     """Returns desired joint positions
 
-        Returns:
-            str: string of list of values
-        """
-        self.s.poll()
-        return str(
-            [
-                "%5.3f" % self.s.actual_position[0],
-                "%5.3f" % self.s.actual_position[1],
-                "%5.3f" % self.s.actual_position[2],
-                "%5.3f" % self.s.actual_position[3],
-                "%5.3f" % self.s.actual_position[4],
-                "%5.3f" % self.s.actual_position[5],
-            ]
-        )
+    #     Returns:
+    #         str: string of list of values
+    #     """
+    #     self.s.poll()
+    #     return str(
+    #         [
+    #             "%5.3f" % self.s.joint_position[0],
+    #             "%5.3f" % self.s.joint_position[1],
+    #             "%5.3f" % self.s.joint_position[2],
+    #             "%5.3f" % self.s.joint_position[3],
+    #             "%5.3f" % self.s.joint_position[4],
+    #             "%5.3f" % self.s.joint_position[5],
+    #         ]
+    #     )
 
-    def get_cmd_joint(self):
-        """Returns desired joint positions
+    # def get_actl_joint(self):
+    #     """Returns actual joint positions.
 
-        Returns:
-            str: string of list of values
-        """
-        self.s.poll()
-        return str(
-            [
-                "%5.3f" % self.s.joint_position[0],
-                "%5.3f" % self.s.joint_position[1],
-                "%5.3f" % self.s.joint_position[2],
-                "%5.3f" % self.s.joint_position[3],
-                "%5.3f" % self.s.joint_position[4],
-                "%5.3f" % self.s.joint_position[5],
-            ]
-        )
-
-    def get_actl_joint(self):
-        """Returns actual joint positions.
-
-        Returns:
-            str: string of list of values
-        """
-        self.s.poll()
-        return str(
-            [
-                "%5.3f" % self.s.joint_actual_position[0],
-                "%5.3f" % self.s.joint_actual_position[1],
-                "%5.3f" % self.s.joint_actual_position[2],
-                "%5.3f" % self.s.joint_actual_position[3],
-                "%5.3f" % self.s.joint_actual_position[4],
-                "%5.3f" % self.s.joint_actual_position[5],
-            ]
-        )
+    #     Returns:
+    #         str: string of list of values
+    #     """
+    #     self.s.poll()
+    #     return str(
+    #         [
+    #             "%5.3f" % self.s.joint_actual_position[0],
+    #             "%5.3f" % self.s.joint_actual_position[1],
+    #             "%5.3f" % self.s.joint_actual_position[2],
+    #             "%5.3f" % self.s.joint_actual_position[3],
+    #             "%5.3f" % self.s.joint_actual_position[4],
+    #             "%5.3f" % self.s.joint_actual_position[5],
+    #         ]
+    #     )
 
     def get_cmd_pos_float(self):
         """Returns trajectory position.
 
         Returns:
-            list[str]: list of strings of values
+            list[float]: list of strings of values
         """
         self.s.poll()
         return [
-            "%5.3f" % self.s.position[0],
-            "%5.3f" % self.s.position[1],
-            "%5.3f" % self.s.position[2],
-            "%5.3f" % self.s.position[3],
-            "%5.3f" % self.s.position[4],
-            "%5.3f" % self.s.position[5],
+            round(self.s.position[0], 3),
+            round(self.s.position[1], 3),
+            round(self.s.position[2], 3),
+            round(self.s.position[3], 3),
+            round(self.s.position[4], 3),
+            round(self.s.position[5], 3),
         ]
 
     def get_actl_pos_float(self):
         """Returns current trajectory position.
 
         Returns:
-            list[str]: list of strings of values
+            list[float]: list of strings of values
         """
         self.s.poll()
         return [
@@ -1523,23 +2145,23 @@ class Pro630:
         """Returns desired joint positions.
 
         Returns:
-            list[str]: list of string of values
+            list[float]: list of string of values
         """
         self.s.poll()
         return [
-            "%5.3f" % self.s.joint_position[0],
-            "%5.3f" % self.s.joint_position[1],
-            "%5.3f" % self.s.joint_position[2],
-            "%5.3f" % self.s.joint_position[3],
-            "%5.3f" % self.s.joint_position[4],
-            "%5.3f" % self.s.joint_position[5],
+            round(self.s.joint_position[0], 3),
+            round(self.s.joint_position[1], 3),
+            round(self.s.joint_position[2], 3),
+            round(self.s.joint_position[3], 3),
+            round(self.s.joint_position[4], 3),
+            round(self.s.joint_position[5], 3),
         ]
 
     def get_actl_joint_float(self):
         """Returns actual joint positions
 
         Returns:
-            list[str]: list of strings of values
+            list[float]: list of strings of values
         """
         self.s.poll()
         return [
@@ -1563,7 +2185,7 @@ class Pro630:
         self.s.poll()
         return self.s.current_vel
 
-    def get_defalut_velocity(self):
+    def get_default_velocity(self):
         """Returns default velocity.
 
         Returns:
@@ -1572,7 +2194,7 @@ class Pro630:
         self.s.poll()
         return self.s.velocity
 
-    def get_defalut_acceleration(self):
+    def get_default_acceleration(self):
         """Returns default acceleration
 
         Returns:
@@ -1619,52 +2241,44 @@ class Pro630:
         self.s.poll()
         return self.s.enabled
 
-    def get_joint_vel_fb(self, _num):
-        """_summary_
+    # def get_joint_vel_fb(self, _num):
+    #     """_summary_
 
-        Args:
-            _num (_type_): _description_
+    #     Args:
+    #         _num (_type_): _description_
 
-        Raises:
-            NotImplementedError: _description_
-        """
-        self.s.poll()
-        ###return self.s.jvel[num]
-        raise NotImplementedError
+    #     Raises:
+    #         NotImplementedError: _description_
+    #     """
+    #     self.s.poll()
+    #     ###return self.s.jvel[num]
+    #     raise NotImplementedError
 
-    def get_joint_torq_fb(self, _num):
-        """_summary_
+    # def get_joint_torq_fb(self, _num):
+    #     """_summary_
 
-        Args:
-            _num (_type_): _description_
+    #     Args:
+    #         _num (_type_): _description_
 
-        Raises:
-            NotImplementedError: _description_
-        """
-        self.s.poll()
-        ###return self.s.jtorq[num]
-        raise NotImplementedError
-
-    def get_error_type(self, _num):
-        """_summary_
-
-        Args:
-            _num (_type_): _description_
-
-        Raises:
-            NotImplementedError: _description_
-        """
-        self.s.poll()
-        ###return self.s.errinfo
-        raise NotImplementedError
+    #     Raises:
+    #         NotImplementedError: _description_
+    #     """
+    #     self.s.poll()
+    #     ###return self.s.jtorq[num]
+    #     raise NotImplementedError
 
     ################################
     # set cmds
     ################################
-    def set_joint_torque_limit(self, num, _value):
-        if num < MAX_JOINTS:
-            ###self.c.set_jtorq_limit(num,value)
-            raise NotImplementedError
+    def set_joint_torque_limit(self, joint, torque_limit):
+        """Sets joint torque limits
+
+        Arguments:
+            joint (Joint): joint
+            torque_limit (float): torque limit value
+        """
+        if joint.value < MAX_JOINTS:
+            self.set_analog_out(AO(AO.J1_TORQUE.value + joint.value), torque_limit)
 
     def set_carte_torque_limit(self, axis, value):
         """Sets cartesian torque limit.
@@ -1678,13 +2292,13 @@ class Pro630:
         elif axis == Axis.Z:
             self.set_analog_out(AO.Z_AXIS_TORQUE, value)
 
-    def set_joint_torque_en(self, _state):
-        # self.c.set_jtorq_enable(0,state)
-        raise NotImplementedError
+    # def set_joint_torque_en(self, _state):
+    #     # self.c.set_jtorq_enable(0,state)
+    #     raise NotImplementedError
 
-    def set_carte_torque_en(self, _state):
-        # self.c.set_cartetorq_enable(0,state)
-        raise NotImplementedError
+    # def set_carte_torque_en(self, _state):
+    #     # self.c.set_cartetorq_enable(0,state)
+    #     raise NotImplementedError
 
     def set_jog_mode(self, jog_mode):
         """Changes jog mode to jog_mode (angular or linear).
@@ -1707,62 +2321,69 @@ class Pro630:
         if self.s.task_mode != elerob.MODE_MANUAL:
             self.c.mode(elerob.MODE_MANUAL)
             self.c.wait_complete()
-        if jog_mode:
+            time.sleep(0.2)
+        self.s.poll()
+        if jog_mode == JogMode.JOG_JOINT:
             if self.s.motion_mode != elerob.TRAJ_MODE_FREE:
                 self.c.teleop_enable(0)
                 self.c.wait_complete()
-        else:
+                time.sleep(0.2)
+        elif jog_mode == JogMode.JOG_TELEOP:
             if self.s.motion_mode != elerob.TRAJ_MODE_TELEOP:
                 self.c.teleop_enable(1)
                 self.c.wait_complete()
-        return True
-
-    def continuous_jog(self, jogmode, axis, direction):
-        """Start axis or joint jog.
-
-        Args:
-            jogmode (_type_): jog mode (axis or joint)
-            axis (_type_): axis or joint
-            direction (_type_): direction of movement
-
-        Returns:
-            bool: True if successfully started jog, False otherwise
-        """
-        if not self.set_jog_mode(jogmode):
-            return False
-        if direction == 0:
-            self.c.jog(elerob.JOG_STOP, jogmode, axis)
+                time.sleep(0.2)
         else:
-            # if axis in (3,4,5):
-            # 	rate = self.angular_jog_velocity
-            # else:
-            rate = jog_velocity
-            self.c.jog(elerob.JOG_CONTINUOUS, jogmode, axis, direction * rate)
-        return True
-
-    def incremental_jog(self, jogmode, axis, direction, distance):
-        """Move joint or axis by specified value.
-
-        Args:
-            jogmode (_type_): move by axis or joint
-            axis (_type_): axis or joint
-            direction (_type_): direction of movement
-            distance (_type_): distance or angle to move for
-
-        Returns:
-            bool: True if jog started successfully, False otherwise
-        """
-        if not self.set_jog_mode(jogmode):
+            print("Error: set_jog_mode: Unknown JogMode")
             return False
-        if direction == 0:
-            self.c.jog(elerob.JOG_STOP, jogmode, axis)
-        else:
-            # if axis in (3,4,5):
-            # 	rate = self.angular_jog_velocity
-            # else:
-            rate = jog_velocity
-            self.c.jog(elerob.JOG_INCREMENT, jogmode, axis, direction * rate, distance)
         return True
+
+    # def continuous_jog(self, jogmode, axis, direction):
+    #     """Start axis or joint jog.
+
+    #     Args:
+    #         jogmode (_type_): jog mode (axis or joint)
+    #         axis (_type_): axis or joint
+    #         direction (_type_): direction of movement
+
+    #     Returns:
+    #         bool: True if successfully started jog, False otherwise
+    #     """
+    #     if not self.set_jog_mode(jogmode):
+    #         return False
+    #     if direction == 0:
+    #         self.c.jog(elerob.JOG_STOP, jogmode, axis)
+    #     else:
+    #         # if axis in (3,4,5):
+    #         # 	rate = self.angular_jog_velocity
+    #         # else:
+    #         rate = jog_velocity
+    #         self.c.jog(elerob.JOG_CONTINUOUS, jogmode, axis, direction * rate)
+    #     return True
+
+    # def incremental_jog(self, jogmode, axis, direction, distance):
+    #     """Move joint or axis by specified value.
+
+    #     Args:
+    #         jogmode (_type_): move by axis or joint
+    #         axis (_type_): axis or joint
+    #         direction (_type_): direction of movement
+    #         distance (_type_): distance or angle to move for
+
+    #     Returns:
+    #         bool: True if jog started successfully, False otherwise
+    #     """
+    #     if not self.set_jog_mode(jogmode):
+    #         return False
+    #     if direction == 0:
+    #         self.c.jog(elerob.JOG_STOP, jogmode, axis)
+    #     else:
+    #         # if axis in (3,4,5):
+    #         # 	rate = self.angular_jog_velocity
+    #         # else:
+    #         rate = jog_velocity
+    #         self.c.jog(elerob.JOG_INCREMENT, jogmode, axis, direction * rate, distance)
+    #     return True
 
     def coords_to_gcode(self, coords):
         """Returns gcode string to move to given coords
