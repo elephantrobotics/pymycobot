@@ -125,7 +125,7 @@ class CommandGenerator(DataProcessor):
             ]
         if command_data:
             command.extend(command_data)
-        if self.__class__.__name__ == "Mercury":
+        if self.__class__.__name__ in ["Mercury", "MercurySocket"]:
             command[2] += 1
             command.extend(self.crc_check(command))
             # command.extend(command_data)
