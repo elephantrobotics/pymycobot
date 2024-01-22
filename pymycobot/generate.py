@@ -181,9 +181,16 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
 
-    def release_all_servos(self):
-        """Relax all joints"""
-        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
+    def release_all_servos(self, data=None):
+        """Relax all joints
+        
+        Args:
+            data: 1 - Undamping (The default is damping)
+        """
+        if data is None:
+            return super().release_all_servos()
+        else:
+            return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
 
     def is_controller_connected(self):
         """Wether connected with Atom.
