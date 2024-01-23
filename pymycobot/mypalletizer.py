@@ -1,6 +1,6 @@
 # coding=utf-8
 
-import logging
+import threading
 import math
 import time
 
@@ -100,6 +100,7 @@ class MyPalletizer(CommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
+        self.lock = threading.Lock()
 
     _write = write
     _read = read
@@ -119,74 +120,75 @@ class MyPalletizer(CommandGenerator):
         real_command, has_reply = super(MyPalletizer, self)._mesg(
             genre, *args, **kwargs
         )
-        self._write(self._flatten(real_command))
+        with self.lock:
+            self._write(self._flatten(real_command))
 
-        if has_reply:
-            data = self._read(genre)
-            # print(data)
-            res = self._process_received(data, genre)
-            if res == []:
-                return None
-            if genre in [
-                ProtocolCode.ROBOT_VERSION,
-                ProtocolCode.SOFTWARE_VERSION,
-                ProtocolCode.GET_ROBOT_ID,
-                ProtocolCode.IS_POWER_ON,
-                ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,
-                ProtocolCode.IS_IN_POSITION,
-                ProtocolCode.IS_MOVING,
-                ProtocolCode.IS_SERVO_ENABLE,
-                ProtocolCode.IS_ALL_SERVO_ENABLE,
-                ProtocolCode.GET_SERVO_DATA,
-                ProtocolCode.GET_DIGITAL_INPUT,
-                ProtocolCode.GET_GRIPPER_VALUE,
-                ProtocolCode.IS_GRIPPER_MOVING,
-                ProtocolCode.GET_SPEED,
-                ProtocolCode.GET_ENCODER,
-                ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE,
-                ProtocolCode.GET_COMMUNICATE_MODE,
-                ProtocolCode.SET_COMMUNICATE_MODE,
-                ProtocolCode.SetHTSGripperTorque,
-                ProtocolCode.GetHTSGripperTorque,
-                ProtocolCode.GetGripperProtectCurrent,
-                ProtocolCode.InitGripper,
-                ProtocolCode.SET_FOUR_PIECES_ZERO
-            ]:
-                return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES]:
-                return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS]:
-                if res:
+            if has_reply:
+                data = self._read(genre)
+                # print(data)
+                res = self._process_received(data, genre)
+                if res == []:
+                    return None
+                if genre in [
+                    ProtocolCode.ROBOT_VERSION,
+                    ProtocolCode.SOFTWARE_VERSION,
+                    ProtocolCode.GET_ROBOT_ID,
+                    ProtocolCode.IS_POWER_ON,
+                    ProtocolCode.IS_CONTROLLER_CONNECTED,
+                    ProtocolCode.IS_PAUSED,
+                    ProtocolCode.IS_IN_POSITION,
+                    ProtocolCode.IS_MOVING,
+                    ProtocolCode.IS_SERVO_ENABLE,
+                    ProtocolCode.IS_ALL_SERVO_ENABLE,
+                    ProtocolCode.GET_SERVO_DATA,
+                    ProtocolCode.GET_DIGITAL_INPUT,
+                    ProtocolCode.GET_GRIPPER_VALUE,
+                    ProtocolCode.IS_GRIPPER_MOVING,
+                    ProtocolCode.GET_SPEED,
+                    ProtocolCode.GET_ENCODER,
+                    ProtocolCode.GET_BASIC_INPUT,
+                    ProtocolCode.GET_TOF_DISTANCE,
+                    ProtocolCode.GET_COMMUNICATE_MODE,
+                    ProtocolCode.SET_COMMUNICATE_MODE,
+                    ProtocolCode.SetHTSGripperTorque,
+                    ProtocolCode.GetHTSGripperTorque,
+                    ProtocolCode.GetGripperProtectCurrent,
+                    ProtocolCode.InitGripper,
+                    ProtocolCode.SET_FOUR_PIECES_ZERO
+                ]:
+                    return self._process_single(res)
+                elif genre in [ProtocolCode.GET_ANGLES]:
+                    return [self._int2angle(angle) for angle in res]
+                elif genre in [ProtocolCode.GET_COORDS]:
+                    if res:
+                        r = []
+                        for idx in range(3):
+                            r.append(self._int2coord(res[idx]))
+                        if len(res)>3:
+                            r.append(self._int2angle(res[3]))
+                        return r
+                    else:
+                        return res
+                elif genre in [
+                    ProtocolCode.GET_JOINT_MIN_ANGLE,
+                    ProtocolCode.GET_JOINT_MAX_ANGLE,
+                ]:
+                    return self._int2angle(res[0]) if res else 0
+                elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+                    return self._int2coord(self._process_single(res))
+                elif genre == ProtocolCode.GET_ANGLES_COORDS:
                     r = []
-                    for idx in range(3):
-                        r.append(self._int2coord(res[idx]))
-                    if len(res)>3:
-                        r.append(self._int2angle(res[3]))
+                    for index in range(len(res)):
+                        if index < 4:
+                            r.append(self._int2angle(res[index]))
+                        elif index < 7:
+                            r.append(self._int2coord(res[index]))
+                        else:
+                            r.append(self._int2angle(res[index]))
                     return r
                 else:
                     return res
-            elif genre in [
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ]:
-                return self._int2angle(res[0]) if res else 0
-            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
-                return self._int2coord(self._process_single(res))
-            elif genre == ProtocolCode.GET_ANGLES_COORDS:
-                r = []
-                for index in range(len(res)):
-                    if index < 4:
-                        r.append(self._int2angle(res[index]))
-                    elif index < 7:
-                        r.append(self._int2coord(res[index]))
-                    else:
-                        r.append(self._int2angle(res[index]))
-                return r
-            else:
-                return res
-        return None
+            return None
 
     def get_radians(self):
         """Get all angle return a list
