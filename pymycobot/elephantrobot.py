@@ -56,7 +56,8 @@ class ElephantRobot(object):
                 coords_4 = float(data_arr[3])
                 coords_5 = float(data_arr[4])
                 coords_6 = float(data_arr[5])
-                coords = [coords_1, coords_2, coords_3, coords_4, coords_5, coords_6]
+                coords = [coords_1, coords_2, coords_3,
+                          coords_4, coords_5, coords_6]
                 return coords
             except:
                 return self.invalid_coords()
@@ -215,13 +216,15 @@ class ElephantRobot(object):
 
     def jog_angle(self, joint_str, direction, speed):
         command = (
-            "jog_angle(" + joint_str + "," + str(direction) + "," + str(speed) + ")\n"
+            "jog_angle(" + joint_str + "," + str(direction) +
+            "," + str(speed) + ")\n"
         )
         self.send_command(command)
 
     def jog_coord(self, axis_str, direction, speed):
         command = (
-            "jog_coord(" + axis_str + "," + str(direction) + "," + str(speed) + ")\n"
+            "jog_coord(" + axis_str + "," + str(direction) +
+            "," + str(speed) + ")\n"
         )
         self.send_command(command)
 
@@ -278,7 +281,45 @@ class ElephantRobot(object):
         return self.send_command(command)
 
     def jog_relative(self, joint_id, angle, speed):
-        command = 'SendJogIncrement("{}","{}","{}")\n'.format(joint_id, angle, speed)
+        command = 'SendJogIncrement("{}","{}","{}")\n'.format(
+            joint_id, angle, speed)
+        return self.send_command(command)
+
+    def set_init_gripper(self, gripper_type):
+        """
+        gripper_type:CAG-1
+        """
+        command = "set_init_gripper(" + str(gripper_type) + ")\n"
+        return self.send_command(command)
+
+    def set_cag_gripper_mode(self, mode):
+        """
+        mode:0 / 1
+        """
+
+        command = "set_cag_gripper_mode("+str(mode) + ")\n"
+        return self.send_command(command)
+
+    def set_cag_gripper_value(self, value, speed):
+        """
+        value: 0-100
+        speed: 1-100
+        """
+        command = "set_cag_gripper_value( " + \
+            str(value) + ',' + str(speed) + "  )\n"
+        return self.send_command(command)
+
+    def get_cag_gripper_value(self):
+        command = "get_cag_gripper_value()\n"
+        return self.send_command(command)
+
+    def set_cag_gripper_enabled(self, mode):
+        """
+        mode:
+        0: unabled
+        1: enabled
+        """
+        command = "set_cag_gripper_enabled(" + str(mode) + ")\n"
         return self.send_command(command)
 
 
@@ -323,6 +364,25 @@ if __name__ == "__main__":
     print(ep.get_variable("f"))
     print(ep.assign_variable("ss", '"eee"'))
     print(ep.get_joint_current(1))
+
+    print(ep.set_init_gripper("CAG-1"))
+    print(ep.wait(2))
+    print(ep.set_cag_gripper_mode(1))
+    print(ep.set_cag_gripper_mode(0))
+
+    print(ep.set_cag_gripper_value(100, 20))
+    print(ep.wait(2))
+    print(ep.get_cag_gripper_value())
+    print(ep.set_cag_gripper_value(50, 20))
+    print(ep.wait(2))
+    print(ep.get_cag_gripper_value())
+    print(ep.set_cag_gripper_value(0, 20))
+    print(ep.wait(2))
+    print(ep.get_cag_gripper_value())
+
+    print(ep.set_cag_gripper_enabled(1))
+    print(ep.wait(2))
+    print(ep.set_cag_gripper_enabled(0))
 
     ep.stop_client()
 
