@@ -222,7 +222,7 @@ class MycobotTest(object):
 
         self.mycobot.set_servo_calibration(self.calibration_num)
         time.sleep(0.1)
-        self.mycobot.send_angle(self.calibration_num, 0, 0)
+        self.mycobot.send_angle(self.calibration_num, 0, 20)
         time.sleep(0.1)
         self.write_log_to_Text("校准电机 %s 结束." % self.calibration_num)
 
