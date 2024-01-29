@@ -41,7 +41,7 @@ class MyAgv(DataProcessor):
         end = 5
         t = time.time()
         if command[k-1] == 29:
-            end = 29
+            end = 30
         while time.time() - t < 0.2:
             data = self._serial_port.read()
             k += 1
@@ -54,7 +54,7 @@ class MyAgv(DataProcessor):
                 datas += data
             
                 
-            elif len(datas) == end-1:
+            elif len(datas) == end:
                 datas += data
                 break
             elif len(datas) > 4:
