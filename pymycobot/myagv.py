@@ -54,7 +54,7 @@ class MyAgv(DataProcessor):
                 datas += data
             
                 
-            elif len(datas) == end:
+            elif len(datas) == end-1:
                 datas += data
                 break
             elif len(datas) > 4:
