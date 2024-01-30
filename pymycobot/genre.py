@@ -19,3 +19,8 @@ class Coord(enum.Enum):
     Rx = 4
     Ry = 5
     Rz = 6
+    
+class MercuryRobot(enum.Enum):
+    A1 = 1
+    B1 = 2
+    X1 = 3

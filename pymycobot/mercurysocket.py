@@ -7,16 +7,18 @@ import threading
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.genre import MercuryRobot
 
 
 class MercurySocket(CommandGenerator):
     _write = write
     _read = read
-    def __init__(self, ip, netport=9000, debug=False):
+    def __init__(self, ip, netport=9000, debug=False, robot=None):
         """
         Args:
             ip: Server ip
             netport: Server port(default 9000)
+            robot: MercuryRobot.A1 or MercuryRobot.B1 or MercuryRobot.X1
         """
         super(MercurySocket, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
@@ -353,5 +355,7 @@ class MercurySocket(CommandGenerator):
             return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
         
+    def turn_right(self):
+        pass
 
         
