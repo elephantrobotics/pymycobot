@@ -180,7 +180,7 @@ class CommandGenerator(DataProcessor):
             -1 - error data
         """
         return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
-
+    
     def release_all_servos(self, data=None):
         """Relax all joints
         
@@ -188,7 +188,7 @@ class CommandGenerator(DataProcessor):
             data: 1 - Undamping (The default is damping)
         """
         if data is None:
-            return super().release_all_servos()
+            return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
         else:
             return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
 
@@ -413,7 +413,7 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
     def jog_stop(self):
-        """Stop jog moving"""
+        """Stop jog moving (Atom 7.0 Delete this interface)"""
         return self._mesg(ProtocolCode.JOG_STOP)
 
     def pause(self):
@@ -582,7 +582,7 @@ class CommandGenerator(DataProcessor):
             value: 0 - 4096
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
         """
-        if mode is not None:
+        if mode is None:
             self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id, value=value)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
         else:
@@ -638,7 +638,7 @@ class CommandGenerator(DataProcessor):
         self.calibration_parameters(class_name = self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.JOINT_BRAKE, joint_id)
 
-    def release_servo(self, servo_id):
+    def release_servo(self, servo_id, mode=None):
         """Power off designated servo
 
         Args:
@@ -646,9 +646,15 @@ class CommandGenerator(DataProcessor):
                 for mycobot / mecharm: Joint id 1 - 6
                 for mypalletizer: Joint id 1 - 4
                 for myArm: joint id 1 - 7
+            mode: Default damping, set to 1, cancel damping
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
+        if mode is None:
+            self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
+            return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
+
+        else:
+            self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
+            return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id, mode)
 
     def focus_servo(self, servo_id):
         """Power on designated servo
@@ -765,7 +771,7 @@ class CommandGenerator(DataProcessor):
                 4: Flexible gripper
         """
         if gripper_type is not None:
-            self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, _type=gripper_type)
+            self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
         else:
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
@@ -1202,5 +1208,13 @@ class CommandGenerator(DataProcessor):
         Returns:
             int: 0 or 1 (1 - success)
         """
-        return self._mesg(ProtocolCode.SET_FOUR_PIECES_ZERO, has_reply = True)
-        
+    
+    def jog_rpy(self, end_direction, direction):
+        """Rotate the end around a fixed axis in the base coordinate system (320 atom 7.0 is available)
+
+        Args:
+            end_direction (int):  Roll, Pitch, Yaw (1-3)
+            direction (int): 1 - forward rotation, 0 - reverse rotation
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, end_direction=end_direction)
+        return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction)

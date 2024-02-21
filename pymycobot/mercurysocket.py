@@ -2,6 +2,7 @@
 
 import time
 import socket
+import threading
 
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
@@ -22,6 +23,7 @@ class MercurySocket(CommandGenerator):
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
+        self.lock = threading.Lock()
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,94 +44,107 @@ class MercurySocket(CommandGenerator):
                 has_reply: Whether there is a return value to accept.
         """
         real_command, has_reply = super(MercurySocket, self)._mesg(genre, *args, **kwargs)
-        self._write(self._flatten(real_command), "socket")
+        with self.lock:
+            self._write(self._flatten(real_command), "socket")
 
-        if has_reply:
-            data = self._read(genre, _class=self.__class__.__name__, method='socket')
-            if genre == ProtocolCode.SET_SSID_PWD:
-                return None
-            res = self._process_received(data, genre, 14)
-            if res == []:
-                return None
-            if genre in [
-                ProtocolCode.ROBOT_VERSION,
-                ProtocolCode.GET_ROBOT_ID,
-                ProtocolCode.IS_POWER_ON,
-                ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
-                ProtocolCode.IS_IN_POSITION,
-                ProtocolCode.IS_MOVING,
-                ProtocolCode.IS_SERVO_ENABLE,
-                ProtocolCode.IS_ALL_SERVO_ENABLE,
-                ProtocolCode.GET_SERVO_DATA,
-                ProtocolCode.GET_DIGITAL_INPUT,
-                ProtocolCode.GET_GRIPPER_VALUE,
-                ProtocolCode.IS_GRIPPER_MOVING,
-                ProtocolCode.GET_SPEED,
-                ProtocolCode.GET_ENCODER,
-                ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE,
-                ProtocolCode.GET_END_TYPE,
-                ProtocolCode.GET_MOVEMENT_TYPE,
-                ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_FRESH_MODE,
-                ProtocolCode.GET_GRIPPER_MODE,
-                ProtocolCode.SET_SSID_PWD,
-                ProtocolCode.COBOTX_IS_GO_ZERO,
-                ProtocolCode.GET_ERROR_DETECT_MODE
-            ]:
-                return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES]:
-                return [self._int2angle(angle) for angle in res]
-            elif genre in [
-                ProtocolCode.GET_COORDS,
-                ProtocolCode.MERCURY_GET_BASE_COORDS,
-                ProtocolCode.GET_TOOL_REFERENCE,
-                ProtocolCode.GET_WORLD_REFERENCE,
-            ]:
-                if res:
+            if has_reply:
+                data = self._read(genre, _class=self.__class__.__name__, method='socket')
+                if genre == ProtocolCode.SET_SSID_PWD:
+                    return None
+                res = self._process_received(data, genre, 14)
+                if res == []:
+                    return None
+                if genre in [
+                    ProtocolCode.ROBOT_VERSION,
+                    ProtocolCode.GET_ROBOT_ID,
+                    ProtocolCode.IS_POWER_ON,
+                    ProtocolCode.IS_CONTROLLER_CONNECTED,
+                    ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+                    ProtocolCode.IS_IN_POSITION,
+                    ProtocolCode.IS_MOVING,
+                    ProtocolCode.IS_SERVO_ENABLE,
+                    ProtocolCode.IS_ALL_SERVO_ENABLE,
+                    ProtocolCode.GET_SERVO_DATA,
+                    ProtocolCode.GET_DIGITAL_INPUT,
+                    ProtocolCode.GET_GRIPPER_VALUE,
+                    ProtocolCode.IS_GRIPPER_MOVING,
+                    ProtocolCode.GET_SPEED,
+                    ProtocolCode.GET_ENCODER,
+                    ProtocolCode.GET_BASIC_INPUT,
+                    ProtocolCode.GET_TOF_DISTANCE,
+                    ProtocolCode.GET_END_TYPE,
+                    ProtocolCode.GET_MOVEMENT_TYPE,
+                    ProtocolCode.GET_REFERENCE_FRAME,
+                    ProtocolCode.GET_FRESH_MODE,
+                    ProtocolCode.GET_GRIPPER_MODE,
+                    ProtocolCode.SET_SSID_PWD,
+                    ProtocolCode.COBOTX_IS_GO_ZERO,
+                    ProtocolCode.GET_ERROR_DETECT_MODE
+                ]:
+                    return self._process_single(res)
+                elif genre in [ProtocolCode.GET_ANGLES]:
+                    return [self._int2angle(angle) for angle in res]
+                elif genre in [
+                    ProtocolCode.GET_COORDS,
+                    ProtocolCode.MERCURY_GET_BASE_COORDS,
+                    ProtocolCode.GET_TOOL_REFERENCE,
+                    ProtocolCode.GET_WORLD_REFERENCE,
+                ]:
+                    if res:
+                        r = []
+                        for idx in range(3):
+                            r.append(self._int2coord(res[idx]))
+                        for idx in range(3, 6):
+                            r.append(self._int2angle(res[idx]))
+                        return r
+                    else:
+                        return res
+                elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+                    return [self._int2coord(angle) for angle in res]
+                elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+                    return self._int2coord(self._process_single(res))
+                elif genre in [
+                    ProtocolCode.GET_JOINT_MAX_ANGLE,
+                    ProtocolCode.GET_JOINT_MIN_ANGLE,
+                ]:
+                    return self._int2coord(res[0])
+                elif genre == ProtocolCode.GET_ANGLES_COORDS:
                     r = []
-                    for idx in range(3):
-                        r.append(self._int2coord(res[idx]))
-                    for idx in range(3, 6):
-                        r.append(self._int2angle(res[idx]))
+                    for index in range(len(res)):
+                        if index < 7:
+                            r.append(self._int2angle(res[index]))
+                        elif index < 10:
+                            r.append(self._int2coord(res[index]))
+                        else:
+                            r.append(self._int2angle(res[index]))
                     return r
+                elif genre == ProtocolCode.GO_ZERO:
+                    r = []
+                    if res:
+                        if 1 not in res[1:]:
+                            return res[0]
+                        else:
+                            for i in range(1, len(res)):
+                                if res[i] == 1:
+                                    r.append(i)
+                    return r
+                elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES]:
+                        return self._int2angle(res[0])
+                elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+                    i = 9
+                    for i in range(9, len(res)):
+                        if res[i] != 0:
+                            data = bin(res[i])[2:]
+                            res[i] = []
+                            while len(data) != 16:
+                                data = "0"+data
+                            for j in range(16):
+                                if data[j] != "0":
+                                    res[i].append(15-j)
+                    return res
                 else:
                     return res
-            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-                return [self._int2coord(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
-                return self._int2coord(self._process_single(res))
-            elif genre in [
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-            ]:
-                return self._int2coord(res[0])
-            elif genre == ProtocolCode.GET_ANGLES_COORDS:
-                r = []
-                for index in range(len(res)):
-                    if index < 7:
-                        r.append(self._int2angle(res[index]))
-                    elif index < 10:
-                        r.append(self._int2coord(res[index]))
-                    else:
-                        r.append(self._int2angle(res[index]))
-                return r
-            elif genre == ProtocolCode.GO_ZERO:
-                r = []
-                if res:
-                    if 1 not in res[1:]:
-                        return res[0]
-                    else:
-                        for i in range(1, len(res)):
-                            if res[i] == 1:
-                                r.append(i)
-                return r
-            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES]:
-                    return self._int2angle(res[0])
-            else:
-                return res
-        return None
+            return None
     
     def open(self):
         self._serial_port.open()
@@ -355,5 +370,99 @@ class MercurySocket(CommandGenerator):
         self.send_angle(13, 0, 30)
         self.sync_send_angles([0,0,0,0,0,0,0], 30)
         
+    def set_gripper_enabled(self, value):
+        """Pro adaptive gripper enable setting
+
+        Args:
+            value (int): 
+                1 : enable
+                0 : release
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, value=value)
+        return self._mesg(ProtocolCode.SET_GRIPPER_ENABLED, value)
+    
+    def is_btn_clicked(self):
+        """Check if the end button has been pressed.
+        
+        Return:
+            1 : pressed.
+            0 : not pressed.
+        """
+        return self._mesg(ProtocolCode.IS_BTN_CLICKED, has_reply=True)
+        
+    def tool_serial_restore(self):
+        """485 factory reset
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_RESTORE)
+    
+    def tool_serial_ready(self):
+        """Set up 485 communication
+        
+        Return:
+            0 : not set
+            1 : Setup completed
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_READY, has_reply=True)
+    
+    def tool_serial_available(self):
+        """Read 485 buffer length
+        
+        Return:
+            485 buffer length available for reading
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_AVAILABLE, has_reply=True)
+    
+    def tool_serial_read_data(self, data_len):
+        """Read fixed length data. Before reading, read the buffer length first. After reading, the data will be cleared
+
+        Args:
+            data_len (int): The number of bytes to be read, range 1 ~ 45
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, data_len=data_len)
+        return self._mesg(ProtocolCode.TOOL_SERIAL_READ_DATA, data_len, has_reply=True)
+    
+    def tool_serial_write_data(self, command):
+        """End 485 sends data， Data length range is 1 ~ 45 bytes
+
+        Args:
+            command : data instructions
+            
+        Return:
+            number of bytes received
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_WRITE_DATA, command, has_reply=True)
+    
+    def tool_serial_flush(self):
+        """Clear 485 buffer
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_FLUSH)
+    
+    def tool_serial_peek(self):
+        """View the first data in the buffer, the data will not be cleared
+        
+        Return:
+            1 byte data
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_PEEK, has_reply=True)
+    
+    def tool_serial_set_baud(self, baud=115200):
+        """Set 485 baud rate, default 115200
+
+        Args:
+            baud (int): baud rate
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_SET_BAUD, baud)
+    
+    def tool_serial_set_timeout(self, max_time):
+        """Set 485 timeout in milliseconds, default 30ms
+
+        Args:
+            max_time (int): timeout
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, max_time=max_time)
+        return self._mesg(ProtocolCode.TOOL_SERIAL_SET_TIME_OUT, max_time)
+
+    def get_robot_status(self):
+        return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS, has_reply=True)
 
         

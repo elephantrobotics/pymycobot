@@ -48,7 +48,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
             wait() *
     """
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=True):
         """
         Args:
             port     : port string

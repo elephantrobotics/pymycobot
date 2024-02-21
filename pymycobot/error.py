@@ -126,7 +126,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
         # TODO 280/320共用MyCobot，无法进行数据限位
         # elif parameter == 'coords':
         #     check_coords(value, robot_limit, class_name, exception_class)
-        elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode']:
+        elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
             check_0_or_1(parameter, value, [0, 1], value_type, exception_class, int)
         elif parameter == 'acceleration':
             check_value_type(parameter, value_type, exception_class, int)
@@ -194,6 +194,8 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             current_max = 500
             if value < current_min or value > current_max:
                 raise exception_class("The range of current is {} ~ {}, but the received is {}".format(current_min, current_max, value))
+        elif parameter == 'end_direction':
+            check_0_or_1(parameter, value, [1, 2, 3], value_type, exception_class, int)
 
 def calibration_parameters(**kwargs):
     with open(os.path.dirname(os.path.abspath(__file__))+"/robot_limit.json") as f:
@@ -249,7 +251,7 @@ def calibration_parameters(**kwargs):
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
             # if direction is not None:
-            elif parameter in ['direction', 'flag']:
+            elif parameter in ['direction', 'flag', 'value']:
                 if value not in [0, 1]:
                     raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
                 
@@ -269,7 +271,12 @@ def calibration_parameters(**kwargs):
             elif parameter == "servo_restore":
                 if value not in [1,2,3,4,5,6,7,13,254]:
                     raise MercuryDataException("The joint_id should be in [1,2,3,4,5,6,7,13,254], but received {}".format(value))
-                    
+            elif parameter == "data_len":
+                if value < 1 or value > 45:
+                    raise MercuryDataException("The parameter data_len data range only supports 1 ~ 45, but received {}".format(value))
+            elif parameter == "max_time":
+                if value < 0:
+                    raise MercuryDataException("The parameter max_time must be greater than or equal to 0, but received {}".format(value))
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
