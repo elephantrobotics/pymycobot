@@ -181,10 +181,10 @@ class MechArmSocket(CommandGenerator):
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
-            if f:
-                break
+            if f == 1:
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode, timeout=15):
         t = time.time()
@@ -239,3 +239,6 @@ class MechArmSocket(CommandGenerator):
     
     def close(self):
         self.sock.close()
+        
+    def go_home(self):
+        self.sync_send_angles([0,0,0,0,0,0], 30)
