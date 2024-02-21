@@ -98,7 +98,8 @@ class ProtocolCode(object):
     JOINT_BRAKE = 0x55
     RELEASE_SERVO = 0x56
     FOCUS_SERVO = 0x57
-
+    SET_GRIPPER_ENABLED = 0x58
+    
     # ATOM IO
     SET_PIN_MODE = 0x60
     SET_DIGITAL_OUTPUT = 0x61
@@ -112,6 +113,7 @@ class ProtocolCode(object):
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
     SET_GRIPPER_TORQUE = 0x6F
+    IS_BTN_CLICKED = 0x6F
     SET_COLOR_MYARM = 0x70
     SET_ELETRIC_GRIPPER = 0x6B
     INIT_ELETRIC_GRIPPER = 0x6C
@@ -124,6 +126,7 @@ class ProtocolCode(object):
     SET_BASIC_OUTPUT = 0xA0
     GET_BASIC_INPUT = 0xA1
     GET_BASE_INPUT = 0xA2
+    MERCURY_ROBOT_STATUS = 0xA2
     SET_BASE_PWM = 0xA5
 
     # Linux GPIO, mode: GPIO.BCM
@@ -135,6 +138,15 @@ class ProtocolCode(object):
     # set WIFI
     SET_SSID_PWD = 0xB0
     GET_SSID_PWD = 0xB1
+    TOOL_SERIAL_RESTORE = 0xB1
+    TOOL_SERIAL_READY = 0xB2
+    TOOL_SERIAL_AVAILABLE = 0xB3
+    TOOL_SERIAL_READ_DATA = 0xB4
+    TOOL_SERIAL_WRITE_DATA = 0xB5
+    TOOL_SERIAL_FLUSH = 0xB6
+    TOOL_SERIAL_PEEK = 0xB7
+    TOOL_SERIAL_SET_BAUD = 0xB8
+    TOOL_SERIAL_SET_TIME_OUT = 0xB9
     SET_SERVER_PORT = 0xB2
 
     # Get the measured distance
@@ -435,6 +447,18 @@ class DataProcessor(object):
             for i in range(0, data_len, 4):
                 byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                 res.append(byte_value)
+        elif data_len == 23:
+            i = 0
+            res = []
+            while i < 23:
+                if i < 9:
+                    res.append(valid_data[i])
+                    i+=1
+                else:
+                    one = valid_data[i : i + 2]
+                    res.append(self._decode_int16(one))
+                    i+=2
+            return res
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -489,7 +513,10 @@ def write(self, command, method=None):
             self.sock.sendall(command)
     else:
         self._serial_port.reset_input_buffer()
-        self.log.debug("_write: {}".format([hex(i) for i in command]))
+        command_log = ""
+        for i in command:
+            command_log += hex(i) + " "
+        self.log.debug("_write: {}".format(command_log))
         self._serial_port.write(command)
         self._serial_port.flush()
 
@@ -525,9 +552,16 @@ def read(self, genre, method=None, command=None, _class=None):
             except:
                 data = b""
         if check_python_version() == 2:
-            self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+            command_log = ""
+            for d in data:
+                command_log += hex(ord(d)) + " "
+            self.log.debug("_read : {}".format(command_log))
+            # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
         else:
-            self.log.debug("_read: {}".format([hex(d) for d in data]))
+            command_log = ""
+            for d in data:
+                command_log += hex(d) + " "
+            self.log.debug("_read : {}".format(command_log))
         return data
     else:
         if genre == ProtocolCode.GET_SSID_PWD:
@@ -575,8 +609,14 @@ def read(self, genre, method=None, command=None, _class=None):
         else:
             datas = b''
         if check_python_version() == 2:
-            self.log.debug("_read: {}".format([hex(ord(data)) for data in datas]))
+            command_log = ""
+            for d in datas:
+                command_log += hex(ord(d)) + " "
+            self.log.debug("_read : {}".format(command_log))
         else:
-            self.log.debug("_read: {}".format([hex(data) for data in datas]))
+            command_log = ""
+            for d in datas:
+                command_log += hex(d) + " "
+            self.log.debug("_read : {}".format(command_log))
             
         return datas

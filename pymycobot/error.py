@@ -251,7 +251,7 @@ def calibration_parameters(**kwargs):
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
             # if direction is not None:
-            elif parameter in ['direction', 'flag']:
+            elif parameter in ['direction', 'flag', 'value']:
                 if value not in [0, 1]:
                     raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
                 
@@ -271,7 +271,12 @@ def calibration_parameters(**kwargs):
             elif parameter == "servo_restore":
                 if value not in [1,2,3,4,5,6,7,13,254]:
                     raise MercuryDataException("The joint_id should be in [1,2,3,4,5,6,7,13,254], but received {}".format(value))
-                    
+            elif parameter == "data_len":
+                if value < 1 or value > 45:
+                    raise MercuryDataException("The parameter data_len data range only supports 1 ~ 45, but received {}".format(value))
+            elif parameter == "max_time":
+                if value < 0:
+                    raise MercuryDataException("The parameter max_time must be greater than or equal to 0, but received {}".format(value))
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
