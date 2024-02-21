@@ -131,6 +131,18 @@ class Mercury(CommandGenerator):
                     return r
                 elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES]:
                         return self._int2angle(res[0])
+                elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+                    i = 9
+                    for i in range(9, len(res)):
+                        if res[i] != 0:
+                            data = bin(res[i])[2:]
+                            res[i] = []
+                            while len(data) != 16:
+                                data = "0"+data
+                            for j in range(16):
+                                if data[j] != "0":
+                                    res[i].append(15-j)
+                    return res
                 else:
                     return res
             return None
