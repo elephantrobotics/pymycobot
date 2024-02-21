@@ -49,7 +49,7 @@ __all__ = [
     "MechArmSocket",
     "MyArmSocket",
     "MercuryChassis",
-    "Phoenix",,
+    "Phoenix",
     "MercurySocket"
 ]
 
