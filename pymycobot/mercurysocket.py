@@ -260,9 +260,9 @@ class MercurySocket(CommandGenerator):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode=None, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -349,6 +349,11 @@ class MercurySocket(CommandGenerator):
         if mode:
             return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
+    
+    def go_home(self):
+        self.send_angle(12, 0, 30)
+        self.send_angle(13, 0, 30)
+        self.sync_send_angles([0,0,0,0,0,0,0], 30)
         
 
         

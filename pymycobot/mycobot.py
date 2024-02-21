@@ -194,9 +194,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -211,9 +211,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
             if self.is_in_position(coords, 1) == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -257,3 +257,6 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
             acc: int
         """
         return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
+    
+    def go_home(self):
+        self.sync_send_angles([0,0,0,0,0,0], 30)
