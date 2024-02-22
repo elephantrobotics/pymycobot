@@ -530,6 +530,11 @@ def read(self, genre, method=None, command=None, _class=None):
     wait_time = 0.1    
     if genre == ProtocolCode.GO_ZERO:
         wait_time = 120
+    if _class in ["Mercury", "MercurySocket"]:
+        if genre == ProtocolCode.POWER_ON:
+            wait_time = 8
+        elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS, ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
+            wait_time = 3
     if method is not None:
         if genre == 177:
             while True:

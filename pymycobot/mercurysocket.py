@@ -191,7 +191,7 @@ class MercurySocket(CommandGenerator):
 
     def focus_all_servos(self):
         """Lock all joints"""
-        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
+        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS, has_reply=True)
 
     def go_zero(self):
         """Control the machine to return to the zero position.
@@ -364,7 +364,7 @@ class MercurySocket(CommandGenerator):
         if mode:
             return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
-        
+    
     def set_gripper_enabled(self, value):
         """Pro adaptive gripper enable setting
 
@@ -459,5 +459,40 @@ class MercurySocket(CommandGenerator):
 
     def get_robot_status(self):
         return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS, has_reply=True)
+    
+    def power_on(self):
+        """Open communication with Atom."""
+        return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
+
+    def power_off(self):
+        """Close communication with Atom."""
+        return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
+    
+    def release_all_servos(self):
+        """Relax all joints
+        """
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, has_reply=True)
+    
+    def focus_servo(self, servo_id):
+        """Power on designated servo
+
+        Args:
+            servo_id: int. joint id 1 - 7
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
+        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id, has_reply=True)
+    
+    def release_servo(self, servo_id):
+        """Power off designated servo
+
+        Args:
+            servo_id: int. joint id 1 - 7
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
+        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id, has_reply=True)
+    
+    def stop(self):
+        """Stop moving"""
+        return self._mesg(ProtocolCode.STOP, has_reply=True)
 
         

@@ -30,6 +30,8 @@ class Mercury(CommandGenerator):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
+        self.has_reply_command = []
+        
         
 
     def _mesg(self, genre, *args, **kwargs):
@@ -80,7 +82,14 @@ class Mercury(CommandGenerator):
                     ProtocolCode.GET_GRIPPER_MODE,
                     ProtocolCode.SET_SSID_PWD,
                     ProtocolCode.COBOTX_IS_GO_ZERO,
-                    ProtocolCode.GET_ERROR_DETECT_MODE
+                    ProtocolCode.GET_ERROR_DETECT_MODE,
+                    ProtocolCode.POWER_ON,
+                    ProtocolCode.POWER_OFF,
+                    ProtocolCode.RELEASE_ALL_SERVOS,
+                    ProtocolCode.RELEASE_SERVO,
+                    ProtocolCode.FOCUS_ALL_SERVOS,
+                    ProtocolCode.FOCUS_SERVO,
+                    ProtocolCode.STOP
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
@@ -192,7 +201,7 @@ class Mercury(CommandGenerator):
 
     def focus_all_servos(self):
         """Lock all joints"""
-        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
+        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS, has_reply=True)
 
     def go_zero(self):
         """Control the machine to return to the zero position.
@@ -460,4 +469,39 @@ class Mercury(CommandGenerator):
 
     def get_robot_status(self):
         return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS, has_reply=True)
+    
+    def power_on(self):
+        """Open communication with Atom."""
+        return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
+
+    def power_off(self):
+        """Close communication with Atom."""
+        return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
+    
+    def release_all_servos(self):
+        """Relax all joints
+        """
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, has_reply=True)
+    
+    def focus_servo(self, servo_id):
+        """Power on designated servo
+
+        Args:
+            servo_id: int. joint id 1 - 7
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
+        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id, has_reply=True)
+    
+    def release_servo(self, servo_id):
+        """Power off designated servo
+
+        Args:
+            servo_id: int. joint id 1 - 7
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
+        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id, has_reply=True)
+    
+    def stop(self):
+        """Stop moving"""
+        return self._mesg(ProtocolCode.STOP, has_reply=True)
         
