@@ -378,7 +378,7 @@ class Mercury(CommandGenerator):
     def go_home(self):
         self.send_angle(12, 0, 30)
         self.send_angle(13, 0, 30)
-        self.sync_send_angles([0,0,0,0,0,0,0], 30)
+        return self.sync_send_angles([0,0,0,0,0,0,0], 30)
     
     def set_gripper_enabled(self, value):
         """Pro adaptive gripper enable setting
