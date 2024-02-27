@@ -152,6 +152,18 @@ class Mercury(CommandGenerator):
                                 if data[j] != "0":
                                     res[i].append(15-j)
                     return res
+                elif genre == ProtocolCode.GET_QUICK_INFO:
+                    r = []
+                    for index in range(len(res)):
+                        if index < 7:
+                            r.append(self._int2angle(res[index]))
+                        elif index < 10:
+                            r.append(self._int2coord(res[index]))
+                        elif index < 13:
+                            r.append(self._int2angle(res[index]))
+                        else:
+                            r.append(res[index])
+                    return r
                 else:
                     return res
             return None
@@ -509,4 +521,7 @@ class Mercury(CommandGenerator):
     def stop(self):
         """Stop moving"""
         return self._mesg(ProtocolCode.STOP, has_reply=True)
+    
+    def get_quick_move_info(self):
+        return self._mesg(ProtocolCode.GET_QUICK_INFO, has_reply=True)
         
