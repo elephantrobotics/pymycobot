@@ -384,7 +384,7 @@ class DataProcessor(object):
             
         unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
 
-        if cmd_id in unique_data:
+        if cmd_id in unique_data and arm != 14:
             if arm == 12:
                 data_pos = header_i + 6
             else:
@@ -395,7 +395,6 @@ class DataProcessor(object):
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
-
         valid_data = data[data_pos : data_pos + data_len]
 
         # process valid data

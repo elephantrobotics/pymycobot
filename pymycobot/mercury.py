@@ -520,8 +520,13 @@ class Mercury(CommandGenerator):
     
     def stop(self):
         """Stop moving"""
-        return self._mesg(ProtocolCode.STOP, has_reply=True)
-    
+        return self._mesg(ProtocolCode.STOP, has_reply=True)    
     def get_quick_move_info(self):
         return self._mesg(ProtocolCode.GET_QUICK_INFO, has_reply=True)
+    
+
+    def get_robot_type(self):
+        """Get robot type
+        """
+        return self._mesg(ProtocolCode.GET_ROBOT_ID, has_reply=True)
         
