@@ -2,20 +2,23 @@
 import socket
 import json
 import threading
-import fcntl
 import struct
 
 class MercuryChassisError(Exception):
     pass
 
 class MercuryChassis:
-    def __init__(self):
+    def __init__(self, ip=None):
         self.ifname = b"wlan0"
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.host = socket.inet_ntoa(fcntl.ioctl(self.server_socket.fileno(), 0x8915, struct.pack('256s', self.ifname[:15]))[20:24])  #IP
-        except:
-            self.host = "127.0.0.1"
+        if ip is not None:
+            self.host = ip
+        else:
+            import fcntl
+            try:
+                self.host = socket.inet_ntoa(fcntl.ioctl(self.server_socket.fileno(), 0x8915, struct.pack('256s', self.ifname[:15]))[20:24])  #IP
+            except:
+                self.host = "127.0.0.1"
         self._sock.connect((self.host, 9999))
         self.recv = threading.Thread(target=self.check_move_end, daemon=True)
         self.recv.start()
@@ -129,32 +132,35 @@ class MercuryChassis:
         command = {"movebaseCancel": True}
         self._sock.sendall(json.dumps(command).encode())        
 
-    def getRobotVersion(self):
+    def get_software_version(self):
         """"""
-        command = {"getRobotVersion": True}
+        command = {"getSoftWareVersion": True}
         self._sock.sendall(json.dumps(command).encode()) 
         while True:
-            data = self.move_end.get("getRobotVersion", None)
-            if data:
-                return self.move_end["getRobotVersion"]["return"]
+            if self.move_end:
+                data = self.move_end.get("getSoftWareVersion", None)
+                if data:
+                    return self.move_end["getSoftWareVersion"]["return"]
 
-    def getSystemVersion(self):
-        command = {"getSystemVersion": True}
+    def get_base_ros_version(self):
+        command = {"getBaseROSVersion": True}
         self._sock.sendall(json.dumps(command).encode()) 
         while True:
-            data = self.move_end.get("getSystemVersion", None)
-            if data:
-                return self.move_end["getSystemVersion"]["return"]
+            if self.move_end:
+                data = self.move_end.get("getBaseROSVersion", None)
+                if data:
+                    return self.move_end["getBaseROSVersion"]["return"]
 
-    def batteryState(self):
+    def get_battery_state(self):
         """Get battery level
         """
         command = {"batteryState": True}
         self._sock.sendall(json.dumps(command).encode())
         while True:
-            data = self.move_end.get("batteryState", None)
-            if data:
-                return self.move_end["batteryState"]["return"]
+            if self.move_end:
+                data = self.move_end.get("batteryState", None)
+                if data:
+                    return self.move_end["batteryState"]["return"]
         
 
         
