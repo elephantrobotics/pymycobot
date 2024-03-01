@@ -133,7 +133,7 @@ class MercuryChassis:
         self._sock.sendall(json.dumps(command).encode())        
 
     def get_software_version(self):
-        """"""
+        """Get the base server version number"""
         command = {"getSoftWareVersion": True}
         self._sock.sendall(json.dumps(command).encode()) 
         while True:
@@ -143,6 +143,7 @@ class MercuryChassis:
                     return self.move_end["getSoftWareVersion"]["return"]
 
     def get_base_ros_version(self):
+        """Get the base ROS project version number"""
         command = {"getBaseROSVersion": True}
         self._sock.sendall(json.dumps(command).encode()) 
         while True:
