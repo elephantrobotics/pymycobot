@@ -2,30 +2,42 @@
 import socket
 import json
 import threading
-import fcntl
 import struct
 
 class MercuryChassisError(Exception):
     pass
 
 class MercuryChassis:
-    def __init__(self):
+    def __init__(self, ip=None):
         self.ifname = b"wlan0"
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.host = socket.inet_ntoa(fcntl.ioctl(self.server_socket.fileno(), 0x8915, struct.pack('256s', self.ifname[:15]))[20:24])  #IP
-        except:
-            self.host = "127.0.0.1"
+        if ip is not None:
+            self.host = ip
+        else:
+            import fcntl
+            try:
+                self.host = socket.inet_ntoa(fcntl.ioctl(self.server_socket.fileno(), 0x8915, struct.pack('256s', self.ifname[:15]))[20:24])  #IP
+            except:
+                self.host = "127.0.0.1"
         self._sock.connect((self.host, 9999))
         self.recv = threading.Thread(target=self.check_move_end, daemon=True)
         self.recv.start()
         self.move_end = False
         
+    def close(self):
+        self._sock.close()
+    
+    def open(self):
+        self._sock.connect((self.host, 9999))
+        
     def check_move_end(self):
         while True:
-            data = self._sock.recv(1024)
-            data = json.loads(data)
-            self.move_end = data
+            try:
+                data = self._sock.recv(1024)
+                data = json.loads(data)
+                self.move_end = data
+            except:
+                pass
     
     # @property
     def is_move_end(self):
