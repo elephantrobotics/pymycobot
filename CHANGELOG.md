@@ -3,7 +3,7 @@
 ## v3.4.0 (2024-3-1)
 
 - Updated Mercury X1 base control interface; A
-- dded 630 API
+- Added 630 API
 - Updated Mercury motion range limits
 
 ## v3.3.9 (2024-2-2)
