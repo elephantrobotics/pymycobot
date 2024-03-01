@@ -120,32 +120,36 @@ class MercuryChassis:
         command = {"movebaseCancel": True}
         self._sock.sendall(json.dumps(command).encode())        
 
-    def getRobotVersion(self):
-        """"""
-        command = {"getRobotVersion": True}
+    def get_software_version(self):
+        """Get the base server version number"""
+        command = {"getSoftWareVersion": True}
         self._sock.sendall(json.dumps(command).encode()) 
         while True:
-            data = self.move_end.get("getRobotVersion", None)
-            if data:
-                return self.move_end["getRobotVersion"]["return"]
+            if self.move_end:
+                data = self.move_end.get("getSoftWareVersion", None)
+                if data:
+                    return self.move_end["getSoftWareVersion"]["return"]
 
-    def getSystemVersion(self):
-        command = {"getSystemVersion": True}
+    def get_base_ros_version(self):
+        """Get the base ROS project version number"""
+        command = {"getBaseROSVersion": True}
         self._sock.sendall(json.dumps(command).encode()) 
         while True:
-            data = self.move_end.get("getSystemVersion", None)
-            if data:
-                return self.move_end["getSystemVersion"]["return"]
+            if self.move_end:
+                data = self.move_end.get("getBaseROSVersion", None)
+                if data:
+                    return self.move_end["getBaseROSVersion"]["return"]
 
-    def batteryState(self):
+    def get_battery_state(self):
         """Get battery level
         """
         command = {"batteryState": True}
         self._sock.sendall(json.dumps(command).encode())
         while True:
-            data = self.move_end.get("batteryState", None)
-            if data:
-                return self.move_end["batteryState"]["return"]
+            if self.move_end:
+                data = self.move_end.get("batteryState", None)
+                if data:
+                    return self.move_end["batteryState"]["return"]
         
 
         
