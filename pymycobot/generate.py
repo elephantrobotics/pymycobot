@@ -1210,7 +1210,7 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_FOUR_PIECES_ZERO, has_reply = True)
     
     def jog_rpy(self, end_direction, direction):
-        """Rotate the end around a fixed axis in the base coordinate system (320 atom 7.0 is available)
+        """Rotate the end around a fixed axis in the base coordinate system
 
         Args:
             end_direction (int):  Roll, Pitch, Yaw (1-3)
