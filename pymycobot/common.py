@@ -101,6 +101,8 @@ class ProtocolCode(object):
     FOCUS_SERVO = 0x57
     SET_GRIPPER_ENABLED = 0x58
     GET_ZERO_POS = 0x59
+    IS_INIT_CALIBRATION = 0x5A
+    
     
     # ATOM IO
     SET_PIN_MODE = 0x60
@@ -123,7 +125,6 @@ class ProtocolCode(object):
     GET_GRIPPER_MODE = 0x6E
 
     GET_ACCEI_DATA = 0x73
-    IS_INIT_CALIBRATION = 0x75
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
