@@ -128,7 +128,7 @@ class TeachingTest(Helper):
                 speeds = self.mc.get_servo_speeds()
                 gripper_value = self.mc.get_encoder(7)
                 interval_time = time.time() - start_t
-                if angles:
+                if angles and speeds and gripper_value:
                     record = [angles, speeds, gripper_value, interval_time]
                     self.record_list.append(record)
                     # time.sleep(0.1)
@@ -151,12 +151,11 @@ class TeachingTest(Helper):
             angles, speeds, gripper_value, interval_time = record
             #print(angles)
             self.mc.set_encoders_drag(angles, speeds)
-            if len(record) == 7:
-                self.mc.set_encoder(7, record[2])
+            self.mc.set_encoder(7, gripper_value, 80)
             if i == 0:
                 time.sleep(3)
             i+=1
-            time.sleep(record[-1])
+            time.sleep(interval_time)
         self.echo("Finish play")
 
     def loop_play(self):

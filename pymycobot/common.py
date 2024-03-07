@@ -41,6 +41,7 @@ class ProtocolCode(object):
     COBOTX_IS_GO_ZERO = 0x1D
     FOCUS_ALL_SERVOS = 0x18
     GO_ZERO = 0x19
+    SET_BREAK = 0x19
 
     # MDI MODE AND OPERATION
     GET_ANGLES = 0x20
@@ -98,6 +99,9 @@ class ProtocolCode(object):
     RELEASE_SERVO = 0x56
     FOCUS_SERVO = 0x57
     SET_GRIPPER_ENABLED = 0x58
+    GET_ZERO_POS = 0x59
+    IS_INIT_CALIBRATION = 0x5A
+    
     
     # ATOM IO
     SET_PIN_MODE = 0x60
@@ -399,10 +403,10 @@ class DataProcessor(object):
 
         # process valid data
         res = []
-        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
-            for i in valid_data:
-                res.append(i)
-            return res    
+        # if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
+        #     for i in valid_data:
+        #         res.append(i)
+        #     return res    
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
