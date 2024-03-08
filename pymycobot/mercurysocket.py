@@ -80,7 +80,8 @@ class MercurySocket(MercuryCommandGenerator):
                     ProtocolCode.SET_SSID_PWD,
                     ProtocolCode.COBOTX_IS_GO_ZERO,
                     ProtocolCode.GET_ERROR_DETECT_MODE,
-                    ProtocolCode.SET_BREAK
+                    ProtocolCode.SET_BREAK,
+                    ProtocolCode.IS_BTN_CLICKED
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:

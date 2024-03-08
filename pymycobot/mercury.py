@@ -90,7 +90,8 @@ class Mercury(MercuryCommandGenerator):
                     ProtocolCode.FOCUS_ALL_SERVOS,
                     ProtocolCode.FOCUS_SERVO,
                     ProtocolCode.STOP,
-                    ProtocolCode.SET_BREAK
+                    ProtocolCode.SET_BREAK,
+                    ProtocolCode.IS_BTN_CLICKED
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
