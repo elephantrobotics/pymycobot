@@ -551,7 +551,7 @@ def read(self, genre, method=None, command=None, _class=None):
                     break
         else:
             try:
-                self.sock.settimeout(0.5)
+                self.sock.settimeout(wait_time)
                 data = self.sock.recv(1024)
                 if isinstance(data, str):
                     datas = bytearray()

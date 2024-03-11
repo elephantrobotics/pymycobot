@@ -80,6 +80,13 @@ class MercurySocket(MercuryCommandGenerator):
                     ProtocolCode.SET_SSID_PWD,
                     ProtocolCode.COBOTX_IS_GO_ZERO,
                     ProtocolCode.GET_ERROR_DETECT_MODE,
+                    ProtocolCode.POWER_ON,
+                    ProtocolCode.POWER_OFF,
+                    ProtocolCode.RELEASE_ALL_SERVOS,
+                    ProtocolCode.RELEASE_SERVO,
+                    ProtocolCode.FOCUS_ALL_SERVOS,
+                    ProtocolCode.FOCUS_SERVO,
+                    ProtocolCode.STOP,
                     ProtocolCode.SET_BREAK,
                     ProtocolCode.IS_BTN_CLICKED
                 ]:
