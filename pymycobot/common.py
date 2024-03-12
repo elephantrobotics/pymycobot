@@ -533,6 +533,8 @@ def read(self, genre, method=None, command=None, _class=None):
     pre = 0
     t = time.time()
     wait_time = 0.1    
+    if method is not None:
+        wait_time = 0.3
     if genre == ProtocolCode.GO_ZERO:
         wait_time = 120
     if _class in ["Mercury", "MercurySocket"]:
