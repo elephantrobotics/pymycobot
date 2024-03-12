@@ -15,6 +15,7 @@ class ProtocolCode(object):
     ROBOT_VERSION = 0x01
     SOFTWARE_VERSION = 0x02
     GET_ROBOT_ID = 0x03
+    OVER_LIMIT_RETURN_ZERO = 0x03
     SET_ROBOT_ID = 0x04
     
     GET_ERROR_INFO = 0x07
