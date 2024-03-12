@@ -57,14 +57,24 @@ class MercuryCommandGenerator(CommandGenerator):
         """Lock all joints"""
         return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS, has_reply=True)
 
-    def go_zero(self):
+    def go_home(self, robot):
         """Control the machine to return to the zero position.
         
+        Args:
+            robot (int): 
+                1 - Mercury A1 
+                2 - Mercury B1 or X1
         Return:
             1 : All motors return to zero position.
-            list : Motor with corresponding ID failed to return to zero.
+            0 : failed.
         """
-        return self._mesg(ProtocolCode.GO_ZERO, has_reply=True)
+        if robot == 1:
+            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0])
+        else:
+            self.send_angle(11, 0)
+            self.send_angle(12, 0)
+            self.send_angle(13, 0)
+            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0])
 
     def get_angle(self, joint_id):
         """Get single joint angle
@@ -74,28 +84,6 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id, has_reply=True)
-
-    def is_gone_zero(self):
-        """Check if it has returned to zero
-
-        Return:
-            1 : Return to zero successfully.
-            0 : Returning to zero.
-        """
-        return self._mesg(ProtocolCode.COBOTX_IS_GO_ZERO, has_reply=True)
-
-    def set_encoder(self, joint_id, encoder):
-        """Set a single joint rotation to the specified potential value.
-
-        Args:
-            joint_id (int): Joint id 1 - 7.
-            encoder: The value of the set encoder.
-        """
-        # TODO Mercury此接口待定
-        # self.calibration_parameters(
-        #     class_name=self.__class__.__name__, id=joint_id, encoder=encoder
-        # )
-        return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
     
     def servo_restore(self, joint_id):
         """Abnormal recovery of joints
@@ -139,9 +127,9 @@ class MercuryCommandGenerator(CommandGenerator):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode=None, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -156,9 +144,9 @@ class MercuryCommandGenerator(CommandGenerator):
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
             if self.is_in_position(coords, 1) == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
         
     def get_base_coords(self):
         """get base coords"""
@@ -394,6 +382,34 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id=joint_id, value=value)
         return self._mesg(ProtocolCode.SET_BREAK, joint_id, value, has_reply=True)
+    
+    def over_limit_return_zero(self):
+        """Return to zero when the joint is over the limit
+        """
+        return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO)
+    
+    def jog_increment_angle(self, joint_id, increment, speed):
+        """angle step mode
+
+        Args:
+            joint_id: Joint id 1 - 7.
+            increment: 
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id = joint_id, speed = speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
+    
+    def jog_increment_coord(self, coord_id, increment, speed):
+        """coord step mode
+
+        Args:
+            coord_id: axis id 1 - 6.
+            increment: 
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id = coord_id, speed = speed)
+        value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, coord_id, [value], speed)
     
     def get_quick_move_info(self):
         return self._mesg(ProtocolCode.GET_QUICK_INFO, has_reply=True)

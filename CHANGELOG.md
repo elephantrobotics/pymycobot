@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.4.1 (2024-3-11)
+
+- release v3.4.1
+- Optimize sockets
+
 ## v3.4.0 (2024-3-1)
 
 - Updated Mercury X1 base control interface; A

@@ -247,8 +247,8 @@ class CommandGenerator(DataProcessor):
             id : Joint id(genre.Angle)
                     for mycobot / mecharm: int 1-6.
                     for mypalletizer: int 1-4.
-                    for myArm: Joint id 1 - 7.
-            angle : angle value(float)(about -170 ~ 170).
+                    for myArm or Mercury: Joint id 1 - 7.
+            angle : angle value(float).
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=degree, speed=speed)

@@ -14,6 +14,7 @@ class ProtocolCode(object):
     ROBOT_VERSION = 0x01
     SOFTWARE_VERSION = 0x02
     GET_ROBOT_ID = 0x03
+    OVER_LIMIT_RETURN_ZERO = 0x03
     SET_ROBOT_ID = 0x04
     
     GET_ERROR_INFO = 0x07
@@ -552,7 +553,7 @@ def read(self, genre, method=None, command=None, _class=None):
                     break
         else:
             try:
-                self.sock.settimeout(2)
+                self.sock.settimeout(wait_time)
                 data = self.sock.recv(1024)
                 if isinstance(data, str):
                     datas = bytearray()
