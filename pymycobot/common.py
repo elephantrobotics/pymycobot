@@ -465,6 +465,13 @@ class DataProcessor(object):
                     res.append(self._decode_int16(one))
                     i+=2
             return res
+        elif data_len == 34:
+            if genre == ProtocolCode.GET_QUICK_INFO:
+                for header_i in range(0, len(valid_data)-8, 2):
+                    one = valid_data[header_i : header_i + 2]
+                    res.append(self._decode_int16(one))
+                for i in range(len(valid_data)-8, len(valid_data))
+                    res.append(valid_data[i])
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
