@@ -69,12 +69,12 @@ class MercuryCommandGenerator(CommandGenerator):
             0 : failed.
         """
         if robot == 1:
-            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0])
+            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0], 30)
         else:
-            self.send_angle(11, 0)
-            self.send_angle(12, 0)
-            self.send_angle(13, 0)
-            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0])
+            self.send_angle(11, 0, 30)
+            self.send_angle(12, 0, 30)
+            self.send_angle(13, 0, 30)
+            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0], 30)
 
     def get_angle(self, joint_id):
         """Get single joint angle
