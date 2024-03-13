@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.4.2 (2024-3-13)
+
+- release v3.4.2
+- Add Mercury new interface
+
 ## v3.4.1 (2024-3-11)
 
 - release v3.4.1
