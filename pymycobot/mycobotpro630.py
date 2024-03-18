@@ -25,7 +25,7 @@ def is_debian_os():
                 return True
 
     except subprocess.CalledProcessError as e:
-        print(f"Error executing lsb_release -a: {e}")
+        print("Error executing lsb_release -a: {}".format(e))
         return False
 
 
