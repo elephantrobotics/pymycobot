@@ -418,7 +418,7 @@ class DataProcessor(object):
             if data_len == 8 and arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION:
                 for v in valid_data:
                     res.append(v)
-                    return res
+                return res
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
