@@ -114,7 +114,7 @@ class MercuryCommandGenerator(CommandGenerator):
         """Set error detection mode"""
         return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
     
-    def sync_send_angles(self, degrees, speed, timeout=15):
+    def sync_send_angles(self, degrees, speed, timeout=30):
         """Send the angle in synchronous state and return when the target point is reached
             
         Args:
@@ -131,7 +131,7 @@ class MercuryCommandGenerator(CommandGenerator):
             time.sleep(0.1)
         return 0
 
-    def sync_send_coords(self, coords, speed, mode=None, timeout=15):
+    def sync_send_coords(self, coords, speed, mode=None, timeout=30):
         """Send the coord in synchronous state and return when the target point is reached
             
         Args:

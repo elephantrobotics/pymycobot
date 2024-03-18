@@ -181,7 +181,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
-    def sync_send_angles(self, degrees, speed, timeout=15):
+    def sync_send_angles(self, degrees, speed, timeout=30):
         """Send the angle in synchronous state and return when the target point is reached
             
         Args:
@@ -259,4 +259,4 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
     
     def go_home(self):
-        self.sync_send_angles([0,0,0,0,0,0], 30)
+        return self.sync_send_angles([0,0,0,0,0,0], 30)
