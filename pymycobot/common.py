@@ -393,7 +393,7 @@ class DataProcessor(object):
             data_len = data[header_i + 2] - 3
             
         unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
-        if unique_data == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
+        if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
             data_pos = header_i + 4
             data_len -= 1
         elif cmd_id in unique_data:
