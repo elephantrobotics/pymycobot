@@ -77,10 +77,6 @@ class RobotMoveState(Enum):
     RUN_PROGRAM_STATE = 5
 
 
-class JogMode(Enum):
-    JOG_TELEOP = elerob.LINEAR - 1
-    JOG_JOINT = elerob.ANGULAR - 1
-
 
 class JogDirection(Enum):
     POSITIVE = 1
