@@ -388,8 +388,9 @@ class DataProcessor(object):
             data_len = data[header_i + 2] - 3
             
         unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
-
-        if cmd_id in unique_data and arm != 14:
+        if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
+            data_pos = header_i + 4
+        elif cmd_id in unique_data:
             if arm == 12:
                 data_pos = header_i + 6
             else:
@@ -409,6 +410,10 @@ class DataProcessor(object):
         #         res.append(i)
         #     return res    
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
+            if data_len == 8 and arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION:
+                for v in valid_data:
+                    res.append(v)
+                return res
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
@@ -539,9 +544,9 @@ def read(self, genre, method=None, command=None, _class=None):
     k = 0
     pre = 0
     t = time.time()
-    wait_time = 0.1    
+    wait_time = 0.1   
     if method is not None:
-        wait_time = 0.3
+         wait_time = 0.3
     if genre == ProtocolCode.GO_ZERO:
         wait_time = 120
     if _class in ["Mercury", "MercurySocket"]:

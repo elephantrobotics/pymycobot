@@ -39,7 +39,7 @@ class MercuryChassisSocket(object):
 
                 if self.debug:
                     current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                    print(f"[{current_time}] Sent command: {command}, Data: {data}")
+                    print("[{}] Sent command: {}, Data: {}".format(current_time, command, data))
             except Exception as e:
                 print("Error sending command:", str(traceback.format_exc()))
 

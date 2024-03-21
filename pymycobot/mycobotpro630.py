@@ -10,6 +10,8 @@ import subprocess
 import logging
 import os
 from pymycobot.log import setup_logging
+
+
 def is_debian_os():
     try:
         # 执行 lsb_release -a 命令，并捕获输出
@@ -25,18 +27,28 @@ def is_debian_os():
                 return True
 
     except subprocess.CalledProcessError as e:
-        print(f"Error executing lsb_release -a: {e}")
+        print("Error executing lsb_release -a: {}".format(e))
         return False
 
-
     return None
+
+
 if platform.system() == "Linux" and platform.machine() == "aarch64" and is_debian_os():
     import linuxcnc as elerob
     import hal
+
+
     class JogMode(Enum):
         JOG_JOINT = elerob.ANGULAR - 1
         JOG_TELEOP = elerob.LINEAR - 1
 from time import sleep
+
+try:
+    from gpiozero import CPUTemperature
+except ImportError:
+
+    def CPUTemperature():
+        return 0
 
 COORDS_EPSILON = 0.50
 MAX_JOINTS = 6
@@ -63,6 +75,7 @@ class RobotMoveState(Enum):
     MOVE_AXIS_STATE = 3
     MOVE_JOINT_STATE = 4
     RUN_PROGRAM_STATE = 5
+
 
 
 class JogDirection(Enum):
@@ -414,16 +427,25 @@ class JointState(Enum):
 
 
 class Phoenix:
-    """Interface for phoenix.
+    """Interface for Phoenix - robot controller.
+
+    Methods starting with underscore ('_') are low level and not intended to be
+    used by users of this class.
 
     Example:
       - Start / Stop Robot Workflow:
         1. start_robot() or start_power_on_only()
-        2. shutdown_robot()
-        3. go to 1.
+        2. ...
+        3. shutdown_robot()
+        4. go to 1.
     """
 
     def __init__(self, debug=False):
+        """Creates new Phoenix object. It can be used to call methods of Phoenix.
+
+        Args:
+            debug (bool, optional): Debug mode of logging (log with debug). Defaults to False.
+        """
         self.c = elerob.command()
         self.s = elerob.stat()
         self.e = elerob.error_channel()
@@ -432,20 +454,17 @@ class Phoenix:
         self.current_robot = 0
         self.init_hal()
         self.init_robot()
+        self.init_can()
         setup_logging(debug)
 
-    # def __del__(self):
-    #     self.stop_force_sensor()
-    #     self.g.unready()
-    #     self.hal_serial.unready()
-
     def init_hal(self):
+        """Initializes HAL (Hardware Abstraction Layer) of Phoenix."""
         self.init_hal_gpio()
         self.init_hal_serial()
         self.apply_hal_config()
 
     def init_hal_gpio(self):
-        """Inits HAL pins in halgpio component."""
+        """Inits HAL pins and parameters in halgpio component."""
 
         self.g = hal.component("halgpio", "halgpio")
 
@@ -467,6 +486,7 @@ class Phoenix:
         self.g.ready()
 
     def init_hal_serial(self):
+        """Initializez HAL parameters of serial component."""
         self.hal_serial = hal.component("serial", "serial")
 
         self.hal_serial.newpin("0.xtorq", hal.HAL_FLOAT, hal.HAL_OUT)
@@ -484,11 +504,59 @@ class Phoenix:
         self.hal_serial.ready()
 
     def apply_hal_config(self):
+        """Runs halcmd and applies elerob_gpio.hal config."""
         os.system(
             "halcmd -f $(dirname $(grep LAST_CONFIG ~/.linuxcncrc | cut -d' ' -f3))/elerob_gpio.hal"
         )
 
+    def init_can(self):
+        """Initializes CAN bus."""
+        filters = [
+            {"can_id": 0x007, "can_mask": 0x7FF},
+        ]
+        self.can = can.interface.Bus(
+            interface="socketcan",
+            channel="can0",
+            bitrate=1000000,
+            receive_own_messages=False,
+            can_filters=filters,
+        )
+        self.can.set_filters(filters)
+        self.can_reader = can.BufferedReader()
+        can.Notifier(self.can, [self.can_reader])
+
+    def send_can(self, data, can_id=0x007):
+        """Sends CAN message.
+
+        Args:
+            data (list[int]): message bytes, e.g. [0xFE, 0x01]
+            can_id (hexadecimal, optional): CAN ID. Defaults to 0x007.
+        """
+        msg = can.Message(arbitration_id=can_id, data=data, is_extended_id=False)
+        try:
+            self.can.send(msg)
+        except can.CanError:
+            print("Error: Cannot send can message")
+
+    def receive_can(self, timeout=0.5):
+        """Receives next message from CAN bus.
+
+        Args:
+            timeout (float, optional): How long time to receive message. Defaults to 0.5.
+
+        Returns:
+            Message | None: CAN message or None (if no message could be received).
+        """
+        msg = None
+        end_time = time.time() + timeout
+        while msg is None or msg.arbitration_id != 0x007:
+            msg = self.can_reader.get_message()
+            if end_time < time.time():
+                break
+        return msg
+
     def init_robot(self):
+        """Initializes robot parameters."""
         self.detect_robot()
         self._set_free_move(False)
 
@@ -498,12 +566,12 @@ class Phoenix:
 
         self.set_acceleration(400)
 
-        self.joint_brake(Joint.J1, 0)
-        self.joint_brake(Joint.J2, 0)
-        self.joint_brake(Joint.J3, 0)
-        self.joint_brake(Joint.J4, 0)
-        self.joint_brake(Joint.J5, 0)
-        self.joint_brake(Joint.J6, 0)
+        self.release_joint_brake(Joint.J1, 0)
+        self.release_joint_brake(Joint.J2, 0)
+        self.release_joint_brake(Joint.J3, 0)
+        self.release_joint_brake(Joint.J4, 0)
+        self.release_joint_brake(Joint.J5, 0)
+        self.release_joint_brake(Joint.J6, 0)
 
         # joint torque limits
         self.set_joint_torque_limit(Joint.J1, 0.15)
@@ -533,6 +601,7 @@ class Phoenix:
         self.set_motion_flexible(0)
 
     def detect_robot(self):
+        """Detects robot from Analog Input HAL pin."""
         robot = Robots(self.get_analog_in(AI.ROBOT))
         if robot == Robots.ELEPHANT:
             self.current_robot = 0
@@ -552,16 +621,23 @@ class Phoenix:
             self.current_robot = 7
 
     def start_robot(self, power_on_only=False):
-        """Start robot"""
-        self.power_off()
+        """Starts robot.
+
+        Args:
+            power_on_only (bool, optional): Only do power on. Defaults to False.
+
+        Returns:
+            bool: True if start successful, False otherwise.
+        """
+        self._power_off()
         time.sleep(0.5)
         power_on_ok = self.is_power_on()
         power_on_retry_count = 0
         while (not power_on_ok) and (power_on_retry_count <= 10):
             if power_on_only:
-                self.power_on_only()
+                self._power_on_only()
             else:
-                self.power_on()
+                self._power_on()
             power_on_retry_count += 1
             power_on_ok = self.is_power_on()
             time.sleep(1)
@@ -579,6 +655,7 @@ class Phoenix:
         if not servo_enable_ok:
             print("servo_enable_ok is false")
             return False
+
         # servo motor ok
         # self.state_on()
         robot_type = self.get_analog_in(AI.ROBOT)
@@ -604,21 +681,30 @@ class Phoenix:
             print("state_on_ok is false")
             return False
 
+        for i in range(6):
+            self.init_can_output(Joint(i))
+            self.clear_encoder_error(Joint(i))
+
         return True
 
     def start_power_on_only(self):
-        """Start robot with power on only
+        """Powers on robot.
 
         Returns:
-            True if success, False otherwise
+            bool: True if power on success, False otherwise
         """
         return self.start_robot(power_on_only=True)
 
     def shutdown_robot(self):
-        self.power_off()
+        """Shutdowns the robot."""
+        self._power_off()
 
-    def power_on(self):
-        """Powers on and prepares for operation the robot."""
+    def _power_on(self):
+        """Powers on robot servos and focuses servo brakes.
+
+        Returns:
+            True: always returns True
+        """
         self.s.poll()
         if self.s.task_state == elerob.STATE_ESTOP:
             self.set_estop_reset()
@@ -637,8 +723,12 @@ class Phoenix:
 
         return True
 
-    def power_on_only(self):
-        """Only powers on the robot."""
+    def _power_on_only(self):
+        """Powers on robot servos.
+
+        Returns:
+            True: always returns True
+        """
         self.set_digital_out(DO.POWER_ON_RELAY_1, 1)
         time.sleep(0.25)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 1)
@@ -648,27 +738,30 @@ class Phoenix:
         self._set_free_move(False)
         return True
 
-    def power_off(self):
-        """Powers off the robot."""
+    def _power_off(self):
+        """Powers off robot servos.
+
+        Returns:
+            True: always returns True
+        """
         self.set_digital_out(DO.POWER_ON_RELAY_1, 0)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 0)
         if self.current_robot != Robots.ELEPHANT.value:
             self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 0)
         return True
 
-    # TODO blockly 12-18测试可用
     def get_coords(self):
-        """Returns current robot coordinates.
+        """Returns current robot coordinates as list[X, Y, Z, RX, RY, RZ].
 
         Returns:
             list[float]: list of 6 float values for each axis
         """
-        c = self.get_actual_position()
+        c = self._get_actual_position()
         return c
 
-    # TODO blockly 12-18测试可用
     def set_coords(self, coords, speed):
-        """Set coords
+        """Moves robot to given coordinates with specified speed.
+        Given coordinates as list[X, Y, Z, RX, RY, RZ].
 
         Args:
             coords (list[float]): coords to set, list[float] of size 6
@@ -676,29 +769,27 @@ class Phoenix:
         """
         if self.is_in_position(coords, True):
             return True
-        self.set_robot_move_state(RobotMoveState.MOVE_AXIS_STATE, 0, 0)
+        self._set_robot_move_state(RobotMoveState.MOVE_AXIS_STATE, 0, 0)
         return self.send_mdi(
             "G01F" + str(speed * MAX_LINEAR_SPEED / 100) + self.coords_to_gcode(coords)
         )
 
-    # TODO blockly 12-18测试可用
     def get_coord(self, axis):
-        """Returns current coord of specified axis
+        """Returns current coord of specified axis.
 
         Args:
-            axis (Axis): axis
+            axis (Axis): Axis.X ~ Axis.RZ
 
         Returns:
             float: current coord of specified axis
         """
         return self.get_coords()[axis.value]
 
-    # TODO blockly 12-18测试可用
     def set_coord(self, axis, coord, speed):
-        """Set coord of axis
+        """Moves robot's given coordinate to specified value with set speed.
 
         Args:
-            axis (Axis): Axis.X ~ Axis.RY
+            axis (Axis): Axis.X ~ Axis.RZ
             coord (float): coord value
             speed (float): speed percentage (1 ~ 100 %)
         """
@@ -706,18 +797,16 @@ class Phoenix:
         coords[axis.value] = coord
         self.set_coords(coords, speed)
 
-    # TODO blockly 12-18测试可用
     def get_angles(self):
-        """Returns current joint angles
+        """Returns robot's current joint angle values.
 
         Returns:
             list[float]: current angles list[float] of size MAX_JOINTS
         """
-        return self.get_actl_joint_float()
+        return self._get_actl_joint_float()
 
-    # TODO blockly 12-18测试可用
     def set_angles(self, angles, speed):
-        """Sets angles
+        """Moves robot's joints angles to specified value with given speed.
 
         Args:
             angles (list[float]): joint angles, list[float] of size MAX_JOINTS
@@ -725,16 +814,15 @@ class Phoenix:
         """
         if self.is_in_position(angles, False):
             return
-        self.set_robot_move_state(RobotMoveState.MOVE_JOINT_STATE, 0, 0)
+        self._set_robot_move_state(RobotMoveState.MOVE_JOINT_STATE, 0, 0)
         self.send_mdi(
             "G38.3F"
             + str(speed * MAX_ANGULAR_SPEED / 100)
             + self.angles_to_gcode(angles)
         )
 
-    # TODO blockly 12-18测试可用
     def get_angle(self, joint):
-        """Returns specified joint's current angle
+        """Returns robot's specified joint's current angle.
 
         Args:
             joint (Joint): Joint.J1 (0) ~ Joint.J6 (5)
@@ -744,9 +832,8 @@ class Phoenix:
         """
         return self.get_angles()[joint.value]
 
-    # TODO blockly 12-18测试可用
     def set_angle(self, joint, angle, speed):
-        """Sets specified joint's angle to given value with passed speed.
+        """Moves robot's specified joint's angle to given value with passed speed.
 
         Args:
             joint (Joint): 0 ~ 5 or Joint.J1 ~ Joint.J6
@@ -760,9 +847,12 @@ class Phoenix:
             angles[joint.value] = angle
         self.set_angles(angles, speed)
 
-    # TODO blockly 12-18测试可用
     def get_speed(self):
-        """_summary_"""
+        """Returns current robot's speed.
+
+        Returns:
+            float: current robot's speed
+        """
         return self.get_current_velocity()
 
     def state_on(self):
@@ -790,7 +880,7 @@ class Phoenix:
             self.send_mdi("G64 P1")
             self.task_stop()
             time.sleep(0.1)
-        self.set_robot_move_state(RobotMoveState.IDLE_STATE, 0, 0)
+        self._set_robot_move_state(RobotMoveState.IDLE_STATE, 0, 0)
         return True
 
     def state_off(self):
@@ -816,18 +906,17 @@ class Phoenix:
         """
         return not self.is_in_commanded_position()
 
-    # TODO blockly 12-18测试可用
-    def is_in_position(self, coords, is_linear):
+    def is_in_position(self, coords, jog_mode):
         """Returns True if current position equals passed coords.
 
         Args:
             coords (list[float]): coords or angles
-            is_linear (bool): False (0) - angles, True (1) - coords
+            jog_mode (JogMode): JogMode enum value
 
         Returns:
             bool: True if robot is in passed coords, False otherwise
         """
-        if is_linear:
+        if jog_mode == JogMode.JOG_TELEOP:
             return self.coords_equal(self.get_coords(), coords)
         else:
             return self.angles_equal(self.get_angles(), coords)
@@ -852,7 +941,11 @@ class Phoenix:
         return True
 
     def _set_free_move(self, on=True):
-        """Sets free move.
+        """Free move mode helper function.
+
+        Do not use. Use set_free_move_mode() for free move.
+
+        Sets jog mode to JogMode.JOG_TELEOP and sets DO.SOFTWARE_FREE_MOVE digital output pin.
 
         Args:
             on (bool): True to enable, False to disable
@@ -863,7 +956,7 @@ class Phoenix:
 
     def is_software_free_move(self):
         """Checks if free move mode is enabled by set_free_move_mode() function
-           or other similar API.
+           or other similar API (from Phoenix).
 
         Returns:
             bool: True if free move mode enabled by software, False otherwise
@@ -879,15 +972,23 @@ class Phoenix:
         return bool(self.get_digital_in(DI.HARDWARE_FREE_MOVE))
 
     def set_payload(self, payload_weight):
-        """Sets current payload weight
+        """Sets current payload weight.
 
         Args:
             payload_weight (float): payload weight in kg
         """
         self.set_analog_out(AO.PAYLOAD, payload_weight)
 
+    def get_payload(self):
+        """Returns current payload.
+
+        Returns:
+            float: payload value in kg
+        """
+        return self.get_analog_out(AO.PAYLOAD)
+
     def is_program_run_finished(self):
-        """Checks if program run finished
+        """Checks if program has finished running.
 
         Returns:
             bool: True if program run finished, False otherwise
@@ -895,7 +996,7 @@ class Phoenix:
         return not self.is_program_running(True)
 
     def is_program_paused(self):
-        """Checks if program is paused
+        """Checks if program running is paused.
 
         Returns:
             bool: True if program is paused, False otherwise
@@ -904,7 +1005,7 @@ class Phoenix:
         return self.s.paused
 
     def get_error(self):
-        """Reads next error and returns type, error code, description as tuple
+        """Reads next error and returns type, error code, description as tuple.
 
         Returns:
             tuple[str, int, str]: error info
@@ -920,7 +1021,7 @@ class Phoenix:
         return (type, kind, text)
 
     def is_power_on(self):
-        """Checks if robot is powered on
+        """Checks if robot is powered on.
 
         Returns:
             bool: True if robot is powered on, False otherwise
@@ -928,7 +1029,7 @@ class Phoenix:
         return bool(self.get_digital_in(DI.POWER_ON_STATUS))
 
     def is_servo_enabled(self, joint):
-        """Checks if servo corresponding to the specified joint is enabled
+        """Checks if servo at the specified joint is enabled.
 
         Args:
             joint (Joint): Joint.J1 ~ Joint.J6
@@ -953,9 +1054,8 @@ class Phoenix:
             and self.is_servo_enabled(Joint.J6)
         )
 
-    # TODO blockly 12-18测试可用
     def get_joint_min_pos_limit(self, joint):
-        """Returns minimum position limit value of specified joint
+        """Returns minimum position limit value of specified joint.
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
@@ -965,9 +1065,8 @@ class Phoenix:
         """
         return self.g[str(joint.value) + ".min_limit"]
 
-    # TODO blockly 12-18测试可用
     def set_joint_min_pos_limit(self, joint, limit):
-        """Sets minimum position limit value of specified joint
+        """Sets minimum position limit value of specified joint.
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
@@ -975,9 +1074,8 @@ class Phoenix:
         """
         self.g[str(joint.value) + ".min_limit"] = limit
 
-    # TODO blockly 12-18测试可用
     def get_joint_max_pos_limit(self, joint):
-        """Returns maximum position limit value of specified joint
+        """Returns maximum position limit value of specified joint.
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
@@ -987,9 +1085,8 @@ class Phoenix:
         """
         return self.g[str(joint.value) + ".max_limit"]
 
-    # TODO blockly 12-18测试可用
     def set_joint_max_pos_limit(self, joint, limit):
-        """Sets maximum position limit value of specified joint
+        """Sets maximum position limit value of specified joint.
 
         Args:
             joint_number (Joint): Joint.J1 ~ Joint.J6
@@ -1006,8 +1103,8 @@ class Phoenix:
     #     """
     #     raise NotImplementedError
 
-    def get_current_cnc_mode(self):
-        """Returns current task mode
+    def get_task_mode(self):
+        """Returns current task mode.
 
         Returns:
             TaskMode: one of TaskMode enum values: AUTO, MANUAL, MDI
@@ -1016,25 +1113,25 @@ class Phoenix:
         return TaskMode(self.s.task_mode)
 
     def set_estop_reset(self):
-        """Resets E-Stop state of the robot."""
+        """Resets E-Stop (Emergency Stop) state of the robot."""
         self.c.state(elerob.STATE_ESTOP_RESET)
         self.c.wait_complete()
 
     def set_estop(self):
-        """Puts robot into E-Stop state."""
+        """Puts robot into E-Stop (Emergency Stop) state."""
         self.c.state(elerob.STATE_ESTOP)
         self.c.wait_complete()
 
     def get_acceleration(self):
-        """Returns acceleration value of robot
+        """Returns acceleration value of robot.
 
         Returns:
             float: acceleration value
         """
         return self.get_analog_out(AO.ACCELERATION)
 
-    def set_mode(self, mode):
-        """Sets mode to mode.
+    def set_task_mode(self, task_mode):
+        """Sets task mode to given mode.
 
         Args:
             mode (TaskMode): one of TaskMode.AUTO, TaskMode.MANUAL, TaskMode.MDI
@@ -1043,18 +1140,18 @@ class Phoenix:
             bool: always returns True
         """
         self.s.poll()
-        if self.s.task_mode == mode.value:
+        if self.s.task_mode == task_mode.value:
             return True
-        self.c.mode(mode.value)
+        self.c.mode(task_mode.value)
         self.c.wait_complete()
         return True
 
-    def joint_brake(self, joint, release):
-        """Releases or enables specified joint's brake.
+    def release_joint_brake(self, joint, release=True):
+        """Releases or focuses (enables) specified joint's brake.
 
         Args:
-            joint (Joint): joint
-            release (bool): True to release, False to enable brake
+            joint (Joint): joint Joint.J1 ~ Joint.J6
+            release (bool): True to release, False to enable brake. Defaults to True.
         """
         self.set_digital_out(DO(joint.value + DO.J1_BRAKE_RELEASE.value), release)
 
@@ -1072,7 +1169,8 @@ class Phoenix:
         self.ensure_mode(TaskMode.MDI)
 
     def get_motion_line(self):
-        """Returns source line number motion is currently executing.
+        """Returns source line number motion parser is currently executing
+        (of previously opened g-code file).
 
         Returns:
             int: motion line number
@@ -1090,16 +1188,15 @@ class Phoenix:
         self.c.wait_complete()
 
     def get_robot_status(self):
-        """Returns robot status
+        """Returns robot status.
 
         Returns:
             bool: True if OK, False if disabled / error / cannot move
         """
         return self.state_check()
 
-    # TODO blockly 12-18测试可用
     def get_robot_temperature(self):
-        """Returns robot (currently CPU) temperature.
+        """Returns robot's (currently CPU) temperature.
 
         Returns:
             float: robot temperature
@@ -1107,7 +1204,6 @@ class Phoenix:
         cpu_temp = CPUTemperature()
         return cpu_temp.temperature
 
-    # TODO blockly 12-18测试可用
     def get_robot_power(self):
         """Returns robot current consuming power in Watts (W).
 
@@ -1141,19 +1237,18 @@ class Phoenix:
         """Returns specified joint's temperature.
 
         Args:
-            joint (Joint): joint
+            joint (Joint): joint enum value (Joint.J1 ~ Joint.J6)
 
         Returns:
             float: joint temperature
         """
         return self.get_analog_in(AI(AI.J1_TEMPERATURE.value + joint.value))
 
-    # TODO blockly 12-18测试可用
     def get_joint_communication(self, joint):
         """Returns True if specified joint's communication is OK.
 
         Args:
-            joint (Joint): joint
+            joint (Joint): joint enum value (Joint.J1 ~ Joint.J6)
 
         Returns:
             bool: True if joint communication is OK, False otherwise
@@ -1164,7 +1259,7 @@ class Phoenix:
         """Returns specified joint's voltage.
 
         Args:
-            joint (Joint): joint
+            joint (Joint): joint enum value (Joint.J1 ~ Joint.J6)
 
         Returns:
             float: voltage
@@ -1175,7 +1270,7 @@ class Phoenix:
         """Returns specified joint's current.
 
         Args:
-            joint (Joint): joint
+            joint (Joint): joint enum value (Joint.J1 ~ Joint.J6)
 
         Returns:
             float: current
@@ -1186,7 +1281,7 @@ class Phoenix:
         """Returns specified joint's error mask
 
         Args:
-            joint (Joint): joint
+            joint (Joint): joint enum value (Joint.J1 ~ Joint.J6)
 
         Returns:
             int: error mask
@@ -1210,7 +1305,7 @@ class Phoenix:
         return self.get_analog_out(AO.POWER_LIMIT)
 
     def set_stopping_time(self, stopping_time):
-        """Sets stopping time
+        """Sets stopping time.
 
         Args:
             stopping_time (float): stopping time
@@ -1250,7 +1345,7 @@ class Phoenix:
         self.set_analog_out(AO.TOOL_SPEED, tool_speed)
 
     def get_tool_speed(self):
-        """Returns tool speed
+        """Returns tool speed.
 
         Returns:
             float: tool speed
@@ -1289,21 +1384,21 @@ class Phoenix:
         """
         self.hal_serial["0.motion_flexible"] = flexible
 
-    def get_actual_position(self):
+    def _get_actual_position(self):
         """Returns actual coord position.
 
         Returns:
             list[float]: actual coord position
         """
-        return self.get_actl_pos_float()
+        return self._get_actl_pos_float()
 
-    def get_actual_joints(self):
+    def _get_actual_joints(self):
         """Returns actual joints angles.
 
         Returns:
             list[float]: actual joints angles
         """
-        return self.get_actl_joint_float()
+        return self._get_actl_joint_float()
 
     def is_in_commanded_position(self):
         """Returns machine-in-position flag. True if commanded position
@@ -1317,16 +1412,15 @@ class Phoenix:
         return self.s.inpos
 
     def set_acceleration(self, acceleration):
-        """Sets acceleration.
+        """Sets robot's acceleration.
 
         Args:
             acceleration (float): new acceleration value
         """
         self.set_analog_out(AO.ACCELERATION, acceleration)
 
-    # TODO blockly 12-18测试可用
     def jog_angle(self, joint, direction, speed):
-        """Jog joint
+        """Starts jog joint with specified direction and speed.
 
         Args:
             joint (Joint): Joint.J1 ~ Joint.J6
@@ -1337,15 +1431,14 @@ class Phoenix:
         Returns:
             bool: True if jog started successfully, False otherwise
         """
-        self.set_robot_move_state(RobotMoveState.JOG_JOINT_STATE, joint, direction)
+        self._set_robot_move_state(RobotMoveState.JOG_JOINT_STATE, joint, direction)
         self.command_id += 1
         return self._jog_continuous(
             JogMode.JOG_JOINT, joint, direction, speed, self.command_id
         )
 
-    # TODO blockly 12-18测试可用
     def jog_coord(self, axis, direction, speed):
-        """Jog axis
+        """Starts jog axis with specified direction and speed.
 
         Args:
             axis (Axis): Axis.X ~ Axis.RZ, 对应 x ~ rz
@@ -1356,14 +1449,14 @@ class Phoenix:
         Returns:
             bool: True if jog started successfully, False otherwise
         """
-        self.set_robot_move_state(RobotMoveState.JOG_AXIS_STATE, axis, direction)
+        self._set_robot_move_state(RobotMoveState.JOG_AXIS_STATE, axis, direction)
         self.command_id += 1
         return self._jog_continuous(
             JogMode.JOG_TELEOP, axis, direction, speed, self.command_id
         )
 
     def _jog_continuous(self, jog_mode, joint_or_axis, direction, speed, jog_id):
-        """Start axis or joint jog.
+        """Starts axis or joint jog.
 
         Args:
             jog_mode (JogMode): jog mode - axis (JogMode.JOG_TELEOP) or joint (JogMode.JOG_JOINT)
@@ -1381,15 +1474,15 @@ class Phoenix:
         if self.s.task_state != elerob.STATE_ON:
             return False
         if (
-            (jog_mode == JogMode.JOG_JOINT)
-            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
+                (jog_mode == JogMode.JOG_JOINT)
+                and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
         ) or (
-            (jog_mode == JogMode.JOG_TELEOP)
-            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
+                (jog_mode == JogMode.JOG_TELEOP)
+                and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
             return False
         if (jog_mode == JogMode.JOG_JOINT) and (
-            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1431,7 +1524,6 @@ class Phoenix:
         """
         return self._jog_increment(JogMode.JOG_TELEOP, axis, increment, speed)
 
-    # TODO blockly 12.18测试可用
     def _jog_increment(self, jog_mode, joint_or_axis, incr, speed):
         """Move joint or axis by specified value.
 
@@ -1450,15 +1542,15 @@ class Phoenix:
         if self.s.task_state != elerob.STATE_ON:
             return False
         if (
-            (jog_mode == JogMode.JOG_JOINT)
-            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
+                (jog_mode == JogMode.JOG_JOINT)
+                and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
         ) or (
-            (jog_mode == JogMode.JOG_TELEOP)
-            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
+                (jog_mode == JogMode.JOG_TELEOP)
+                and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
             return False
         if (jog_mode == JogMode.JOG_JOINT) and (
-            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1517,15 +1609,15 @@ class Phoenix:
         if self.s.task_state != elerob.STATE_ON:
             return False
         if (
-            (jog_mode == JogMode.JOG_JOINT)
-            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
+                (jog_mode == JogMode.JOG_JOINT)
+                and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
         ) or (
-            (jog_mode == JogMode.JOG_TELEOP)
-            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
+                (jog_mode == JogMode.JOG_TELEOP)
+                and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
             return False
         if (jog_mode == JogMode.JOG_JOINT) and (
-            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1540,9 +1632,8 @@ class Phoenix:
             print("Jog Absolute: Wrong Jog Mode.")
             return False
 
-    # TODO blockly 12.18测试可用
     def jog_stop(self, jog_mode, joint_or_axis):
-        """Stop specified jog
+        """Stops specified jog.
 
         Args:
             jog_mode (JogMode): JogMode.JOG_TELEOP (axis (0)) or
@@ -1553,7 +1644,7 @@ class Phoenix:
             bool: True if jog stopped successfully, False otherwise
         """
         if (jog_mode == JogMode.JOG_JOINT) and (
-            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1591,12 +1682,12 @@ class Phoenix:
     #     """
     #     raise NotImplementedError
 
-    def set_robot_move_state(self, new_robot_state, joint_or_axis, direction):
+    def _set_robot_move_state(self, new_robot_state, joint_or_axis, direction):
         """Sets robot move state.
 
         Args:
             new_robot_state (RobotMoveState): any value from RobotMoveState enum
-            joint_or_axis (Joint | Axis): joint or axis
+            joint_or_axis (Joint | Axis): joint or axis (Joint or Axis enum value)
             direction (JogDirection): direction from JogDirection enum
         """
         if new_robot_state == self.robot_state:
@@ -1675,7 +1766,7 @@ class Phoenix:
 
         Args:
             axis_num (int, optional): Axis to home. -1 means home all axes.
-                                     Defaults to -1.
+                                      Defaults to -1.
         """
         self.c.home(axis_num)
 
@@ -1722,7 +1813,7 @@ class Phoenix:
         """
         self.s.poll()
         if self.s.task_mode != elerob.MODE_MDI:
-            self.set_mode(TaskMode.MDI)
+            self.set_task_mode(TaskMode.MDI)
         self.s.poll()
         if self.s.task_mode != elerob.MODE_MDI:
             print("send_mdi error: task_mode is not MODE_MDI")
@@ -1732,7 +1823,7 @@ class Phoenix:
         return True
 
     def send_mdi_wait(self, gcode_command):
-        """Send command and wait for it to complete
+        """Send command and wait for it to complete.
 
         Args:
             program (str): G-code command
@@ -1740,12 +1831,10 @@ class Phoenix:
         self.c.mdi(gcode_command)
         self.c.wait_complete()
 
-    # # TODO 不明白什么意思
     # def set_optional_stop(self, on=0):
     #     self.c.set_optional_stop(on)
     #     self.c.wait_complete()
 
-    # # TODO 不明白什么意思
     # def set_block_delete(self, on=0):
     #     self.c.set_block_delete(on)
     #     self.c.wait_complete()
@@ -1762,12 +1851,21 @@ class Phoenix:
         if do_poll:
             self.s.poll()
         return (
-            self.s.task_mode == elerob.MODE_AUTO
-            and self.s.interp_state != elerob.INTERP_IDLE
+                self.s.task_mode == elerob.MODE_AUTO
+                and self.s.interp_state != elerob.INTERP_IDLE
         )
 
-    # TODO 不明白什么意思
     def manual_ok(self, do_poll=True):
+        """Returns True if robot state is elerob.STATE_ON and g-code interpreter
+        state is elerob.INTERP_IDLE.
+
+        Args:
+            do_poll (bool, optional): Update robot data before checking state. Defaults to True.
+
+        Returns:
+            bool: True if robot state is elerob.STATE_ON and g-code interpreter
+                  state is elerob.INTERP_IDLE.
+        """
         if do_poll:
             self.s.poll()
         if self.s.task_state != elerob.STATE_ON:
@@ -1779,7 +1877,7 @@ class Phoenix:
         the first mode: elerob.MODE_MDI, elerob.MODE_MANUAL, elerob.MODE_AUTO.
 
         Args:
-            m (TaskMode) : TaskMode or "STEP_MODE"
+            m (TaskMode) : TaskMode or "STEP_MODE" (same as TaskMode.MDI)
 
         Returns:
             bool: True if mode is m or in p
@@ -1791,7 +1889,7 @@ class Phoenix:
             return True
         if self.is_program_running(do_poll=False):
             return False
-        return self.set_mode(m)
+        return self.set_task_mode(m)
 
     def program_open(self, program_file_path):
         """Opens g-code file. Only absolute file paths are supported.
@@ -1814,11 +1912,11 @@ class Phoenix:
         Returns:
             bool: True if program run started successfully, False otherwise
         """
-        self.set_robot_move_state(RobotMoveState.RUN_PROGRAM_STATE, 0, 0)
+        self._set_robot_move_state(RobotMoveState.RUN_PROGRAM_STATE, 0, 0)
         self.s.poll()
         if len(self.s.file) == 0:
             return False
-        self.set_mode(TaskMode.AUTO)
+        self.set_task_mode(TaskMode.AUTO)
 
         self.c.auto(elerob.AUTO_RUN, start_line)
         self.c.wait_complete()
@@ -1832,8 +1930,8 @@ class Phoenix:
         """
         self.s.poll()
         if self.s.task_mode != elerob.MODE_AUTO or self.s.interp_state not in (
-            elerob.INTERP_READING,
-            elerob.INTERP_WAITING,
+                elerob.INTERP_READING,
+                elerob.INTERP_WAITING,
         ):
             return -1
         self.ensure_mode(TaskMode.AUTO)
@@ -1866,8 +1964,8 @@ class Phoenix:
         """
         self.s.poll()
         if self.s.task_mode != elerob.MODE_AUTO or self.s.interp_state not in (
-            elerob.INTERP_READING,
-            elerob.INTERP_WAITING,
+                elerob.INTERP_READING,
+                elerob.INTERP_WAITING,
         ):
             return -1
         self.ensure_mode(TaskMode.AUTO)
@@ -1910,11 +2008,11 @@ class Phoenix:
         self.c.auto(elerob.AUTO_RESUME)
 
     def program_pause(self):
-        """Pause program."""
+        """Pause currently running program."""
         self.s.poll()
         if self.s.task_mode != elerob.MODE_AUTO or self.s.interp_state not in (
-            elerob.INTERP_READING,
-            elerob.INTERP_WAITING,
+                elerob.INTERP_READING,
+                elerob.INTERP_WAITING,
         ):
             return
         self.ensure_mode(TaskMode.AUTO)
@@ -1943,7 +2041,9 @@ class Phoenix:
             self.c.wait_complete()
             self.s.poll()
             print(
-                f"Warning: Failed Task abort: task_mode={self.s.task_mode}, exec_status={self.s.exec_state}, interp_state={self.s.interp_state}"
+                "Warning: Failed Task abort: task_mode={}, exec_status={}, interp_state={}".format(self.s.task_mode,
+                                                                                                   self.s.exec_state,
+                                                                                                   self.s.interp_state)
             )
 
     def task_stop_async(self):
@@ -2014,7 +2114,6 @@ class Phoenix:
 
     def get_axis_velocity(self, axis):
         """Return axis velocity.
-        获取单关节速度
 
         Args:
             axis (Axis): axis number
@@ -2110,7 +2209,7 @@ class Phoenix:
     #     )
 
     def get_cmd_pos_float(self):
-        """Returns trajectory position.
+        """Returns commanded robot's position.
 
         Returns:
             list[float]: list of strings of values
@@ -2125,8 +2224,8 @@ class Phoenix:
             round(self.s.position[5], 3),
         ]
 
-    def get_actl_pos_float(self):
-        """Returns current trajectory position.
+    def _get_actl_pos_float(self):
+        """Returns current robot's position.
 
         Returns:
             list[float]: list of strings of values
@@ -2157,7 +2256,7 @@ class Phoenix:
             round(self.s.joint_position[5], 3),
         ]
 
-    def get_actl_joint_float(self):
+    def _get_actl_joint_float(self):
         """Returns actual joint positions
 
         Returns:
@@ -2233,7 +2332,6 @@ class Phoenix:
     def get_motion_enabled(self):
         """State of trajectory planner enabled flag.
         True if robot can move, false otherwise.
-        轨迹规划器启用标志的状态。如果机器人可以移动，则为True，否则为False
 
         Returns:
             bool: enabled flag value
@@ -2271,7 +2369,7 @@ class Phoenix:
     # set cmds
     ################################
     def set_joint_torque_limit(self, joint, torque_limit):
-        """Sets joint torque limits
+        """Sets joint torque limits.
 
         Arguments:
             joint (Joint): joint
@@ -2313,9 +2411,9 @@ class Phoenix:
         """
         self.s.poll()
         if (
-            self.s.estop
-            or not self.s.enabled
-            or (self.s.interp_state != elerob.INTERP_IDLE)
+                self.s.estop
+                or not self.s.enabled
+                or (self.s.interp_state != elerob.INTERP_IDLE)
         ):
             return False
         if self.s.task_mode != elerob.MODE_MANUAL:
@@ -2395,18 +2493,18 @@ class Phoenix:
             str: gcode string to move to given coords
         """
         return (
-            "X"
-            + str(coords[0])
-            + "Y"
-            + str(coords[1])
-            + "Z"
-            + str(coords[2])
-            + "A"
-            + str(coords[3])
-            + "B"
-            + str(coords[4])
-            + "C"
-            + str(coords[5])
+                "X"
+                + str(coords[0])
+                + "Y"
+                + str(coords[1])
+                + "Z"
+                + str(coords[2])
+                + "A"
+                + str(coords[3])
+                + "B"
+                + str(coords[4])
+                + "C"
+                + str(coords[5])
         )
 
     def angles_to_gcode(self, angles):
@@ -2421,15 +2519,16 @@ class Phoenix:
         return self.coords_to_gcode(angles)
 
     def float_equal(self, a, b, epsilon=COORDS_EPSILON):
-        """_summary_
+        """Compares 2 floats with given epsilon precision.
 
         Args:
-            a (float): _description_
-            b (float): _description_
-            epsilon (float): _description_
+            a (float): 1st float to compare
+            b (float): 2nd float to compare
+            epsilon (float): precision (epsilon) to compare
 
         Returns:
-            bool: _description_
+            bool: True if floats are considered equal with given precision,
+                  False otherwise
         """
         return math.fabs(a - b) < epsilon
 
@@ -2444,12 +2543,12 @@ class Phoenix:
             bool: True if coords are equal, False otherwise.
         """
         return (
-            self.float_equal(coords_1[Axis.X.value], coords_2[Axis.X.value])
-            and self.float_equal(coords_1[Axis.Y.value], coords_2[Axis.Y.value])
-            and self.float_equal(coords_1[Axis.Z.value], coords_2[Axis.Z.value])
-            and self.float_equal(coords_1[Axis.RX.value], coords_2[Axis.RX.value])
-            and self.float_equal(coords_1[Axis.RY.value], coords_2[Axis.RY.value])
-            and self.float_equal(coords_1[Axis.RZ.value], coords_2[Axis.RZ.value])
+                self.float_equal(coords_1[Axis.X.value], coords_2[Axis.X.value])
+                and self.float_equal(coords_1[Axis.Y.value], coords_2[Axis.Y.value])
+                and self.float_equal(coords_1[Axis.Z.value], coords_2[Axis.Z.value])
+                and self.float_equal(coords_1[Axis.RX.value], coords_2[Axis.RX.value])
+                and self.float_equal(coords_1[Axis.RY.value], coords_2[Axis.RY.value])
+                and self.float_equal(coords_1[Axis.RZ.value], coords_2[Axis.RZ.value])
         )
 
     def angles_equal(self, angles_1, angles_2):
@@ -2463,10 +2562,250 @@ class Phoenix:
             bool: True if angles are equal, False otherwise.
         """
         return (
-            self.float_equal(angles_1[Axis.X.value], angles_2[Axis.X.value])
-            and self.float_equal(angles_1[Axis.Y.value], angles_2[Axis.Y.value])
-            and self.float_equal(angles_1[Axis.Z.value], angles_2[Axis.Z.value])
-            and self.float_equal(angles_1[Axis.RX.value], angles_2[Axis.RX.value])
-            and self.float_equal(angles_1[Axis.RY.value], angles_2[Axis.RY.value])
-            and self.float_equal(angles_1[Axis.RZ.value], angles_2[Axis.RZ.value])
+                self.float_equal(angles_1[Axis.X.value], angles_2[Axis.X.value])
+                and self.float_equal(angles_1[Axis.Y.value], angles_2[Axis.Y.value])
+                and self.float_equal(angles_1[Axis.Z.value], angles_2[Axis.Z.value])
+                and self.float_equal(angles_1[Axis.RX.value], angles_2[Axis.RX.value])
+                and self.float_equal(angles_1[Axis.RY.value], angles_2[Axis.RY.value])
+                and self.float_equal(angles_1[Axis.RZ.value], angles_2[Axis.RZ.value])
         )
+
+    def tool_get_firmware_version(self):
+        """Returns ESP32 Pico firmware version.
+
+        Returns:
+            float: firmware version
+        """
+        self.send_can(data=[0x01, 0x09])
+        msg = self.receive_can()
+        print("msg.data = " + str(msg.data))
+        version = msg.data[2] / 10
+        return version
+
+    def tool_set_digital_out(self, pin_no, pin_value):
+        """Sets digital output pin on ESP32.
+
+        Args:
+            pin_no (int): pin number
+            pin_value (int): pin value (0 or 1)
+        """
+        self.send_can(data=[0x03, 0x61, pin_no, pin_value])
+
+    def tool_get_digital_in(self, pin_no):
+        """Returns digital input pin's value.
+
+        Args:
+            pin_no (int): pin number
+
+        Returns:
+            int : pin value
+        """
+        self.send_can(data=[0x02, 0x62, pin_no])
+        msg = self.receive_can()
+        pin_state = msg.data[2]
+        return pin_state
+
+    def tool_set_led_color(self, r, g, b):
+        """Sets RGB color of ESP32 LED.
+
+        Args:
+            r (int): red color value (0-255)
+            g (int): green color value (0-255)
+            b (int): blue color value (0-255)
+        """
+        self.send_can(data=[0x04, 0x70, r, g, b])
+
+    def tool_is_btn_clicked(self):
+        """Returns True if ESP32 button is pressed.
+
+        Returns:
+            bool: True if button is pressed, False otherwise
+        """
+        self.send_can([0x01, 0x71])
+        msg = self.receive_can()
+        button_state = msg.data[2]
+        return bool(button_state)
+
+    def tool_set_gripper_state(self, state, speed):
+        """Sets gripper state.
+
+        Args:
+            state (int): state
+            speed (int): speed
+        """
+        self.send_can([0x03, 0x66, state, speed])
+
+    def tool_set_gripper_value(self, value, speed):
+        """Sets gripper value.
+
+        Args:
+            value (int): value
+            speed (int): speed
+        """
+        self.send_can([0x03, 0x67, value, speed])
+
+    def tool_set_gripper_calibrate(self):
+        """Set the current position of the gripper to zero
+        """
+        self.send_can([0x01, 0x68])
+
+    def tool_set_gripper_enabled(self, enabled):
+        """Enables or disables gripper.
+
+        Args:
+            enabled (bool): True if enable, False if disable
+        """
+        self.send_can([0x02, 0x6B, enabled])
+
+    def tool_set_gripper_mode(self, mode):
+        """Sets gripper mode.
+
+        Args:
+            mode (int): gripper mode
+        """
+        self.send_can([0x02, 0x6D, mode])
+
+    def tool_serial_restore(self):
+        """Restore ESP32 serial."""
+        self.send_can([0x01, 0xB1])
+
+    def tool_serial_is_ready(self):
+        """Returns True if ESP32 serial is ready.
+
+        Returns:
+            bool: True if ready, False otherwise
+        """
+        self.send_can([0x01, 0xB2])
+        msg = self.receive_can()
+        ready = msg.data[2]
+        return bool(ready)
+
+    def tool_serial_available(self):
+        """Returns true if ESP32 serial is available.
+
+        Returns:
+            bool: True if serial available, False otherwise
+        """
+        self.send_can([0x01, 0xB3])
+        msg = self.receive_can()
+        num_bytes = msg.data[2]
+        return bool(num_bytes)
+
+    def tool_serial_read_data(self, n):
+        """Reads and returns available serial data.
+
+        Args:
+            n (int): how many bytes to read
+
+        Returns:
+            list[int]: list of bytes read from serial
+        """
+        self.send_can([0x02, 0xB4, n])
+        data = []
+        msg = self.receive_can()
+        data.extend(msg.data[3:])
+        while msg is not None:
+            msg = self.receive_can()
+            data.extend(msg.data[3:])
+        return data
+
+    def tool_serial_write_data(self, bytes):
+        """Write data into ESP32 serial.
+
+        Args:
+            bytes (list[int]): data to write
+
+        Returns:
+            int: how many bytes were actually written
+        """
+        CHUNK_SIZE = 5
+        num_chunks = int(len(bytes) / CHUNK_SIZE + 1)
+        # print("num_chunks = " + str(num_chunks))
+        for i in range(0, len(bytes), CHUNK_SIZE):
+            chunk = bytes[i: i + CHUNK_SIZE]
+            # print("num_chunks = " + str(num_chunks) + ", i = " + str(i))
+            msg_bytes = [0x2 + len(chunk), 0xB5, num_chunks - int(i / CHUNK_SIZE)]
+            msg_bytes.extend(list(chunk))
+            # print("msg_bytes = " + str(list(msg_bytes)))
+            self.send_can(msg_bytes)
+        msg = self.receive_can()
+        return msg.data[2]
+
+    def tool_serial_flush(self):
+        """Flushes ESP32 serial buffers."""
+        self.send_can([0x01, 0xB6])
+
+    def tool_serial_peek(self):
+        """Peek one byte from ESP32 serial buffer.
+
+        Returns:
+            int: read byte
+        """
+        self.send_can([0x01, 0xB7])
+        msg = self.receive_can()
+        if msg.data[0] == 0x02:
+            return msg.data[2]
+        return None
+
+    def tool_serial_set_baudrate(self, baudrate):
+        """Sets baudrate of ESP32 serial.
+
+        Args:
+            baudrate (int): baudrate
+        """
+        baudrate_bytes = baudrate.to_bytes(4, "big")
+        msg_bytes = [0x05, 0xB8]
+        msg_bytes.extend(list(baudrate_bytes))
+        self.send_can(msg_bytes)
+
+    def tool_serial_set_timeout(self, timeout):
+        """Sets ESP32 serial timeout in ms.
+
+        Args:
+            timeout (int): timeout in ms
+        """
+        timeout_bytes = timeout.to_bytes(2, "big")
+        msg_bytes = [0x03, 0xB9]
+        msg_bytes.extend(list(timeout_bytes))
+        self.send_can(msg_bytes)
+
+    def init_can_output(self, servo_id):
+        """Init servo IO output.
+
+        Args:
+            servo_id (Joint): one of Joint enum's values
+        """
+        msg_bytes = [0x23, 0xFE, 0x60, 0x02, 0x00, 0x00, 0x10, 0x00]
+        self.send_can(msg_bytes, 0x600 + servo_id.value + 1)
+
+    def clear_encoder_error(self, servo_id):
+        """Clears servo's encoder error.
+
+        Args:
+            servo_id (Joint): one of Joint enum's values
+        """
+        self.send_can(
+            [0x23, 0xFE, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00], 0x600 + servo_id.value + 1
+        )
+        self.send_can(
+            [0x23, 0xFE, 0x60, 0x01, 0x00, 0x00, 0x10, 0x00], 0x600 + servo_id.value + 1
+        )
+
+    def set_output(self, servo_id, state):
+        """Sets servo IO state.
+
+        Args:
+            servo_id (Joint): one of Joint enum's values
+            state (int): 0 or 1
+        """
+        if state:
+            self.send_can(
+                [0x23, 0xFE, 0x60, 0x01, 0x00, 0x00, 0x10, 0x00],
+                0x600 + servo_id.value + 1,
+            )
+
+        else:
+            self.send_can(
+                [0x23, 0xFE, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00],
+                0x600 + servo_id.value + 1,
+            )
