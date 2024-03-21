@@ -2332,7 +2332,6 @@ class Phoenix:
     def get_motion_enabled(self):
         """State of trajectory planner enabled flag.
         True if robot can move, false otherwise.
-        轨迹规划器启用标志的状态。如果机器人可以移动，则为True，否则为False
 
         Returns:
             bool: enabled flag value
@@ -2646,6 +2645,8 @@ class Phoenix:
         self.send_can([0x03, 0x67, value, speed])
 
     def tool_set_gripper_calibrate(self):
+        """Set the current position of the gripper to zero
+        """
         self.send_can([0x01, 0x68])
 
     def tool_set_gripper_enabled(self, enabled):
