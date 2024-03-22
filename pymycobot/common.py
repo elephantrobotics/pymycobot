@@ -131,6 +131,9 @@ class ProtocolCode(object):
     GET_BASIC_INPUT = 0xA1
     GET_BASE_INPUT = 0xA2
     MERCURY_ROBOT_STATUS = 0xA2
+    MERCURY_ERROR_COUNTS = 0xA3
+    MERCURY_SET_POS_OVER_SHOOT = 0xA4
+    MERCURY_GET_POS_OVER_SHOOT = 0xA5
     SET_BASE_PWM = 0xA5
 
     # Linux GPIO, mode: GPIO.BCM
@@ -206,6 +209,7 @@ class ProtocolCode(object):
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
     MERCURY_DRAG_TECH_PAUSE = 0x72
+    MERCURY_DRAG_TEACH_CLEAN = 0x73
 
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
@@ -434,6 +438,10 @@ class DataProcessor(object):
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
+            if genre == ProtocolCode.COBOTX_GET_ANGLE and arm == 14:
+                byte_value = int.from_bytes(valid_data, byteorder='big', signed=True)
+                res.append(byte_value)
+                return res
             for i in range(1,4):
                 res.append(valid_data[i])
         elif data_len == 7:
@@ -458,14 +466,14 @@ class DataProcessor(object):
                 for i in range(0, data_len, 4):
                     byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                     res.append(byte_value)
-        elif data_len == 23:
+        elif data_len == 30:
             i = 0
             res = []
-            while i < 23:
-                if i < 9:
+            while i < 30:
+                if i < 9 or i >= 23:
                     res.append(valid_data[i])
                     i+=1
-                else:
+                elif i < 23:
                     one = valid_data[i : i + 2]
                     res.append(self._decode_int16(one))
                     i+=2
@@ -532,7 +540,7 @@ def write(self, command, method=None):
         self._serial_port.reset_input_buffer()
         command_log = ""
         for i in command:
-            command_log += hex(i) + " "
+            command_log += hex(i)[2:] + " "
         self.log.debug("_write: {}".format(command_log))
         self._serial_port.write(command)
         self._serial_port.flush()
@@ -578,13 +586,13 @@ def read(self, genre, method=None, command=None, _class=None):
         if check_python_version() == 2:
             command_log = ""
             for d in data:
-                command_log += hex(ord(d)) + " "
+                command_log += hex(ord(d))[2:] + " "
             self.log.debug("_read : {}".format(command_log))
             # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
         else:
             command_log = ""
             for d in data:
-                command_log += hex(d) + " "
+                command_log += hex(d)[2:] + " "
             self.log.debug("_read : {}".format(command_log))
         return data
     else:
@@ -635,12 +643,12 @@ def read(self, genre, method=None, command=None, _class=None):
         if check_python_version() == 2:
             command_log = ""
             for d in datas:
-                command_log += hex(ord(d)) + " "
+                command_log += hex(ord(d))[2:] + " "
             self.log.debug("_read : {}".format(command_log))
         else:
             command_log = ""
             for d in datas:
-                command_log += hex(d) + " "
+                command_log += hex(d)[2:] + " "
             self.log.debug("_read : {}".format(command_log))
             
         return datas
