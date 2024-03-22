@@ -478,13 +478,23 @@ class DataProcessor(object):
                     res.append(self._decode_int16(one))
                     i+=2
             return res
-        elif data_len == 34:
+        elif data_len == 48:
             if genre == ProtocolCode.GET_QUICK_INFO:
-                for header_i in range(0, len(valid_data)-8, 2):
-                    one = valid_data[header_i : header_i + 2]
-                    res.append(self._decode_int16(one))
-                for i in range(len(valid_data)-8, len(valid_data)):
-                    res.append(valid_data[i])
+                i = 0
+                while i < data_len:
+                    if i < 28:
+                        byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                        res.append(byte_value)
+                        i+=4
+                    elif i < 40:
+                        one = valid_data[i : i + 2]
+                        # print(one)
+                        res.append(self._decode_int16(one))
+                        i+=2
+                    else:
+                        print(i, valid_data[i])
+                        res.append(valid_data[i])
+                        i+=1
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
