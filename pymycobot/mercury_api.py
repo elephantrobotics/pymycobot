@@ -411,3 +411,35 @@ class MercuryCommandGenerator(CommandGenerator):
         self.calibration_parameters(class_name = self.__class__.__name__, id = coord_id, speed = speed)
         value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
         return self._mesg(ProtocolCode.JOG_INCREMENT, coord_id, [value], speed)
+    
+    def drag_teach_clean(self):
+        """clear sample
+        """
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TEACH_CLEAN)
+    
+    def get_comm_error_counts(self, joint_id, _type):
+        """Read the number of communication exceptions
+
+        Args:
+            joint_id (int): joint ID
+            _type (int): Error type to be read, 1 ~ 4.
+                1-The number of exceptions sent by the joint
+                2-The number of exceptions obtained by the joint
+                3-The number of exceptions sent by the end
+                4-The number of exceptions read by the end
+        """
+        return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id, _type, has_reply=True)
+    
+    def set_pos_over_shoot(self, value):
+        """Set position deviation value
+
+        Args:
+            value (_type_): _description_
+        """
+        return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, value)
+        
+    def get_pos_over_shoot(self):
+        """Get position deviation value
+        """
+        return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, has_reply=True)
+        
