@@ -488,11 +488,9 @@ class DataProcessor(object):
                         i+=4
                     elif i < 40:
                         one = valid_data[i : i + 2]
-                        # print(one)
                         res.append(self._decode_int16(one))
                         i+=2
                     else:
-                        print(i, valid_data[i])
                         res.append(valid_data[i])
                         i+=1
         else:
