@@ -119,6 +119,8 @@ We support Python2, Python3.5 or later.
     - [init\_gripper](#init_gripper)
     - [set\_gripper\_protect\_current](#set_gripper_protect_current)
     - [set\_four\_pieces\_zero](#set_four_pieces_zero)
+    - [jog\_rpy](#jog_rpy)
+    - [set\_void\_compensate](#set_void_compensate)
   - [Raspberry pi -- GPIO](#raspberry-pi----gpio)
     - [gpio\_init](#gpio_init)
     - [gpio\_output](#gpio_output)
@@ -1401,6 +1403,25 @@ Set the terminal atom io status
 
 - **Return**
   - `int`: 1 - Set successful. 0 - Set failed.
+
+### jog_rpy
+
+- **Prototype**: `jog_rpy(end_direction, direction)`
+
+- **Description**: Rotate the end around a fixed axis in the base coordinate system.
+
+- **Parameters**
+  - `end_direction (int)`: Roll, Pitch, Yaw (1-3)
+  - `direction (int)`: 1 - forward rotation, 0 - reverse rotation
+
+### set_void_compensate
+
+- **Prototype**: `set_void_compensate(mode)`
+
+- **Description**: Set void compensation mode.
+
+- **Parameters**
+  - `mode (int)`: 0 - close, 1 - open
 
 ## Raspberry pi -- GPIO
 
