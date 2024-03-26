@@ -446,4 +446,31 @@ class MercuryCommandGenerator(CommandGenerator):
         """Get position deviation value
         """
         return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, has_reply=True)
+    
+    def stop(self, deceleration=False):
+        """Robot stops moving
+
+        Args:
+            deceleration (bool, optional): Whether to slow down and stop. Defaults to False.
+
+        Returns:
+            int: 1 - Stop completion
+        """
+        if deceleration:
+            return self._mesg(ProtocolCode.STOP, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.STOP, 1, has_reply=True)
         
+    def pause(self, deceleration=False):
+        """Robot pauses movement
+
+        Args:
+            deceleration (bool, optional): Whether to slow down and stop. Defaults to False.
+
+        Returns:
+            int: 1 - pause completion
+        """
+        if deceleration:
+            return self._mesg(ProtocolCode.PAUSE, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.PAUSE, 1, has_reply=True)
