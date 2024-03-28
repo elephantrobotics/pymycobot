@@ -96,7 +96,7 @@ class TeachingTest(Helper):
                 gripper_value = self.mc.get_gripper_value()
                 interval_time = time.time() - start_t
                 #print(angles)
-                if angles:
+                if angles and speeds:
                     self.record_list.append([angles, speeds, gripper_value, interval_time])
                     # time.sleep(0.1)
                     print("\r {}".format(time.time() - start_t), end="")
@@ -119,6 +119,7 @@ class TeachingTest(Helper):
             self.mc.set_encoders_drag(angles[0],angles[1])
             self.mc.set_gripper_value(angles[2], 80)
             if i == 0:
+                i = 1
                 time.sleep(3)
             time.sleep(angles[-1])
         self.echo("Finish play")
@@ -133,7 +134,7 @@ class TeachingTest(Helper):
                 idx_ = i % len_
                 i += 1
                 self.mc.set_encoders_drag(self.record_list[idx_][0],self.record_list[idx_][1])
-                self.mc.set_encoder(7, self.record_list[idx_])
+                self.mc.set_gripper_value(self.record_list[idx_][2], 80)
                 if idx_ == 0:
                     time.sleep(3)
                 time.sleep(self.record_list[idx_][-1])
