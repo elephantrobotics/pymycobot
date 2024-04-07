@@ -129,7 +129,7 @@ class MyAgv(DataProcessor):
         if has_reply:
             data = self._read(command)
             if data:
-                if genre in [ProtocolCode.GET_FIRMWARE_VERSION.value, ProtocolCode.GET_GYRO_STATE.value]:
+                if genre in [ProtocolCode.GET_FIRMWARE_VERSION.value]:
                     return self._int2coord(data[4])
                 elif genre == ProtocolCode.GET_MOTORS_CURRENT.value:
                     return self._decode_int16(data[4:6])
@@ -147,6 +147,7 @@ class MyAgv(DataProcessor):
                     elif byte_1[1] == "0":
                         res[1] = 0
                     return res
+                return data[4]
             # print(res)
         return None
     
