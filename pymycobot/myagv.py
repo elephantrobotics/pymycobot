@@ -313,7 +313,7 @@ class MyAgv(DataProcessor):
                 res.append(self._decode_int16(datas[index:index+2]))
                 index+=2
             elif index >= 28 and index <= 32:
-                res.append(self._decode_int16(self._int2angle(datas[index:index+2])))
+                res.append(self._int2angle(self._decode_int16(datas[index:index+2])))
                 index+=2
             elif index == 17:
                 byte_1 = bin(datas[index])[2:]
