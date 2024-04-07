@@ -44,7 +44,7 @@ class MyAgv(DataProcessor):
         end = 5
         t = time.time()
         if command[k-1] == 29:
-            end = 30
+            end = 28
         elif command[k-1] == 41:
             end = 40
         while time.time() - t < 0.2:
@@ -305,7 +305,7 @@ class MyAgv(DataProcessor):
         datas = self._read([0xfe, 0xfe, data_len])
         res = []
         index = 2
-        while index < len(datas) - 2:
+        while index < len(datas) - 1:
             if index < 5:
                 res.append(datas[index])
                 index+=1
