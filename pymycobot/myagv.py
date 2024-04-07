@@ -46,7 +46,7 @@ class MyAgv(DataProcessor):
         if command[k-1] == 29:
             end = 30
         elif command[k-1] == 41:
-            end = 42
+            end = 40
         while time.time() - t < 0.2:
             data = self._serial_port.read()
             k += 1
@@ -63,7 +63,7 @@ class MyAgv(DataProcessor):
             
             elif len(datas) >= 2:
                 data_len = struct.unpack("b", data)[0]
-                if command[-1] == 29 or data_len == command[k-1]:
+                if command[-1] == 29 or command[-1] == 41 or data_len == command[k-1]:
                     datas += data
                 else:
                     datas = b''
@@ -309,10 +309,12 @@ class MyAgv(DataProcessor):
             if index < 5:
                 res.append(datas[index])
                 index+=1
-            elif index < 17 or (index >= 20 and index < 33):
+            elif index < 17 or (index >= 20 and index < 28):
                 res.append(self._decode_int16(datas[index:index+2]))
                 index+=2
-                
+            elif index >= 28 and index <= 32:
+                res.append(self._decode_int16(self._int2angle(datas[index:index+2])))
+                index+=2
             elif index == 17:
                 byte_1 = bin(datas[index])[2:]
                 while len(byte_1) != 6:
@@ -320,7 +322,7 @@ class MyAgv(DataProcessor):
                 res.append(byte_1)
                 index+=1
                 
-            elif index < 20 or index > 32:
+            elif index < 20 or (index > 32 and index < 41):
                 res.append(self._int2coord(datas[index]))
                 index+=1
                 
@@ -347,7 +349,7 @@ class MyAgv(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_GYRO_STATE.value, has_reply = True)
     
-    def __get_modified_version(self):
+    def get_modified_version(self):
         return self._mesg(ProtocolCode.GET_MODIFIED_VERSION.value, has_reply = True)
     
     # def get_battery_voltage(self, num=1):
