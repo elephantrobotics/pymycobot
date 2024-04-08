@@ -470,3 +470,16 @@ class MercuryCommandGenerator(CommandGenerator):
             return self._mesg(ProtocolCode.PAUSE, has_reply=True)
         else:
             return self._mesg(ProtocolCode.PAUSE, 1, has_reply=True)
+        
+    def get_modified_version(self):
+        return self._mesg(ProtocolCode.ROBOT_VERSION, has_reply=True)
+    
+    def get_pos_over(self):
+        return self._mesg(ProtocolCode.GET_POS_OVER, has_reply=True)
+    
+    def clear_encoders_error(self):
+        return self._mesg(ProtocolCode.CLEAR_ENCODERS_ERROR)
+    
+    def get_down_encoders(self):
+        return self._mesg(ProtocolCode.GET_DOWN_ENCODERS, has_reply=True)
+        
