@@ -1218,3 +1218,12 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, end_direction=end_direction)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction)
+    
+    def set_void_compensate(self, mode):
+        """Set void compensation mode
+
+        Args:
+            mode (int): 0 - close, 1 - open
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_VOID_COMPENSATE, mode)

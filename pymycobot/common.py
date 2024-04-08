@@ -179,6 +179,9 @@ class ProtocolCode(object):
     SET_JOINT_CURRENT = 0x90
     GET_JOINT_CURRENT = 0x91
     SET_CURRENT_STATE = 0x92
+    GET_POS_OVER = 0x94
+    CLEAR_ENCODERS_ERROR = 0x95
+    GET_DOWN_ENCODERS = 0x96
 
     # planning speed
     GET_PLAN_SPEED = 0xD0
@@ -198,6 +201,7 @@ class ProtocolCode(object):
     GET_SERVO_TEMPS = 0xE5
     GET_SERVO_LASTPDI = 0xE6
     SERVO_RESTORE = 0xE7
+    SET_VOID_COMPENSATE = 0xE7
     SET_ERROR_DETECT_MODE = 0xE8
     GET_ERROR_DETECT_MODE = 0xE9
     
@@ -418,6 +422,13 @@ class DataProcessor(object):
                 for v in valid_data:
                     res.append(v)
                 return res
+            elif data_len == 8 and arm == 14 and cmd_id == ProtocolCode.GET_DOWN_ENCODERS:
+                i = 0
+                while i < data_len:
+                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    i+=4
+                    res.append(byte_value)
+                return res
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i : header_i + 2]
                 res.append(self._decode_int16(one))
@@ -465,7 +476,18 @@ class DataProcessor(object):
             else:
                 for i in range(0, data_len, 4):
                     byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    res.append(byte_value)
+                    res.append(byte_value) 
+        elif data_len == 40:
+            i = 0
+            while i < data_len:
+                if i < 28:
+                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    res.append(byte_value) 
+                    i+=4
+                else:
+                    one = valid_data[i : i + 2]
+                    res.append(self._decode_int16(one))
+                    i+=2
         elif data_len == 30:
             i = 0
             res = []

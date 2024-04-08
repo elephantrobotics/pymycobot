@@ -15,6 +15,9 @@ class ProtocolCode(enum.Enum):
     GET_FIRMWARE_VERSION = [0x01, 0x03]
     GET_MOTORS_CURRENT = [0x01, 0x04]
     GET_BATTERY_INFO = [0x01, 0x05]
+    SET_GYRO_STATE = [0x01, 0x07]
+    GET_GYRO_STATE = [0x01, 0x08]
+    GET_MODIFIED_VERSION = [0x01, 0x09]
 
 class MyAgv(DataProcessor):
     def __init__(self, port="/dev/ttyAMA0", baudrate="115200", timeout=0.1, debug=False):
@@ -41,18 +44,16 @@ class MyAgv(DataProcessor):
         end = 5
         t = time.time()
         if command[k-1] == 29:
-            end = 30
+            end = 28
+        elif command[k-1] == 41:
+            end = 40
         while time.time() - t < 0.2:
             data = self._serial_port.read()
             k += 1
-            # print("data_len:",end)
-            # print(data, len(datas), k, end)
             if len(datas) == 4:
-                # print("------:",datas, command, k, end)
                 if datas[-2] == 0x01 and datas[-1] == 0x05:
                     end = 7
                 datas += data
-            
                 
             elif len(datas) == end:
                 datas += data
@@ -62,7 +63,7 @@ class MyAgv(DataProcessor):
             
             elif len(datas) >= 2:
                 data_len = struct.unpack("b", data)[0]
-                if command[-1] == 29 or data_len == command[k-1]:
+                if command[-1] == 29 or command[-1] == 41 or data_len == command[k-1]:
                     datas += data
                 else:
                     datas = b''
@@ -128,11 +129,11 @@ class MyAgv(DataProcessor):
         if has_reply:
             data = self._read(command)
             if data:
-                if genre == ProtocolCode.GET_FIRMWARE_VERSION.value:
+                if genre in [ProtocolCode.GET_FIRMWARE_VERSION.value]:
                     return self._int2coord(data[4])
                 elif genre == ProtocolCode.GET_MOTORS_CURRENT.value:
                     return self._decode_int16(data[4:6])
-                elif ProtocolCode.GET_BATTERY_INFO.value:
+                elif genre == ProtocolCode.GET_BATTERY_INFO.value:
                     res = []
                     byte_1 = bin(data[4])[2:]
                     res =[]
@@ -146,6 +147,7 @@ class MyAgv(DataProcessor):
                     elif byte_1[1] == "0":
                         res[1] = 0
                     return res
+                return data[4]
             # print(res)
         return None
     
@@ -294,19 +296,25 @@ class MyAgv(DataProcessor):
         """
         self._mesg(128, 128, 128)
         
-    def get_mcu_info(self):
+    def get_mcu_info(self, version=1.0):
         """"""
-        datas = self._read([0xfe, 0xfe, 29])
+        if version == 1.0:
+            data_len = 29
+        else:
+            data_len = 41
+        datas = self._read([0xfe, 0xfe, data_len])
         res = []
         index = 2
-        while index < len(datas) - 2:
+        while index < len(datas) - 1:
             if index < 5:
                 res.append(datas[index])
                 index+=1
-            elif index < 17 or index >= 20:
+            elif index < 17 or (index >= 20 and index < 28):
                 res.append(self._decode_int16(datas[index:index+2]))
                 index+=2
-                
+            elif index >= 28 and index <= 32:
+                res.append(self._int2angle(self._decode_int16(datas[index:index+2])))
+                index+=2
             elif index == 17:
                 byte_1 = bin(datas[index])[2:]
                 while len(byte_1) != 6:
@@ -314,7 +322,7 @@ class MyAgv(DataProcessor):
                 res.append(byte_1)
                 index+=1
                 
-            elif index < 20:
+            elif index < 20 or (index > 32 and index < 41):
                 res.append(self._int2coord(datas[index]))
                 index+=1
                 
@@ -323,6 +331,26 @@ class MyAgv(DataProcessor):
     def restore(self):
         """Motor stall recovery"""
         self._mesg(ProtocolCode.RESTORE.value, 1)
+        
+    def set_gyro_state(self, state=1):
+        """Set gyroscope calibration status (save after power failure)
+
+        Args:
+            state (int, optional): 1 - open. 0 - close. Defaults to 1.
+        """
+        self._mesg(ProtocolCode.SET_GYRO_STATE.value, state)
+        
+    def get_gyro_state(self):
+        """Get gyroscope calibration status
+
+        Return:
+            1 - open
+            0 - close
+        """
+        return self._mesg(ProtocolCode.GET_GYRO_STATE.value, has_reply = True)
+    
+    def get_modified_version(self):
+        return self._mesg(ProtocolCode.GET_MODIFIED_VERSION.value, has_reply = True)
     
     # def get_battery_voltage(self, num=1):
     #     """Get battery voltage

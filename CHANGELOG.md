@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.4.4 (2024-3-26)
+
+- release v3.4.4
+- Mercury API Pause and Stop Interface Add Slow Stop Parameters
+
 ## v3.4.3 (2024-3-18)
 
 - release v3.4.3
