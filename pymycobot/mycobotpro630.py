@@ -9,6 +9,7 @@ from enum import Enum
 import subprocess
 import logging
 import os
+import can
 from pymycobot.log import setup_logging
 
 
@@ -630,7 +631,7 @@ class Phoenix:
             bool: True if start successful, False otherwise.
         """
         self._power_off()
-        time.sleep(0.5)
+        time.sleep(1.0)
         power_on_ok = self.is_power_on()
         power_on_retry_count = 0
         while (not power_on_ok) and (power_on_retry_count <= 10):
