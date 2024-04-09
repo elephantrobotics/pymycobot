@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.4.5 (2024-4-9)
+
+- release v3.4.5
+- Add python-can
+
 ## v3.4.4 (2024-3-26)
 
 - release v3.4.4
