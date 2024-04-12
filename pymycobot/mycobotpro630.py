@@ -9,7 +9,7 @@ from enum import Enum
 import subprocess
 import logging
 import os
-import can
+
 from pymycobot.log import setup_logging
 
 
@@ -37,6 +37,7 @@ def is_debian_os():
 if platform.system() == "Linux" and platform.machine() == "aarch64" and is_debian_os():
     import linuxcnc as elerob
     import hal
+    import can
 
 
     class JogMode(Enum):
