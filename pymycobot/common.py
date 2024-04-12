@@ -498,6 +498,18 @@ class DataProcessor(object):
                     res.append(self._decode_int16(one))
                     i+=2
             return res
+        elif data_len == 34:
+            i = 0
+            res = []
+            while i < data_len:
+                if i < 10 or i >= 26:
+                    res.append(valid_data[i])
+                    i+=1
+                elif i < 26:
+                    one = valid_data[i : i + 2]
+                    res.append(self._decode_int16(one))
+                    i+=2
+            return res
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
