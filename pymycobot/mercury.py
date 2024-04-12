@@ -165,6 +165,7 @@ class Mercury(MercuryCommandGenerator):
                                 for j in range(16):
                                     if data[j] != "0":
                                         res[i].append(15-j)
+                        return res
                 else:
                     return res
             return None
