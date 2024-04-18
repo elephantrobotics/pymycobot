@@ -216,6 +216,31 @@ class ProtocolCode(object):
     MERCURY_DRAG_TECH_PAUSE = 0x72
     MERCURY_DRAG_TEACH_CLEAN = 0x73
 
+    GET_ROBOT_MODIFIED_VERSION = 1
+    GET_ROBOT_FIRMWARE_VERSION = 2
+    GET_ROBOT_AUXILIARY_FIRMWARE_VERSION = 3
+    GET_ROBOT_ATOM_MODIFIED_VERSION = 4
+    GET_ROBOT_TOOL_FIRMWARE_VERSION = 9
+    GET_ROBOT_SERIAL_NUMBER = 5
+    SET_ROBOT_ERROR_CHECK_STATE = 6
+    GET_ROBOT_ERROR_CHECK_STATE = 7
+    GET_ROBOT_ERROR_STATUS = 0x15
+    GET_ATOM_PRESS_STATUS = 0x6b
+    GET_ATOM_LED_COLOR = 0x6a
+    SET_ATOM_PIN_STATUS = 0x61
+    GET_ATOM_PIN_STATUS = 0x62
+    SET_MASTER_PIN_STATUS = 0x65
+    GET_MASTER_PIN_STATUS = 0x66
+    SET_AUXILIARY_PIN_STATUS = 0xa0
+    GET_AUXILIARY_PIN_STATUS = 0xa1
+    SET_SERVO_MOTOR_CLOCKWISE = 0x73
+    GET_SERVO_MOTOR_CLOCKWISE = 0Xea
+    SET_SERVO_MOTOR_COUNTER_CLOCKWISE = 0x74
+    GET_SERVO_MOTOR_COUNTER_CLOCKWISE = 0xeb
+    SET_SERVO_MOTOR_CONFIG = 0x52
+    GET_SERVO_MOTOR_CONFIG = 0x53
+    CLEAR_RECV_QUEUE = 0x19
+    GET_RECV_QUEUE_LENGTH = 0x08
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
     COLLISION = 0xF2
@@ -226,6 +251,9 @@ class ProtocolCode(object):
     JOG_INC_COORD = 0xF7
     COLLISION_SWITCH = 0xF8
     IS_COLLISION_ON = 0xF9
+    CLEAR_ROBOT_ERROR = 0x16
+    GET_RECV_QUEUE_SIZE = 0x17
+    SET_RECV_QUEUE_SIZE = 0x18
 
     # IIC
     # SET_IIC_STATE = 0xA4
@@ -265,6 +293,41 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
+    def _mesg(self, genre, *args, **kwargs):
+        """
+        Args:
+            genre: command type (Command)
+            *args: other data.
+                   It is converted to octal by default.
+                   If the data needs to be encapsulated into hexadecimal,
+                   the array is used to include them. (Data cannot be nested)
+            **kwargs: support `has_reply`
+                has_reply: Whether there is a return value to accept.
+        """
+        command_data = self._process_data_command(genre, self.__class__.__name__, args)
+        if genre == 178:
+            command_data = self._encode_int16(command_data)
+        elif genre in [76, 77]:
+            command_data = [command_data[0]] + self._encode_int16(command_data[1] * 10)
+        elif genre == 115 and self.__class__.__name__ != "MyArmM":
+            command_data = [command_data[1], command_data[3]]
+        LEN = len(command_data) + 2
+        command = [
+            ProtocolCode.HEADER,
+            ProtocolCode.HEADER,
+            LEN,
+            genre,
+        ]
+        if command_data:
+            command.extend(command_data)
+        if self.__class__.__name__ in ["Mercury", "MercurySocket"]:
+            command[2] += 1
+            command.extend(self.crc_check(command))
+        else:
+            command.append(ProtocolCode.FOOTER)
+        real_command = self._flatten(command)
+        has_reply = kwargs.get("has_reply", False)
+        return real_command, has_reply
     # Functional approach
     def _encode_int8(self, data):
         return struct.pack("b", data)
@@ -346,7 +409,7 @@ class DataProcessor(object):
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
-                           res.append(byte_value[i])
+                            res.append(byte_value[i])
                         processed_args.extend(res)
                 else:
                     processed_args.extend(self._encode_int16(args[index]))
@@ -358,7 +421,7 @@ class DataProcessor(object):
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
-                           res.append(byte_value[i])
+                            res.append(byte_value[i])
                         processed_args.extend(res)
                     else:
                         processed_args.append(args[index])
@@ -382,7 +445,7 @@ class DataProcessor(object):
         header_i, header_j = 0, 1
         while header_j < data_len - 4:
             if self._is_frame_header(data, header_i, header_j):
-                if arm in [6, 7, 14]:
+                if arm in [6, 7, 14, 8]:
                     cmd_id = data[header_i + 3]
                 elif arm == 12:
                     cmd_id = data[header_i + 4]
@@ -393,7 +456,7 @@ class DataProcessor(object):
             header_j += 1
         else:
             return []
-        if arm in [6, 7]:
+        if arm in [6, 7, 8]:
             data_len = data[header_i + 2] - 2
         elif arm == 12:
             data_len = data[header_i + 3] - 2
@@ -410,7 +473,7 @@ class DataProcessor(object):
                 data_pos = header_i + 5
             data_len -= 1
         else:
-            if arm in [6, 7, 14]:
+            if arm in [6, 7, 14, 8]:
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
@@ -423,7 +486,17 @@ class DataProcessor(object):
         #         res.append(i)
         #     return res    
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
-            if data_len == 8 and arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION:
+            ignor_t = (
+                ProtocolCode.GET_SERVO_CURRENTS,
+                ProtocolCode.GET_SERVO_TEMPS,
+                ProtocolCode.GET_SERVO_VOLTAGES,
+                ProtocolCode.GET_SERVO_STATUS,
+                ProtocolCode.IS_ALL_SERVO_ENABLE
+            )
+            if data_len == 8 and (
+                    (arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION) or
+                    (arm == 8 and cmd_id in ignor_t)
+            ):
                 for v in valid_data:
                     res.append(v)
                 return res
@@ -572,7 +645,7 @@ def write(self, command, method=None):
         self._serial_port.flush()
 
 
-def read(self, genre, method=None, command=None, _class=None):
+def read(self, genre, method=None, command=None, _class=None, timeout=None):
     datas = b""
     data_len = -1
     k = 0
@@ -580,13 +653,16 @@ def read(self, genre, method=None, command=None, _class=None):
     t = time.time()
     wait_time = 0.1   
     if method is not None:
-         wait_time = 0.3
+        wait_time = 0.3
     if genre == ProtocolCode.GO_ZERO:
         wait_time = 120
+    if timeout is not None:
+        wait_time = timeout
     if _class in ["Mercury", "MercurySocket"]:
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
-        elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS, ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
+        elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
+                       ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
             wait_time = 3
     if method is not None:
         if genre == 177:

@@ -94,47 +94,6 @@ class CommandGenerator(DataProcessor):
         self.log = logging.getLogger(__name__)
         self.calibration_parameters = calibration_parameters
 
-    def _mesg(self, genre, *args, **kwargs):
-        """
-        Args:
-            genre: command type (Command)
-            *args: other data.
-                   It is converted to octal by default.
-                   If the data needs to be encapsulated into hexadecimal,
-                   the array is used to include them. (Data cannot be nested)
-            **kwargs: support `has_reply`
-                has_reply: Whether there is a return value to accept.
-        """
-        command_data = self._process_data_command(genre, self.__class__.__name__, args)
-
-        if genre == 178:
-            # 修改wifi端口
-            command_data = self._encode_int16(command_data)
-            
-        elif genre in [76, 77]:
-            command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
-        elif genre == 115:
-            command_data = [command_data[1],command_data[3]]
-        LEN = len(command_data) + 2
-        
-        command = [
-                ProtocolCode.HEADER,
-                ProtocolCode.HEADER,
-                LEN,
-                genre,
-            ]
-        if command_data:
-            command.extend(command_data)
-        if self.__class__.__name__ in ["Mercury", "MercurySocket"]:
-            command[2] += 1
-            command.extend(self.crc_check(command))
-        else:
-            command.append(ProtocolCode.FOOTER)
-
-        real_command = self._flatten(command)
-        has_reply = kwargs.get("has_reply", False)
-        return real_command, has_reply
-
     # System status
     def get_robot_version(self):  # TODO: test method <2021-03-11, yourname> #
         """Get cobot version
@@ -144,15 +103,15 @@ class CommandGenerator(DataProcessor):
             mycobotPro: 101
         """
         return self._mesg(ProtocolCode.ROBOT_VERSION, has_reply=True)
-    
+
     def get_system_version(self):
         """get system version"""
-        return self._mesg(ProtocolCode.SOFTWARE_VERSION, has_reply = True)
+        return self._mesg(ProtocolCode.SOFTWARE_VERSION, has_reply=True)
 
     def get_robot_id(self):
         """get robot id"""
-        return self._mesg(ProtocolCode.GET_ROBOT_ID, has_reply = True)
-    
+        return self._mesg(ProtocolCode.GET_ROBOT_ID, has_reply=True)
+
     def set_robot_id(self, id):
         """set robot id
         
@@ -449,7 +408,8 @@ class CommandGenerator(DataProcessor):
             encoder: The value of the set encoder.
             speed : 1 - 100
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, encode_id = joint_id, encoder = encoder, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, encode_id=joint_id, encoder=encoder,
+                                    speed=speed)
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder], speed)
 
     def get_encoder(self, joint_id):
@@ -585,7 +545,8 @@ class CommandGenerator(DataProcessor):
             self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id, value=value)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
         else:
-            self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id, address=data_id, value=value, mode=mode)
+            self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id, address=data_id, value=value,
+                                        mode=mode)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, [value], mode)
 
     def get_servo_data(self, servo_id, data_id, mode=None):
@@ -770,7 +731,8 @@ class CommandGenerator(DataProcessor):
                 4: Flexible gripper
         """
         if gripper_type is not None:
-            self.calibration_parameters(class_name = self.__class__.__name__, gripper_value=gripper_value, speed=speed, gripper_type=gripper_type)
+            self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
+                                        gripper_type=gripper_type)
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
         else:
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
