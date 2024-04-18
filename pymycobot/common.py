@@ -216,6 +216,29 @@ class ProtocolCode(object):
     MERCURY_DRAG_TECH_PAUSE = 0x72
     MERCURY_DRAG_TEACH_CLEAN = 0x73
 
+    GET_ROBOT_MODIFIED_VERSION = 1
+    GET_ROBOT_FIRMWARE_VERSION = 2
+    GET_ROBOT_AUXILIARY_FIRMWARE_VERSION = 3
+    GET_ROBOT_ATOM_MODIFIED_VERSION = 4
+    GET_ROBOT_TOOL_FIRMWARE_VERSION = 9
+    GET_ROBOT_SERIAL_NUMBER = 5
+    SET_ROBOT_ERROR_CHECK_STATE = 6
+    GET_ROBOT_ERROR_CHECK_STATE = 7
+    GET_ROBOT_ERROR_STATUS = 0x15
+    GET_ATOM_PRESS_STATUS = 0x6b
+    GET_ATOM_LED_COLOR = 0x6a
+    SET_ATOM_PIN_STATUS = 0x61
+    GET_ATOM_PIN_STATUS = 0x62
+    SET_MASTER_PIN_STATUS = 0x61
+    GET_MASTER_PIN_STATUS = 0x62
+    SET_AUXILIARY_PIN_STATUS = 0x63
+    GET_AUXILIARY_PIN_STATUS = 0x64
+    SET_SERVO_MOTOR_CLOCKWISE = 0x73
+    GET_SERVO_MOTOR_CLOCKWISE = 0Xea
+    SET_SERVO_MOTOR_COUNTER_CLOCKWISE = 0x74
+    GET_SERVO_MOTOR_COUNTER_CLOCKWISE = 0xeb
+    SET_SERVO_MOTOR_CONFIG = 0x52
+    GET_SERVO_MOTOR_CONFIG = 0x53
     GET_BASE_COORDS = 0xF0
     BASE_TO_SINGLE_COORDS = 0xF1
     COLLISION = 0xF2
@@ -265,6 +288,47 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
+    def _mesg(self, genre, *args, **kwargs):
+        """
+        Args:
+            genre: command type (Command)
+            *args: other data.
+                   It is converted to octal by default.
+                   If the data needs to be encapsulated into hexadecimal,
+                   the array is used to include them. (Data cannot be nested)
+            **kwargs: support `has_reply`
+                has_reply: Whether there is a return value to accept.
+        """
+        command_data = self._process_data_command(genre, self.__class__.__name__, args)
+
+        if genre == 178:
+            # 修改wifi端口
+            command_data = self._encode_int16(command_data)
+            
+        elif genre in [76, 77]:
+            command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
+        elif genre == 115 and self.__class__.__name__ not in  ["MyArmC", "MyArmM"]:
+            command_data = [command_data[1],command_data[3]]
+        LEN = len(command_data) + 2
+        
+        command = [
+                ProtocolCode.HEADER,
+                ProtocolCode.HEADER,
+                LEN,
+                genre,
+            ]
+        if command_data:
+            command.extend(command_data)
+        if self.__class__.__name__ in ["Mercury", "MercurySocket"]:
+            command[2] += 1
+            command.extend(self.crc_check(command))
+        else:
+            command.append(ProtocolCode.FOOTER)
+
+        real_command = self._flatten(command)
+        has_reply = kwargs.get("has_reply", False)
+        return real_command, has_reply
+    
     # Functional approach
     def _encode_int8(self, data):
         return struct.pack("b", data)
@@ -572,7 +636,7 @@ def write(self, command, method=None):
         self._serial_port.flush()
 
 
-def read(self, genre, method=None, command=None, _class=None):
+def read(self, genre, method=None, command=None, _class=None, timeout=None):
     datas = b""
     data_len = -1
     k = 0
@@ -581,8 +645,8 @@ def read(self, genre, method=None, command=None, _class=None):
     wait_time = 0.1   
     if method is not None:
          wait_time = 0.3
-    if genre == ProtocolCode.GO_ZERO:
-        wait_time = 120
+    if timeout is not None:
+        wait_time = timeout
     if _class in ["Mercury", "MercurySocket"]:
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
