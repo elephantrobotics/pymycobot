@@ -306,18 +306,21 @@ class DataProcessor(object):
         """
         command_data = self._process_data_command(genre, self.__class__.__name__, args)
         if genre == 178:
+            # 修改wifi端口
             command_data = self._encode_int16(command_data)
+            
         elif genre in [76, 77]:
-            command_data = [command_data[0]] + self._encode_int16(command_data[1] * 10)
-        elif genre == 115 and self.__class__.__name__ != "MyArmM":
-            command_data = [command_data[1], command_data[3]]
+            command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
+        elif genre == 115 and self.__class__.__name__ not in  ["MyArmC", "MyArmM"]:
+            command_data = [command_data[1],command_data[3]]
         LEN = len(command_data) + 2
+        
         command = [
-            ProtocolCode.HEADER,
-            ProtocolCode.HEADER,
-            LEN,
-            genre,
-        ]
+                ProtocolCode.HEADER,
+                ProtocolCode.HEADER,
+                LEN,
+                genre,
+            ]
         if command_data:
             command.extend(command_data)
         if self.__class__.__name__ in ["Mercury", "MercurySocket"]:
@@ -325,9 +328,11 @@ class DataProcessor(object):
             command.extend(self.crc_check(command))
         else:
             command.append(ProtocolCode.FOOTER)
+
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
         return real_command, has_reply
+
     # Functional approach
     def _encode_int8(self, data):
         return struct.pack("b", data)
@@ -653,9 +658,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
     t = time.time()
     wait_time = 0.1   
     if method is not None:
-        wait_time = 0.3
-    if genre == ProtocolCode.GO_ZERO:
-        wait_time = 120
+         wait_time = 0.3
     if timeout is not None:
         wait_time = timeout
     if _class in ["Mercury", "MercurySocket"]:
