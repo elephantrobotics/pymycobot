@@ -16,13 +16,15 @@ from pymycobot.log import setup_logging
 def is_debian_os():
     try:
         # 执行 lsb_release -a 命令，并捕获输出
-        result = subprocess.run(['lsb_release', '-a'], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["lsb_release", "-a"], capture_output=True, text=True, check=True
+        )
 
         # 解析输出，获取 Distributor ID 的信息
-        lines = result.stdout.split('\n')
+        lines = result.stdout.split("\n")
         for line in lines:
-            if line.startswith('Distributor ID:'):
-                distributor_id = line.split(':', 1)[1].strip()
+            if line.startswith("Distributor ID:"):
+                distributor_id = line.split(":", 1)[1].strip()
                 if distributor_id != "Debian":
                     return False
                 return True
@@ -39,10 +41,11 @@ if platform.system() == "Linux" and platform.machine() == "aarch64" and is_debia
     import hal
     import can
 
-
     class JogMode(Enum):
         JOG_JOINT = elerob.ANGULAR - 1
         JOG_TELEOP = elerob.LINEAR - 1
+
+
 from time import sleep
 
 try:
@@ -51,6 +54,7 @@ except ImportError:
 
     def CPUTemperature():
         return 0
+
 
 COORDS_EPSILON = 0.50
 MAX_JOINTS = 6
@@ -77,7 +81,6 @@ class RobotMoveState(Enum):
     MOVE_AXIS_STATE = 3
     MOVE_JOINT_STATE = 4
     RUN_PROGRAM_STATE = 5
-
 
 
 class JogDirection(Enum):
@@ -1476,15 +1479,15 @@ class Phoenix:
         if self.s.task_state != elerob.STATE_ON:
             return False
         if (
-                (jog_mode == JogMode.JOG_JOINT)
-                and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
+            (jog_mode == JogMode.JOG_JOINT)
+            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
         ) or (
-                (jog_mode == JogMode.JOG_TELEOP)
-                and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
+            (jog_mode == JogMode.JOG_TELEOP)
+            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
             return False
         if (jog_mode == JogMode.JOG_JOINT) and (
-                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1544,15 +1547,15 @@ class Phoenix:
         if self.s.task_state != elerob.STATE_ON:
             return False
         if (
-                (jog_mode == JogMode.JOG_JOINT)
-                and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
+            (jog_mode == JogMode.JOG_JOINT)
+            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
         ) or (
-                (jog_mode == JogMode.JOG_TELEOP)
-                and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
+            (jog_mode == JogMode.JOG_TELEOP)
+            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
             return False
         if (jog_mode == JogMode.JOG_JOINT) and (
-                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1611,15 +1614,15 @@ class Phoenix:
         if self.s.task_state != elerob.STATE_ON:
             return False
         if (
-                (jog_mode == JogMode.JOG_JOINT)
-                and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
+            (jog_mode == JogMode.JOG_JOINT)
+            and (self.s.motion_mode == elerob.TRAJ_MODE_TELEOP)
         ) or (
-                (jog_mode == JogMode.JOG_TELEOP)
-                and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
+            (jog_mode == JogMode.JOG_TELEOP)
+            and (self.s.motion_mode != elerob.TRAJ_MODE_TELEOP)
         ):
             return False
         if (jog_mode == JogMode.JOG_JOINT) and (
-                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1646,7 +1649,7 @@ class Phoenix:
             bool: True if jog stopped successfully, False otherwise
         """
         if (jog_mode == JogMode.JOG_JOINT) and (
-                joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
+            joint_or_axis.value < 0 or joint_or_axis.value >= MAX_JOINTS
         ):
             return False
         if (jog_mode == JogMode.JOG_TELEOP) and (joint_or_axis.value < 0):
@@ -1853,8 +1856,8 @@ class Phoenix:
         if do_poll:
             self.s.poll()
         return (
-                self.s.task_mode == elerob.MODE_AUTO
-                and self.s.interp_state != elerob.INTERP_IDLE
+            self.s.task_mode == elerob.MODE_AUTO
+            and self.s.interp_state != elerob.INTERP_IDLE
         )
 
     def manual_ok(self, do_poll=True):
@@ -1932,8 +1935,8 @@ class Phoenix:
         """
         self.s.poll()
         if self.s.task_mode != elerob.MODE_AUTO or self.s.interp_state not in (
-                elerob.INTERP_READING,
-                elerob.INTERP_WAITING,
+            elerob.INTERP_READING,
+            elerob.INTERP_WAITING,
         ):
             return -1
         self.ensure_mode(TaskMode.AUTO)
@@ -1966,8 +1969,8 @@ class Phoenix:
         """
         self.s.poll()
         if self.s.task_mode != elerob.MODE_AUTO or self.s.interp_state not in (
-                elerob.INTERP_READING,
-                elerob.INTERP_WAITING,
+            elerob.INTERP_READING,
+            elerob.INTERP_WAITING,
         ):
             return -1
         self.ensure_mode(TaskMode.AUTO)
@@ -2013,8 +2016,8 @@ class Phoenix:
         """Pause currently running program."""
         self.s.poll()
         if self.s.task_mode != elerob.MODE_AUTO or self.s.interp_state not in (
-                elerob.INTERP_READING,
-                elerob.INTERP_WAITING,
+            elerob.INTERP_READING,
+            elerob.INTERP_WAITING,
         ):
             return
         self.ensure_mode(TaskMode.AUTO)
@@ -2043,9 +2046,9 @@ class Phoenix:
             self.c.wait_complete()
             self.s.poll()
             print(
-                "Warning: Failed Task abort: task_mode={}, exec_status={}, interp_state={}".format(self.s.task_mode,
-                                                                                                   self.s.exec_state,
-                                                                                                   self.s.interp_state)
+                "Warning: Failed Task abort: task_mode={}, exec_status={}, interp_state={}".format(
+                    self.s.task_mode, self.s.exec_state, self.s.interp_state
+                )
             )
 
     def task_stop_async(self):
@@ -2413,9 +2416,9 @@ class Phoenix:
         """
         self.s.poll()
         if (
-                self.s.estop
-                or not self.s.enabled
-                or (self.s.interp_state != elerob.INTERP_IDLE)
+            self.s.estop
+            or not self.s.enabled
+            or (self.s.interp_state != elerob.INTERP_IDLE)
         ):
             return False
         if self.s.task_mode != elerob.MODE_MANUAL:
@@ -2495,18 +2498,18 @@ class Phoenix:
             str: gcode string to move to given coords
         """
         return (
-                "X"
-                + str(coords[0])
-                + "Y"
-                + str(coords[1])
-                + "Z"
-                + str(coords[2])
-                + "A"
-                + str(coords[3])
-                + "B"
-                + str(coords[4])
-                + "C"
-                + str(coords[5])
+            "X"
+            + str(coords[0])
+            + "Y"
+            + str(coords[1])
+            + "Z"
+            + str(coords[2])
+            + "A"
+            + str(coords[3])
+            + "B"
+            + str(coords[4])
+            + "C"
+            + str(coords[5])
         )
 
     def angles_to_gcode(self, angles):
@@ -2545,12 +2548,12 @@ class Phoenix:
             bool: True if coords are equal, False otherwise.
         """
         return (
-                self.float_equal(coords_1[Axis.X.value], coords_2[Axis.X.value])
-                and self.float_equal(coords_1[Axis.Y.value], coords_2[Axis.Y.value])
-                and self.float_equal(coords_1[Axis.Z.value], coords_2[Axis.Z.value])
-                and self.float_equal(coords_1[Axis.RX.value], coords_2[Axis.RX.value])
-                and self.float_equal(coords_1[Axis.RY.value], coords_2[Axis.RY.value])
-                and self.float_equal(coords_1[Axis.RZ.value], coords_2[Axis.RZ.value])
+            self.float_equal(coords_1[Axis.X.value], coords_2[Axis.X.value])
+            and self.float_equal(coords_1[Axis.Y.value], coords_2[Axis.Y.value])
+            and self.float_equal(coords_1[Axis.Z.value], coords_2[Axis.Z.value])
+            and self.float_equal(coords_1[Axis.RX.value], coords_2[Axis.RX.value])
+            and self.float_equal(coords_1[Axis.RY.value], coords_2[Axis.RY.value])
+            and self.float_equal(coords_1[Axis.RZ.value], coords_2[Axis.RZ.value])
         )
 
     def angles_equal(self, angles_1, angles_2):
@@ -2564,12 +2567,12 @@ class Phoenix:
             bool: True if angles are equal, False otherwise.
         """
         return (
-                self.float_equal(angles_1[Axis.X.value], angles_2[Axis.X.value])
-                and self.float_equal(angles_1[Axis.Y.value], angles_2[Axis.Y.value])
-                and self.float_equal(angles_1[Axis.Z.value], angles_2[Axis.Z.value])
-                and self.float_equal(angles_1[Axis.RX.value], angles_2[Axis.RX.value])
-                and self.float_equal(angles_1[Axis.RY.value], angles_2[Axis.RY.value])
-                and self.float_equal(angles_1[Axis.RZ.value], angles_2[Axis.RZ.value])
+            self.float_equal(angles_1[Axis.X.value], angles_2[Axis.X.value])
+            and self.float_equal(angles_1[Axis.Y.value], angles_2[Axis.Y.value])
+            and self.float_equal(angles_1[Axis.Z.value], angles_2[Axis.Z.value])
+            and self.float_equal(angles_1[Axis.RX.value], angles_2[Axis.RX.value])
+            and self.float_equal(angles_1[Axis.RY.value], angles_2[Axis.RY.value])
+            and self.float_equal(angles_1[Axis.RZ.value], angles_2[Axis.RZ.value])
         )
 
     def tool_get_firmware_version(self):
@@ -2600,11 +2603,15 @@ class Phoenix:
             pin_no (int): pin number
 
         Returns:
-            int : pin value
+            int: pin value
         """
         self.send_can(data=[0x02, 0x62, pin_no])
-        msg = self.receive_can()
-        pin_state = msg.data[2]
+        pin_state = -1
+        for _ in range(100):
+            msg = self.receive_can()
+            if msg.data[0] == 0x03 and msg.data[1] == 0x62 and msg.data[2] == pin_no:
+                pin_state = msg.data[3]
+                break
         return pin_state
 
     def tool_set_led_color(self, r, g, b):
@@ -2647,8 +2654,7 @@ class Phoenix:
         self.send_can([0x03, 0x67, value, speed])
 
     def tool_set_gripper_calibrate(self):
-        """Set the current position of the gripper to zero
-        """
+        """Set the current position of the gripper to zero"""
         self.send_can([0x01, 0x68])
 
     def tool_set_gripper_enabled(self, enabled):
@@ -2724,7 +2730,7 @@ class Phoenix:
         num_chunks = int(len(bytes) / CHUNK_SIZE + 1)
         # print("num_chunks = " + str(num_chunks))
         for i in range(0, len(bytes), CHUNK_SIZE):
-            chunk = bytes[i: i + CHUNK_SIZE]
+            chunk = bytes[i : i + CHUNK_SIZE]
             # print("num_chunks = " + str(num_chunks) + ", i = " + str(i))
             msg_bytes = [0x2 + len(chunk), 0xB5, num_chunks - int(i / CHUNK_SIZE)]
             msg_bytes.extend(list(chunk))
