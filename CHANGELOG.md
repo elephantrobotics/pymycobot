@@ -1,5 +1,12 @@
 # ChangeLog for pymycobot
 
+## v3.4.6 (2024-4-23)
+
+- release v3.4.6
+- 1. Fix the issue of Mercury API: drag_teach_clean not being able to be used
+- 2. Unified naming convention for Mercury drag teaching API
+- 3. Clean up excess files
+
 ## v3.4.5 (2024-4-9)
 
 - release v3.4.5
