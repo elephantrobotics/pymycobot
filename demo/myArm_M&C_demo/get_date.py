@@ -39,6 +39,7 @@ class CreateSerial(QThread):
                         data["speed"] = self.serial.get_servos_speed()
                         data["angle"][3] = 4096 - data["angle"][3]
                         data["angle"][-1] *= 1.1
+                        data["angle"][-1] = int(data["angle"][-1])
                         # self.parent_serial.set_servos_encoder_drag(data["angle"], data["speed"])
                         self.parent_serial.serial.set_servos_encoder(data["angle"], 100)
                     else:
