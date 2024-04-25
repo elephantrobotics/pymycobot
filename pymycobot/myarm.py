@@ -328,6 +328,6 @@ class MyArm(CommandGenerator, sms_sts):
         return self._mesg(ProtocolCode.GET_ANGLES_COORDS_END, has_reply=True)
     
     def go_home(self):
-        self.sync_send_angles([0,0,0,0,0,0,0], 30)
+        self.send_angles([0,0,0,0,0,0,0], 10)
         
     

@@ -259,4 +259,4 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
     
     def go_home(self):
-        return self.sync_send_angles([0,0,0,0,0,0], 30)
+        return self.send_angles([0,0,0,0,0,0], 10)
