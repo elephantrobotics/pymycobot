@@ -83,7 +83,10 @@ class MyArmAPI(DataProcessor):
                 ProtocolCode.SERVO_RESTORE,
                 ProtocolCode.GET_ERROR_DETECT_MODE,
                 ProtocolCode.GET_SERVO_MOTOR_CLOCKWISE,
-                ProtocolCode.GET_SERVO_MOTOR_CONFIG
+                ProtocolCode.GET_SERVO_MOTOR_CONFIG,
+                ProtocolCode.POWER_ON,
+                ProtocolCode.GET_MASTER_PIN_STATUS,
+                ProtocolCode.GET_ATOM_PIN_STATUS
             ]
 
             if genre in return_single_genres:
