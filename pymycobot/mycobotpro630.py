@@ -586,8 +586,6 @@ class Phoenix:
         self.set_joint_torque_limit(Joint.J5, 0.10)
         self.set_joint_torque_limit(Joint.J6, 0.10)
 
-        self.set_payload(1.0)
-
         # joint angle limits
         self.set_joint_min_pos_limit(Joint.J1, -180)
         self.set_joint_min_pos_limit(Joint.J2, -270)
