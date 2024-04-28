@@ -562,7 +562,7 @@ class Phoenix:
 
     def init_robot(self):
         """Initializes robot parameters."""
-        self.detect_robot()
+        self._detect_robot()
         self._set_free_move(False)
 
         self.set_carte_torque_limit(Axis.X, DEFAULT_XY_TORQUE_LIMIT)
@@ -603,7 +603,7 @@ class Phoenix:
 
         self.set_motion_flexible(0)
 
-    def detect_robot(self):
+    def _detect_robot(self):
         """Detects robot from Analog Input HAL pin."""
         robot = Robots(self.get_analog_in(AI.ROBOT))
         if robot == Robots.ELEPHANT:
