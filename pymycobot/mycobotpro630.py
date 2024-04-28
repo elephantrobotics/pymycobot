@@ -53,7 +53,11 @@ try:
 except ImportError:
 
     def CPUTemperature():
-        return 0
+        class Temp:
+            def __init__(self, temperature):
+                self.temperature = temperature
+
+        return Temp(0)
 
 
 COORDS_EPSILON = 0.50
@@ -1257,17 +1261,6 @@ class Phoenix:
             bool: True if joint communication is OK, False otherwise
         """
         return not self.get_digital_in(DI(DI.J1_COMMUNICATION.value + joint.value))
-
-    def get_joint_voltage(self, joint):
-        """Returns specified joint's voltage.
-
-        Args:
-            joint (Joint): joint enum value (Joint.J1 ~ Joint.J6)
-
-        Returns:
-            float: voltage
-        """
-        return self.get_analog_in(AI(AI.J1_VOLTAGE.value + joint.value))
 
     def get_joint_current(self, joint):
         """Returns specified joint's current.
