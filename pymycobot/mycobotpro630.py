@@ -2572,10 +2572,12 @@ class Phoenix:
         Returns:
             float: firmware version
         """
+        version = 0.0
         self.send_can(data=[0x01, 0x09])
-        msg = self.receive_can()
-        print("msg.data = " + str(msg.data))
-        version = msg.data[2] / 10
+        for _ in range(100):
+            msg = self.receive_can()
+            if msg.data[0] == 0x02 and msg.data[1] == 0x09:
+                version = msg.data[2] / 10
         return version
 
     def tool_set_digital_out(self, pin_no, pin_value):
