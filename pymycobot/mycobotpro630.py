@@ -637,7 +637,7 @@ class Phoenix:
             bool: True if start successful, False otherwise.
         """
         self._power_off()
-        time.sleep(1.0)
+        time.sleep(5.0)
         power_on_ok = self.is_power_on()
         power_on_retry_count = 0
         while (not power_on_ok) and (power_on_retry_count <= 10):
