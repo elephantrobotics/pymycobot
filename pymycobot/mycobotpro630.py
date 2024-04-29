@@ -2622,12 +2622,16 @@ class Phoenix:
         """Returns True if ESP32 button is pressed.
 
         Returns:
-            bool: True if button is pressed, False otherwise
+            bool: True if button is pressed, False otherwise, None if failed to get button status
         """
         self.send_can([0x01, 0x71])
-        msg = self.receive_can()
-        button_state = msg.data[2]
-        return bool(button_state)
+        button_state = None
+        for _ in range(100):
+            msg = self.receive_can()
+            if msg.data[0] == 0x02 and msg.data[1] == 0x71:
+                button_state = bool(msg.data[2])
+                break
+        return button_state
 
     def tool_set_gripper_state(self, state, speed):
         """Sets gripper state.
