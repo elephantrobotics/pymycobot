@@ -9,26 +9,41 @@ from enum import Enum
 import subprocess
 import logging
 import os
+import sys
 
 from pymycobot.log import setup_logging
 
-
+def check_python_version():
+    if sys.version_info.major == 2:
+        return 2
+    elif sys.version_info.major == 3:
+        return 3
+    else:
+        return -1
 def is_debian_os():
     try:
         # 执行 lsb_release -a 命令，并捕获输出
-        result = subprocess.run(
-            ["lsb_release", "-a"], capture_output=True, text=True, check=True
-        )
+        py_version = check_python_version()
+        if py_version == 3:
+            result = subprocess.run(
+                ["lsb_release", "-a"], capture_output=True, text=True, check=True
+            )
 
-        # 解析输出，获取 Distributor ID 的信息
-        lines = result.stdout.split("\n")
+            # 解析输出，获取 Distributor ID 的信息
+            lines = result.stdout.split("\n")
+            
+        elif py_version == 2:
+            result = subprocess.Popen(["lsb_release", "-a"], stdout=subprocess.PIPE).communicate()[0]
+
+            # 解析输出，获取 Distributor ID 的信息
+            lines = result.split("\n")
+
         for line in lines:
             if line.startswith("Distributor ID:"):
                 distributor_id = line.split(":", 1)[1].strip()
                 if distributor_id != "Debian":
                     return False
                 return True
-
     except subprocess.CalledProcessError as e:
         print("Error executing lsb_release -a: {}".format(e))
         return False
