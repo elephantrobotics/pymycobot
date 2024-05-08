@@ -13,6 +13,7 @@ import sys
 
 from pymycobot.log import setup_logging
 
+
 def check_python_version():
     if sys.version_info.major == 2:
         return 2
@@ -20,6 +21,8 @@ def check_python_version():
         return 3
     else:
         return -1
+
+
 def is_debian_os():
     try:
         # 执行 lsb_release -a 命令，并捕获输出
@@ -31,9 +34,11 @@ def is_debian_os():
 
             # 解析输出，获取 Distributor ID 的信息
             lines = result.stdout.split("\n")
-            
+
         elif py_version == 2:
-            result = subprocess.Popen(["lsb_release", "-a"], stdout=subprocess.PIPE).communicate()[0]
+            result = subprocess.Popen(
+                ["lsb_release", "-a"], stdout=subprocess.PIPE
+            ).communicate()[0]
 
             # 解析输出，获取 Distributor ID 的信息
             lines = result.split("\n")
@@ -1170,6 +1175,16 @@ class Phoenix:
         self.c.mode(task_mode.value)
         self.c.wait_complete()
         return True
+
+    def enable_manual_brake_control(self, enable=True):
+        """Enables or disables manual brake control.
+
+        Args:
+            enable (bool, optional): enable (True) or disable (False) manual
+                                     brake control. Defaults to True.
+        """
+        self.set_digital_out(DO.BRAKE_MANUAL_MODE_ENABLE, enable)
+        time.sleep(0.05)
 
     def release_joint_brake(self, joint, release=True):
         """Releases or focuses (enables) specified joint's brake.
