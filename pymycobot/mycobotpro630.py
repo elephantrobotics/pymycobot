@@ -1293,7 +1293,7 @@ class Phoenix:
         Returns:
             bool: True if joint communication is OK, False otherwise
         """
-        return not self.get_digital_in(DI(DI.J1_COMMUNICATION.value + joint.value))
+        return bool(self.get_digital_in(DI(DI.J1_COMMUNICATION.value + joint.value)))
 
     def get_joint_current(self, joint):
         """Returns specified joint's current.
