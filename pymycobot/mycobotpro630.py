@@ -780,6 +780,17 @@ class Phoenix:
             self.set_digital_out(DO.BRAKE_ACTIVE_AUTO, 0)
         return True
 
+    def _check_speed(self, speed):
+        """Returns True if speed is within limits [0, 100], False otherwise.
+
+        Args:
+            speed (float): speed value to be checked
+
+        Returns:
+            bool: True if speed is within limits [0, 100], False otherwise
+        """
+        return speed >= 0 and speed <= 100
+
     def get_coords(self):
         """Returns current robot coordinates as list[X, Y, Z, RX, RY, RZ].
 
@@ -799,6 +810,8 @@ class Phoenix:
         """
         if self.is_in_position(coords, True):
             return True
+        if not self._check_speed(speed):
+            return False
         self._set_robot_move_state(RobotMoveState.MOVE_AXIS_STATE, 0, 0)
         return self.send_mdi(
             "G01F" + str(speed * MAX_LINEAR_SPEED / 100) + self.coords_to_gcode(coords)
@@ -823,9 +836,11 @@ class Phoenix:
             coord (float): coord value
             speed (float): speed percentage (1 ~ 100 %)
         """
+        if not self._check_speed(speed):
+            return False
         coords = self.get_coords()
         coords[axis.value] = coord
-        self.set_coords(coords, speed)
+        return self.set_coords(coords, speed)
 
     def get_angles(self):
         """Returns robot's current joint angle values.
@@ -843,9 +858,11 @@ class Phoenix:
             speed (float): speed percentage (1 ~ 100 %)
         """
         if self.is_in_position(angles, False):
-            return
+            return True
+        if not self._check_speed(speed):
+            return False
         self._set_robot_move_state(RobotMoveState.MOVE_JOINT_STATE, 0, 0)
-        self.send_mdi(
+        return self.send_mdi(
             "G38.3F"
             + str(speed * MAX_ANGULAR_SPEED / 100)
             + self.angles_to_gcode(angles)
@@ -870,12 +887,14 @@ class Phoenix:
             angle (float): angle to set
             speed (float): speed percentage (0 ~ 100 %)
         """
+        if not self._check_speed(speed):
+            return False
         angles = self.get_angles()
         if isinstance(joint, int):
             angles[joint] = angle
         elif isinstance(joint, Joint):
             angles[joint.value] = angle
-        self.set_angles(angles, speed)
+        return self.set_angles(angles, speed)
 
     def get_speed(self):
         """Returns current robot's speed.
@@ -1460,6 +1479,8 @@ class Phoenix:
         Returns:
             bool: True if jog started successfully, False otherwise
         """
+        if not self._check_speed(speed):
+            return False
         self._set_robot_move_state(RobotMoveState.JOG_JOINT_STATE, joint, direction)
         self.command_id += 1
         return self._jog_continuous(
@@ -1478,6 +1499,8 @@ class Phoenix:
         Returns:
             bool: True if jog started successfully, False otherwise
         """
+        if not self._check_speed(speed):
+            return False
         self._set_robot_move_state(RobotMoveState.JOG_AXIS_STATE, axis, direction)
         self.command_id += 1
         return self._jog_continuous(
@@ -1538,6 +1561,8 @@ class Phoenix:
         Returns:
             bool: True if jog successfully started, False otherwise
         """
+        if not self._check_speed(speed):
+            return False
         return self._jog_increment(JogMode.JOG_JOINT, joint, increment, speed)
 
     def jog_increment_coord(self, axis, increment, speed):
@@ -1551,6 +1576,8 @@ class Phoenix:
         Returns:
             bool: True if jog successfully started, False otherwise
         """
+        if not self._check_speed(speed):
+            return False
         return self._jog_increment(JogMode.JOG_TELEOP, axis, increment, speed)
 
     def _jog_increment(self, jog_mode, joint_or_axis, incr, speed):
@@ -1605,6 +1632,8 @@ class Phoenix:
         Returns:
             bool: True if jog started successfully, False otherwise
         """
+        if not self._check_speed(speed):
+            return False
         return self._jog_absolute(joint, JogMode.JOG_JOINT, position, speed)
 
     def jog_absolute_coord(self, axis, position, speed):
@@ -1618,6 +1647,8 @@ class Phoenix:
         Returns:
             bool: True if jog started successfully, False otherwise
         """
+        if not self._check_speed(speed):
+            return False
         return self._jog_absolute(axis, JogMode.JOG_TELEOP, position, speed)
 
     def _jog_absolute(self, joint_or_axis, jog_mode, pos, speed):
