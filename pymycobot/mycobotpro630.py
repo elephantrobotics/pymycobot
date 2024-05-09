@@ -1251,7 +1251,8 @@ class Phoenix:
         """Returns robot status.
 
         Returns:
-            bool: True if OK, False if disabled / error / cannot move
+            bool: True if robot started in normal mode, False if free move mode,
+                  disabled, error or cannot move
         """
         return self.state_check()
 
