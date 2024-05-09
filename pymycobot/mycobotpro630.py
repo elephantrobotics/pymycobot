@@ -1168,6 +1168,7 @@ class Phoenix:
 
     def set_estop(self):
         """Puts robot into E-Stop (Emergency Stop) state."""
+        self.tool_set_led_color(255, 0, 0)
         self.c.state(elerob.STATE_ESTOP)
         self.c.wait_complete()
 
