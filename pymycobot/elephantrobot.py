@@ -280,6 +280,21 @@ class ElephantRobot(object):
         return self.send_command(command)
 
     def jog_relative(self, joint_id, angle, speed, mode):
+        """Relative jog.
+
+        Example:
+            jog_relative('J1', 5, 600, 1)
+
+        Args:
+            joint_id (str): 'J1' - 'J6', 'X', 'Y', 'Z', 'RX', 'RY', 'RZ'
+            angle (float): relative angle or coord value to move, can be negative
+                           to move to other direction
+            speed (int): speed value
+            mode (int): 0 (coord mode) or 1 (joint mode)
+
+        Returns:
+            str: return data from socket
+        """
         command = "jog_increment({},{},{},{})\n".format(joint_id, angle, speed, mode)
         return self.send_command(command)
 
