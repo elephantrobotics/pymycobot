@@ -200,7 +200,7 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def set_payload(self, payload):
-        command = "set_speed(" + str(payload) + ")\n"
+        command = "set_payload(" + str(payload) + ")\n"
         self.send_command(command)
 
     def state_on(self):
