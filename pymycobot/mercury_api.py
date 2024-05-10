@@ -57,7 +57,7 @@ class MercuryCommandGenerator(CommandGenerator):
         """Lock all joints"""
         return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS, has_reply=True)
 
-    def go_home(self, robot, speed=20):
+    def go_home(self, robot, speed=10):
         """Control the machine to return to the zero position.
         
         Args:
