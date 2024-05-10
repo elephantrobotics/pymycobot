@@ -279,8 +279,8 @@ class ElephantRobot(object):
         command = 'get_variable("' + str(var_name) + '")\n'
         return self.send_command(command)
 
-    def jog_relative(self, joint_id, angle, speed):
-        command = 'SendJogIncrement("{}","{}","{}")\n'.format(joint_id, angle, speed)
+    def jog_relative(self, joint_id, angle, speed, mode):
+        command = "jog_increment({},{},{},{})\n".format(joint_id, angle, speed, mode)
         return self.send_command(command)
 
     def set_init_gripper(self, gripper_type):
