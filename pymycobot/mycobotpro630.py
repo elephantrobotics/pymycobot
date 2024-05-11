@@ -260,7 +260,6 @@ class DO(Enum):
     PIN_44 = 44
     PIN_45 = 45
     PIN_46 = 46
-    POWERING_ON = 46
 
     BRAKE_ACTIVE_AUTO = 47
     BRAKE_MANUAL_MODE_ENABLE = 48
@@ -659,7 +658,6 @@ class Phoenix:
         """
         self._power_off()
         time.sleep(5.0)
-        self.set_digital_out(DO.POWERING_ON, 1)
         self.enable_manual_brake_control(False)
         power_on_ok = self.is_power_on()
         power_on_retry_count = 0
@@ -673,11 +671,9 @@ class Phoenix:
             time.sleep(1)
         power_on_ok = self.is_power_on()
         if power_on_ok and power_on_only:
-            self.set_digital_out(DO.POWERING_ON, 0)
             return True
         elif not power_on_ok:
             print("power_on_ok is false")
-            self.set_digital_out(DO.POWERING_ON, 0)
             return False
         # power on ok
         servo_enable_ok = False
@@ -688,7 +684,6 @@ class Phoenix:
             servo_enable_retry_count += 1
         if not servo_enable_ok:
             print("servo_enable_ok is false")
-            self.set_digital_out(DO.POWERING_ON, 0)
             return False
 
         # servo motor ok
@@ -704,7 +699,6 @@ class Phoenix:
                 brake_active_retry_count += 1
             if not brake_active_ok:
                 print("brake_active_ok is false")
-                self.set_digital_out(DO.POWERING_ON, 0)
                 return False
         state_on_ok = self.state_check()
         state_on_retry_count = 0
@@ -715,14 +709,12 @@ class Phoenix:
             state_on_retry_count += 1
         if not state_on_ok:
             print("state_on_ok is false")
-            self.set_digital_out(DO.POWERING_ON, 0)
             return False
 
         for i in range(6):
             self.init_can_output(Joint(i))
             self.clear_encoder_error(Joint(i))
 
-        self.set_digital_out(DO.POWERING_ON, 0)
         return True
 
     def start_power_on_only(self):
