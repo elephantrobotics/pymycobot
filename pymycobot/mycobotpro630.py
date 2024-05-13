@@ -469,7 +469,7 @@ class Phoenix:
         4. go to 1.
     """
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, do_init=True):
         """Creates new Phoenix object. It can be used to call methods of Phoenix.
 
         Args:
@@ -481,9 +481,10 @@ class Phoenix:
         self.robot_state = RobotMoveState.IDLE_STATE
         self.command_id = 0
         self.current_robot = 0
-        self.init_hal()
-        self.init_robot()
-        self.init_can()
+        if do_init:
+            self.init_hal()
+            self.init_robot()
+            self.init_can()
         setup_logging(debug)
 
     def init_hal(self):
