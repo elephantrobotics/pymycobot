@@ -672,6 +672,7 @@ class Phoenix:
             time.sleep(1)
         power_on_ok = self.is_power_on()
         if power_on_ok and power_on_only:
+            os.system("halcmd setp or2.0.in1 1")
             return True
         elif not power_on_ok:
             print("power_on_ok is false")
@@ -716,6 +717,7 @@ class Phoenix:
             self.init_can_output(Joint(i))
             self.clear_encoder_error(Joint(i))
 
+        os.system("halcmd setp or2.0.in1 1")
         return True
 
     def start_power_on_only(self):
@@ -728,6 +730,7 @@ class Phoenix:
 
     def shutdown_robot(self):
         """Shutdowns the robot."""
+        os.system("halcmd setp or2.0.in1 0")
         self._power_off()
 
     def _power_on(self):
