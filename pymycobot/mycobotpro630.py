@@ -513,6 +513,9 @@ class Phoenix:
             self.g.newpin(str(i) + ".min_limit", hal.HAL_FLOAT, hal.HAL_OUT)
             self.g.newpin(str(i) + ".max_limit", hal.HAL_FLOAT, hal.HAL_OUT)
 
+        self.g.newpin("esp32-btn", hal.HAL_BIT, hal.HAL_IN)
+        self.g.newpin("esp32-led", hal.HAL_U32, hal.HAL_OUT)
+
         self.g.ready()
 
     def init_hal_serial(self):
