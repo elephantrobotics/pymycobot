@@ -736,6 +736,11 @@ class Phoenix:
         os.system("halcmd setp or2.0.in1 0")
         self._power_off()
 
+    def recover_robot(self):
+        os.system("halcmd setp or2.0.in1 0")
+        self.state_on()
+        os.system("halcmd setp or2.0.in1 1")
+
     def _power_on(self):
         """Powers on robot servos and focuses servo brakes.
 
