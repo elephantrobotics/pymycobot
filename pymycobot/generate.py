@@ -94,48 +94,6 @@ class CommandGenerator(DataProcessor):
         self.log = logging.getLogger(__name__)
         self.calibration_parameters = calibration_parameters
 
-    def _mesg(self, genre, *args, **kwargs):
-        """
-        Args:
-            genre: command type (Command)
-            *args: other data.
-                   It is converted to octal by default.
-                   If the data needs to be encapsulated into hexadecimal,
-                   the array is used to include them. (Data cannot be nested)
-            **kwargs: support `has_reply`
-                has_reply: Whether there is a return value to accept.
-        """
-        command_data = self._process_data_command(genre, self.__class__.__name__, args)
-
-        if genre == 178:
-            # 修改wifi端口
-            command_data = self._encode_int16(command_data)
-            
-        elif genre in [76, 77]:
-            command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
-        elif genre == 115:
-            command_data = [command_data[1],command_data[3]]
-        LEN = len(command_data) + 2
-        
-        command = [
-                ProtocolCode.HEADER,
-                ProtocolCode.HEADER,
-                LEN,
-                genre,
-            ]
-        if command_data:
-            command.extend(command_data)
-        if self.__class__.__name__ in ["Mercury", "MercurySocket"]:
-            command[2] += 1
-            command.extend(self.crc_check(command))
-            # command.extend(command_data)
-        else:
-            command.append(ProtocolCode.FOOTER)
-
-        real_command = self._flatten(command)
-        has_reply = kwargs.get("has_reply", False)
-        return real_command, has_reply
-
     # System status
     def get_robot_version(self):  # TODO: test method <2021-03-11, yourname> #
         """Get cobot version
