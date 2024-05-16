@@ -41,6 +41,8 @@ class ProtocolCode(object):
     IS_FREE_MODE = 0x1B
     COBOTX_GET_ANGLE = 0x1C
     COBOTX_IS_GO_ZERO = 0x1D
+    SET_CONTROL_MODE = 0x1E
+    GET_CONTROL_MODE = 0x1F
     FOCUS_ALL_SERVOS = 0x18
     GO_ZERO = 0x19
     SET_BREAK = 0x19
@@ -70,6 +72,7 @@ class ProtocolCode(object):
     JOG_COORD = 0x32
     JOG_INCREMENT = 0x33
     JOG_STOP = 0x34
+    JOG_INCREMENT_COORD = 0x34
     
     COBOTX_GET_SOLUTION_ANGLES = 0x35
     COBOTX_SET_SOLUTION_ANGLES = 0x36
@@ -126,6 +129,12 @@ class ProtocolCode(object):
     GET_GRIPPER_MODE = 0x6E
 
     GET_ACCEI_DATA = 0x73
+    SET_COLLISION_MODE = 0x74
+    SET_COLLISION_THRESHOLD = 0x75
+    GET_COLLISION_THRESHOLD = 0x76
+    SET_TORQUE_COMP = 0x77
+    GET_TORQUE_COMP = 0x78
+    
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -437,13 +446,15 @@ class DataProcessor(object):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre, arm=6):
-        if not data:
-            return []
         if genre == 177:
             data = str(data)[2:-1].split(": ")
             return data[1][0:-9], data[-1]
-        if not data:
+        elif not data:
             return []
+        elif data == b'\xfe\xfe\x04[\x01\r\x87':
+            # 水星到位反馈
+            return 1
+        
         data = bytearray(data)
         data_len = len(data)
         # Get valid header: 0xfe0xfe
@@ -607,13 +618,14 @@ class DataProcessor(object):
     def _process_single(self, data):
         return data[0] if data else -1
 
-def check_python_version():
-    if sys.version_info.major == 2:
-        return 2
-    elif sys.version_info.major == 3:
-        return 3
-    else:
-        return -1
+    @staticmethod
+    def check_python_version():
+        if sys.version_info.major == 2:
+            return 2
+        elif sys.version_info.major == 3:
+            return 3
+        else:
+            return -1
 
 
 def write(self, command, method=None):
@@ -667,6 +679,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                        ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
             wait_time = 3
+        elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
+            wait_time = 300
     if method is not None:
         if genre == 177:
             while True:
@@ -709,7 +723,11 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre == ProtocolCode.GET_ACCEI_DATA:
             wait_time = 1
         while True and time.time() - t < wait_time:
+            if genre != ProtocolCode.STOP and self.is_stop:
+                break
+            # print(genre)
             data = self._serial_port.read()
+            print(genre, data)
             k += 1
             if _class in ["Mercury", "MercurySocket"]:
                 if data_len == 3:
@@ -745,7 +763,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                         pre = k
         else:
             datas = b''
-        if check_python_version() == 2:
+        print("datas", datas)
+        if DataProcessor.check_python_version() == 2:
             command_log = ""
             for d in datas:
                 command_log += hex(ord(d))[2:] + " "
