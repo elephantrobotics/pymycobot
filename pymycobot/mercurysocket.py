@@ -141,6 +141,7 @@ class MercurySocket(MercuryCommandGenerator):
                         return self._int2angle(res[0])
                 elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
                     i = 9
+                    same_error = []
                     for i in range(9, len(res)):
                         if res[i] != 0:
                             data = bin(res[i])[2:]
@@ -149,7 +150,15 @@ class MercurySocket(MercuryCommandGenerator):
                                 data = "0"+data
                             for j in range(16):
                                 if data[j] != "0":
-                                    res[i].append(15-j)
+                                    error_id = 15-j
+                                    if error_id in [0,5,6]:
+                                        if error_id not in same_error:
+                                            same_error.append(error_id)
+                                            res[i].append(error_id)
+                                    else:
+                                        res[i].append(error_id)
+                            if res[i] == []:
+                                res[i] = 0
                     return res
                 else:
                     return res
