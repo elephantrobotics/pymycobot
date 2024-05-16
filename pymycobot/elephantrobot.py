@@ -56,8 +56,7 @@ class ElephantRobot(object):
                 coords_4 = float(data_arr[3])
                 coords_5 = float(data_arr[4])
                 coords_6 = float(data_arr[5])
-                coords = [coords_1, coords_2, coords_3,
-                          coords_4, coords_5, coords_6]
+                coords = [coords_1, coords_2, coords_3, coords_4, coords_5, coords_6]
                 return coords
             except:
                 return self.invalid_coords()
@@ -122,12 +121,14 @@ class ElephantRobot(object):
         return res == "1"
 
     def upload_file(self, local_filename, remote_filename):
-        """Base64 encode local file, send it over socket and save it on robot
-           as remote_filename.
+        """Upload local file to robot via socket. Permissions are checked before
+           upload so it cannot overwrite system files (owned by root).
 
         Args:
-            local_filename (str): file to send
-            remote_filename (str): save remote file name
+            local_filename (str): absolute or relative path to a file to send
+            remote_filename (str): absolute or relative file path to where
+                                   to upload a file. If path is relative, it is
+                                   relative to ~/RoboFlow/upload folder.
 
         Returns:
             str: ok if success or error message otherwise
@@ -199,7 +200,7 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def set_payload(self, payload):
-        command = "set_speed(" + str(payload) + ")\n"
+        command = "set_payload(" + str(payload) + ")\n"
         self.send_command(command)
 
     def state_on(self):
@@ -216,15 +217,13 @@ class ElephantRobot(object):
 
     def jog_angle(self, joint_str, direction, speed):
         command = (
-            "jog_angle(" + joint_str + "," + str(direction) +
-            "," + str(speed) + ")\n"
+            "jog_angle(" + joint_str + "," + str(direction) + "," + str(speed) + ")\n"
         )
         self.send_command(command)
 
     def jog_coord(self, axis_str, direction, speed):
         command = (
-            "jog_coord(" + axis_str + "," + str(direction) +
-            "," + str(speed) + ")\n"
+            "jog_coord(" + axis_str + "," + str(direction) + "," + str(speed) + ")\n"
         )
         self.send_command(command)
 
@@ -280,9 +279,23 @@ class ElephantRobot(object):
         command = 'get_variable("' + str(var_name) + '")\n'
         return self.send_command(command)
 
-    def jog_relative(self, joint_id, angle, speed):
-        command = 'SendJogIncrement("{}","{}","{}")\n'.format(
-            joint_id, angle, speed)
+    def jog_relative(self, joint_id, angle, speed, mode):
+        """Relative jog.
+
+        Example:
+            jog_relative('J1', 5, 600, 1)
+
+        Args:
+            joint_id (str): 'J1' - 'J6', 'X', 'Y', 'Z', 'RX', 'RY', 'RZ'
+            angle (float): relative angle or coord value to move, can be negative
+                           to move to other direction
+            speed (int): speed value
+            mode (int): 0 (coord mode) or 1 (joint mode)
+
+        Returns:
+            str: return data from socket
+        """
+        command = "jog_increment({},{},{},{})\n".format(joint_id, angle, speed, mode)
         return self.send_command(command)
 
     def set_init_gripper(self, gripper_type):
@@ -297,7 +310,7 @@ class ElephantRobot(object):
         mode:0 / 1
         """
 
-        command = "set_cag_gripper_mode("+str(mode) + ")\n"
+        command = "set_cag_gripper_mode(" + str(mode) + ")\n"
         return self.send_command(command)
 
     def set_cag_gripper_value(self, value, speed):
@@ -305,8 +318,7 @@ class ElephantRobot(object):
         value: 0-100
         speed: 1-100
         """
-        command = "set_cag_gripper_value( " + \
-            str(value) + ',' + str(speed) + "  )\n"
+        command = "set_cag_gripper_value( " + str(value) + "," + str(speed) + "  )\n"
         return self.send_command(command)
 
     def get_cag_gripper_value(self):

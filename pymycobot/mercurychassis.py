@@ -8,6 +8,9 @@ class MercuryChassisError(Exception):
     pass
 
 class MercuryChassis:
+    """
+    Mercury X1 mobile chassis car socket class
+    """
     def __init__(self, ip=None):
         self.ifname = b"wlan0"
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

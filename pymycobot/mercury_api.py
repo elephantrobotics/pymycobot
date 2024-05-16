@@ -4,6 +4,7 @@
 import sys
 import logging
 import time
+import struct
 
 from pymycobot.log import setup_logging
 from pymycobot.error import calibration_parameters
@@ -15,6 +16,242 @@ class MercuryCommandGenerator(CommandGenerator):
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
+        self.is_stop = False
+        self.write_command = []
+        self.read_command = []
+        
+    def _process_received(self, data):
+        if not data:
+            return []
+        elif data == b'\xfe\xfe\x04[\x01\r\x87':
+            # 水星到位反馈
+            return data
+        
+        data = bytearray(data)
+        data_len = len(data)
+        # Get valid header: 0xfe0xfe
+        header_i, header_j = 0, 1
+        while header_j < data_len - 4:
+            if self._is_frame_header(data, header_i, header_j):
+                cmd_id = data[header_i + 3]
+                if cmd_id in self.write_command:
+                    break
+            header_i += 1
+            header_j += 1
+        else:
+            return []
+        return data
+        if arm == 14:
+            data_len = data[header_i + 2] - 3
+            
+        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
+        if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
+            data_pos = header_i + 4
+        elif cmd_id in unique_data:
+            if arm == 12:
+                data_pos = header_i + 6
+            else:
+                data_pos = header_i + 5
+            data_len -= 1
+        else:
+            if arm in [6, 7, 14, 8]:
+                data_pos = header_i + 4
+            elif arm == 12:
+                data_pos = header_i + 5
+        valid_data = data[data_pos : data_pos + data_len]
+
+        # process valid data
+        res = []   
+        if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
+            ignor_t = (
+                ProtocolCode.GET_SERVO_CURRENTS,
+                ProtocolCode.GET_SERVO_TEMPS,
+                ProtocolCode.GET_SERVO_VOLTAGES,
+                ProtocolCode.GET_SERVO_STATUS,
+                ProtocolCode.IS_ALL_SERVO_ENABLE
+            )
+            if data_len == 8 and (
+                    (arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION) or
+                    (arm == 8 and cmd_id in ignor_t)
+            ):
+                for v in valid_data:
+                    res.append(v)
+                return res
+            elif data_len == 8 and arm == 14 and cmd_id == ProtocolCode.GET_DOWN_ENCODERS:
+                i = 0
+                while i < data_len:
+                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    i+=4
+                    res.append(byte_value)
+                return res
+            for header_i in range(0, len(valid_data), 2):
+                one = valid_data[header_i : header_i + 2]
+                res.append(self._decode_int16(one))
+        elif data_len == 2:
+            if genre in [ProtocolCode.IS_SERVO_ENABLE]:
+                return [self._decode_int8(valid_data[1:2])]
+            elif genre in [ProtocolCode.GET_ERROR_INFO]:
+                return [self._decode_int8(valid_data[1:])]
+            res.append(self._decode_int16(valid_data))
+        elif data_len == 3:
+            res.append(self._decode_int16(valid_data[1:]))
+        elif data_len == 4:
+            if genre == ProtocolCode.COBOTX_GET_ANGLE and arm == 14:
+                byte_value = int.from_bytes(valid_data, byteorder='big', signed=True)
+                res.append(byte_value)
+                return res
+            for i in range(1,4):
+                res.append(valid_data[i])
+        elif data_len == 7:
+            error_list = [i for i in valid_data]
+            for i in error_list:
+                if i in range(16,23):
+                    res.append(1)
+                elif i in range(23,29):
+                    res.append(2)
+                elif i in range(32,112):
+                    res.append(3)
+                else:
+                    res.append(i)
+        elif data_len == 28:
+            for i in range(0, data_len, 4):
+                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                res.append(byte_value) 
+        elif data_len == 40:
+            i = 0
+            while i < data_len:
+                if i < 28:
+                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    res.append(byte_value) 
+                    i+=4
+                else:
+                    one = valid_data[i : i + 2]
+                    res.append(self._decode_int16(one))
+                    i+=2
+        elif data_len == 30:
+            i = 0
+            res = []
+            while i < 30:
+                if i < 9 or i >= 23:
+                    res.append(valid_data[i])
+                    i+=1
+                elif i < 23:
+                    one = valid_data[i : i + 2]
+                    res.append(self._decode_int16(one))
+                    i+=2
+            return res
+        elif data_len == 38:
+            i = 0
+            res = []
+            while i < data_len:
+                if i < 10 or i >= 30:
+                    res.append(valid_data[i])
+                    i+=1
+                elif i < 38:
+                    one = valid_data[i : i + 2]
+                    res.append(self._decode_int16(one))
+                    i+=2
+            return res
+        else:
+            if genre in [
+                ProtocolCode.GET_SERVO_VOLTAGES,
+                ProtocolCode.GET_SERVO_STATUS,
+                ProtocolCode.GET_SERVO_TEMPS,
+            ]:
+                for i in range(data_len):
+                    data1 = self._decode_int8(valid_data[i : i + 1])
+                    res.append(0xFF & data1 if data1 < 0 else data1)
+                return res
+            res.append(self._decode_int8(valid_data))
+        if genre == ProtocolCode.GET_ACCEI_DATA:
+            for i in range(len(res)):
+                res[i] /= 1000
+        return res
+        
+        
+    def read_thread(self, method=None):
+        while True:
+            datas = b""
+            data_len = -1
+            k = 0
+            pre = 0
+            t = time.time()
+            wait_time = 0.1   
+            if method is not None:
+                try:
+                    self.sock.settimeout(wait_time)
+                    data = self.sock.recv(1024)
+                    if isinstance(data, str):
+                        datas = bytearray()
+                        for i in data:   
+                            datas += hex(ord(i))
+                except:
+                    data = b""
+                if self.check_python_version() == 2:
+                    command_log = ""
+                    for d in data:
+                        command_log += hex(ord(d))[2:] + " "
+                    self.log.debug("_read : {}".format(command_log))
+                    # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                else:
+                    command_log = ""
+                    for d in data:
+                        command_log += hex(d)[2:] + " "
+                    self.log.debug("_read : {}".format(command_log))
+                return data
+            else:
+                while True and time.time() - t < wait_time:
+                    data = self._serial_port.read()
+                    k += 1
+                    if data_len == 3:
+                        datas += data
+                        crc = self._serial_port.read(2)
+                        if self.crc_check(datas) == [v for v in crc]:
+                            datas+=crc
+                            break
+                    if data_len == 1 and data == b"\xfa":
+                        datas += data
+                        # if [i for i in datas] == command:
+                        #     datas = b''
+                        #     data_len = -1
+                        #     k = 0
+                        #     pre = 0
+                        #     continue
+                        # break
+                    elif len(datas) == 2:
+                        data_len = struct.unpack("b", data)[0]
+                        datas += data
+                    elif len(datas) > 2 and data_len > 0:
+                        datas += data
+                        data_len -= 1
+                    elif data == b"\xfe":
+                        if datas == b"":
+                            datas += data
+                            pre = k
+                        else:
+                            if k - 1 == pre:
+                                datas += data
+                            else:
+                                datas = b"\xfe"
+                                pre = k
+                else:
+                    datas = b''
+                if datas:
+                    res = self._process_received(datas)
+                    
+                    if self.check_python_version() == 2:
+                        command_log = ""
+                        for d in datas:
+                            command_log += hex(ord(d))[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
+                    else:
+                        command_log = ""
+                        for d in datas:
+                            command_log += hex(d)[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
+                    with self.lock:
+                        self.read_command.append(res)
+                # return datas
         
     def set_solution_angles(self, angle, speed):
         """Set zero space deflection angle value
@@ -191,15 +428,15 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed)
     
-    def drag_tech_save(self):
+    def drag_teach_save(self):
         """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 90 seconds."""
         return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE)
     
-    def drag_tech_execute(self):
+    def drag_teach_execute(self):
         """Start dragging the teaching point and only execute it once."""
         return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE)
     
-    def drag_tech_pause(self):
+    def drag_teach_pause(self):
         """Pause recording of dragging teaching point"""
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
         
@@ -346,6 +583,8 @@ class MercuryCommandGenerator(CommandGenerator):
     
     def stop(self):
         """Stop moving"""
+        # self.is_stop = True
+        # self.write_command.remove()
         return self._mesg(ProtocolCode.STOP, has_reply=True)
     
     def get_robot_type(self):
@@ -410,7 +649,7 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id = coord_id, speed = speed)
         value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
-        return self._mesg(ProtocolCode.JOG_INCREMENT, coord_id, [value], speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed)
     
     def get_quick_move_info(self):
         return self._mesg(ProtocolCode.GET_QUICK_INFO, has_reply=True)
@@ -486,4 +725,65 @@ class MercuryCommandGenerator(CommandGenerator):
     
     def get_down_encoders(self):
         return self._mesg(ProtocolCode.GET_DOWN_ENCODERS, has_reply=True)
+    
+    def set_control_mode(self, mode):
+        """Set robot motion mode
+
+        Args:
+            mode (int): 0 - location mode, 1 - torque mode
+
+        """
+        return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
+    
+    def get_control_mode(self):
+        """Get robot motion mode
+
+        Returns:
+            int: 0 - location mode, 1 - torque mode
+        """
+        return self._mesg(ProtocolCode.GET_CONTROL_MODE, has_reply=True)
+    
+    def set_collision_mode(self, mode):
+        """Set collision detection mode
+
+        Args:
+            mode (int): 0 - disable, 1 - enable
+
+        """
+        return self._mesg(ProtocolCode.SET_COLLISION_MODE, mode)
+    
+    def set_collision_threshold(self, joint_id, value=100):
+        """Set joint collision threshold
+
+        Args:
+            joint_id (int): joint ID， range 1 ~ 7
+            value (int): Collision threshold, range is 50 ~ 250, default is 100, the smaller the value, the easier it is to trigger a collision
+        """
+        return self._mesg(ProtocolCode.SET_COLLISION_THRESHOLD, joint_id, value)
+    
+    def get_collision_threshold(self, joint_id):
+        """Get joint collision threshold
+
+        Args:
+            joint_id (int): joint ID， range 1 ~ 7
+        """
+        return self._mesg(ProtocolCode.GET_COLLISION_THRESHOLD, joint_id, has_reply=True)
+    
+    def set_torque_comp(self, joint_id, value=100):
+        """Set joint torque compensation
+
+        Args:
+            joint_id (int): joint ID， range 1 ~ 7
+            value (int): Compensation value, range is 0 ~ 250, default is 100, The smaller the value, the harder it is to drag the joint
+        """
+        return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, value)
+    
+    def get_torque_comp(self, joint_id):
+        """Get joint torque compensation
+
+        Args:
+            joint_id (int): joint ID， range 1 ~ 7
+        """
+        return self._mesg(ProtocolCode.GET_TORQUE_COMP, joint_id, has_reply=True)
+    
         

@@ -470,16 +470,16 @@ print(mc.get_angles())
 
 ### 11. Drag Teaching
 
-#### `drag_tech_save()`
+#### `drag_teach_save()`
 
 - **function:** Start recording and dragging teaching points.
   - Note: In order to display the best sports effect, the recording time should not exceed 90 seconds
 
-#### `drag_tech_pause()`
+#### `drag_teach_pause()`
 
 - **function:** Pause sampling
 
-#### `drag_tech_execute()`
+#### `drag_teach_execute()`
 
 - **function:** Start dragging the teach-in point, executing it only once.
 
