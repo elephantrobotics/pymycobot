@@ -660,7 +660,7 @@ class Phoenix:
         Returns:
             bool: True if start successful, False otherwise.
         """
-        self._power_off()
+        self.shutdown_robot()
         time.sleep(5.0)
         self.enable_manual_brake_control(False)
         power_on_ok = self.is_power_on()
