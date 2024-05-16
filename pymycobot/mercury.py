@@ -221,7 +221,7 @@ class Mercury(MercuryCommandGenerator):
                     ProtocolCode.STOP,
                     ProtocolCode.SET_BREAK,
                     ProtocolCode.IS_BTN_CLICKED,
-                ] or (isinstance(res, list) and len(res) == 1):
+                ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
                     return [self._int2angle(angle) for angle in res]
