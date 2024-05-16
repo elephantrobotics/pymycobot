@@ -581,12 +581,6 @@ class MercuryCommandGenerator(CommandGenerator):
         self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id, has_reply=True)
     
-    def stop(self):
-        """Stop moving"""
-        # self.is_stop = True
-        # self.write_command.remove()
-        return self._mesg(ProtocolCode.STOP, has_reply=True)
-    
     def get_robot_type(self):
         """Get robot type
         """
@@ -695,7 +689,7 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 1 - Stop completion
         """
-        if deceleration:
+        if deceleration is False:
             return self._mesg(ProtocolCode.STOP, has_reply=True)
         else:
             return self._mesg(ProtocolCode.STOP, 1, has_reply=True)
