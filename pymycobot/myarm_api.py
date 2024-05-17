@@ -248,6 +248,14 @@ class MyArmAPI(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ENCODER, servo_id, has_reply=True)
 
+    def get_servos_encoder_drag(self):
+        """ Reads the current encoder value and operating speed of all servo motors
+        Returns:
+            encoders (list[int * 8]): 0-4095
+            speeds (list[int * 8]): 0-4095
+        """
+        return self._mesg(ProtocolCode.GET_SERVOS_ENCODER_DRAG, has_reply=True)
+
     def is_all_servos_enabled(self):
         """
         Get the connection status of multiple servo motors
