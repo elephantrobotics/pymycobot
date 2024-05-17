@@ -41,133 +41,6 @@ class MercuryCommandGenerator(CommandGenerator):
         else:
             return []
         return data
-        if arm == 14:
-            data_len = data[header_i + 2] - 3
-            
-        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
-        if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
-            data_pos = header_i + 4
-        elif cmd_id in unique_data:
-            if arm == 12:
-                data_pos = header_i + 6
-            else:
-                data_pos = header_i + 5
-            data_len -= 1
-        else:
-            if arm in [6, 7, 14, 8]:
-                data_pos = header_i + 4
-            elif arm == 12:
-                data_pos = header_i + 5
-        valid_data = data[data_pos : data_pos + data_len]
-
-        # process valid data
-        res = []   
-        if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
-            ignor_t = (
-                ProtocolCode.GET_SERVO_CURRENTS,
-                ProtocolCode.GET_SERVO_TEMPS,
-                ProtocolCode.GET_SERVO_VOLTAGES,
-                ProtocolCode.GET_SERVO_STATUS,
-                ProtocolCode.IS_ALL_SERVO_ENABLE
-            )
-            if data_len == 8 and (
-                    (arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION) or
-                    (arm == 8 and cmd_id in ignor_t)
-            ):
-                for v in valid_data:
-                    res.append(v)
-                return res
-            elif data_len == 8 and arm == 14 and cmd_id == ProtocolCode.GET_DOWN_ENCODERS:
-                i = 0
-                while i < data_len:
-                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    i+=4
-                    res.append(byte_value)
-                return res
-            for header_i in range(0, len(valid_data), 2):
-                one = valid_data[header_i : header_i + 2]
-                res.append(self._decode_int16(one))
-        elif data_len == 2:
-            if genre in [ProtocolCode.IS_SERVO_ENABLE]:
-                return [self._decode_int8(valid_data[1:2])]
-            elif genre in [ProtocolCode.GET_ERROR_INFO]:
-                return [self._decode_int8(valid_data[1:])]
-            res.append(self._decode_int16(valid_data))
-        elif data_len == 3:
-            res.append(self._decode_int16(valid_data[1:]))
-        elif data_len == 4:
-            if genre == ProtocolCode.COBOTX_GET_ANGLE and arm == 14:
-                byte_value = int.from_bytes(valid_data, byteorder='big', signed=True)
-                res.append(byte_value)
-                return res
-            for i in range(1,4):
-                res.append(valid_data[i])
-        elif data_len == 7:
-            error_list = [i for i in valid_data]
-            for i in error_list:
-                if i in range(16,23):
-                    res.append(1)
-                elif i in range(23,29):
-                    res.append(2)
-                elif i in range(32,112):
-                    res.append(3)
-                else:
-                    res.append(i)
-        elif data_len == 28:
-            for i in range(0, data_len, 4):
-                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                res.append(byte_value) 
-        elif data_len == 40:
-            i = 0
-            while i < data_len:
-                if i < 28:
-                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    res.append(byte_value) 
-                    i+=4
-                else:
-                    one = valid_data[i : i + 2]
-                    res.append(self._decode_int16(one))
-                    i+=2
-        elif data_len == 30:
-            i = 0
-            res = []
-            while i < 30:
-                if i < 9 or i >= 23:
-                    res.append(valid_data[i])
-                    i+=1
-                elif i < 23:
-                    one = valid_data[i : i + 2]
-                    res.append(self._decode_int16(one))
-                    i+=2
-            return res
-        elif data_len == 38:
-            i = 0
-            res = []
-            while i < data_len:
-                if i < 10 or i >= 30:
-                    res.append(valid_data[i])
-                    i+=1
-                elif i < 38:
-                    one = valid_data[i : i + 2]
-                    res.append(self._decode_int16(one))
-                    i+=2
-            return res
-        else:
-            if genre in [
-                ProtocolCode.GET_SERVO_VOLTAGES,
-                ProtocolCode.GET_SERVO_STATUS,
-                ProtocolCode.GET_SERVO_TEMPS,
-            ]:
-                for i in range(data_len):
-                    data1 = self._decode_int8(valid_data[i : i + 1])
-                    res.append(0xFF & data1 if data1 < 0 else data1)
-                return res
-            res.append(self._decode_int8(valid_data))
-        if genre == ProtocolCode.GET_ACCEI_DATA:
-            for i in range(len(res)):
-                res[i] /= 1000
-        return res
-        
         
     def read_thread(self, method=None):
         while True:
@@ -201,39 +74,43 @@ class MercuryCommandGenerator(CommandGenerator):
                 return data
             else:
                 while True and time.time() - t < wait_time:
-                    data = self._serial_port.read()
-                    k += 1
-                    if data_len == 3:
-                        datas += data
-                        crc = self._serial_port.read(2)
-                        if self.crc_check(datas) == [v for v in crc]:
-                            datas+=crc
-                            break
-                    if data_len == 1 and data == b"\xfa":
-                        datas += data
-                        # if [i for i in datas] == command:
-                        #     datas = b''
-                        #     data_len = -1
-                        #     k = 0
-                        #     pre = 0
-                        #     continue
-                        # break
-                    elif len(datas) == 2:
-                        data_len = struct.unpack("b", data)[0]
-                        datas += data
-                    elif len(datas) > 2 and data_len > 0:
-                        datas += data
-                        data_len -= 1
-                    elif data == b"\xfe":
-                        if datas == b"":
+                    try:
+                        data = self._serial_port.read()
+                        k += 1
+                        if data_len == 3:
                             datas += data
-                            pre = k
-                        else:
-                            if k - 1 == pre:
+                            crc = self._serial_port.read(2)
+                            if self.crc_check(datas) == [v for v in crc]:
+                                datas+=crc
+                                break
+                        if data_len == 1 and data == b"\xfa":
+                            datas += data
+                            # if [i for i in datas] == command:
+                            #     datas = b''
+                            #     data_len = -1
+                            #     k = 0
+                            #     pre = 0
+                            #     continue
+                            # break
+                        elif len(datas) == 2:
+                            data_len = struct.unpack("b", data)[0]
+                            datas += data
+                        elif len(datas) > 2 and data_len > 0:
+                            datas += data
+                            data_len -= 1
+                        elif data == b"\xfe":
+                            if datas == b"":
                                 datas += data
-                            else:
-                                datas = b"\xfe"
                                 pre = k
+                            else:
+                                if k - 1 == pre:
+                                    datas += data
+                                else:
+                                    datas = b"\xfe"
+                                    pre = k
+                    except Exception as e:
+                        time.sleep(0.1)
+                        self.log.error(e)
                 else:
                     datas = b''
                 if datas:
