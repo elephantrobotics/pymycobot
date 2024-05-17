@@ -254,7 +254,7 @@ class ProtocolCode(object):
     CLEAR_ROBOT_ERROR = 0x16
     GET_RECV_QUEUE_SIZE = 0x17
     SET_RECV_QUEUE_SIZE = 0x18
-
+    GET_SERVOS_ENCODER_DRAG = 0xEF
     # IIC
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
@@ -576,6 +576,11 @@ class DataProcessor(object):
                     res.append(self._decode_int16(one))
                     i+=2
             return res
+        elif data_len == 32:
+            def byte2int(bvs):
+                return list(map(lambda _i: self._decode_int16(bvs[_i:_i + 2]), range(0, 16, 2)))
+            return [byte2int(valid_data[0:16]), byte2int(valid_data[16:32])]
+
         elif data_len == 38:
             i = 0
             res = []
