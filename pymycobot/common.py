@@ -659,7 +659,7 @@ def write(self, command, method=None):
                 log_command.append(hex(i))
         self.log.debug("_write: {}".format(log_command))
                 
-        py_version = check_python_version()
+        py_version = DataProcessor.check_python_version()
         if py_version == 2:
             self.sock.sendall("".join([chr(b) for b in command]))
         else:
@@ -718,7 +718,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                         datas += hex(ord(i))
             except:
                 data = b""
-        if check_python_version() == 2:
+        if DataProcessor.check_python_version() == 2:
             command_log = ""
             for d in data:
                 command_log += hex(ord(d))[2:] + " "
@@ -739,11 +739,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre == ProtocolCode.GET_ACCEI_DATA:
             wait_time = 1
         while True and time.time() - t < wait_time:
-            if genre != ProtocolCode.STOP and self.is_stop:
-                break
-            # print(genre)
             data = self._serial_port.read()
-            print(genre, data)
             k += 1
             if _class in ["Mercury", "MercurySocket"]:
                 if data_len == 3:
@@ -779,7 +775,6 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                         pre = k
         else:
             datas = b''
-        print("datas", datas)
         if DataProcessor.check_python_version() == 2:
             command_log = ""
             for d in datas:
