@@ -34,15 +34,16 @@ class CreateSerial(QThread):
                     
                     
                     if (self.index == 1 or self.index == 2) and self.parent_serial is not None and data["angle"] and data["speed"]:
-                        data["angle"] = self.serial.get_servos_encoder()
-                        data["speed"] = self.serial.get_servos_speed()
+                        values = self.serial.get_servos_encoder_drag()
+                        data["angle"] = values[0]
+                        data["speed"] = values[1]
                         data["angle"][3] = 4096 - data["angle"][3]
                         data["angle"][-1] *= 1.1
                         data["angle"][-1] = int(data["angle"][-1])
                         if data["angle"][-1] > 2048:
                             data["angle"][-1] = 2048
-                        # self.parent_serial.set_servos_encoder_drag(data["angle"], data["speed"])
-                        self.parent_serial.serial.set_servos_encoder(data["angle"], 100)
+                        self.parent_serial.set_servos_encoder_drag(data["angle"], data["speed"])
+                        # self.parent_serial.serial.set_servos_encoder(data["angle"], 100)
                     else:
                         data["angle"] = self.serial.get_servos_encoder()
                         data["speed"] = self.serial.get_servos_speed()
