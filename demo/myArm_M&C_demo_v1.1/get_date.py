@@ -12,7 +12,7 @@ class CreateSerial(QThread):
         if index in [1,2]:
             self.serial = MyArmC(port)
         else:
-            self.serial = MyArmM(port)
+            self.serial = MyArmM(port, 1000000)
         self.index = index
         self.parent_serial = parent_serial
         self.serial_type = self.serial.__class__.__name__
@@ -34,22 +34,27 @@ class CreateSerial(QThread):
                     
                     
                     if (self.index == 1 or self.index == 2) and self.parent_serial is not None and data["angle"] and data["speed"]:
+                        # print(1)
                         values = self.serial.get_servos_encoder_drag()
+                        # print(values)
                         data["angle"] = values[0]
                         data["speed"] = values[1]
                         data["angle"][3] = 4096 - data["angle"][3]
-                        data["angle"][-1] *= 1.1
-                        data["angle"][-1] = int(data["angle"][-1])
+                        if data["angle"][-1] < 2000:
+                            data["angle"][-1] /= 1.1
+                            data["angle"][-1] = int(data["angle"][-1])
                         if data["angle"][-1] > 2048:
                             data["angle"][-1] = 2048
-                        self.parent_serial.set_servos_encoder_drag(data["angle"], data["speed"])
+                        # print(data["angle"], data["speed"])
+                        self.parent_serial.serial.set_servos_encoder_drag(data["angle"], data["speed"])
                         # self.parent_serial.serial.set_servos_encoder(data["angle"], 100)
                     else:
-                        data["angle"] = self.serial.get_servos_encoder()
-                        data["speed"] = self.serial.get_servos_speed()
-                        time.sleep(1)
-                    if data["angle"] and data["speed"]:
-                        self.progress.emit({str(self.index):data})
-            except:
-                pass
+                        # data["angle"] = self.serial.get_servos_encoder()
+                        # data["speed"] = self.serial.get_servos_speed()
+                        # time.sleep(1)
+                        pass
+                    # if data["angle"] and data["speed"]:
+                    #     self.progress.emit({str(self.index):data})
+            except Exception as e:
+                print(e)
             time.sleep(0.0001)
