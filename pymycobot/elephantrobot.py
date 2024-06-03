@@ -18,7 +18,7 @@ class ElephantRobot(object):
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
-        self.BUFFSIZE = 2048
+        self.BUFFSIZE = 8 * 1024 * 1024
         self.ADDR = (host, port)
         self.tcp_client = socket(AF_INET, SOCK_STREAM)
 
@@ -140,6 +140,11 @@ class ElephantRobot(object):
         command = "upload_file({},{},{})".format(
             content_base64, remote_filename, content_sha256
         )
+        res = self.send_command(command)
+        return res
+
+    def read_text_file(self, remote_filename):
+        command = f"read_text_file({remote_filename})"
         res = self.send_command(command)
         return res
 
