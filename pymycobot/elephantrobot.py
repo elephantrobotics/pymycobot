@@ -134,7 +134,7 @@ class ElephantRobot(object):
             str: ok if success or error message otherwise
         """
         with open(local_filename, "rb") as f:
-            content = f.read().encode()
+            content = f.read()
         content_base64 = base64.b64encode(content).decode()
         content_sha256 = hashlib.sha256(content).hexdigest()
         command = "upload_file({},{},{})".format(
