@@ -417,8 +417,9 @@ class DataProcessor(object):
 
         processed_args = []
         for index in range(len(args)):
+            print(index, args)
             if isinstance(args[index], list):
-                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and _class in ["Mercury", "MercurySocket"]:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES] and index in [0, 1] and _class in ["Mercury", "MercurySocket"]:
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -643,7 +644,7 @@ def write(self, command, method=None):
                 log_command.append(hex(i))
         self.log.debug("_write: {}".format(log_command))
                 
-        py_version = check_python_version()
+        py_version = DataProcessor.check_python_version()
         if py_version == 2:
             self.sock.sendall("".join([chr(b) for b in command]))
         else:
@@ -653,7 +654,7 @@ def write(self, command, method=None):
                 command = bytes(command)
             self.sock.sendall(command)
     else:
-        self._serial_port.reset_input_buffer()
+        # self._serial_port.reset_input_buffer()
         command_log = ""
         for i in command:
             command_log += hex(i)[2:] + " "
@@ -702,7 +703,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                         datas += hex(ord(i))
             except:
                 data = b""
-        if check_python_version() == 2:
+        if DataProcessor.check_python_version() == 2:
             command_log = ""
             for d in data:
                 command_log += hex(ord(d))[2:] + " "
@@ -727,7 +728,6 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                 break
             # print(genre)
             data = self._serial_port.read()
-            print(genre, data)
             k += 1
             if _class in ["Mercury", "MercurySocket"]:
                 if data_len == 3:
@@ -763,7 +763,6 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                         pre = k
         else:
             datas = b''
-        print("datas", datas)
         if DataProcessor.check_python_version() == 2:
             command_log = ""
             for d in datas:
