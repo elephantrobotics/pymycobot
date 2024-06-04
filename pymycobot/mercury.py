@@ -289,6 +289,8 @@ class Mercury(MercuryCommandGenerator):
                                     if error_id in [0,5,6]:
                                         if error_id not in same_error:
                                             same_error.append(error_id)
+                                            # if error_id in [3,6]:
+                                            #     continue
                                             res[i].append(error_id)
                                     else:
                                         res[i].append(error_id)
