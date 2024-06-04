@@ -409,7 +409,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre == ProtocolCode.SET_ENCODERS_DRAG and index == 0 and _class in ["Mercury", "MercurySocket"]:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES] and index in [0, 1] and _class in ["Mercury", "MercurySocket"]:
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []

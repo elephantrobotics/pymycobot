@@ -1406,13 +1406,14 @@ Set the terminal atom io status
 
 ### jog_rpy
 
-- **Prototype**: `jog_rpy(end_direction, direction)`
+- **Prototype**: `jog_rpy(end_direction, direction, speed)`
 
 - **Description**: Rotate the end around a fixed axis in the base coordinate system.
 
 - **Parameters**
   - `end_direction (int)`: Roll, Pitch, Yaw (1-3)
   - `direction (int)`: 1 - forward rotation, 0 - reverse rotation
+  - `speed (int)`: 1 ~ 100
 
 ### set_void_compensate
 
