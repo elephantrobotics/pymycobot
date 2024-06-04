@@ -339,6 +339,16 @@ class ElephantRobot(object):
         command = "set_cag_gripper_enabled(" + str(mode) + ")\n"
         return self.send_command(command)
 
+    def set_cag_gripper_open(self):
+        """Opens CAG gripper."""
+        self.set_digital_out(16, 0)
+        self.set_digital_out(17, 1)
+
+    def set_cag_gripper_close(self):
+        """Closes CAG gripper."""
+        self.set_digital_out(16, 1)
+        self.set_digital_out(17, 0)
+
 
 if __name__ == "__main__":
     ep = ElephantRobot("192.168.124.28", 5001)
