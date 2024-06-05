@@ -273,7 +273,7 @@ class MercuryCommandGenerator(CommandGenerator):
                         for j in range(16):
                             if data[j] != "0":
                                 error_id = 15-j
-                                if error_id in [0,5,6]:
+                                if error_id in [0,3,5,6]:
                                     if error_id not in same_error:
                                         same_error.append(error_id)
                                         if error_id in [3,6]:
