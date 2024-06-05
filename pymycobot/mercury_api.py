@@ -207,6 +207,7 @@ class MercuryCommandGenerator(CommandGenerator):
                 ProtocolCode.STOP,
                 ProtocolCode.SET_BREAK,
                 ProtocolCode.IS_BTN_CLICKED,
+                ProtocolCode.GET_CONTROL_MODE
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
@@ -255,7 +256,7 @@ class MercuryCommandGenerator(CommandGenerator):
                             if res[i] == 1:
                                 r.append(i)
                 return r
-            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES]:
+            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.GET_POS_OVER]:
                     return self._int2angle(res[0])
             elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
                 if len(res) == 23:
@@ -821,7 +822,7 @@ class MercuryCommandGenerator(CommandGenerator):
         Args:
             value (_type_): _description_
         """
-        return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, value)
+        return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, [value*100])
         
     def get_pos_over_shoot(self):
         """Get position deviation value
