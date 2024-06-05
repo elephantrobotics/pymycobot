@@ -1170,15 +1170,16 @@ class CommandGenerator(DataProcessor):
             int: 0 or 1 (1 - success)
         """
     
-    def jog_rpy(self, end_direction, direction):
+    def jog_rpy(self, end_direction, direction, speed):
         """Rotate the end around a fixed axis in the base coordinate system
 
         Args:
             end_direction (int):  Roll, Pitch, Yaw (1-3)
             direction (int): 1 - forward rotation, 0 - reverse rotation
+            speed (int): 1 ~ 100
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, end_direction=end_direction)
-        return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction)
+        self.calibration_parameters(class_name = self.__class__.__name__, end_direction=end_direction, speed=speed)
+        return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
     
     def set_void_compensate(self, mode):
         """Set void compensation mode
