@@ -53,8 +53,8 @@ class Mercury(MercuryCommandGenerator):
         with self.lock:
             self.write_command.append(genre)
             self._write(self._flatten(real_command))
-        if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-            has_reply = True
+        # if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
+        #     has_reply = True
         if has_reply:
             t = time.time()
             wait_time = 0.1   
@@ -289,8 +289,8 @@ class Mercury(MercuryCommandGenerator):
                                     if error_id in [0,5,6]:
                                         if error_id not in same_error:
                                             same_error.append(error_id)
-                                            # if error_id in [3,6]:
-                                            #     continue
+                                            if error_id in [3,6]:
+                                                continue
                                             res[i].append(error_id)
                                     else:
                                         res[i].append(error_id)
