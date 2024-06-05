@@ -39,8 +39,8 @@ class MercuryCommandGenerator(CommandGenerator):
         with self.lock:
             self.write_command.append(genre)
             self._write(self._flatten(real_command))
-        if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-            has_reply = True
+        # if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
+        #     has_reply = True
         if has_reply:
             t = time.time()
             wait_time = 0.1   
@@ -49,9 +49,9 @@ class MercuryCommandGenerator(CommandGenerator):
             elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                         ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
                 wait_time = 3
-            elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-                wait_time = 300
-                is_in_position = True
+            # elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
+            #     wait_time = 300
+            #     is_in_position = True
             need_break = False
             while True and time.time() - t < wait_time:
                 for data in self.read_command:
@@ -259,29 +259,31 @@ class MercuryCommandGenerator(CommandGenerator):
             elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.GET_POS_OVER]:
                     return self._int2angle(res[0])
             elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+                same_error = []
                 if len(res) == 23:
-                    i = 9
-                    for i in range(9, len(res)):
-                        if res[i] != 0:
-                            data = bin(res[i])[2:]
-                            res[i] = []
-                            while len(data) != 16:
-                                data = "0"+data
-                            for j in range(16):
-                                if data[j] != "0":
-                                    res[i].append(15-j)
-                    return res
+                    index = 9
                 else:
-                    for i in range(10, len(res)):
-                        if res[i] != 0:
-                            data = bin(res[i])[2:]
-                            res[i] = []
-                            while len(data) != 16:
-                                data = "0"+data
-                            for j in range(16):
-                                if data[j] != "0":
-                                    res[i].append(15-j)
-                    return res
+                    index = 10
+                for i in range(index, len(res)):
+                    if res[i] != 0:
+                        data = bin(res[i])[2:]
+                        res[i] = []
+                        while len(data) != 16:
+                            data = "0"+data
+                        for j in range(16):
+                            if data[j] != "0":
+                                error_id = 15-j
+                                if error_id in [0,5,6]:
+                                    if error_id not in same_error:
+                                        same_error.append(error_id)
+                                        if error_id in [3,6]:
+                                            continue
+                                        res[i].append(error_id)
+                                else:
+                                    res[i].append(error_id)
+                        if res[i] == []:
+                            res[i] = 0
+                return res
             else:
                 return res
     
