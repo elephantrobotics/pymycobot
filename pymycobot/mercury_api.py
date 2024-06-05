@@ -72,6 +72,8 @@ class MercuryCommandGenerator(CommandGenerator):
                 if need_break:
                     break
                 time.sleep(0.01)
+            if data is None:
+                return data
             res = []
             data = bytearray(data)
             data_len = data[2] - 3
