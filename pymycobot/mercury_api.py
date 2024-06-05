@@ -53,24 +53,27 @@ class MercuryCommandGenerator(CommandGenerator):
                 wait_time = 300
                 is_in_position = True
             need_break = False
+            data = None
             while True and time.time() - t < wait_time:
-                for data in self.read_command:
-                    if is_in_position and data == b'\xfe\xfe\x04[\x01\r\x87':
+                for v in self.read_command:
+                    if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87':
                         need_break = True
                         with self.lock:
-                            self.read_command.remove(data)
+                            self.read_command.remove(v)
                             self.write_command.remove(genre)
                             return 1
-                    elif genre == data[3]:
+                    elif genre == v[3]:
                         need_break = True
+                        data = v
                         with self.lock:
-                            self.read_command.remove(data)
+                            self.read_command.remove(v)
                             self.write_command.remove(genre)
                         break
                 if need_break:
                     break
                 time.sleep(0.01)
             res = []
+            data = bytearray(data)
             data_len = data[2] - 3
             unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
             if genre in unique_data:
