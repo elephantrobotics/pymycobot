@@ -128,7 +128,7 @@ class TeachingTest(Helper):
                 speeds = self.mc.get_servo_speeds()
                 gripper_value = self.mc.get_encoder(7)
                 interval_time = time.time() - start_t
-                if angles and speeds and gripper_value:
+                if angles and speeds:
                     record = [angles, speeds, gripper_value, interval_time]
                     self.record_list.append(record)
                     # time.sleep(0.1)
