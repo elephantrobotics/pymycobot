@@ -674,7 +674,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                        ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
             wait_time = 3
-    elif _class == "MyCobot":
+    elif _class in ["MyCobot", "MyCobotSocket"]:
         if genre == ProtocolCode.GET_ROBOT_STATUS:
             wait_time = 15
     if method is not None:

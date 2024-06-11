@@ -95,7 +95,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
     def _res(self, real_command, has_reply, genre):
         self._write(self._flatten(real_command))
         if has_reply:
-            data = self._read(genre)
+            data = self._read(genre, _class=self.__class__.__name__)
             if genre == ProtocolCode.SET_SSID_PWD:
                 return None
             res = self._process_received(data, genre)
