@@ -1190,3 +1190,8 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_VOID_COMPENSATE, mode)
+    
+    def get_robot_status(self):
+        """Get robot status
+        """
+        return self._mesg(ProtocolCode.GET_ROBOT_STATUS, has_reply = True)

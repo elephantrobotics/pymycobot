@@ -37,6 +37,8 @@ class ProtocolCode(object):
     READ_NEXT_ERROR = 0x15
     SET_FRESH_MODE = 0x16
     GET_FRESH_MODE = 0x17
+    
+    GET_ROBOT_STATUS = 0x19
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
     COBOTX_GET_ANGLE = 0x1C
@@ -672,6 +674,9 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                        ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
             wait_time = 3
+    elif _class == "MyCobot":
+        if genre == ProtocolCode.GET_ROBOT_STATUS:
+            wait_time = 15
     if method is not None:
         if genre == 177:
             while True:
