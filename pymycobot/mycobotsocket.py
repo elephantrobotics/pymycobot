@@ -86,7 +86,7 @@ class MyCobotSocket(CommandGenerator):
         with self.lock:
             data = self._write(self._flatten(real_command), "socket")
             if has_reply:
-                data = self._read(genre, , _class=self.__class__.__name__, method='socket')
+                data = self._read(genre, _class=self.__class__.__name__, method='socket')
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
                 res = self._process_received(data, genre)
