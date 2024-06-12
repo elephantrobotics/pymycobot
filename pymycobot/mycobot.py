@@ -101,8 +101,6 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             res = self._process_received(data, genre)
             if res == []:
                 return None
-            if res == []:
-                return None
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.GET_ROBOT_ID,
@@ -164,7 +162,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
                     else:
                         r.append(self._int2angle(res[index]))
                 return r
-            elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+            elif genre == ProtocolCode.GET_ROBOT_STATUS:
                 for i in range(len(res)):
                     if res[i] != 0:
                         data = bin(res[i])[2:]
