@@ -201,7 +201,6 @@ class MercuryCommandGenerator(CommandGenerator):
                 ProtocolCode.GET_FRESH_MODE,
                 ProtocolCode.GET_GRIPPER_MODE,
                 ProtocolCode.SET_SSID_PWD,
-                ProtocolCode.COBOTX_IS_GO_ZERO,
                 ProtocolCode.GET_ERROR_DETECT_MODE,
                 ProtocolCode.POWER_ON,
                 ProtocolCode.POWER_OFF,
@@ -212,7 +211,9 @@ class MercuryCommandGenerator(CommandGenerator):
                 ProtocolCode.STOP,
                 ProtocolCode.SET_BREAK,
                 ProtocolCode.IS_BTN_CLICKED,
-                ProtocolCode.GET_CONTROL_MODE
+                ProtocolCode.GET_CONTROL_MODE,
+                ProtocolCode.GET_VR_MODE,
+                ProtocolCode.GET_FILTER_LEN
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
@@ -928,4 +929,61 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_TORQUE_COMP, has_reply=True)
     
+    def power_on_only(self):
+        """Only turn on the power
+        """
+        return self._mesg(ProtocolCode.POWER_ON_ONLY, has_reply=True)
+    
+    def get_vr_mode(self):
+        """Check if the robot is in VR mode
+        """
+        return self._mesg(ProtocolCode.GET_VR_MODE, has_reply=True)
+    
+    def set_vr_mode(self, mode):
+        """Set VR mode
+
+        Args:
+            mode (int): 0 - open, 1 - close
+        """
+        return self._mesg(ProtocolCode.SET_VR_MODE, mode)
+    
+    def get_model_direction(self):
+        """Get the direction of the robot model
+        """
+        return self._mesg(ProtocolCode.GET_MODEL_DIRECTION, has_reply=True)
+    
+    def set_model_direction(self, id, direction):
+        """Set the direction of the robot model
+
+        Args:
+            id (int): joint ID, 1 ~ 7.
+            direction (int): 0 - forward, 1 - backward
+        """
+        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, id, direction)
+    
+    def get_filter_len(self, rank):
+        """Get the filter length
         
+        Args:
+            rank (int): 
+                1 : Drag teaching sampling filter
+                2 : Drag teaching execution filter
+                3 : Joint velocity fusion filter
+                4 : Coordinate velocity fusion filter
+                5 : Drag teaching sampling period
+        """
+        return self._mesg(ProtocolCode.GET_FILTER_LEN, rank, has_reply=True)
+    
+    def set_filter_len(self, rank, value):
+        """Set the filter length
+
+        Args:
+            rank (int): 
+                1 : Drag teaching sampling filter
+                2 : Drag teaching execution filter
+                3 : Joint velocity fusion filter
+                4 : Coordinate velocity fusion filter
+                5 : Drag teaching sampling period
+            value (int): Filter length, range is 1 ~ 100
+        """
+        return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)

@@ -40,7 +40,7 @@ class ProtocolCode(object):
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
     COBOTX_GET_ANGLE = 0x1C
-    COBOTX_IS_GO_ZERO = 0x1D
+    POWER_ON_ONLY = 0x1D
     SET_CONTROL_MODE = 0x1E
     GET_CONTROL_MODE = 0x1F
     FOCUS_ALL_SERVOS = 0x18
@@ -134,6 +134,12 @@ class ProtocolCode(object):
     GET_COLLISION_THRESHOLD = 0x76
     SET_TORQUE_COMP = 0x77
     GET_TORQUE_COMP = 0x78
+    GET_VR_MODE = 0x79
+    SET_VR_MODE = 0x7A
+    GET_MODEL_DIRECTION = 0x7C
+    SET_MODEL_DIRECTION = 0x7D
+    GET_FILTER_LEN = 0x7E
+    SET_FILTER_LEN = 0x7F
     
 
     # Basic
