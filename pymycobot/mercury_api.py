@@ -86,17 +86,24 @@ class MercuryCommandGenerator(CommandGenerator):
             valid_data = data[data_pos : data_pos + data_len]
             if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
                 if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
-                    for v in valid_data:
-                        res.append(v)
+                    if valid_data[0] == 1:
+                        return 1
+                    n = len(valid_data)
+                    for v in range(1,n):
+                        res.append(valid_data[v])
                 elif data_len == 8 and genre == ProtocolCode.GET_DOWN_ENCODERS:
                     i = 0
                     while i < data_len:
                         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                         i+=4
                         res.append(byte_value)
-                for header_i in range(0, len(valid_data), 2):
-                    one = valid_data[header_i : header_i + 2]
-                    res.append(self._decode_int16(one))
+                elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_CURRENTS]:
+                    for i in range(data_len):
+                        res.append(valid_data[i])
+                else:
+                    for header_i in range(0, len(valid_data), 2):
+                        one = valid_data[header_i : header_i + 2]
+                        res.append(self._decode_int16(one))
             elif data_len == 2:
                 if genre in [ProtocolCode.IS_SERVO_ENABLE]:
                     return [self._decode_int8(valid_data[1:2])]
