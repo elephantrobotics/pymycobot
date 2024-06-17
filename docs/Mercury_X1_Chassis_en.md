@@ -14,17 +14,17 @@
 
   ```python
   # demo
-    from pymycobot import mercurychassis_api
+  from pymycobot import mercurychassis_api
 
-    mc = ChassisControl('/dev/wheeltec_controller')
+  mc = ChassisControl('/dev/wheeltec_controller')
 
-    # Get battery voltage
-    voltage = mc.get_power_voltage()
-    print(voltage)
+  # Get battery voltage
+  voltage = mc.get_power_voltage()
+  print(voltage)
 
-    # Set the chassis RGB light strip to green
-    mc.set_color(255, 0, 0)
-    ```
+  # Set the chassis RGB light strip to green
+  mc.set_color(255, 0, 0)
+  ```
 
 ## get_power_voltage()
 
