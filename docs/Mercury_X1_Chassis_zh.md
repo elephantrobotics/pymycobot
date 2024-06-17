@@ -14,17 +14,17 @@
 
   ```python
   # 示例
-    from pymycobot import mercurychassis_api
+  from pymycobot import mercurychassis_api
 
-    mc = ChassisControl('/dev/wheeltec_controller')
+  mc = ChassisControl('/dev/wheeltec_controller')
 
-    # 获取电池电压
-    voltage = mc.get_power_voltage()
-    print(voltage)
+  # 获取电池电压
+  voltage = mc.get_power_voltage()
+  print(voltage)
 
-    # 设置底盘RGB灯带为绿色
-    mc.set_color(255, 0, 0)
-    ```
+  # 设置底盘RGB灯带为绿色
+  mc.set_color(255, 0, 0)
+  ```
 
 ## get_power_voltage()
 
