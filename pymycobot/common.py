@@ -257,6 +257,8 @@ class ProtocolCode(object):
     GET_RECV_QUEUE_SIZE = 0x17
     SET_RECV_QUEUE_SIZE = 0x18
     GET_SERVOS_ENCODER_DRAG = 0xEF
+    RESTORE_SERVO_SYSTEM_PARAM = 0x0a
+    GET_SERVO_D = 0xE8
     # IIC
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
@@ -528,10 +530,12 @@ class DataProcessor(object):
                 ]
             elif genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
-            elif genre in [ProtocolCode.GET_ERROR_INFO]:
+            elif genre in [ProtocolCode.GET_ERROR_INFO, ProtocolCode.GET_MASTER_PIN_STATUS]:
                 return [self._decode_int8(valid_data[1:])]
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
+            if genre == ProtocolCode.GET_ATOM_PRESS_STATUS:
+                return [data for data in valid_data]
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
             if genre == ProtocolCode.COBOTX_GET_ANGLE and arm == 14:
