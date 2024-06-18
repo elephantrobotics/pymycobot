@@ -86,11 +86,17 @@ class MyArmAPI(DataProcessor):
                 ProtocolCode.GET_SERVO_MOTOR_CONFIG,
                 ProtocolCode.POWER_ON,
                 ProtocolCode.GET_MASTER_PIN_STATUS,
-                ProtocolCode.GET_ATOM_PIN_STATUS
+                ProtocolCode.GET_ATOM_PIN_STATUS,
+                ProtocolCode.GET_SERVO_D
             ]
 
             if genre in return_single_genres:
-                return self._process_single(res)
+                result = self._process_single(res)
+                if genre in (ProtocolCode.COBOTX_GET_ANGLE,):
+                    result = self._int2angle(result)
+                return result
+            if genre in (ProtocolCode.GET_ATOM_PRESS_STATUS, ):
+                return res
             elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
@@ -156,32 +162,13 @@ class MyArmAPI(DataProcessor):
             No error: [0,0,0,0,0,0,0,0]
             assuming that error 1 and 3 are reported in section 1, it should return: [[1,3],0,0,0,0,0,0,0]
         """
-        return self._mesg(ProtocolCode.GET_ROBOT_ERROR_STATUS, has_reply=True, timeout=15)
+        return self._mesg(ProtocolCode.GET_ROBOT_ERROR_STATUS, has_reply=True, timeout=90)
 
-    def get_robot_power_status(self):
-        """Get the robot power status
-        Returns:
-            power_status (int): 0: power off, 1: power on
-        """
-        return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
 
-    def set_robot_power_on(self):
-        """Set the robot to power on
 
-        Returns: (int) 1
-        """
-        return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
 
-    def set_robot_power_off(self):
-        """Set the robot to power off
 
-        Returns: (int) 1
-        """
-        return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
 
-    def clear_robot_err(self):
-        """Clear the robot abnormality Ignore the error joint and continue to move"""
-        self._mesg(ProtocolCode.CLEAR_ROBOT_ERROR)
 
     def get_recv_queue_max_len(self):
         """The total length of the read command queue, the default length is 100"""
@@ -201,7 +188,8 @@ class MyArmAPI(DataProcessor):
 
     def get_joint_angle(self, joint_id):
         """
-        Gets the current angle of the specified joint
+        Obtain the current angle of the specified joint, when the obtained angle is 200��,
+        it means that the joint has no communication
         Args:
             joint_id (int): 0 - 254
 
@@ -211,22 +199,15 @@ class MyArmAPI(DataProcessor):
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id, has_reply=True)
 
     def get_joints_angle(self):
-        """Gets the current angle of all joints
+        """Obtain the current angle of all joints, if one of the angles is 200��,
+        it means that the joint has no communication
 
         Returns:
             angles list(int): 0 - 254
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
-    def get_joints_max(self):
-        """Read the maximum angle of all joints"""
-        max_angles = self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, has_reply=True)
-        return max_angles
 
-    def get_joints_min(self):
-        """Read the minimum angle of all joints"""
-        min_angles = self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, has_reply=True)
-        return list(map(lambda n: n / 100, min_angles))
 
     def set_servo_calibrate(self, servo_id):
         """Sets the zero position of the specified servo motor
@@ -285,16 +266,7 @@ class MyArmAPI(DataProcessor):
         """Obtain multiple servo motor protection currents"""
         return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, has_reply=True)
 
-    def set_servo_enabled(self, joint_id, state):
-        """Set the servo motor torque switch
 
-        Args:
-            joint_id (int): 0-254 254-all
-            state: 0/1
-                1-focus
-                0-release
-        """
-        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, joint_id, state)
 
     def get_servos_encoder(self):
         """Obtain the current encoder potential values for multiple servo motors"""
@@ -337,7 +309,7 @@ class MyArmAPI(DataProcessor):
         Args:
             servo_id (int): 0-254
         """
-        return self._mesg(ProtocolCode.SET_ERROR_DETECT_MODE, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_D, servo_id, has_reply=True)
 
     def set_servo_i(self, servo_id, data):
         """Set the proportional factor of the position ring I of the specified servo motor
@@ -395,10 +367,8 @@ class MyArmAPI(DataProcessor):
             data (int): 0 - 4096
             mode (int): 1 - data 1byte. 2 - data 2byte
         """
-        if mode == 1:
-            self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, data, mode)
-        elif mode == 2:
-            self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, [data], mode)
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id, servo_addr=addr)
+        self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, [data], mode)
 
     def get_servo_system_data(self, servo_id, addr, mode):
         """Read the system parameters of the specified servo motor
@@ -464,11 +434,19 @@ class MyArmAPI(DataProcessor):
         """
         self._mesg(ProtocolCode.GET_ATOM_LED_COLOR, r, g, b)
 
-    def is_tool_btn_clicked(self):
-        """read the atom press status
-
+    def is_tool_btn_clicked(self, mode=1):
+        """get the end button status
+        Args:
+            1: atom
+            2: gripper red button
+            3: gripper blue button
+            254: get all button status
         Returns:
             int: 0 or 1. 1: press
 
         """
-        return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, has_reply=True)
+        return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, mode, has_reply=True)
+
+    def restore_servo_system_param(self):
+        """Restore servo motor system parameters"""
+        self._mesg(ProtocolCode.RESTORE_SERVO_SYSTEM_PARAM)
