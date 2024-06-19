@@ -729,9 +729,6 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre == ProtocolCode.GET_ACCEI_DATA:
             wait_time = 1
         while True and time.time() - t < wait_time:
-            if genre != ProtocolCode.STOP and self.is_stop:
-                break
-            # print(genre)
             data = self._serial_port.read()
             k += 1
             if _class in ["Mercury", "MercurySocket"]:
