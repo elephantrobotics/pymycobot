@@ -53,6 +53,7 @@ class MercuryCommandGenerator(CommandGenerator):
             #     wait_time = 300
             #     is_in_position = True
             need_break = False
+            data = None
             while True and time.time() - t < wait_time:
                 for data in self.read_command:
                     if is_in_position and data == b'\xfe\xfe\x04[\x01\r\x87':
@@ -70,6 +71,8 @@ class MercuryCommandGenerator(CommandGenerator):
                 if need_break:
                     break
                 time.sleep(0.01)
+            if data is None:
+                return data
             res = []
             data_len = data[2] - 3
             unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
