@@ -20,13 +20,13 @@ class Pro630(CloseLoop):
         super(Pro630, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
-        # import RPi.GPIO as GPIO
+        import RPi.GPIO as GPIO
         self.power_control_1 = 3
         self.power_control_2 = 4
-        # GPIO.setmode(GPIO.BCM)
-        # GPIO.setwarnings(False)
-        # GPIO.setup(self.power_control_1, GPIO.IN)
-        # GPIO.setup(self.power_control_2, GPIO.OUT)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(self.power_control_1, GPIO.IN)
+        GPIO.setup(self.power_control_2, GPIO.OUT)
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -43,6 +43,8 @@ class Pro630(CloseLoop):
         read_data = super(Pro630, self)._mesg(genre, *args, **kwargs)
         if read_data is None:
             return None
+        elif read_data == 1:
+            return 1
         valid_data, data_len = read_data
         res = []
         if data_len in [6, 8, 12, 14, 16, 26, 60]:
@@ -262,9 +264,63 @@ class Pro630(CloseLoop):
         GPIO.output(self.power_control_2, GPIO.HIGH)
         time.sleep(0.25)
         return super().power_on()
-    
+     
     def power_off(self):
         import RPi.GPIO as GPIO
         res = super().power_off()
         GPIO.output(self.power_control_2, GPIO.LOW)
         return res
+    
+    def power_on_only(self):
+        import RPi.GPIO as GPIO
+        GPIO.output(self.power_control_2, GPIO.HIGH)
+        
+    def set_basic_output(self, pin_no, pin_signal):
+        """Set basic output.
+
+        Args:
+            pin_no: pin port number. range 1 ~ 6
+            pin_signal: 0 / 1
+        """
+        import RPi.GPIO as GPIO
+        if pin_no == 1:
+            pin_no = 17
+        elif pin_no == 2:
+            pin_no = 27
+        elif pin_no == 3:
+            pin_no = 22
+        elif pin_no == 4:
+            pin_no = 5
+        elif pin_no == 5:
+            pin_no = 6
+        elif pin_no == 6:
+            pin_no = 19
+        GPIO.setup(pin_no, GPIO.OUT)
+        GPIO.output(pin_no, pin_signal)
+        
+    def get_basic_input(self, pin_no):
+        """Get basic input.
+
+        Args:
+            pin_no: pin port number. range 1 ~ 6
+            
+        Return:
+            1 - high
+            0 - low
+        """
+        import RPi.GPIO as GPIO
+        if pin_no == 1: 
+            pin_no = 23
+        elif pin_no == 2:
+            pin_no = 24
+        elif pin_no == 3:
+            pin_no = 16
+        elif pin_no == 4:
+            pin_no = 26
+        elif pin_no == 5:
+            pin_no = 20
+        elif pin_no == 6:
+            pin_no = 21
+        GPIO.setup(pin_no, GPIO.IN)
+        return GPIO.input(pin_no)
+        
