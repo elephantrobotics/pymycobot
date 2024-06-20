@@ -20,13 +20,13 @@ class Pro630(CloseLoop):
         super(Pro630, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
-        import RPi.GPIO as GPIO
+        # import RPi.GPIO as GPIO
         self.power_control_1 = 3
         self.power_control_2 = 4
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(self.power_control_1, GPIO.IN)
-        GPIO.setup(self.power_control_2, GPIO.OUT)
+        # GPIO.setmode(GPIO.BCM)
+        # GPIO.setwarnings(False)
+        # GPIO.setup(self.power_control_1, GPIO.IN)
+        # GPIO.setup(self.power_control_2, GPIO.OUT)
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate

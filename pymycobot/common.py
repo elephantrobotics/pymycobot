@@ -324,8 +324,8 @@ class DataProcessor(object):
             # 修改wifi端口
             command_data = self._encode_int16(command_data)
             
-        elif genre in [76, 77]:
-            command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
+        # elif genre in [76, 77]:
+        #     command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
         elif genre == 115 and self.__class__.__name__ not in  ["MyArmC", "MyArmM", "Mercury","MercurySocket", "Pro630"]:
             command_data = [command_data[1],command_data[3]]
         LEN = len(command_data) + 2
