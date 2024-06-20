@@ -20,13 +20,13 @@ class Pro630(CloseLoop):
         super(Pro630, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
-        # import RPi.GPIO as GPIO
+        import RPi.GPIO as GPIO
         self.power_control_1 = 3
         self.power_control_2 = 4
-        # GPIO.setmode(GPIO.BCM)
-        # GPIO.setwarnings(False)
-        # GPIO.setup(self.power_control_1, GPIO.IN)
-        # GPIO.setup(self.power_control_2, GPIO.OUT)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(self.power_control_1, GPIO.IN)
+        GPIO.setup(self.power_control_2, GPIO.OUT)
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -47,7 +47,7 @@ class Pro630(CloseLoop):
             return 1
         valid_data, data_len = read_data
         res = []
-        if data_len in [6, 8, 12, 14, 16, 26, 60]:
+        if data_len in [8, 12, 14, 16, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
                 if valid_data[0] == 1:
                     return 1
@@ -126,6 +126,9 @@ class Pro630(CloseLoop):
                 
                 byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                 res.append(byte_value)
+        elif data_len == 6:
+            for i in valid_data:
+                res.append(i)
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -175,7 +178,8 @@ class Pro630(CloseLoop):
             ProtocolCode.IS_BTN_CLICKED,
             ProtocolCode.GET_CONTROL_MODE,
             ProtocolCode.GET_VR_MODE,
-            ProtocolCode.GET_FILTER_LEN
+            ProtocolCode.GET_FILTER_LEN,
+            ProtocolCode.IS_SERVO_ENABLE
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
