@@ -133,14 +133,11 @@ class MercuryCommandGenerator(CommandGenerator):
                         res.append(3)
                     else:
                         res.append(i)
-            elif data_len == 28:
-                for i in range(0, data_len, 4):
-                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    res.append(byte_value) 
-            elif data_len == 40:
+            elif data_len == 36:
+                # get angles and coords
                 i = 0
                 while i < data_len:
-                    if i < 28:
+                    if i < 24:
                         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                         res.append(byte_value) 
                         i+=4
@@ -148,28 +145,30 @@ class MercuryCommandGenerator(CommandGenerator):
                         one = valid_data[i : i + 2]
                         res.append(self._decode_int16(one))
                         i+=2
-            elif data_len == 30:
-                i = 0
-                res = []
-                while i < 30:
-                    if i < 9 or i >= 23:
-                        res.append(valid_data[i])
-                        i+=1
-                    elif i < 23:
-                        one = valid_data[i : i + 2]
-                        res.append(self._decode_int16(one))
-                        i+=2
-            elif data_len == 38:
+            elif data_len == 26:
+                # left arm get_robot_status
                 i = 0
                 res = []
                 while i < data_len:
-                    if i < 10 or i >= 30:
+                    if i < 9 or i >= 21:
                         res.append(valid_data[i])
                         i+=1
-                    elif i < 38:
+                    elif i < 21:
                         one = valid_data[i : i + 2]
                         res.append(self._decode_int16(one))
                         i+=2
+            # elif data_len == 38:
+            #     # right arm get_robot_status
+            #     i = 0
+            #     res = []
+            #     while i < data_len:
+            #         if i < 10 or i >= 30:
+            #             res.append(valid_data[i])
+            #             i+=1
+            #         elif i < 38:
+            #             one = valid_data[i : i + 2]
+            #             res.append(self._decode_int16(one))
+            #             i+=2
             elif data_len == 56:
                 for i in range(0, data_len, 8):
                     
