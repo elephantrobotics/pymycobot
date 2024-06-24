@@ -280,7 +280,7 @@ class Pro630(CloseLoop):
         GPIO.output(self.power_control_2, GPIO.HIGH)
         
     def set_basic_output(self, pin_no, pin_signal):
-        """Set basic output.
+        """Set basic output.IO low-level output high-level, high-level output high resistance state
 
         Args:
             pin_no: pin port number. range 1 ~ 6
@@ -314,17 +314,17 @@ class Pro630(CloseLoop):
         """
         import RPi.GPIO as GPIO
         if pin_no == 1: 
-            pin_no = 23
-        elif pin_no == 2:
-            pin_no = 24
-        elif pin_no == 3:
-            pin_no = 16
-        elif pin_no == 4:
             pin_no = 26
+        elif pin_no == 2:
+            pin_no = 21
+        elif pin_no == 3:
+            pin_no = 23
+        elif pin_no == 4:
+            pin_no = 16
         elif pin_no == 5:
             pin_no = 20
         elif pin_no == 6:
-            pin_no = 21
+            pin_no = 24
         GPIO.setup(pin_no, GPIO.IN)
         return GPIO.input(pin_no)
         
