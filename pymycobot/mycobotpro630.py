@@ -2568,17 +2568,17 @@ class Phoenix:
         """
         return (
             "X"
-            + str(coords[0])
+            + str(round(coords[0], 3))
             + "Y"
-            + str(coords[1])
+            + str(round(coords[1], 3))
             + "Z"
-            + str(coords[2])
+            + str(round(coords[2], 3))
             + "A"
-            + str(coords[3])
+            + str(round(coords[3], 3))
             + "B"
-            + str(coords[4])
+            + str(round(coords[4], 3))
             + "C"
-            + str(coords[5])
+            + str(round(coords[5], 3))
         )
 
     def angles_to_gcode(self, angles):
