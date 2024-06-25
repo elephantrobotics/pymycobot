@@ -179,7 +179,8 @@ class Pro630(CloseLoop):
             ProtocolCode.GET_CONTROL_MODE,
             ProtocolCode.GET_VR_MODE,
             ProtocolCode.GET_FILTER_LEN,
-            ProtocolCode.IS_SERVO_ENABLE
+            ProtocolCode.IS_SERVO_ENABLE,
+            ProtocolCode.GET_POS_SWITCH
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -263,10 +264,10 @@ class Pro630(CloseLoop):
     def close(self):
         self._serial_port.close()
         
-    def power_on(self):
+    def power_on(self, delay=2):
         import RPi.GPIO as GPIO
         GPIO.output(self.power_control_2, GPIO.HIGH)
-        time.sleep(0.25)
+        time.sleep(delay)
         return super().power_on()
      
     def power_off(self):
@@ -332,3 +333,19 @@ class Pro630(CloseLoop):
         self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, no_return=True)
+    
+    def set_pos_switch(self, mode):
+        """Set position switch mode.
+
+        Args:
+            mode: 0 - switch off, 1 - switch on
+        """
+        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, no_return=True)
+    
+    def get_pos_switch(self):
+        """Get position switch mode.
+
+        Return:
+            1 - switch on, 0 - switch off
+        """
+        return self._mesg(ProtocolCode.GET_POS_SWITCH, has_reply=True)
