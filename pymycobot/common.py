@@ -22,6 +22,10 @@ class ProtocolCode(object):
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
     
+    SET_CW = 0x0B
+    GET_CW = 0x0C
+    CLEAR_WAIST_QUEUE = 0x0D
+    
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
