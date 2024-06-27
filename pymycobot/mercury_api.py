@@ -77,14 +77,14 @@ class MercuryCommandGenerator(CommandGenerator):
             res = []
             data = bytearray(data)
             data_len = data[2] - 3
-            unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
-            if genre in unique_data:
+            # unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
+            if genre == ProtocolCode.GET_BASIC_INPUT:
                 data_pos = 5
                 data_len -= 1
             else:
                 data_pos = 4
             valid_data = data[data_pos : data_pos + data_len]
-            if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
+            if data_len in [6, 8, 12, 14, 16, 24]:
                 if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
                     if valid_data[0] == 1:
                         return 1
@@ -150,10 +150,10 @@ class MercuryCommandGenerator(CommandGenerator):
                 i = 0
                 res = []
                 while i < data_len:
-                    if i < 9 or i >= 21:
+                    if i < 8 or i >= 20:
                         res.append(valid_data[i])
                         i+=1
-                    elif i < 21:
+                    elif i < 19:
                         one = valid_data[i : i + 2]
                         res.append(self._decode_int16(one))
                         i+=2
@@ -169,11 +169,12 @@ class MercuryCommandGenerator(CommandGenerator):
             #             one = valid_data[i : i + 2]
             #             res.append(self._decode_int16(one))
             #             i+=2
-            elif data_len == 56:
+            elif data_len == 48:
+                # get_pos_over
                 for i in range(0, data_len, 8):
-                    
-                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    res.append(byte_value)
+                    byte_value_send = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    byte_value_current = int.from_bytes(valid_data[i+4:i+4], byteorder='big', signed=True)
+                    res.append([byte_value_send, byte_value_current])
             else:
                 if genre in [
                     ProtocolCode.GET_SERVO_VOLTAGES,
@@ -272,7 +273,7 @@ class MercuryCommandGenerator(CommandGenerator):
                             if res[i] == 1:
                                 r.append(i)
                 return r
-            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.GET_POS_OVER]:
+            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.MERCURY_GET_POS_OVER_SHOOT]:
                     return self._int2angle(res[0])
             elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
                 if len(res) == 23:
