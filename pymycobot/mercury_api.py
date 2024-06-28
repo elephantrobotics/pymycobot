@@ -870,7 +870,7 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, has_reply=True)
     
-    def stop(self, deceleration=False):
+    def stop(self, deceleration=0):
         """Robot stops moving
 
         Args:
@@ -879,12 +879,12 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 1 - Stop completion
         """
-        if deceleration:
-            return self._mesg(ProtocolCode.STOP, has_reply=True)
-        else:
+        if deceleration == 1:
             return self._mesg(ProtocolCode.STOP, 1, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.STOP, has_reply=True)    
         
-    def pause(self, deceleration=False):
+    def pause(self, deceleration=0):
         """Robot pauses movement
 
         Args:
@@ -893,10 +893,11 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 1 - pause completion
         """
-        if deceleration:
-            return self._mesg(ProtocolCode.PAUSE, has_reply=True)
-        else:
+        if deceleration == 1:
             return self._mesg(ProtocolCode.PAUSE, 1, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.PAUSE, has_reply=True)
+        
         
     def get_modified_version(self):
         return self._mesg(ProtocolCode.ROBOT_VERSION, has_reply=True)
