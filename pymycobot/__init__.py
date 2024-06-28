@@ -56,7 +56,7 @@ __all__ = [
     "Pro630",
 ]
 
-__version__ = "3.5.0b7" 
+__version__ = "3.5.0a1" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

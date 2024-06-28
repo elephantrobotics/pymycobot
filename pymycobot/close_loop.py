@@ -73,8 +73,8 @@ class CloseLoop(CommandGenerator):
                 return data
             data = bytearray(data)
             data_len = data[2] - 3
-            unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
-            if genre in unique_data:
+            # unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
+            if genre == ProtocolCode.GET_BASIC_INPUT:
                 data_pos = 5
                 data_len -= 1
             else:
