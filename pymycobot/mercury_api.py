@@ -1073,3 +1073,14 @@ class MercuryCommandGenerator(CommandGenerator):
         """_summary_
         """
         return self._mesg(ProtocolCode.CLEAR_WAIST_QUEUE)
+    
+    def solve_inv_kinematics(self, new_coords, old_angles):
+        """_summary_
+        """
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(new_coords[idx]))
+        for angle in new_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        angles = [self._angle2int(angle) for angle in old_angles]
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
