@@ -21,6 +21,10 @@ class ProtocolCode(object):
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
     
+    SET_CW = 0x0B
+    GET_CW = 0x0C
+    CLEAR_WAIST_QUEUE = 0x0D
+    
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
@@ -39,7 +43,7 @@ class ProtocolCode(object):
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
     COBOTX_GET_ANGLE = 0x1C
-    COBOTX_IS_GO_ZERO = 0x1D
+    POWER_ON_ONLY = 0x1D
     SET_CONTROL_MODE = 0x1E
     GET_CONTROL_MODE = 0x1F
     FOCUS_ALL_SERVOS = 0x18
@@ -133,6 +137,12 @@ class ProtocolCode(object):
     GET_COLLISION_THRESHOLD = 0x76
     SET_TORQUE_COMP = 0x77
     GET_TORQUE_COMP = 0x78
+    GET_VR_MODE = 0x79
+    SET_VR_MODE = 0x7A
+    GET_MODEL_DIRECTION = 0x7C
+    SET_MODEL_DIRECTION = 0x7D
+    GET_FILTER_LEN = 0x7E
+    SET_FILTER_LEN = 0x7F
     
 
     # Basic
@@ -183,6 +193,7 @@ class ProtocolCode(object):
     SET_END_TYPE = 0x89
     GET_END_TYPE = 0x8A
     WRITE_MOVE_C = 0x8C
+    SOLVE_INV_KINEMATICS = 0x8D
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
