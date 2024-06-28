@@ -94,6 +94,8 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             
     def _res(self, real_command, has_reply, genre):
         self._write(self._flatten(real_command))
+        if genre == ProtocolCode.STOP:
+            has_reply = True
         if has_reply:
             data = self._read(genre, _class=self.__class__.__name__)
             if genre == ProtocolCode.SET_SSID_PWD:
@@ -131,7 +133,8 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
                 ProtocolCode.GetHTSGripperTorque,
                 ProtocolCode.GetGripperProtectCurrent,
                 ProtocolCode.InitGripper,
-                ProtocolCode.SET_FOUR_PIECES_ZERO
+                ProtocolCode.SET_FOUR_PIECES_ZERO,
+                ProtocolCode.STOP
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES]:

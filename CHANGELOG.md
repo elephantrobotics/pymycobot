@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.4.7 (2024-6-28)
+
+- release v3.4.7
+- Mycobot 280 stop interface adds return (applicable to Atom v7.0 and later versions)
+
 ## v3.4.6 (2024-4-23)
 
 - release v3.4.6
