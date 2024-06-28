@@ -905,9 +905,10 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.is_stop = True
         if deceleration:
-            return self._mesg(ProtocolCode.STOP, has_reply=True)
-        else:
             return self._mesg(ProtocolCode.STOP, 1, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.STOP, has_reply=True)
+        
 
     def pause(self, deceleration=False):
         """Robot pauses movement
@@ -919,9 +920,9 @@ class MercuryCommandGenerator(CommandGenerator):
             int: 1 - pause completion
         """
         if deceleration:
-            return self._mesg(ProtocolCode.PAUSE, has_reply=True)
-        else:
             return self._mesg(ProtocolCode.PAUSE, 1, has_reply=True)
+        else:
+            return self._mesg(ProtocolCode.PAUSE, has_reply=True)
 
     def get_modified_version(self):
         return self._mesg(ProtocolCode.ROBOT_VERSION, has_reply=True)
