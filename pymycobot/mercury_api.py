@@ -121,7 +121,7 @@ class MercuryCommandGenerator(CommandGenerator):
                         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                         i+=4
                         res.append(byte_value)
-                elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_CURRENTS]:
+                elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_CURRENTS, ProtocolCode.GET_MODEL_DIRECTION]:
                     for i in range(data_len):
                         res.append(valid_data[i])
                 elif data_len == 24:
