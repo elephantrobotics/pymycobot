@@ -1,0 +1,80 @@
+2024-07-02 17:56:52,487 - INFO - get command: ['0xfe', '0xfe', '0x2', '0x23', '0xfa']
+2024-07-02 17:56:52,607 - INFO - return datas: []
+2024-07-03 10:47:15,891 - INFO - get command: ['0xfe', '0xfe', '0x2', '0x11', '0xfa']
+2024-07-03 10:47:18,938 - INFO - return datas: []
+2024-07-03 10:54:52,973 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 10:54:56,050 - INFO - return datas: []
+2024-07-03 10:55:42,605 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 10:55:50,687 - INFO - return datas: []
+2024-07-03 10:58:48,971 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 10:58:57,051 - INFO - return datas: []
+2024-07-03 10:59:43,341 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x1d', '0x1', '0xfa']
+2024-07-03 11:00:52,587 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x1d', '0x1', '0xfa']
+2024-07-03 11:01:53,564 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 11:02:01,642 - INFO - return datas: []
+2024-07-03 11:02:06,619 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 11:02:14,692 - INFO - return datas: []
+2024-07-03 11:02:47,239 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 11:02:55,356 - INFO - return datas: []
+2024-07-03 11:07:01,571 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 11:07:04,662 - INFO - return datas: []
+2024-07-03 11:07:21,691 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 11:07:24,790 - INFO - return datas: []
+2024-07-03 11:07:43,417 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x1d', '0x1', '0xfa']
+2024-07-03 11:14:14,876 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xa0', '0x1', '0xfa']
+2024-07-03 11:20:19,758 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xa0', '0x1', '0xfa']
+2024-07-03 11:20:49,013 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xa0', '0x1', '0xfa']
+2024-07-03 11:22:54,265 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 11:23:02,339 - INFO - return datas: []
+2024-07-03 11:23:19,008 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 11:23:22,023 - INFO - return datas: []
+2024-07-03 11:23:34,937 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x1d', '0x1', '0xfa']
+2024-07-03 11:24:18,581 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xa0', '0x1', '0xfa']
+2024-07-03 11:24:18,582 - ERROR - Traceback (most recent call last):
+  File "Server_pro630.py", line 95, in connect
+    import RPi.GPIO as GPIO
+  File "/home/junjie/.local/lib/python3.8/site-packages/RPi/GPIO/__init__.py", line 23, in <module>
+    from RPi._GPIO import *
+RuntimeError: This module can only be run on a Raspberry Pi!
+
+2024-07-03 11:24:50,007 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xa1', '0x1', '0xfa']
+2024-07-03 11:24:50,008 - ERROR - Traceback (most recent call last):
+  File "Server_pro630.py", line 113, in connect
+    import RPi.GPIO as GPIO
+  File "/home/junjie/.local/lib/python3.8/site-packages/RPi/GPIO/__init__.py", line 23, in <module>
+    from RPi._GPIO import *
+RuntimeError: This module can only be run on a Raspberry Pi!
+
+2024-07-03 11:25:35,453 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x22', '0x1', '0xfa']
+2024-07-03 11:27:21,751 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xb', '0x1', '0xfa']
+2024-07-03 11:29:40,763 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xc', '0x1', '0xfa']
+2024-07-03 11:47:05,212 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x22', '0x1', '0xfa']
+2024-07-03 11:52:23,755 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x22', '0x1', '0xfa']
+2024-07-03 11:52:47,989 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x22', '0x1', '0xfa']
+2024-07-03 11:53:22,733 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xc', '0x1', '0xfa']
+2024-07-03 13:36:33,472 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 13:37:33,041 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 13:42:02,906 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 13:47:01,286 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 13:47:09,290 - INFO - return datas: []
+2024-07-03 13:47:23,377 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xc', '0x1', '0xfa']
+2024-07-03 13:53:13,835 - INFO - get command: ['0xfe', '0xfe', '0x3', '0xc', '0x1', '0xfa']
+2024-07-03 13:53:13,937 - INFO - return datas: []
+2024-07-03 13:54:02,406 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 13:54:10,477 - INFO - return datas: []
+2024-07-03 13:54:44,476 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 13:54:47,507 - INFO - return datas: []
+2024-07-03 13:59:17,348 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 13:59:17,349 - ERROR - Traceback (most recent call last):
+  File "Server_pro630.py", line 132, in connect
+    res = self.read(command)
+  File "Server_pro630.py", line 190, in read
+    data = self.mc.read()
+  File "/home/junjie/.local/lib/python3.8/site-packages/serial/serialposix.py", line 595, in read
+    raise SerialException(
+serial.serialutil.SerialException: device reports readiness to read but returned no data (device disconnected or multiple access on port?)
+
+2024-07-03 14:00:24,535 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x11', '0x1', '0xfa']
+2024-07-03 14:00:27,573 - INFO - return datas: []
+2024-07-03 14:01:08,410 - INFO - get command: ['0xfe', '0xfe', '0x3', '0x10', '0x1', '0xfa']
+2024-07-03 14:01:16,433 - INFO - return datas: []

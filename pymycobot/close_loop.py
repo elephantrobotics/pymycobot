@@ -33,7 +33,8 @@ class CloseLoop(CommandGenerator):
         is_in_position = False
         with self.lock:
             self.write_command.append(genre)
-            self._write(self._flatten(real_command))
+            if args[0] == 1:    self._write(self._flatten(real_command), "socket")
+            else:   self._write(self._flatten(real_command))
         if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
             has_reply = True
         if genre == ProtocolCode.SEND_ANGLES and no_return:

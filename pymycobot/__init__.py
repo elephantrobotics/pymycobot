@@ -28,6 +28,7 @@ from pymycobot.mercurysocket import MercurySocket
 from pymycobot.myarmm import MyArmM
 from pymycobot.myarmc import MyArmC
 from pymycobot.pro630 import Pro630
+from pymycobot.pro630socket import Pro630Socket
 __all__ = [
     "MyCobot",
     "CommandGenerator",
@@ -54,6 +55,7 @@ __all__ = [
     "MyArmM",
     "MyArmC",
     "Pro630",
+    "Pro630Socket",
 ]
 
 __version__ = "3.5.0a1" 

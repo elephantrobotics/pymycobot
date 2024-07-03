@@ -206,8 +206,9 @@ class MercuryServer(object):
 if __name__ == "__main__":
     ifname = "wlan0"
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack(
-        '256s', bytes(ifname, encoding="utf8")))[20:24])
+    # HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack(
+    #     '256s', bytes(ifname, encoding="utf8")))[20:24])
+    HOST = "localhost"
     PORT = 9000
     print("ip: {} port: {}".format(HOST, PORT))
-    MercuryServer(HOST, PORT, "/dev/ttyAMA1", 115200)
+    MercuryServer(HOST, PORT, "/dev/ttyACM0", 115200)

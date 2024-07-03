@@ -9,7 +9,7 @@ import re
 import fcntl
 import struct
 import traceback
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 
 """
 Instructions for use:
@@ -66,10 +66,10 @@ class MycobotServer(object):
             baud: baud rate of the serial port.The default is 1000000.
 
         """
-        try:
-            GPIO.setwarnings(False)
-        except:
-            pass
+        # try:
+        #     GPIO.setwarnings(False)
+        # except:
+        #     pass
         self.logger = get_logger("AS")
         self.mc = None
         self.serial_num = serial_num
@@ -103,20 +103,26 @@ class MycobotServer(object):
                             #command = self.re_data_2(command)
                             if command[3] == 170: 
                                 if command[4] == 0:
-                                    GPIO.setmode(GPIO.BCM)
+                                    # GPIO.setmode(GPIO.BCM)
+                                    print("0")
                                 else:
-                                    GPIO.setmode(GPIO.BOARD)
+                                    # GPIO.setmode(GPIO.BOARD)
+                                    print("not 0")
                             elif command[3] == 171:
                                 if command[5]:
-                                    GPIO.setup(command[4], GPIO.OUT)
+                                    # GPIO.setup(command[4], GPIO.OUT)
+                                    print("171 - 1")
                                 else:
-                                    GPIO.setup(command[4], GPIO.IN)
+                                    # GPIO.setup(command[4], GPIO.IN)
+                                    print("171 - 0")
 
                             elif command[3] == 172:
-                                GPIO.output(command[4], command[5])
+                                # GPIO.output(command[4], command[5])
+                                print("172")
 
                             elif command[3] == 173:
-                                res = bytes(GPIO.input(command[4]))
+                                # res = bytes(GPIO.input(command[4]))
+                                print("173")
 
                             self.write(command)
                             if command[3] in has_return:
@@ -187,7 +193,8 @@ class MycobotServer(object):
 if __name__ == "__main__":
     ifname = "wlan0"
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', bytes(ifname,encoding="utf8")))[20:24])
+    # HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', bytes(ifname,encoding="utf8")))[20:24])
+    HOST = "localhost"
     PORT = 9000
     print("ip: {} port: {}".format(HOST, PORT))
-    MycobotServer(HOST, PORT, "/dev/ttyAMA0", 1000000)
+    MycobotServer(HOST, PORT, "/dev/ttyACM0", 115200)
