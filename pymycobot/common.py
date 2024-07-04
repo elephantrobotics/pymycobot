@@ -734,7 +734,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                         break
             if data_len == 1 and data == b"\xfa":
                 datas += data
-                if [i for i in datas] == command:
+                if [i for i in datas] == command and genre not in (ProtocolCode.GET_ATOM_PRESS_STATUS, ):
                     datas = b''
                     data_len = -1
                     k = 0
