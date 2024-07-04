@@ -140,3 +140,15 @@ class MyArmM(MyArmAPI):
     def get_joints_min(self):
         """Read the minimum angle of all joints"""
         return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, has_reply=True)
+
+    def is_tool_btn_clicked(self):
+        """get the end button status
+
+        Returns:
+            int: 0/1, 1: press, 0: no press
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, has_reply=True)
+
+    def clear_recv_queue(self):
+        """Clear the queue for receiving commands"""
+        self._mesg(ProtocolCode.CLEAR_RECV_QUEUE)

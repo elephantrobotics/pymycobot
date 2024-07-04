@@ -475,7 +475,5 @@ def calibration_parameters(**kwargs):
                             f"speed value not right, should be 1 ~ 100, the received speed is {value}"
                         )
             elif parameter == "servo_addr":
-                if value not in (0, 4):
-                    raise MyArmDataException(
-                        "The servo minor version number and servo firmware minor version cannot be modified"
-                    )
+                if value in (0, 1, 2, 3, 4):
+                    raise MyArmDataException("addr 0-4 cannot be modified")

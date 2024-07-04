@@ -164,12 +164,6 @@ class MyArmAPI(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ROBOT_ERROR_STATUS, has_reply=True, timeout=90)
 
-
-
-
-
-
-
     def get_recv_queue_max_len(self):
         """The total length of the read command queue, the default length is 100"""
         return self._mesg(ProtocolCode.GET_RECV_QUEUE_SIZE, has_reply=True)
@@ -177,10 +171,6 @@ class MyArmAPI(DataProcessor):
     def set_recv_queue_max_len(self, max_len):
         """Set the total length of the receiving command queue"""
         self._mesg(ProtocolCode.SET_RECV_QUEUE_SIZE, max_len, has_reply=True)
-
-    def clear_recv_queue(self):
-        """Clear the queue for receiving commands"""
-        self._mesg(ProtocolCode.CLEAR_RECV_QUEUE)
 
     def get_recv_queue_len(self):
         """The current length of the read receive queue"""
@@ -206,8 +196,6 @@ class MyArmAPI(DataProcessor):
             angles list(int): 0 - 254
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
-
-
 
     def set_servo_calibrate(self, servo_id):
         """Sets the zero position of the specified servo motor
@@ -265,8 +253,6 @@ class MyArmAPI(DataProcessor):
     def get_servos_protect_current(self):
         """Obtain multiple servo motor protection currents"""
         return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, has_reply=True)
-
-
 
     def get_servos_encoder(self):
         """Obtain the current encoder potential values for multiple servo motors"""
@@ -433,19 +419,6 @@ class MyArmAPI(DataProcessor):
 
         """
         self._mesg(ProtocolCode.GET_ATOM_LED_COLOR, r, g, b)
-
-    def is_tool_btn_clicked(self, mode=1):
-        """get the end button status
-        Args:
-            1: atom
-            2: gripper red button
-            3: gripper blue button
-            254: get all button status
-        Returns:
-            int: 0 or 1. 1: press
-
-        """
-        return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, mode, has_reply=True)
 
     def restore_servo_system_param(self):
         """Restore servo motor system parameters"""
