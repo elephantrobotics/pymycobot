@@ -28,6 +28,7 @@ from pymycobot.mercurysocket import MercurySocket
 from pymycobot.myarmm import MyArmM
 from pymycobot.myarmc import MyArmC
 from pymycobot.pro630 import Pro630
+from pymycobot.pro630client import Pro630Client
 __all__ = [
     "MyCobot",
     "CommandGenerator",
@@ -54,9 +55,10 @@ __all__ = [
     "MyArmM",
     "MyArmC",
     "Pro630",
+    "Pro630Client"
 ]
 
-__version__ = "3.5.0a1" 
+__version__ = "3.5.0a2" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

@@ -15,6 +15,7 @@ class CloseLoop(CommandGenerator):
         self.is_stop = False
         self.write_command = []
         self.read_command = []
+        self.no_return = False
         
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -30,14 +31,18 @@ class CloseLoop(CommandGenerator):
         """
         real_command, has_reply = super(CloseLoop, self)._mesg(genre, *args, **kwargs)
         no_return = kwargs.get("no_return", False)
+        self.no_return = kwargs.get("asyn_mode", False)
         is_in_position = False
         with self.lock:
             self.write_command.append(genre)
-            self._write(self._flatten(real_command))
-        if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
+            if self.__class__.__name__ == "Pro630Socket":
+                self._write(self._flatten(real_command), "socket")
+            else:
+                self._write(self._flatten(real_command))
+        if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.no_return == False:
             has_reply = True
         if genre == ProtocolCode.SEND_ANGLES and no_return:
-            has_reply = False
+            has_reply = False   
         if has_reply:
             t = time.time()
             wait_time = 0.1   
