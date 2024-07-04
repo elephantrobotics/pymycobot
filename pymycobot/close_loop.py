@@ -31,15 +31,24 @@ class CloseLoop(CommandGenerator):
         """
         real_command, has_reply = super(CloseLoop, self)._mesg(genre, *args, **kwargs)
         no_return = kwargs.get("no_return", False)
-        self.no_return = kwargs.get("asyn_mode", False)
+        if no_return:
+            self.no_return = True
+        t = kwargs.get("asyn_mode", None)
+        if t:
+            self.no_return = True
+        elif t == False:
+            self.no_return = False
         is_in_position = False
         with self.lock:
             self.write_command.append(genre)
-            if self.__class__.__name__ == "Pro630Socket":
+            if self.__class__.__name__ == "Pro630Client":
                 self._write(self._flatten(real_command), "socket")
+                time.sleep(0.01)
             else:
                 self._write(self._flatten(real_command))
-        if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.no_return == False:
+                
+        close_loop = [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]
+        if genre in close_loop and self.no_return == False:
             has_reply = True
         if genre == ProtocolCode.SEND_ANGLES and no_return:
             has_reply = False   
@@ -51,14 +60,14 @@ class CloseLoop(CommandGenerator):
             elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                         ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
                 wait_time = 3
-            elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
+            elif genre in close_loop:
                 wait_time = 300
                 is_in_position = True
             need_break = False
             data = None
             while True and time.time() - t < wait_time:
                 for v in self.read_command:
-                    if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87':
+                    if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87' and genre in close_loop:
                         need_break = True
                         with self.lock:
                             self.read_command.remove(v)
@@ -84,6 +93,8 @@ class CloseLoop(CommandGenerator):
                 data_len -= 1
             else:
                 data_pos = 4
+            if self.__class__.__name__ == "Pro630Client":
+                data_len += 1
             valid_data = data[data_pos : data_pos + data_len]
             return (valid_data, data_len)
         return None
@@ -112,6 +123,7 @@ class CloseLoop(CommandGenerator):
         
     def read_thread(self, method=None):
         while True:
+            
             datas = b""
             data_len = -1
             k = 0
@@ -120,36 +132,37 @@ class CloseLoop(CommandGenerator):
             wait_time = 0.1   
             if method is not None:
                 try:
+                    wait_time = 0.1
                     self.sock.settimeout(wait_time)
                     data = self.sock.recv(1024)
+                    
                     if isinstance(data, str):
                         datas = bytearray()
                         for i in data:   
                             datas += hex(ord(i))
                 except:
                     data = b""
-                if self.check_python_version() == 2:
-                    command_log = ""
-                    for d in data:
-                        command_log += hex(ord(d))[2:] + " "
-                    self.log.debug("_read : {}".format(command_log))
-                    # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-                else:
-                    command_log = ""
-                    for d in data:
-                        command_log += hex(d)[2:] + " "
-                    self.log.debug("_read : {}".format(command_log))
-                if data:
+                
+                if data != b'':
+                    if self.check_python_version() == 2:
+                        command_log = ""
+                        for d in data:
+                            command_log += hex(ord(d))[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
+                        # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                    else:
+                        command_log = ""
+                        for d in data:
+                            command_log += hex(d)[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
                     res = self._process_received(data)
                     with self.lock:
                         self.read_command.append(res)
             else:
                 while True and time.time() - t < wait_time:
-                    # print("r", end=" ", flush=True)
                     if self._serial_port.inWaiting() > 0:
                         data = self._serial_port.read()
                         k += 1
-                        # print(datas, flush=True)
                         if data_len == 3:
                             datas += data
                             crc = self._serial_port.read(2)
@@ -181,8 +194,6 @@ class CloseLoop(CommandGenerator):
                                 else:
                                     datas = b"\xfe"
                                     pre = k
-                    # else:
-                    #     print("no data", flush=True)
                 else:
                     datas = b''
                 if datas:

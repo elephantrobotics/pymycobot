@@ -20,14 +20,6 @@ class Pro630Client(CloseLoop):
         """
         super(Pro630Client, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        # import serial
-        # import RPi.GPIO as GPIO
-        # self.power_control_1 = 3
-        # self.power_control_2 = 4
-        # GPIO.setmode(GPIO.BCM)
-        # GPIO.setwarnings(False)
-        # GPIO.setup(self.power_control_1, GPIO.IN)
-        # GPIO.setup(self.power_control_2, GPIO.OUT)
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
@@ -39,9 +31,8 @@ class Pro630Client(CloseLoop):
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(self.SERVER_IP, self.SERVER_PORT)
+        sock.connect((self.SERVER_IP, self.SERVER_PORT))
         return sock
-        
         
     def _mesg(self, genre, *args, **kwargs):
         read_data = super(Pro630Client, self)._mesg(genre, *args, **kwargs)
@@ -272,7 +263,7 @@ class Pro630Client(CloseLoop):
         return super().power_on()
      
     def power_off(self):
-        return super().power_on()
+        return super().power_off()
     
     def power_on_only(self):
         return super().power_on_only()
@@ -296,7 +287,7 @@ class Pro630Client(CloseLoop):
             1 - high
             0 - low
         """
-        return super().set_basic_output(pin_no)
+        return super().get_basic_input(pin_no)
         
     def send_angles_sync(self, angles, speed):
         self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
@@ -309,9 +300,9 @@ class Pro630Client(CloseLoop):
         Args:
             mode: 0 - switch off, 1 - switch on
         """
-        if mode == 1:
+        if mode == 0:
             return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, asyn_mode=True)
-        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode)
+        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode,asyn_mode=False)
         
     
     def get_pos_switch(self):

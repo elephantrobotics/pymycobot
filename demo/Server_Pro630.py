@@ -10,6 +10,7 @@ import fcntl
 import struct
 import traceback
 import RPi.GPIO as GPIO
+import threading
 class ProtocolCode(object):
     # BASIC
     HEADER = 0xFE
@@ -277,7 +278,7 @@ class ProtocolCode(object):
     GET_RECV_QUEUE_SIZE = 0x17
     SET_RECV_QUEUE_SIZE = 0x18
 has_return = [0x02, 0x03, 0x04, 0x09, 0x10, 0x11, 0x12, 0x13, 0x1c, 0x18, 0x19, 0x20, 0x23, 0x27, 0x29, 0x2A, 0x2B, 0x35, 0x4A, 0x4B,0x4C, 0x4D,
-              0x50, 0x51, 0x56,0x57, 0x59,0x5A,0x62, 0x82, 0x84, 0x86, 0x88, 0x8A, 0xA1, 0xA2, 0xB2, 0xB3, 0xB4, 0xB5, 0xB7, 0xD6, 0xe1, 0xe2, 0xe4]
+              0x50, 0x51, 0x56,0x57, 0x59,0x5A,0x62, 0x82, 0x84, 0x86, 0x88, 0x8A, 0xA1, 0xA2, 0xB2, 0xB3, 0xB4, 0xB5, 0xB7, 0xD6, 0xe1, 0xe2, 0xe4, 0xC]
 
 def get_logger(name):
     logger = logging.getLogger(name)
@@ -300,13 +301,14 @@ def get_logger(name):
 
 class pro630Server(object):
     
-    def __init__(self, host, port, serial_num="/dev/ttyACM0", baud=115200) -> None:
+    def __init__(self, host, port, serial_num="/dev/ttyAMA0", baud=115200) -> None:
         
         self.logger = get_logger("AS")
         self.mc = None
         self.serial_num = serial_num
         self.baud = baud
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind((host, port))
         print("Binding succeeded!")
         self.s.listen(1)
@@ -317,7 +319,21 @@ class pro630Server(object):
         GPIO.setwarnings(False)
         GPIO.setup(self.power_control_1, GPIO.IN)
         GPIO.setup(self.power_control_2, GPIO.OUT)
+        self.conn = None
+        check_mode = [0xfe,0xfe,0x3,0xc,0xc9,0x50]
+        self.connected = True
         self.asynchronous=False
+        self.mc.write(check_mode)
+        res = self.read(check_mode)
+        self.connected = False
+        
+        
+        if len(res) > 5 and res[4] == 0:
+            print("This is asynchronous mode")
+            self.asynchronous=True
+        else:
+            print("This is synchronous mode")
+            self.asynchronous=False
         self.connect()
         
 
@@ -325,15 +341,17 @@ class pro630Server(object):
         while True:
             try:
                 print("waiting connect!------------------")
-                conn, addr = self.s.accept()
+                self.mc.read_all()
+                self.conn, addr = self.s.accept()
+                self.connected = True
                 while True:
                     try:
                         print("waiting data--------")
-                        data = conn.recv(1024)
+                        data = self.conn.recv(1024)
                         command = []
                         for v in data:
                             command.append(v)
-                        print(f"command:{command}")
+                        # print(f"command:{command}")
                         if command == []:
                             print("close disconnect!")
                             break
@@ -345,18 +363,20 @@ class pro630Server(object):
                             # command = self.re_data_2(command)
                             # print(f"Type of command[3] is {type(command[3])} value = {command[3]}")
                             if command[3] == 16:
-                                print("Power On")
+                                # print("Power On")
                                 GPIO.output(self.power_control_2, GPIO.HIGH)
                                 time.sleep(2)
                             elif command[3] == 17:
-                                print("Power Off")
+                                # print("Power Off")
+                                self.write(command)
+                                time.sleep(3)
                                 GPIO.output(self.power_control_2, GPIO.LOW)
+                                continue
                             elif command[3] == 0x1D:
-                                print("Power On ONLY")
+                                # print("Power On ONLY")
                                 GPIO.output(self.power_control_2, GPIO.HIGH)
                                 continue
                             elif command[3] == 160:
-                                print("Set Basic Output")
                                 pin_no = command[4]
                                 if pin_no == 1:
                                     pin_no = 17
@@ -371,44 +391,50 @@ class pro630Server(object):
                                 elif pin_no == 6:
                                     pin_no = 19
                                 GPIO.setup(pin_no, GPIO.OUT)
-                                GPIO.output(pin_no, command[5])
+                                GPIO.output(pin_no, int(command[5]))
+                                continue
                             elif command[3] == 161:
-                                print("Get Basic Input")
                                 pin_no = command[4]
-                                if pin_no == 1:
-                                    pin_no = 17
+                                if pin_no == 1: 
+                                    pin_no = 26
                                 elif pin_no == 2:
-                                    pin_no = 27
+                                    pin_no = 21
                                 elif pin_no == 3:
-                                    pin_no = 22
+                                    pin_no = 23
                                 elif pin_no == 4:
-                                    pin_no = 5
+                                    pin_no = 16
                                 elif pin_no == 5:
-                                    pin_no = 6
+                                    pin_no = 20
                                 elif pin_no == 6:
-                                    pin_no = 19
+                                    pin_no = 24
                                 GPIO.setup(pin_no, GPIO.IN)
-                            # elif command[3] == 12:
-                            #     print()
+                                statue = GPIO.input(pin_no)
+                                res = command[:-2]+[statue]
+                                res+=self.crc_check(res)
+                                self.conn.sendall(bytearray(res))
+                                continue
                             self.write(command)
                             if command[3] == ProtocolCode.SET_POS_SWITCH:
                                 if command[4] == 1:
+                                    # 开启闭环
                                     self.asynchronous = False
                                 elif command[4] == 0:
+                                    # 关闭闭环
                                     self.asynchronous = True
-                            if command[3] in has_return:
-                                res = self.read(command)
-                                self.logger.info(
-                                    "return datas: {}".format([hex(v) for v in res]))
-
-                                conn.sendall(res)
+                            if command[3] in has_return or (command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.asynchronous == False):
+                                # res = self.read(command)
+                                self.read_thread = threading.Thread(target=self.read, args=(command,), daemon=True)
+                                self.read_thread.start()
+                    except ConnectionResetError:
+                        pass
                     except Exception as e:
                         self.logger.error(traceback.format_exc())
-                        # conn.sendall(str.encode(traceback.format_exc()))
+                        self.connected = False
                         break
             except Exception as e:
                 self.logger.error(traceback.format_exc())
-                conn.close()
+                self.connected = False
+                self.conn.close()
                 self.mc.close()
             
     def _encode_int16(self, data):
@@ -444,6 +470,7 @@ class pro630Server(object):
         self.mc.flush()
 
     def read(self, command):
+        # print("read, ",command)
         datas = b""
         data_len = -1
         k = 0
@@ -456,8 +483,11 @@ class pro630Server(object):
             wait_time = 3
         elif command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.asynchronous == False:
             wait_time = 300
-        while True and time.time() - t < wait_time:
+        while True and time.time() - t < wait_time and self.connected:
             data = self.mc.read()
+            # print("read data: ", data)
+            # if data != b"":
+            #     print(data, datas)
             k += 1
             if data_len == 3:
                 datas += data
@@ -480,13 +510,13 @@ class pro630Server(object):
             elif len(datas) > 2 and data_len > 0:
                 datas += data
                 data_len -= 1
-                if len(datas) == 4:
-                    if datas[-1] != command[3]:
-                        datas = b''
-                        data_len = -1
-                        k = 0
-                        pre = 0
-                        continue
+                # if len(datas) == 4:
+                #     if datas[-1] != command[3]:
+                #         datas = b''
+                #         data_len = -1
+                #         k = 0
+                #         pre = 0
+                #         continue
             elif data == b"\xfe":
                 if datas == b"":
                     datas += data
@@ -498,6 +528,11 @@ class pro630Server(object):
                         datas = b"\xfe"
                         pre = k
         else:
+            datas = b''
+        if self.conn is not None:
+            self.logger.info("return datas: {}".format([hex(v) for v in datas]))
+            
+            self.conn.sendall(datas)
             datas = b''
         return datas
 
@@ -512,9 +547,9 @@ class pro630Server(object):
 if __name__ == "__main__":
     ifname = "wlan0"
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack(
-    #     '256s', bytes(ifname, encoding="utf8")))[20:24])
-    HOST = "localhost"
+    HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack(
+        '256s', bytes(ifname, encoding="utf8")))[20:24])
+    # HOST = "localhost"
     PORT = 9000
     print("ip: {} port: {}".format(HOST, PORT))
-    pro630Server(HOST, PORT, "/dev/ttyACM1", 115200)
+    pro630Server(HOST, PORT)
