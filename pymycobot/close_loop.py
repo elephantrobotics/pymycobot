@@ -91,10 +91,11 @@ class CloseLoop(CommandGenerator):
             if genre == ProtocolCode.GET_BASIC_INPUT:
                 data_pos = 5
                 data_len -= 1
+                if self.__class__.__name__ == "Pro630Client":
+                    data_len += 1
             else:
                 data_pos = 4
-            if self.__class__.__name__ == "Pro630Client":
-                data_len += 1
+            
             valid_data = data[data_pos : data_pos + data_len]
             return (valid_data, data_len)
         return None

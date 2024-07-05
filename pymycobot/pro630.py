@@ -340,7 +340,9 @@ class Pro630(CloseLoop):
         Args:
             mode: 0 - switch off, 1 - switch on
         """
-        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, no_return=True)
+        if mode == 0:
+            return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, asyn_mode=True)
+        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode,asyn_mode=False)
     
     def get_pos_switch(self):
         """Get position switch mode.
