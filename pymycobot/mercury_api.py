@@ -181,18 +181,18 @@ class MercuryCommandGenerator(CommandGenerator):
                         one = valid_data[i : i + 2]
                         res.append(self._decode_int16(one))
                         i+=2
-            # elif data_len == 38:
-            #     # right arm get_robot_status
-            #     i = 0
-            #     res = []
-            #     while i < data_len:
-            #         if i < 10 or i >= 30:
-            #             res.append(valid_data[i])
-            #             i+=1
-            #         elif i < 38:
-            #             one = valid_data[i : i + 2]
-            #             res.append(self._decode_int16(one))
-            #             i+=2
+            elif data_len == 30:
+                # right arm get_robot_status
+                i = 0
+                res = []
+                while i < data_len:
+                    if i < 8 or i >= 24:
+                        res.append(valid_data[i])
+                        i+=1
+                    elif i < 23:
+                        one = valid_data[i : i + 2]
+                        res.append(self._decode_int16(one))
+                        i+=2
             elif data_len == 48:
                 # get_pos_over
                 for i in range(0, data_len, 8):
@@ -297,7 +297,7 @@ class MercuryCommandGenerator(CommandGenerator):
                             if res[i] == 1:
                                 r.append(i)
                 return r
-            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.MERCURY_GET_POS_OVER_SHOOT]:
+            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, ProtocolCode.GET_SERVO_CW]:
                     return self._int2angle(res[0])
             elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
                 if len(res) == 23:
@@ -1023,3 +1023,42 @@ class MercuryCommandGenerator(CommandGenerator):
             value (int): Filter length, range is 1 ~ 100
         """
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
+    
+    def clear_zero_pos(self):
+        return self._mesg(ProtocolCode.CLEAR_ZERO_POS)
+    
+    def set_servo_cw(self, joint_id, err_angle):
+        """Set the joint in-place feedback error angle
+
+        Args:
+            joint_id (int): Joint ID, 11 or 12.
+            err_angle (float): Error range is 0 ~ 5.
+        """
+        return self._mesg(ProtocolCode.SET_SERVO_CW, joint_id, [self._angle2int(err_angle)])
+    
+    def get_servo_cw(self, joint_id):
+        """Get the joint in-place feedback error angle
+
+        Args:
+            joint_id (int): Joint ID, 11 or 12.
+
+        Returns:
+            float: Error angle, range is 0 ~ 5.
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_CW, joint_id, has_reply=True)
+    
+    def clearWaistQueue(self):
+        """Clear the cache points of the three motors in the torso
+        """
+        return self._mesg(ProtocolCode.CLEAR_WAIST_QUEUE)
+    
+    def jog_increment_base_coord(self, axis, increment, speed):
+        """Base coordinate stepping control
+
+        Args:
+            axis (int): axis id, range 1 ~ 6 corresponds to [x,y,z,rx,ry,rz]
+            increment (float): Incremental value
+            speed (int): speed
+        """
+        return self._mesg(ProtocolCode.JOG_INCREMENT_BASE_COORD, axis, [self._angle2int(increment)], speed)
+    

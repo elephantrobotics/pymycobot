@@ -22,9 +22,15 @@ class ProtocolCode(object):
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
     
+    CLEAR_ZERO_POS = 0x0A
+    SET_SERVO_CW = 0x0B
+    GET_SERVO_CW = 0x0C
+    CLEAR_WAIST_QUEUE = 0x0D
+    
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
+    JOG_INCREMENT_BASE_COORD = 0x37
     InitGripper = 0x38
     SetGripperProtectCurrent = 0x39
 
