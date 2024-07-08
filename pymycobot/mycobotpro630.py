@@ -977,6 +977,8 @@ class Phoenix:
         Returns:
             bool: True if robot is in passed coords, False otherwise
         """
+        if type(jog_mode) != JogMode:
+            raise TypeError("jog_mode should be of type JogMode")
         if jog_mode == JogMode.JOG_TELEOP:
             return self.coords_equal(self.get_coords(), coords)
         else:
@@ -2195,7 +2197,7 @@ class Phoenix:
         Returns:
             float: axis velocity or -1.0 if error
         """
-        if 0 <= axis.value <= 6:
+        if 0 <= axis.value <= 5:
             self.s.poll()
             return self.s.axis[axis.value]["velocity"]
         return -1.0
