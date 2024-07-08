@@ -749,7 +749,7 @@ class Phoenix:
         """
         self.s.poll()
         if self.s.task_state == elerob.STATE_ESTOP:
-            self.set_estop_reset()
+            self._set_estop_reset()
         self.set_digital_out(DO.POWER_ON_RELAY_1, 1)
         time.sleep(0.25)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 1)
@@ -776,7 +776,7 @@ class Phoenix:
         self.set_digital_out(DO.POWER_ON_RELAY_2, 1)
         time.sleep(0.25)
         self.set_digital_out(DO.POWER_ON_RELAY_2, 0)
-        self.set_estop()
+        self._set_estop()
         self._set_free_move(False)
         return True
 
@@ -1175,12 +1175,12 @@ class Phoenix:
         self.s.poll()
         return TaskMode(self.s.task_mode)
 
-    def set_estop_reset(self):
+    def _set_estop_reset(self):
         """Resets E-Stop (Emergency Stop) state of the robot."""
         self.c.state(elerob.STATE_ESTOP_RESET)
         self.c.wait_complete()
 
-    def set_estop(self):
+    def _set_estop(self):
         """Puts robot into E-Stop (Emergency Stop) state."""
         self.tool_set_led_color(255, 0, 0)
         self.c.state(elerob.STATE_ESTOP)
