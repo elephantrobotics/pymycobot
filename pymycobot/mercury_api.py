@@ -36,6 +36,8 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         real_command, has_reply = super(MercuryCommandGenerator, self)._mesg(genre, *args, **kwargs)
         is_in_position = False
+        is_get_return = False
+        lost_times = 0
         with self.lock:
             self.write_command.append(genre)
             self._write(self._flatten(real_command))
@@ -93,9 +95,19 @@ class MercuryCommandGenerator(CommandGenerator):
                             self.read_command.remove(v)
                             self.write_command.remove(genre)
                         break
-                if need_break:
+                    elif v[3] == 0xFF and genre == v[4]:
+                        # 通信闭环
+                        is_get_return = True
+                        self.read_command.remove(v)
+                        
+                if time.time() - t > 0.01 and is_get_return == False:
+                    # 指令丢失，重发
+                    lost_times += 1
+                    with self.lock:
+                        self.write_command.append(genre)
+                if need_break or lost_times > 2:
                     break
-                time.sleep(0.01)
+                time.sleep(0.002)
             if data is None:
                 return data
             res = []
@@ -836,7 +848,7 @@ class MercuryCommandGenerator(CommandGenerator):
             speed: int (1 - 100)
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id = coord_id, speed = speed)
-        value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
+        value = self._coord2int(increment) if coord_id <= 3 else self._angle2int(increment)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed)
     
     def drag_teach_clean(self):
