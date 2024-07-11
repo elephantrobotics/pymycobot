@@ -66,15 +66,22 @@ class MercuryCommandGenerator(CommandGenerator):
         need_break = False
         data = None
         while True and time.time() - t < wait_time:
-            print(self.read_command)
             for v in self.read_command:
-                print(v)
-                if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87':
+                # print(v)v == b'\xfe\xfe\x04[\x01\r\x87'
+                if is_in_position and v[2] == 0x04 and v[3] == 0x5b:
                     need_break = True
                     with self.lock:
                         self.read_command.remove(v)
                         self.write_command.remove(genre)
-                        return 1
+                
+                elif genre == v[3] and v[2] == 5 and v[4] == 0xFF:
+                    # 通信闭环
+                    is_get_return = True
+                    with self.lock:
+                        self.read_command.remove(v)
+                    if has_reply == False:
+                        need_break = True
+                        data = v
                 elif genre == v[3]:
                     need_break = True
                     data = v
@@ -82,27 +89,26 @@ class MercuryCommandGenerator(CommandGenerator):
                         self.read_command.remove(v)
                         self.write_command.remove(genre)
                     break
-                elif v[4] == 0xFF and genre == v[3] and v[2] == 5:
-                    # 通信闭环
-                    is_get_return = True
-                    self.read_command.remove(v)
                     
-            if time.time() - t > 0.1 and is_get_return == False:
-                # 指令丢失，重发
-                print("指令丢失，重发")
+                    
+            if is_in_position and time.time() - t > 0.1 and is_get_return == False:
+                # 运动指令丢失，重发
+                print("运动指令丢失，重发")
                 lost_times += 1
                 with self.lock:
                     self.write_command.append(genre)
-            if need_break or lost_times > 2:
+            if need_break:
                 print("退出")
                 break
+            if lost_times > 2:
+                # 重传3次失败，返回-1
+                return -1
             time.sleep(0.002)
         if data is None:
             return data
         res = []
         data = bytearray(data)
         data_len = data[2] - 3
-        if is_get_return
         # unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
         if genre == ProtocolCode.GET_BASIC_INPUT:
             data_pos = 5
