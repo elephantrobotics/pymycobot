@@ -506,7 +506,7 @@ class DataProcessor(object):
             if data_len == 8 and (
                     (arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION) or
                     (arm == 8 and cmd_id in ignor_t)
-            ):
+            ) or data_len == 6 and cmd_id in ignor_t:
                 for v in valid_data:
                     res.append(v)
                 return res
