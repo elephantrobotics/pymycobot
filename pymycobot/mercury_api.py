@@ -113,7 +113,7 @@ class MercuryCommandGenerator(CommandGenerator):
                 data_pos = 4
             valid_data = data[data_pos: data_pos + data_len]
             if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
-                if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
+                if (data_len == 8 or data_len == 9)and (genre == ProtocolCode.IS_INIT_CALIBRATION):
                     if valid_data[0] == 1:
                         return 1
                     n = len(valid_data)
