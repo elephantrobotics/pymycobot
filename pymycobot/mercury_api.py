@@ -60,29 +60,41 @@ class MercuryCommandGenerator(CommandGenerator):
             ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
             ProtocolCode.MERCURY_SET_BASE_COORDS,
             ProtocolCode.MERCURY_JOG_BASE_COORD,
-            ProtocolCode.MERCURY_SET_BASE_COORD]:
+            ProtocolCode.MERCURY_SET_BASE_COORD,
+            ProtocolCode.OVER_LIMIT_RETURN_ZERO]:
             wait_time = 300
             is_in_position = True
         need_break = False
         data = None
         while True and time.time() - t < wait_time:
             for v in self.read_command:
-                # print(v)v == b'\xfe\xfe\x04[\x01\r\x87'
+                print("--------------", v)
+                # v == b'\xfe\xfe\x04[\x01\r\x87'
                 if is_in_position and v[2] == 0x04 and v[3] == 0x5b:
+                    # print(-1)
+                    print("到位反馈")
+                    is_get_return = True
                     need_break = True
+                    data = v
                     with self.lock:
                         self.read_command.remove(v)
                         self.write_command.remove(genre)
                 
                 elif genre == v[3] and v[2] == 5 and v[4] == 0xFF:
                     # 通信闭环
+                    # print(-2)
+                    print("闭环")
                     is_get_return = True
                     with self.lock:
                         self.read_command.remove(v)
                     if has_reply == False:
+                        # print(-3)
+                        print("仅闭环退出")
                         need_break = True
                         data = v
                 elif genre == v[3]:
+                    # print(-4)
+                    print("正常读取")
                     need_break = True
                     data = v
                     with self.lock:
@@ -109,12 +121,24 @@ class MercuryCommandGenerator(CommandGenerator):
         res = []
         data = bytearray(data)
         data_len = data[2] - 3
+        
         # unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
         if genre == ProtocolCode.GET_BASIC_INPUT:
             data_pos = 5
             data_len -= 1
         else:
             data_pos = 4
+        if is_get_return:
+            data_len -= 1 
+            data_pos += 1
+            if data[2] == 5:
+                print("握手成功")
+                
+                return data[5]
+            elif data[2] == 4:
+                print("到位或者失败反馈")
+                return data[4]
+        print("111: ",data_pos, data_len)
         valid_data = data[data_pos : data_pos + data_len]
         if data_len in [6, 8, 12, 14, 16, 24]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
@@ -141,11 +165,9 @@ class MercuryCommandGenerator(CommandGenerator):
                     one = valid_data[header_i : header_i + 2]
                     res.append(self._decode_int16(one))
         elif data_len == 2:
-            if genre in [ProtocolCode.IS_SERVO_ENABLE]:
-                return [self._decode_int8(valid_data[1:2])]
-            elif genre in [ProtocolCode.GET_ERROR_INFO]:
-                return [self._decode_int8(valid_data[1:])]
-            res.append(self._decode_int16(valid_data))
+            # if genre in [ProtocolCode.IS_SERVO_ENABLE]:
+            #     return [self._decode_int8(valid_data[1:2])]
+            return self._decode_int16(valid_data)
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
@@ -154,8 +176,13 @@ class MercuryCommandGenerator(CommandGenerator):
                 res.append(byte_value)
             for i in range(1,4):
                 res.append(valid_data[i])
-        elif data_len == 7:
+        elif data_len == 7 or data_len == 9:
             error_list = [i for i in valid_data]
+            if genre == ProtocolCode.IS_INIT_CALIBRATION:
+                if error_list[0] == 1:
+                    return 1
+                else:
+                    return [i for i in error_list[1:]]
             for i in error_list:
                 if i in range(16,23):
                     res.append(1)
@@ -346,8 +373,7 @@ class MercuryCommandGenerator(CommandGenerator):
         while header_j < data_len - 4:
             if self._is_frame_header(data, header_i, header_j):
                 cmd_id = data[header_i + 3]
-                if cmd_id in self.write_command:
-                    print(3)
+                if cmd_id in self.write_command or cmd_id == 0x5B:
                     return data
             header_i += 1
             header_j += 1
@@ -445,6 +471,7 @@ class MercuryCommandGenerator(CommandGenerator):
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
                     with self.lock:
+                        print("res: ", res)
                         self.read_command.append(res)
                 # return datas
         
@@ -530,7 +557,7 @@ class MercuryCommandGenerator(CommandGenerator):
         self.calibration_parameters(
             class_name=self.__class__.__name__, servo_restore=joint_id
         )
-        self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+        return self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
         
     def set_error_detect_mode(self, mode):
         """Set error detection mode. Turn off without saving, default to open state
@@ -743,20 +770,20 @@ class MercuryCommandGenerator(CommandGenerator):
         return self._mesg(ProtocolCode.TOOL_SERIAL_SET_TIME_OUT, max_time)
 
     def get_robot_status(self):
-        return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS, has_reply=True)
+        return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS)
     
     def power_on(self):
         """Open communication with Atom."""
-        return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
+        return self._mesg(ProtocolCode.POWER_ON)
 
     def power_off(self):
         """Close communication with Atom."""
-        return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
+        return self._mesg(ProtocolCode.POWER_OFF)
     
     def release_all_servos(self):
         """Relax all joints
         """
-        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, has_reply=True)
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
     
     def focus_servo(self, servo_id):
         """Power on designated servo
@@ -765,7 +792,7 @@ class MercuryCommandGenerator(CommandGenerator):
             servo_id: int. joint id 1 - 7
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
     
     def release_servo(self, servo_id):
         """Power off designated servo
@@ -774,13 +801,12 @@ class MercuryCommandGenerator(CommandGenerator):
             servo_id: int. joint id 1 - 7
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
     
     def stop(self):
         """Stop moving"""
-        # self.is_stop = True
-        # self.write_command.remove()
-        return self._mesg(ProtocolCode.STOP, has_reply=True)
+        self.is_stop = True
+        return self._mesg(ProtocolCode.STOP)
     
     def get_robot_type(self):
         """Get robot type
@@ -821,7 +847,7 @@ class MercuryCommandGenerator(CommandGenerator):
     def over_limit_return_zero(self):
         """Return to zero when the joint is over the limit
         """
-        return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO)
+        return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO, has_reply=True)
     
     def jog_increment_angle(self, joint_id, increment, speed):
         """angle step mode
@@ -872,10 +898,10 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, [value*100])
         
-    def get_pos_over_shoot(self):
-        """Get position deviation value
-        """
-        return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, has_reply=True)
+    # def get_pos_over_shoot(self):
+    #     """内部接口，不开放客户使用
+    #     """
+    #     return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, has_reply=True)
     
     def stop(self, deceleration=0):
         """Robot stops moving
@@ -975,7 +1001,7 @@ class MercuryCommandGenerator(CommandGenerator):
     def power_on_only(self):
         """Only turn on the power
         """
-        return self._mesg(ProtocolCode.POWER_ON_ONLY, has_reply=True)
+        return self._mesg(ProtocolCode.POWER_ON_ONLY)
     
     def get_vr_mode(self):
         """Check if the robot is in VR mode
@@ -1068,4 +1094,72 @@ class MercuryCommandGenerator(CommandGenerator):
             speed (int): speed
         """
         return self._mesg(ProtocolCode.JOG_INCREMENT_BASE_COORD, axis, [self._angle2int(increment)], speed)
+    
+    def clear_error_information(self):
+        """Clear robot error message"""
+        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO)
+    
+    def get_error_information(self):
+        """Obtaining robot error information
+        
+        Return:
+            0: No error message.
+            1 ~ 6: The corresponding joint exceeds the limit position.
+            16 ~ 19: Collision protection.
+            32: Kinematics inverse solution has no solution.
+            33 ~ 34: Linear motion has no adjacent solution.
+        """
+        return self._mesg(ProtocolCode.GET_ERROR_INFO)
+    
+    def send_angles(self, angles, speed):
+        """Send the angles of all joints to robot arm.
+
+        Args:
+            angles: a list of angle values(List[float]). len 6.
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
+    
+    def send_angle(self, id, degree, speed):
+        """Send one angle of joint to robot arm.
+
+        Args:
+            id : Joint id(genre.Angle)， int 1-6.
+            angle : angle value(float).
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=degree, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True)
+    
+    def send_coord(self, id, coord, speed):
+        """Send one coord to robot arm. 
+
+        Args:
+            id(int) : coord id(genre.Coord)\n
+                        for mycobot / mecharm / myArm: int 1-6.\n
+                        for mypalletizer: int 1-4.
+            coord(float) : coord value, mm
+            speed(int) : 1 ~ 100
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=id, coord = coord, speed=speed)
+        value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
+        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed, has_reply=True)
+
+    def send_coords(self, coords, speed):
+        """Send all coords to robot arm.
+
+        Args:
+            coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
+            speed : (int) 1 ~ 100
+            mode : (int) 0 - angluar, 1 - linear (mypalletizer 340 does not require this parameter)
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords, speed=speed)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True)
     
