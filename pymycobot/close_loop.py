@@ -219,12 +219,14 @@ class CloseLoop(CommandGenerator):
         data_len = len(bytes4)
         while i < data_len:
             if self.check_python_version() == 2:
-                byte_value = 0
-                for b in bytes4:
-                    byte_value = byte_value * 256 + b
-                
-                if byte_value & (1 << (8 * len(bytes4) - 1)):
-                    byte_value -= 1 << (8 * len(bytes4))
+                for i in range(0, data_len, 4):
+                    byte_value = 0
+                    data = bytes4[i:i+4]
+                    for b in data:
+                        byte_value = byte_value * 256 + b
+                    
+                    if byte_value & (1 << 31):
+                        byte_value -= 1 << (32)
             else:
                 byte_value = int.from_bytes(bytes4[i:i+4], byteorder='big', signed=True)
             i+=4
