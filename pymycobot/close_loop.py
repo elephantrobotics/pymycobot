@@ -156,8 +156,9 @@ class CloseLoop(CommandGenerator):
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
                     res = self._process_received(data)
-                    with self.lock:
-                        self.read_command.append(res)
+                    if res != []:
+                        with self.lock:
+                            self.read_command.append(res)
             else:
                 while True and time.time() - t < wait_time:
                     if self._serial_port.inWaiting() > 0:
@@ -209,8 +210,9 @@ class CloseLoop(CommandGenerator):
                         for d in datas:
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
-                    with self.lock:
-                        self.read_command.append(res)
+                    if res != []:
+                        with self.lock:
+                            self.read_command.append(res)
                 # return datas
                 
     def bytes4_to_int(self, bytes4):
