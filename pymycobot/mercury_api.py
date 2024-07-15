@@ -470,6 +470,8 @@ class MercuryCommandGenerator(CommandGenerator):
                         for d in datas:
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
+                    if res == []:
+                        continue
                     with self.lock:
                         print("res: ", res)
                         self.read_command.append(res)
