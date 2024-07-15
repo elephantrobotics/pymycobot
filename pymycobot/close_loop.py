@@ -219,7 +219,6 @@ class CloseLoop(CommandGenerator):
         data_len = len(bytes4)
         while i < data_len:
             if self.check_python_version() == 2:
-                # for i in range(0, data_len, 4):
                 byte_value = 0
                 data = bytes4[i:i+4]
                 for b in data:

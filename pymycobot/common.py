@@ -653,7 +653,10 @@ def write(self, command, method=None):
                 log_command.append(hex(i))
         command_log = ""
         for i in command:
-            command_log += hex(i)[2:] + " "
+            if isinstance(i, str):
+                command_log += i[2:] + " "
+            else:
+                command_log += hex(i)[2:] + " "
         self.log.debug("_write: {}".format(command_log))
                 
         py_version = DataProcessor.check_python_version()
@@ -669,7 +672,10 @@ def write(self, command, method=None):
         # self._serial_port.reset_input_buffer()
         command_log = ""
         for i in command:
-            command_log += hex(i)[2:] + " "
+            if isinstance(i, str):
+                command_log += i[2:] + " "
+            else:
+                command_log += hex(i)[2:] + " "
         self.log.debug("_write: {}".format(command_log))
         self._serial_port.write(command)
         self._serial_port.flush()
