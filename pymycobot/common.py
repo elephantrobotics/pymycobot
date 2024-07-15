@@ -399,8 +399,13 @@ class DataProcessor(object):
                 else:
                     crc >>= 1
         if crc > 0x7FFF:
-            return list(struct.pack(">H", crc))
-        return cls._encode_int16(crc)
+            crc_res = list(struct.pack(">H", crc))
+        else:
+            crc_res = cls._encode_int16(crc)
+        for i in range(2):
+            if isinstance(crc_res[i], str):
+                crc_res[i] = ord(crc_res[i])
+        return crc_res
     # def encode_int16(self, data):
     #     encoded_data = []
 
@@ -650,14 +655,8 @@ def write(self, command, method=None):
             elif isinstance(i, str):
                 log_command.append(i)
             else:
-                log_command.append(hex(i))
-        command_log = ""
-        for i in command:
-            if isinstance(i, str):
-                command_log += i[2:] + " "
-            else:
-                command_log += hex(i)[2:] + " "
-        self.log.debug("_write: {}".format(command_log))
+                log_command.append(hex(i)[2:] + " ")
+        self.log.debug("_write: {}".format(log_command))
                 
         py_version = DataProcessor.check_python_version()
         if py_version == 2:
