@@ -648,14 +648,12 @@ def write(self, command, method=None):
         command = "'" + command[4] + "'" + "(" + command[5] + ")"
         command = command.encode()
     if method == "socket":
-        log_command = []
+        log_command = ""
         for i in command:
-            if isinstance(command, str):
-                log_command.append(command)
-            elif isinstance(i, str):
-                log_command.append(i)
+            if isinstance(i, str):
+                log_command += i
             else:
-                log_command.append(hex(i)[2:] + " ")
+                log_command += hex(i)[2:] + " "
         self.log.debug("_write: {}".format(log_command))
                 
         py_version = DataProcessor.check_python_version()
