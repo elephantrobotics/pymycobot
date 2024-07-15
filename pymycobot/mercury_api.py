@@ -1,12 +1,9 @@
 
 # coding=utf-8
 
-import sys
-import logging
 import time
 import struct
 
-from pymycobot.log import setup_logging
 from pymycobot.error import calibration_parameters
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
@@ -123,7 +120,8 @@ class MercuryCommandGenerator(CommandGenerator):
         data_len = data[2] - 3
         
         # unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
-        if genre == ProtocolCode.GET_BASIC_INPUT:
+        if genre in [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.IS_SERVO_ENABLE]:
+            # 指令后面多一位ID位
             data_pos = 5
             data_len -= 1
         else:
