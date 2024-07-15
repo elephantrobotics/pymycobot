@@ -106,6 +106,7 @@
   - [TCP/IP 通信](#tcpip-通信)
     - [服务端](#服务端)
     - [客户端](#客户端)
+- [打包姿态](#打包姿态)
 
 <!-- /code_chunk_output -->
 
@@ -939,4 +940,16 @@ p.set_pos_switch(0)
 # # p.set_pos_switch(1)
 p.send_angle(5, 100, 20)
 
+```
+
+# 打包姿态
+
+打包角度为[90, -38, 128, 180, -90, 0], 控制机器人运动到打包角度即可。
+
+```python
+
+from pymycobot import Pro630Client
+
+p = Pro630("/dev/ttyAMA0")
+p.send_angles([90, -38, 128, 180, -90, 0], 10)
 ```
