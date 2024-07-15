@@ -104,7 +104,6 @@ class CloseLoop(CommandGenerator):
         if not data:
             return []
         elif data == b'\xfe\xfe\x04[\x01\r\x87':
-            # 水星到位反馈
             return data
         
         data = bytearray(data)
