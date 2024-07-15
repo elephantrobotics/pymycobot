@@ -117,11 +117,11 @@ class Pro630Client(CloseLoop):
                     one = valid_data[i : i + 2]
                     res.append(self._decode_int16(one))
                     i+=2
-        elif data_len == 56:
-            for i in range(0, data_len, 8):
+        # elif data_len == 56:
+        #     for i in range(0, data_len, 8):
                 
-                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                res.append(byte_value)
+        #         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+        #         res.append(byte_value)
         elif data_len == 6:
             for i in valid_data:
                 res.append(i)

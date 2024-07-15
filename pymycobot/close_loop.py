@@ -212,13 +212,18 @@ class CloseLoop(CommandGenerator):
                     with self.lock:
                         self.read_command.append(res)
                 # return datas
-        
+                
     def bytes4_to_int(self, bytes4):
         i = 0
         res = []
         data_len = len(bytes4)
         while i < data_len:
-            byte_value = int.from_bytes(bytes4[i:i+4], byteorder='big', signed=True)
+            if self.check_python_version() == 2:
+                byte_value = 0
+                for b in bytes4:
+                    byte_value = byte_value * 256 + ord(b)
+            else:
+                byte_value = int.from_bytes(bytes4[i:i+4], byteorder='big', signed=True)
             i+=4
             res.append(byte_value)
         return res
