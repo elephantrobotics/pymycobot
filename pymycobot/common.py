@@ -355,7 +355,8 @@ class DataProcessor(object):
     def _encode_int8(self, data):
         return struct.pack("b", data)
 
-    def _encode_int16(self, data):
+    @classmethod
+    def _encode_int16(cls, data):
         if isinstance(data, int):
             return [
                 ord(i) if isinstance(i, str) else i
@@ -364,7 +365,7 @@ class DataProcessor(object):
         else:
             res = []
             for v in data:
-                t = self._encode_int16(v)
+                t = cls._encode_int16(v)
                 res.extend(t)
         return res
 
@@ -399,7 +400,7 @@ class DataProcessor(object):
                     crc >>= 1
         if crc > 0x7FFF:
             return list(struct.pack(">H", crc))
-        return cls._encode_int16(_, crc)
+        return cls._encode_int16(crc)
     # def encode_int16(self, data):
     #     encoded_data = []
 

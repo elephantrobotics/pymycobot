@@ -26,7 +26,8 @@ class Pro630Client(CloseLoop):
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
         self.is_stop = False
-        self.read_threading = threading.Thread(target=self.read_thread, args=("socket",), daemon=True)
+        self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
+        self.read_threading.daemon = True
         self.read_threading.start()
 
     def connect_socket(self):
@@ -259,15 +260,6 @@ class Pro630Client(CloseLoop):
     def close(self):
         self.sock.close()
         
-    def power_on(self):
-        return super().power_on()
-     
-    def power_off(self):
-        return super().power_off()
-    
-    def power_on_only(self):
-        return super().power_on_only()
-        
     def set_basic_output(self, pin_no, pin_signal):
         """Set basic output.IO low-level output high-level, high-level output high resistance state
 
@@ -275,7 +267,7 @@ class Pro630Client(CloseLoop):
             pin_no: pin port number. range 1 ~ 6
             pin_signal: 0 / 1
         """
-        return super().set_basic_output(pin_no, pin_signal)
+        return super(Pro630Client, self).set_basic_output(pin_no, pin_signal)
         
     def get_basic_input(self, pin_no):
         """Get basic input.
@@ -287,7 +279,7 @@ class Pro630Client(CloseLoop):
             1 - high
             0 - low
         """
-        return super().get_basic_input(pin_no)
+        return super(Pro630Client, self).get_basic_input(pin_no)
         
     def send_angles_sync(self, angles, speed):
         self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
