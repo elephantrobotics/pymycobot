@@ -938,8 +938,8 @@ class MercuryCommandGenerator(CommandGenerator):
     def get_pos_over(self):
         return self._mesg(ProtocolCode.GET_POS_OVER, has_reply=True)
     
-    def clear_encoders_error(self):
-        return self._mesg(ProtocolCode.CLEAR_ENCODERS_ERROR)
+    def clear_encoders_error(self, joint_id):
+        return self._mesg(ProtocolCode.CLEAR_ENCODERS_ERROR, joint_id)
     
     def get_down_encoders(self):
         return self._mesg(ProtocolCode.GET_DOWN_ENCODERS, has_reply=True)
