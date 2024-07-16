@@ -1080,7 +1080,7 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_SERVO_CW, joint_id, has_reply=True)
     
-    def clearWaistQueue(self):
+    def clear_waist_queue(self):
         """Clear the cache points of the three motors in the torso
         """
         return self._mesg(ProtocolCode.CLEAR_WAIST_QUEUE)
@@ -1093,7 +1093,9 @@ class MercuryCommandGenerator(CommandGenerator):
             increment (float): Incremental value
             speed (int): speed
         """
-        return self._mesg(ProtocolCode.JOG_INCREMENT_BASE_COORD, axis, [self._angle2int(increment)], speed)
+        self.calibration_parameters(class_name = self.__class__.__name__, id=axis, speed=speed)
+        value = self._coord2int(increment) if axis <= 3 else self._angle2int(increment)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_BASE_COORD, axis, [value], speed)
     
     def clear_error_information(self):
         """Clear robot error message"""
