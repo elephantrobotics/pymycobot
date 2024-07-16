@@ -1,4 +1,5 @@
 # myarm_m接收角度并执行
+from pymycobot.error import MyArmDataException
 from pymycobot import MyArmC, MyArmM
 import serial.tools.list_ports
 import time
@@ -44,9 +45,13 @@ def main():
         # 客户端IP
         print('Connected by ', addr)
         while True:
-            data = conn.recv(1024).decode('utf-8')
-            angle = processing_data(data)
-            m.set_joints_angle(angle, speed)
+            try:
+                data = conn.recv(1024).decode('utf-8')
+                angle = processing_data(data)
+                m.set_joints_angle(angle, speed)
+             except MyArmDataException:
+                 pass
+            
 
 if __name__ == "__main__":
     main()
