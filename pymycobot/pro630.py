@@ -36,7 +36,8 @@ class Pro630(CloseLoop):
         self.lock = threading.Lock()
         self.has_reply_command = []
         self.is_stop = False
-        self.read_threading = threading.Thread(target=self.read_thread, daemon=True)
+        self.read_threading = threading.Thread(target=self.read_thread)
+        self.read_threading.daemon = True
         self.read_threading.start()
         
     def _mesg(self, genre, *args, **kwargs):
@@ -268,11 +269,11 @@ class Pro630(CloseLoop):
         import RPi.GPIO as GPIO
         GPIO.output(self.power_control_2, GPIO.HIGH)
         time.sleep(delay)
-        return super().power_on()
+        return super(Pro630, self).power_on()
      
     def power_off(self):
         import RPi.GPIO as GPIO
-        res = super().power_off()
+        res = super(Pro630, self).power_off()
         GPIO.output(self.power_control_2, GPIO.LOW)
         return res
     
