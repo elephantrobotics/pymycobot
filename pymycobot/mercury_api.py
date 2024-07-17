@@ -65,11 +65,11 @@ class MercuryCommandGenerator(CommandGenerator):
         data = None
         while True and time.time() - t < wait_time:
             for v in self.read_command:
-                print("--------------", v)
+                # print("--------------", v)
                 # v == b'\xfe\xfe\x04[\x01\r\x87'
                 if is_in_position and v[2] == 0x04 and v[3] == 0x5b:
                     # print(-1)
-                    print("到位反馈")
+                    # print("到位反馈")
                     is_get_return = True
                     need_break = True
                     data = v
@@ -80,18 +80,18 @@ class MercuryCommandGenerator(CommandGenerator):
                 elif genre == v[3] and v[2] == 5 and v[4] == 0xFF:
                     # 通信闭环
                     # print(-2)
-                    print("闭环")
+                    # print("闭环")
                     is_get_return = True
                     with self.lock:
                         self.read_command.remove(v)
                     if has_reply == False:
                         # print(-3)
-                        print("仅闭环退出")
+                        # print("仅闭环退出")
                         need_break = True
                         data = v
                 elif genre == v[3]:
                     # print(-4)
-                    print("正常读取")
+                    # print("正常读取")
                     need_break = True
                     data = v
                     with self.lock:
@@ -102,12 +102,12 @@ class MercuryCommandGenerator(CommandGenerator):
                     
             if is_in_position and time.time() - t > 0.1 and is_get_return == False:
                 # 运动指令丢失，重发
-                print("运动指令丢失，重发")
+                # print("运动指令丢失，重发")
                 lost_times += 1
                 with self.lock:
                     self.write_command.append(genre)
             if need_break:
-                print("退出")
+                # print("退出")
                 break
             if lost_times > 2:
                 # 重传3次失败，返回-1
@@ -133,13 +133,13 @@ class MercuryCommandGenerator(CommandGenerator):
             data_len -= 1 
             data_pos += 1
             if data[2] == 5:
-                print("握手成功")
+                # print("握手成功")
                 
                 return data[5]
             elif data[2] == 4:
-                print("到位或者失败反馈")
+                # print("到位或者失败反馈")
                 return data[4]
-        print("111: ",data_pos, data_len)
+        # print("111: ",data_pos, data_len)
         valid_data = data[data_pos : data_pos + data_len]
         if data_len in [6, 8, 12, 14, 16, 24]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
