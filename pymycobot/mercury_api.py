@@ -914,9 +914,9 @@ class MercuryCommandGenerator(CommandGenerator):
             int: 1 - pause completion
         """
         if deceleration == 1:
-            return self._mesg(ProtocolCode.PAUSE, 1, has_reply=True)
+            return self._mesg(ProtocolCode.PAUSE, 1)
         else:
-            return self._mesg(ProtocolCode.PAUSE, has_reply=True)
+            return self._mesg(ProtocolCode.PAUSE)
         
         
     def get_modified_version(self):
