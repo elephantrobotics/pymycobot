@@ -531,7 +531,7 @@ class MercuryCommandGenerator(DataProcessor):
             joint_id (int): 1 ~ 7 or 11 ~ 13.
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
-        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id, has_reply=True)
+        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
     
     def servo_restore(self, joint_id):
         """Abnormal recovery of joints
