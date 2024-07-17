@@ -58,7 +58,7 @@ __all__ = [
     "Pro630Client"
 ]
 
-__version__ = "3.5.0a3" 
+__version__ = "3.5.0a4" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
