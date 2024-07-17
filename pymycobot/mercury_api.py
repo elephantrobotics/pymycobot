@@ -5,11 +5,10 @@ import time
 import struct
 
 from pymycobot.error import calibration_parameters
-from pymycobot.generate import CommandGenerator
-from pymycobot.common import ProtocolCode, write, read
+from pymycobot.common import DataProcessor, ProtocolCode, write, read
 
 
-class MercuryCommandGenerator(CommandGenerator):
+class MercuryCommandGenerator(DataProcessor):
     _write = write
     _read = read
     def __init__(self, debug=False):
@@ -461,7 +460,6 @@ class MercuryCommandGenerator(CommandGenerator):
                     if res == []:
                         continue
                     with self.lock:
-                        print("res: ", res)
                         self.read_command.append(res)
                 # return datas
         

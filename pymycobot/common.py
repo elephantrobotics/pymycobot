@@ -3,7 +3,11 @@
 from __future__ import division
 import time
 import struct
+import logging
 import sys
+
+from pymycobot.log import setup_logging
+from pymycobot.error import calibration_parameters
 
 
 class ProtocolCode(object):
@@ -314,6 +318,17 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
+    def __init__(self, debug=False):
+        """
+        Args:
+            debug    : whether show debug info
+        """
+        self._version = sys.version_info[:2][0]
+        self.debug = debug
+        setup_logging(self.debug)
+        self.log = logging.getLogger(__name__)
+        self.calibration_parameters = calibration_parameters
+        
     def _mesg(self, genre, *args, **kwargs):
         """
         Args:
