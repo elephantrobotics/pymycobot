@@ -112,6 +112,9 @@ class MercuryCommandGenerator(CommandGenerator):
             if lost_times > 2:
                 # 重传3次失败，返回-1
                 return -1
+            if self.is_stop:
+                self.is_stop = False
+                break
             time.sleep(0.002)
         if data is None:
             return data
@@ -765,6 +768,8 @@ class MercuryCommandGenerator(CommandGenerator):
 
     def power_off(self):
         """Close communication with Atom."""
+        with self.lock:
+            self.read_command.clear()
         return self._mesg(ProtocolCode.POWER_OFF)
     
     def release_all_servos(self):
@@ -789,11 +794,6 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
-    
-    def stop(self):
-        """Stop moving"""
-        self.is_stop = True
-        return self._mesg(ProtocolCode.STOP)
     
     def get_robot_type(self):
         """Get robot type
@@ -899,6 +899,7 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 1 - Stop completion
         """
+        self.is_stop = True
         if deceleration == 1:
             return self._mesg(ProtocolCode.STOP, 1, has_reply=True)
         else:
@@ -913,6 +914,7 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 1 - pause completion
         """
+        self.is_stop = True
         if deceleration == 1:
             return self._mesg(ProtocolCode.PAUSE, 1)
         else:
