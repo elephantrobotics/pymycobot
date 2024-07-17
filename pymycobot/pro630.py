@@ -320,13 +320,13 @@ class Pro630(CloseLoop):
         elif pin_no == 2:
             pin_no = 21
         elif pin_no == 3:
-            pin_no = 23
+            pin_no = 20 #23
         elif pin_no == 4:
             pin_no = 16
         elif pin_no == 5:
-            pin_no = 20
-        elif pin_no == 6:
             pin_no = 24
+        elif pin_no == 6:
+            pin_no = 23
         GPIO.setup(pin_no, GPIO.IN)
         return GPIO.input(pin_no)
         
