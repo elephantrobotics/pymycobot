@@ -462,6 +462,48 @@ class MercuryCommandGenerator(DataProcessor):
                     with self.lock:
                         self.read_command.append(res)
                 # return datas
+                
+                
+    def get_system_version(self):
+        """get system version"""
+        return self._mesg(ProtocolCode.SOFTWARE_VERSION)
+    
+    def get_atom_version(self):
+        """Get atom firmware version.
+
+        Returns:
+            float: version number.
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_VERSION)
+    
+    def is_power_on(self):
+        """Adjust robot arm status
+
+        Return:
+            1 - power on
+            0 - power off
+            -1 - error data
+        """
+        return self._mesg(ProtocolCode.IS_POWER_ON)
+    
+    def get_coords(self):
+        """Get the coords from robot arm, coordinate system based on base.
+
+        Return:
+            list : A float list of coord . [x, y, z, rx, ry, rz].
+        
+        """
+        return self._mesg(ProtocolCode.GET_COORDS)
+    
+    def is_paused(self):
+        """Judge whether the manipulator pauses or not.
+
+        Return:
+            1 - paused
+            0 - not paused
+            -1 - error
+        """
+        return self._mesg(ProtocolCode.IS_PAUSED)
         
     def set_solution_angles(self, angle, speed):
         """Set zero space deflection angle value
@@ -509,20 +551,19 @@ class MercuryCommandGenerator(DataProcessor):
         
         Args:
             robot (int): 
-                1 - Mercury A1 
-                2 - Mercury B1 or X1
+                1 - left arm
+                2 - right arm
             speed (int): 1 ~ 100
         Return:
             1 : All motors return to zero position.
             0 : failed.
         """
         if robot == 1:
-            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0], speed)
+            return self.send_angles([0, 0, 0, 0, 90, 0], speed)
         else:
             self.send_angle(11, 0, speed)
             self.send_angle(12, 0, speed)
-            self.send_angle(13, 0, speed)
-            return self.sync_send_angles([0, 0, 0, 0, 0, 90, 0], speed)
+            return self.send_angles([0, 0, 0, 0, 90, 0], speed)
 
     def get_angle(self, joint_id):
         """Get single joint angle
@@ -532,6 +573,14 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
+    
+    def get_angles(self):
+        """ Get the angle of all joints.
+
+        Return:
+            list: A float list of all angle.
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES)
     
     def servo_restore(self, joint_id):
         """Abnormal recovery of joints
