@@ -62,7 +62,7 @@ class MyArmAPI(DataProcessor):
                 return None
 
             timeout = kwargs.get('timeout', None)
-            data = self._read(genre, command=command, timeout=timeout)
+            data = self._read(genre, command=command, timeout=timeout, _class=self.__class__.__name__)
             res = self._process_received(data, genre, arm=8)
 
             if len(res) == 0:
@@ -97,7 +97,10 @@ class MyArmAPI(DataProcessor):
                 return result
             if genre in (ProtocolCode.GET_ATOM_PRESS_STATUS, ):
                 return res
-            elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+            elif genre in [
+                ProtocolCode.GET_ANGLES, ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE,
+                ProtocolCode.GET_JOINTS_COORD
+            ]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
                 return [self._int2coord(angle) for angle in res]

@@ -28,6 +28,7 @@ from pymycobot.mercurysocket import MercurySocket
 from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.myarmm import MyArmM
 from pymycobot.myarmc import MyArmC
+from pymycobot.myarmm_control import MyArmMControl
 __all__ = [
     "MyCobot",
     "CommandGenerator",
@@ -53,7 +54,8 @@ __all__ = [
     "MercurySocket",
     "Phoenix",
     "MyArmM",
-    "MyArmC"
+    "MyArmC",
+    "MyArmMControl"
 ]
 
 
