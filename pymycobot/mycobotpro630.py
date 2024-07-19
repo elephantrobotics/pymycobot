@@ -481,6 +481,7 @@ class Phoenix:
         self.robot_state = RobotMoveState.IDLE_STATE
         self.command_id = 0
         self.current_robot = 0
+        self.bus = None
         if do_init:
             self.init_hal()
             self.init_robot()
@@ -544,21 +545,23 @@ class Phoenix:
 
     def init_can(self):
         """Initializes CAN bus."""
-        filters = [
-            {"can_id": 0x007, "can_mask": 0x7FF},
-        ]
-        self.can = can.interface.Bus(
-            interface="socketcan",
-            channel="can0",
-            bitrate=1000000,
-            receive_own_messages=False,
-            can_filters=filters,
-        )
-        self.can.set_filters(filters)
-        self.can_reader = can.BufferedReader()
-        can.Notifier(self.can, [self.can_reader])
+        if not self.bus:
+            self.bus = can.Bus(
+                interface="socketcan",
+                channel="can0",
+                bitrate=1000000,
+                receive_own_messages=False,
+                can_filters=[{"can_id": 0x007, "can_mask": 0x7FF}],
+            )
 
-    def send_can(self, data, can_id=0x007):
+    def destroy_can(self):
+        """Shuts down and deletes initialized CAN bus."""
+        if self.bus:
+            self.bus.shutdown()
+            del self.bus
+            self.bus = None
+
+    def send_can(self, data, can_id=0x007, timeout=0.5):
         """Sends CAN message.
 
         Args:
@@ -566,12 +569,13 @@ class Phoenix:
             can_id (hexadecimal, optional): CAN ID. Defaults to 0x007.
         """
         msg = can.Message(arbitration_id=can_id, data=data, is_extended_id=False)
+        self.init_can()
         try:
-            self.can.send(msg)
+            self.bus.send(msg, timeout)
         except can.CanError:
             print("Error: Cannot send can message")
 
-    def receive_can(self, timeout=0.5):
+    def receive_can(self, msg_data=None, timeout=0.5, num_tries=1000):
         """Receives next message from CAN bus.
 
         Args:
@@ -580,12 +584,24 @@ class Phoenix:
         Returns:
             Message | None: CAN message or None (if no message could be received).
         """
+        msg_data = msg_data or []
         msg = None
-        end_time = time.time() + timeout
-        while msg is None or msg.arbitration_id != 0x007:
-            msg = self.can_reader.get_message()
-            if end_time < time.time():
+        self.init_can()
+        for _ in range(num_tries):
+            msg = self.bus.recv(timeout)
+            msg_found = True
+            if len(msg.data) >= len(msg_data):
+                for i, byte in enumerate(msg_data):
+                    if byte != msg.data[i]:
+                        msg_found = False
+                        break
+            else:
+                msg_found = False
+            if msg_found:
                 break
+        self.destroy_can()
+        if not msg_found:
+            msg = None
         return msg
 
     def init_robot(self):
@@ -2654,11 +2670,9 @@ class Phoenix:
         """
         self.send_can(data=[0x01, 0x09])
         version = 0.0
-        for _ in range(100):
-            msg = self.receive_can()
-            if msg.data[0] == 0x02 and msg.data[1] == 0x09:
-                version = msg.data[2] / 10
-                break
+        msg = self.receive_can([0x02, 0x09])
+        if msg:
+            version = msg.data[2] / 10
         return version
 
     def tool_set_digital_out(self, pin_no, pin_value):
@@ -2681,11 +2695,9 @@ class Phoenix:
         """
         self.send_can(data=[0x02, 0x62, pin_no])
         pin_state = -1
-        for _ in range(100):
-            msg = self.receive_can()
-            if msg.data[0] == 0x03 and msg.data[1] == 0x62 and msg.data[2] == pin_no:
-                pin_state = msg.data[3]
-                break
+        msg = self.receive_can([0x03, 0x62, pin_no])
+        if msg:
+            pin_state = msg.data[3]
         return pin_state
 
     def tool_set_led_color(self, r, g, b):
@@ -2706,11 +2718,9 @@ class Phoenix:
         """
         self.send_can([0x01, 0x71])
         button_state = None
-        for _ in range(100):
-            msg = self.receive_can()
-            if msg.data[0] == 0x02 and msg.data[1] == 0x71:
-                button_state = bool(msg.data[2])
-                break
+        msg = self.receive_can([0x02, 0x71])
+        if msg:
+            button_state = bool(msg.data[2])
         return button_state
 
     def tool_set_gripper_state(self, state, speed):
