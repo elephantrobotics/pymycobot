@@ -2666,6 +2666,7 @@ class Phoenix:
 
     def tool_get_firmware_version(self):
         """Returns ESP32 Pico firmware version.
+           This function may block for some time until the data is received.
 
         Returns:
             float: firmware version
@@ -2688,6 +2689,7 @@ class Phoenix:
 
     def tool_get_digital_in(self, pin_no):
         """Returns digital input pin's value.
+           This function may block for some time until the data is received.
 
         Args:
             pin_no (int): pin number
@@ -2714,6 +2716,7 @@ class Phoenix:
 
     def tool_is_btn_clicked(self):
         """Returns True if ESP32 button is pressed.
+           This function may block for some time until the data is received.
 
         Returns:
             bool: True if button is pressed, False otherwise, None if failed to get button status
