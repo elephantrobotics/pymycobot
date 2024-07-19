@@ -119,6 +119,7 @@ class ProtocolCode(object):
     SET_GRIPPER_CALIBRATION = 0x68
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
+    IS_TOOL_BTN_CLICKED = 0x6b
     SET_GRIPPER_TORQUE = 0x6F
     IS_BTN_CLICKED = 0x6F
     SET_COLOR_MYARM = 0x70
@@ -229,6 +230,8 @@ class ProtocolCode(object):
     GET_ROBOT_ERROR_CHECK_STATE = 7
     GET_ROBOT_ERROR_STATUS = 0x15
     GET_ATOM_PRESS_STATUS = 0x6b
+    GET_JOINTS_COORD = 0x23
+    GET_ROBOT_TOOL_MODIFY_VERSION = 0x04
     GET_ATOM_LED_COLOR = 0x6a
     SET_ATOM_PIN_STATUS = 0x61
     GET_ATOM_PIN_STATUS = 0x62
@@ -735,7 +738,13 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                         break
             if data_len == 1 and data == b"\xfa":
                 datas += data
-                if [i for i in datas] == command and genre not in (ProtocolCode.GET_ATOM_PRESS_STATUS, ):
+                if [i for i in datas] == command:
+                    if genre in (
+                        ProtocolCode.GET_ATOM_PRESS_STATUS,
+                        ProtocolCode.GET_SERVO_MOTOR_COUNTER_CLOCKWISE,
+                        ProtocolCode.GET_SERVO_MOTOR_CLOCKWISE
+                    ) and _class in ["MyArmM", "MyArmC", "MyArmAPI"]:
+                        break
                     datas = b''
                     data_len = -1
                     k = 0
