@@ -1235,6 +1235,8 @@ class Phoenix:
         """
         self.set_digital_out(DO.BRAKE_MANUAL_MODE_ENABLE, enable)
         time.sleep(0.05)
+        for joint in Joint:
+            self.release_joint_brake(joint, False)
 
     def release_joint_brake(self, joint, release=True):
         """Releases or focuses (enables) specified joint's brake.
