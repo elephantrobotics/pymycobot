@@ -177,6 +177,7 @@ class ProtocolCode(object):
     SET_END_TYPE = 0x89
     GET_END_TYPE = 0x8A
     WRITE_MOVE_C = 0x8C
+    SOLVE_INV_KINEMATICS = 0x8D
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
@@ -413,7 +414,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES] and index in [0, 1] and _class in ["Mercury", "MercurySocket"]:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG] and index in [0, 1] and _class in ["Mercury", "MercurySocket"]:
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -505,7 +506,7 @@ class DataProcessor(object):
             if data_len == 8 and (
                     (arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION) or
                     (arm == 8 and cmd_id in ignor_t)
-            ):
+            ) or data_len == 6 and cmd_id in ignor_t:
                 for v in valid_data:
                     res.append(v)
                 return res

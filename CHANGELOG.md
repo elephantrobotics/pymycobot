@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.4.9 (2024-7-18)
+
+- release v3.4.9
+- fix A1 bug
+
+## v3.4.8 (2024-7-11)
+
+- release v3.4.7
+- fix 280 get VOLTAGES error
+
 ## v3.4.7 (2024-6-28)
 
 - release v3.4.7

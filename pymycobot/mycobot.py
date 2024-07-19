@@ -137,7 +137,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
                 ProtocolCode.STOP
             ]:
                 return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES]:
+            elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
                 if res:

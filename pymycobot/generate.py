@@ -1195,3 +1195,16 @@ class CommandGenerator(DataProcessor):
         """Get robot status
         """
         return self._mesg(ProtocolCode.GET_ROBOT_STATUS, has_reply = True)
+    
+    def angles_to_coords(self, angles):
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
+    
+    def solve_inv_kinematics(self, target_coords, current_angles):
+        angles = [self._angle2int(angle) for angle in current_angles]
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(target_coords[idx]))
+        for angle in target_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
