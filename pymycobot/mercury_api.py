@@ -398,8 +398,9 @@ class MercuryCommandGenerator(CommandGenerator):
                     self.log.debug("_read : {}".format(command_log))
                 if data:
                     res = self._process_received(data)
-                    with self.lock:
-                        self.read_command.append(res)
+                    if res != []:
+                        with self.lock:
+                            self.read_command.append(res)
             else:
                 while True and time.time() - t < wait_time:
                     # print("r", end=" ", flush=True)
@@ -455,8 +456,9 @@ class MercuryCommandGenerator(CommandGenerator):
                         for d in datas:
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
-                    with self.lock:
-                        self.read_command.append(res)
+                    if res != []:
+                        with self.lock:
+                            self.read_command.append(res)
                 # return datas
 
     def set_solution_angles(self, angle, speed):
