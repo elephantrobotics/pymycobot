@@ -15,7 +15,7 @@ from pymycobot.common import ProtocolCode, write, read
 class MercuryCommandGenerator(CommandGenerator):
     _write = write
     _read = read
-
+    close_loop = b'\xfe\xfe\x04[\x00\xcd\xF'
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
@@ -85,7 +85,7 @@ class MercuryCommandGenerator(CommandGenerator):
             data = None
             while True and time.time() - t < wait_time:
                 for v in self.read_command:
-                    if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87':
+                    if is_in_position and v == self.close_loop:
                         need_break = True
                         with self.lock:
                             self.read_command.remove(v)
@@ -348,7 +348,7 @@ class MercuryCommandGenerator(CommandGenerator):
     def _process_received(self, data):
         if not data:
             return []
-        elif data == b'\xfe\xfe\x04[\x01\r\x87':
+        elif data == self.close_loop:
             # 水星到位反馈
             return data
 
