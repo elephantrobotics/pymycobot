@@ -15,7 +15,7 @@ from pymycobot.common import ProtocolCode, write, read
 class MercuryCommandGenerator(CommandGenerator):
     _write = write
     _read = read
-    close_loop = b'\xfe\xfe\x04[\x00\xcd\xF'
+    close_loop = b'\xfe\xfe\x04[\x00\xcdF'
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
