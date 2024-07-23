@@ -367,7 +367,7 @@ class MercuryServer(object):
                             self.write(command)
                             if command[3] == 0x29:
                                 self.connected = False
-                            if command[3] in has_return or (command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.asynchronous == False):
+                            if command[3] in has_return or (command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]):
                                 # res = self.read(command)
                                 self.read_thread = threading.Thread(target=self.read, args=(command,), daemon=True)
                                 self.read_thread.start()
@@ -425,7 +425,7 @@ class MercuryServer(object):
             wait_time = 8
         elif command[3] in [0x11, 0x13, 0x18, 0x56, 0x57, 0x29]:
             wait_time = 3
-        elif command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.asynchronous == False:
+        elif command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
             wait_time = 300
         while True and time.time() - t < wait_time and self.connected:
             if self.mc.inWaiting() > 0:
@@ -472,13 +472,11 @@ class MercuryServer(object):
                         else:
                             datas = b"\xfe"
                             pre = k
-                else:
-                    datas = b''
-                if self.conn is not None:
-                    self.logger.info("return datas: {}".format([hex(v) for v in datas]))
-                    
-                    self.conn.sendall(datas)
-                    datas = b''
+        if self.conn is not None:
+            self.logger.info("return datas: {}".format([hex(v) for v in datas]))
+            
+            self.conn.sendall(datas)
+            datas = b''
         return datas
 
     def re_data_2(self, command):

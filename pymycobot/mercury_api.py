@@ -90,7 +90,7 @@ class MercuryCommandGenerator(CommandGenerator):
                         with self.lock:
                             self.read_command.remove(v)
                             self.write_command.remove(genre)
-                            return 1
+                            return 0
                     elif genre == v[3]:
                         need_break = True
                         data = v
@@ -385,6 +385,8 @@ class MercuryCommandGenerator(CommandGenerator):
                             datas += hex(ord(i))
                 except:
                     data = b""
+                if data == b"":
+                    continue
                 if self.check_python_version() == 2:
                     command_log = ""
                     for d in data:
@@ -398,9 +400,9 @@ class MercuryCommandGenerator(CommandGenerator):
                     self.log.debug("_read : {}".format(command_log))
                 if data:
                     res = self._process_received(data)
-                    if res != []:
-                        with self.lock:
-                            self.read_command.append(res)
+                    
+                    with self.lock:
+                        self.read_command.append(res)
             else:
                 while True and time.time() - t < wait_time:
                     # print("r", end=" ", flush=True)
