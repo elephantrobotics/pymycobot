@@ -115,6 +115,8 @@ class MyArmAPI(DataProcessor):
                     rank = [i for i, e in enumerate(reverse_bins) if e != '0']
                     result.append(rank)
                 return result
+            elif genre == ProtocolCode.GET_ROBOT_FIRMWARE_VERSION:
+                return self._int2coord(res[0])
             else:
                 return res
 
