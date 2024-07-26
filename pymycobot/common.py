@@ -211,7 +211,7 @@ class ProtocolCode(object):
     GET_JOINT_CURRENT = 0x91
     SET_CURRENT_STATE = 0x92
     GET_POS_OVER = 0x94
-    CLEAR_ENCODERS_ERROR = 0x95
+    CLEAR_ENCODERS_ERROR = 0xEA
     GET_DOWN_ENCODERS = 0x96
 
     # planning speed

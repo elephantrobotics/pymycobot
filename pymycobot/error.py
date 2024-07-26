@@ -149,7 +149,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
         # TODO 280/320共用MyCobot，无法进行数据限位
         # elif parameter == 'coords':
         #     check_coords(value, robot_limit, class_name, exception_class)
-        elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+        elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'pin_signal']:
             check_0_or_1(parameter, value, [0, 1],
                          value_type, exception_class, int)
         elif parameter == 'acceleration':
@@ -388,8 +388,7 @@ def calibration_parameters(**kwargs):
 
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
-            # if direction is not None:
-            elif parameter in ['direction', 'flag', 'value', 'mode']:
+            elif parameter in ['direction', 'flag', 'value', 'mode', 'pin_signal']:
                 if value not in [0, 1]:
                     raise MercuryDataException(
                         "{} only supports 0 or 1, but received {}".format(parameter, value))
@@ -445,6 +444,16 @@ def calibration_parameters(**kwargs):
                     if value < min_speed or value > max_speed:
                         raise MercuryDataException(
                                 "The parameter max_speed data range only supports {} ~ {}, but received {}".format(min_speed, max_speed, value))
+                elif mode == 1:
+                    min_speed = 1
+                    max_speed = 200
+                    if value < min_speed or value > max_speed:
+                        raise MercuryDataException(
+                                "The parameter max_speed data range only supports {} ~ {}, but received {}".format(min_speed, max_speed, value))
+            elif parameter in ['gripper_type', 'pin_no']:
+                value_type = type(value)
+                check_0_or_1(parameter, value, [1, 2], value_type, MercuryDataException, int)
+                
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
