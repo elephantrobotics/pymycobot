@@ -237,16 +237,16 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
 def calibration_parameters(**kwargs):
     robot_limit = {
         "Mercury": {
-            "id": [1, 2, 3, 4, 5, 6, 11, 12, 13],
-            "angles_min": [-165, -55, -173, -165, -20, -180, -60, -138, -118],
-            "angles_max": [165, 95, 5, 165, 265, 180, 0, 188, 118],
+            "id": [1, 2, 3, 4, 5, 6, 11, 12],
+            "angles_min": [-165, -55, -173, -165, -20, -180, -60, -138],
+            "angles_max": [165, 95, 5, 165, 265, 180, 0, 188],
             "coords_min": [-441.37, -441.37, -206.52, -180, -180, -180],
             "coords_max": [441.37, 441.37, 628.02, 180, 180, 180]
         },
         "MercurySocket": {
-            "id": [1, 2, 3, 4, 5, 6, 11, 12, 13],
-            "angles_min": [-165, -55, -173, -165, -20, -180, -60, -138, -118],
-            "angles_max": [165, 95, 5, 165, 265, 180, 0, 188, 118],
+            "id": [1, 2, 3, 4, 5, 6, 11, 12],
+            "angles_min": [-165, -55, -173, -165, -20, -180, -60, -138],
+            "angles_max": [165, 95, 5, 165, 265, 180, 0, 188],
             "coords_min": [-441.37, -441.37, -206.52, -180, -180, -180],
             "coords_max": [441.37, 441.37, 628.02, 180, 180, 180]
         },
@@ -347,7 +347,7 @@ def calibration_parameters(**kwargs):
             elif parameter == 'angle':
                 id = kwargs.get('id', None)
                 if id in [11, 12, 13]:
-                    index = robot_limit[class_name]['id'][id-4] - 4
+                    index = robot_limit[class_name]['id'][id-5] - 5
                 else:
                     index = robot_limit[class_name]['id'][id-1] - 1
                 if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
@@ -389,7 +389,7 @@ def calibration_parameters(**kwargs):
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
             # if direction is not None:
-            elif parameter in ['direction', 'flag', 'value']:
+            elif parameter in ['direction', 'flag', 'value', 'mode']:
                 if value not in [0, 1]:
                     raise MercuryDataException(
                         "{} only supports 0 or 1, but received {}".format(parameter, value))
@@ -404,17 +404,17 @@ def calibration_parameters(**kwargs):
                     raise MercuryDataException(
                         "The angle range is -90° ~ 90°, but received {}".format(value))
             elif parameter == 'address':
-                if value < 32 or value > 34:
+                if value < 5 or value > 69:
                     raise MercuryDataException(
-                        "The angle address is 32 ~ 34, but received {}".format(value))
+                        "The address range is 5 ~ 69, but received {}".format(value))
             elif parameter == 'value':
                 if value < 1 or value > 32000:
                     raise MercuryDataException(
                         "The angle value is 1 ~ 32000, but received {}".format(value))
             elif parameter == "servo_restore":
-                if value not in [1, 2, 3, 4, 5, 6, 7, 13, 254]:
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
                     raise MercuryDataException(
-                        "The joint_id should be in [1,2,3,4,5,6,7,13,254], but received {}".format(value))
+                        "The joint_id should be in [1,2,3,4,5,6,,254], but received {}".format(value))
             elif parameter == "data_len":
                 if value < 1 or value > 45:
                     raise MercuryDataException(
@@ -423,6 +423,28 @@ def calibration_parameters(**kwargs):
                 if value < 0:
                     raise MercuryDataException(
                         "The parameter max_time must be greater than or equal to 0, but received {}".format(value))
+            elif parameter == "max_acc":
+                mode = kwargs.get("mode", None)
+                if mode == 0:
+                    if value < 1 or value > 150:
+                        raise MercuryDataException(
+                            "The parameter max_acc data range only supports 1 ~ 150, but received {}".format(value))
+                elif mode == 1:
+                    if value < 1 or value > 400:
+                        raise MercuryDataException(
+                            "The parameter max_acc data range only supports 1 ~ 400, but received {}".format(value))
+            elif parameter == "servo_id":
+                if value not in [11,12]:
+                    raise MercuryDataException(
+                            "The parameter servo_id data range only supports 11 or 12, but received {}".format(value))
+            elif parameter == "max_speed":
+                mode = kwargs.get("mode", None)
+                if mode == 0:
+                    min_speed = 1
+                    max_speed = 150
+                    if value < min_speed or value > max_speed:
+                        raise MercuryDataException(
+                                "The parameter max_speed data range only supports {} ~ {}, but received {}".format(min_speed, max_speed, value))
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
