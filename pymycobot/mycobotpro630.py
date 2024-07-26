@@ -312,12 +312,19 @@ class AI(Enum):
     PIN_22 = 22
     PIN_23 = 23
     PIN_24 = 24
+
     PIN_25 = 25
+    AXIS_X_VELOCITY = 25
     PIN_26 = 26
+    AXIS_Y_VELOCITY = 26
     PIN_27 = 27
+    AXIS_Z_VELOCITY = 27
     PIN_28 = 28
+    AXIS_RX_VELOCITY = 28
     PIN_29 = 29
+    AXIS_RY_VELOCITY = 29
     PIN_30 = 30
+    AXIS_RZ_VELOCITY = 30
 
     J1_VOLTAGE = 31
     J2_VOLTAGE = 32
@@ -2217,7 +2224,8 @@ class Phoenix:
         """
         if 0 <= axis.value <= 5:
             self.s.poll()
-            return self.s.axis[axis.value]["velocity"]
+            axis = AI(AI.AXIS_X_VELOCITY.value + axis.value)
+            return self.get_analog_in(axis)
         return -1.0
 
     def get_current_command(self):
