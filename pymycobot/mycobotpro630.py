@@ -1106,6 +1106,11 @@ class Phoenix:
                 type = "info"
         return (type, kind, text)
 
+    def clear_all_errors(self):
+        """Clears all errors."""
+        while self.get_error() == (None, None, None):
+            pass
+
     def is_power_on(self):
         """Checks if robot is powered on.
 

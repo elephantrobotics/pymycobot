@@ -37,7 +37,8 @@ class ElephantRobot(object):
             self.tcp_client.send(command.encode())
             recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
             res_str = str(recv_data)
-            print("recv = " + res_str)
+            if self.debug:
+                print("recv = " + res_str)
             res_arr = res_str.split(":")
             if len(res_arr) == 2:
                 return res_arr[1]
@@ -162,6 +163,10 @@ class ElephantRobot(object):
         command = "read_next_error()\n"
         res = self.send_command(command)
         return res
+
+    def clear_all_errors(self):
+        while self.read_next_error() != "":
+            pass
 
     def write_coords(self, coords, speed):
         command = "set_coords("
