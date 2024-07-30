@@ -21,7 +21,7 @@ class MycobotTest(object):
 
         self.win = tkinter.Tk()
         self.win.title("树莓派版 MyPalletizer 测试工具")
-        self.win.geometry("918x511+10+10")  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
+        self.win.geometry("918x611+10+10")  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
 
         self.port_label = tkinter.Label(self.win, text="选择串口：")
         self.port_label.grid(row=0)
