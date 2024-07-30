@@ -1108,7 +1108,7 @@ class Phoenix:
 
     def clear_all_errors(self):
         """Clears all errors."""
-        while self.get_error() == (None, None, None):
+        while self.get_error() != (None, None, None):
             pass
 
     def is_power_on(self):
