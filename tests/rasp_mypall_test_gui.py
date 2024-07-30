@@ -33,12 +33,12 @@ class MycobotTest(object):
         self.stop_test = False
         self.port_list.grid(row=0, column=1)
 
-        # self.baud_label = tkinter.Label(self.win, text="选择波特率：")
-        # self.baud_label.grid(row=1)
-        # self.baud_list = ttk.Combobox(self.win, width=15)
-        # self.baud_list["value"] = ("115200", "115200")
-        # self.baud_list.current(0)
-        # self.baud_list.grid(row=1, column=1)
+        self.baud_label = tkinter.Label(self.win, text="选择波特率：")
+        self.baud_label.grid(row=1)
+        self.baud_list = ttk.Combobox(self.win, width=15)
+        self.baud_list["value"] = ("115200", "115200")
+        self.baud_list.current(0)
+        self.baud_list.grid(row=1, column=1)
 
         # Connect
         self.connect_label = tkinter.Label(self.win, text="连接机器：")
@@ -134,11 +134,11 @@ class MycobotTest(object):
         if not port:
             self.write_log_to_Text("请选择串口")
             return
-        # self.baud = baud = self.baud_list.get()
-        # if not baud:
-        #     self.write_log_to_Text("请选择波特率")
-        #     return
-        baud = 1000000
+        self.baud = baud = self.baud_list.get()
+        if not baud:
+            self.write_log_to_Text("请选择波特率")
+            return
+        # baud = 1000000
 
         try:
             # self.mycobot = MyCobot(PI_PORT, PI_BAUD)
