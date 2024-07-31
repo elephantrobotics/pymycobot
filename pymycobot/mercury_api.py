@@ -1061,3 +1061,14 @@ class MercuryCommandGenerator(CommandGenerator):
             coord_list.append(self._angle2int(angle))
         angles = [self._angle2int(angle) for angle in old_angles]
         return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
+
+        # 7/29
+    def get_drag_fifo(self):
+        return self._mesg(ProtocolCode.GET_DRAG_FIFO, has_reply=True)
+    
+    def set_drag_fifo(self, angles):
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.SET_DRAG_FIFO, angles)
+    
+    def get_drag_fifo_len(self):
+        return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN, has_reply=True)
