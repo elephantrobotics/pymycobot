@@ -84,6 +84,18 @@ class ChassisControl:
             return_data = [receive_data[1] * 256 + receive_data[2], receive_data[3] * 256 + receive_data[4],
                            receive_data[5] * 256 + receive_data[6]]
             return return_data
+        
+        elif flag == "version":
+            receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer)
+            # print(receive_data, len(receive_data))
+            self._debug(receive_data)
+            
+            major_version = receive_data[22]
+            minor_version = receive_data[23]
+            return_data = f"v{major_version}.{minor_version}"
+
+            return return_data
+
         else:
             print('no data', return_data)
 
@@ -139,6 +151,13 @@ class ChassisControl:
         :return: A list of length 3,Unit: mm
         """
         return self._request('ultrasonic')
+    
+    def get_base_version(self):
+        """
+        Get base version
+        :return: A string representing the firmware version in the format 'vX.X' (e.g., 'v1.1').
+        """
+        return self._request('version')
 
     def go_straight(self, speed=0.2):
         """
