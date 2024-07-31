@@ -29,7 +29,8 @@ class Mercury(MercuryCommandGenerator):
         self.lock = threading.Lock()
         self.has_reply_command = []
         self.is_stop = False
-        self.read_threading = threading.Thread(target=self.read_thread, daemon=True)
+        self.read_threading = threading.Thread(target=self.read_thread)
+        self.read_threading.daemon = True
         self.read_threading.start()
 
     def open(self):

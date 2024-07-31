@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import time
 import socket
 import threading
 
@@ -21,7 +20,8 @@ class MercurySocket(MercuryCommandGenerator):
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
-        self.read_threading = threading.Thread(target=self.read_thread, daemon=True)
+        self.read_threading = threading.Thread(target=self.read_thread)
+        self.read_threading.daemon = True
         self.read_threading.start()
 
     def connect_socket(self):
