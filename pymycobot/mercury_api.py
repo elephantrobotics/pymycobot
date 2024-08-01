@@ -1648,7 +1648,15 @@ class MercuryCommandGenerator(DataProcessor):
     def set_monitor_mode(self,mode):
         return self._mesg(ProtocolCode.SET_MONITOR_MODE, mode)
     
+    def set_limit_switch(self, limit_mode, state):
+        """Setting the limit switches. No save after power off
+
+        Args:
+            limit_mode (int): 1 - Location out of tolerance. 2 - Synchronous control
+            state (int): 0 - close. 1 - open
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, limit_mode=limit_mode, state=state)
+        return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
     
-    
-            
-            
+    # def get_limit_switch(self):
+        

@@ -388,7 +388,7 @@ def calibration_parameters(**kwargs):
 
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
-            elif parameter in ['direction', 'flag', 'value', 'mode', 'pin_signal']:
+            elif parameter in ['direction', 'flag', 'value', 'mode', 'pin_signal', 'state']:
                 if value not in [0, 1]:
                     raise MercuryDataException(
                         "{} only supports 0 or 1, but received {}".format(parameter, value))
@@ -450,7 +450,7 @@ def calibration_parameters(**kwargs):
                     if value < min_speed or value > max_speed:
                         raise MercuryDataException(
                                 "The parameter max_speed data range only supports {} ~ {}, but received {}".format(min_speed, max_speed, value))
-            elif parameter in ['gripper_type', 'pin_no']:
+            elif parameter in ['gripper_type', 'pin_no', 'limit_mode']:
                 value_type = type(value)
                 check_0_or_1(parameter, value, [1, 2], value_type, MercuryDataException, int)
                 

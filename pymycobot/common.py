@@ -30,6 +30,8 @@ class ProtocolCode(object):
     SET_SERVO_CW = 0x0B
     GET_SERVO_CW = 0x0C
     CLEAR_WAIST_QUEUE = 0x0D
+    SET_LIMIT_SWITCH = 0x0E
+    GET_LIMIT_SWITCH = 0x0E
     
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
