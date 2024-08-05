@@ -430,8 +430,9 @@ class MercuryCommandGenerator(CommandGenerator):
                         for d in datas:
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
-                    with self.lock:
-                        self.read_command.append(res)
+                    if res != []:
+                        with self.lock:
+                            self.read_command.append(res)
                 # return datas
 
     def set_solution_angles(self, angle, speed):
