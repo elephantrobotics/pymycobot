@@ -134,7 +134,8 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
                 ProtocolCode.GetGripperProtectCurrent,
                 ProtocolCode.InitGripper,
                 ProtocolCode.SET_FOUR_PIECES_ZERO,
-                ProtocolCode.STOP
+                ProtocolCode.STOP,
+                ProtocolCode.SET_BASIC_OUTPUT
             ]:
                 return self._process_single(res)
             elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:

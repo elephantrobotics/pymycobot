@@ -122,7 +122,8 @@ class MyCobotSocket(CommandGenerator):
                     ProtocolCode.GetHTSGripperTorque,
                     ProtocolCode.GetGripperProtectCurrent,
                     ProtocolCode.InitGripper,
-                    ProtocolCode.SET_FOUR_PIECES_ZERO
+                    ProtocolCode.SET_FOUR_PIECES_ZERO,
+                    ProtocolCode.SET_BASIC_OUTPUT
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES]:
