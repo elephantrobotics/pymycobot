@@ -1649,7 +1649,7 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_MONITOR_MODE, mode)
     
     def set_limit_switch(self, limit_mode, state):
-        """Setting the limit switches. No save after power off
+        """Set the limit switches. No save after power off
 
         Args:
             limit_mode (int): 1 - Location out of tolerance. 2 - Synchronous control
@@ -1658,5 +1658,31 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(class_name = self.__class__.__name__, limit_mode=limit_mode, state=state)
         return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
     
-    # def get_limit_switch(self):
+    def get_limit_switch(self):
+        """Get the limit switches
         
+        Return:
+            list : [sync state, Location out of tolerance state], 0 - close. 1 - open
+        """
+        return self._mesg(ProtocolCode.GET_LIMIT_SWITCH)
+    
+    def solve_inv_kinematics(self, new_coords, old_angles):
+        """_summary_
+        """
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(new_coords[idx]))
+        for angle in new_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        angles = [self._angle2int(angle) for angle in old_angles]
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
+    
+    def get_drag_fifo(self):
+        return self._mesg(ProtocolCode.GET_DRAG_FIFO, has_reply=True)
+    
+    def set_drag_fifo(self, angles):
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.SET_DRAG_FIFO, angles)
+    
+    def get_drag_fifo_len(self):
+        return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN, has_reply=True)

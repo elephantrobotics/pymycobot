@@ -105,7 +105,10 @@ class ProtocolCode(object):
     GET_MAX_ACC = 0x42
     SET_MAX_ACC = 0x43
     GET_ACCELERATION = 0x44
+    GET_DRAG_FIFO = 0x44
+    SET_DRAG_FIFO = 0x45
     SET_ACCELERATION = 0x45
+    GET_DRAG_FIFO_LEN = 0x46
     GET_JOINT_MIN_ANGLE = 0x4A
     GET_JOINT_MAX_ANGLE = 0x4B
     SET_JOINT_MIN = 0x4C
@@ -207,6 +210,7 @@ class ProtocolCode(object):
     SET_END_TYPE = 0x89
     GET_END_TYPE = 0x8A
     WRITE_MOVE_C = 0x8C
+    SOLVE_INV_KINEMATICS = 0x8D
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
