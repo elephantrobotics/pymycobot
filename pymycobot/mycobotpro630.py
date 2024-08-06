@@ -853,7 +853,7 @@ class Phoenix:
             coords (list[float]): coords to set, list[float] of size 6
             speed (float): speed percentage (0 ~ 100 %)
         """
-        if self.is_in_position(coords, True):
+        if self.is_in_position(coords, JogMode.JOG_TELEOP):
             return True
         if not self._check_speed(speed):
             return False
@@ -902,7 +902,7 @@ class Phoenix:
             angles (list[float]): joint angles, list[float] of size MAX_JOINTS
             speed (float): speed percentage (1 ~ 100 %)
         """
-        if self.is_in_position(angles, False):
+        if self.is_in_position(angles, JogMode.JOG_JOINT):
             return True
         if not self._check_speed(speed):
             return False
