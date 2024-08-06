@@ -482,6 +482,7 @@ class Phoenix:
 
         Args:
             debug (bool, optional): Debug mode of logging (log with debug). Defaults to False.
+            do_init (bool, optional): if True will initialize robot, otherwise will skip  initialization.
         """
         self.c = elerob.command()
         self.s = elerob.stat()
