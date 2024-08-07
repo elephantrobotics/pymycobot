@@ -191,7 +191,7 @@ class MercuryCommandGenerator(DataProcessor):
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
-            if genre == ProtocolCode.COBOTX_GET_ANGLE:
+            if genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_ENCODER]:
                 byte_value = int.from_bytes(
                     valid_data, byteorder='big', signed=True)
                 res.append(byte_value)
@@ -1805,3 +1805,23 @@ class MercuryCommandGenerator(DataProcessor):
             0 - close
         """
         return self._mesg(ProtocolCode.GET_COLLISION_MODE)
+    
+    def set_electric_gripper(self, mode):
+        """Set the state of the electric gripper
+
+        Args:
+            mode (int): 0 - open. 1 - close
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_ELECTRIC_GRIPPER, mode)
+    
+    def init_electric_gripper(self):
+        """Electric Gripper Initialization
+        """
+        return self._mesg(ProtocolCode.INIT_ELECTRIC_GRIPPER)
+    
+    def get_servo_encoder(self, id):
+        return self._mesg(ProtocolCode.GET_ENCODER, id)
+    
+    def get_servo_encoders(self):
+        return self._mesg(ProtocolCode.GET_ENCODERS)
