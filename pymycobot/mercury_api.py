@@ -320,7 +320,8 @@ class MercuryCommandGenerator(DataProcessor):
             ProtocolCode.GET_FILTER_LEN,
             ProtocolCode.MERCURY_ERROR_COUNTS,
             ProtocolCode.GET_MAX_ACC,
-            ProtocolCode.GET_MONITOR_MODE
+            ProtocolCode.GET_MONITOR_MODE,
+            ProtocolCode.GET_COLLISION_MODE
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_DRAG_FIFO]:
@@ -1795,3 +1796,12 @@ class MercuryCommandGenerator(DataProcessor):
             speed (int): 1 ~ 100.
         """
         return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, has_reply=True)
+    
+    def get_collision_mode(self):
+        """Get collision detection status
+        
+        Return:
+            1 - open
+            0 - close
+        """
+        return self._mesg(ProtocolCode.GET_COLLISION_MODE)
