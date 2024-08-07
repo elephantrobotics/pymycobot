@@ -3,7 +3,11 @@
 from __future__ import division
 import time
 import struct
+import logging
 import sys
+
+from pymycobot.log import setup_logging
+from pymycobot.error import calibration_parameters
 
 
 class ProtocolCode(object):
@@ -22,13 +26,17 @@ class ProtocolCode(object):
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
     
-    SET_CW = 0x0B
-    GET_CW = 0x0C
+    CLEAR_ZERO_POS = 0x0A
+    SET_SERVO_CW = 0x0B
+    GET_SERVO_CW = 0x0C
     CLEAR_WAIST_QUEUE = 0x0D
+    SET_LIMIT_SWITCH = 0x0E
+    GET_LIMIT_SWITCH = 0x0F
     
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
+    JOG_INCREMENT_BASE_COORD = 0x37
     InitGripper = 0x38
     SetGripperProtectCurrent = 0x39
 
@@ -75,11 +83,14 @@ class ProtocolCode(object):
     JOG_ABSOLUTE = 0x31
     JOG_COORD = 0x32
     JOG_INCREMENT = 0x33
+    JOG_INCREMENT_COORD = 0x34
+    
     JOG_STOP = 0x34
     JOG_INCREMENT_COORD = 0x34
     
     COBOTX_GET_SOLUTION_ANGLES = 0x35
     COBOTX_SET_SOLUTION_ANGLES = 0x36
+    JOG_BASE_INCREMENT_COORD = 0x37
     
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
@@ -91,6 +102,8 @@ class ProtocolCode(object):
     GET_SPEED = 0x40
     SET_SPEED = 0x41
     GET_FEED_OVERRIDE = 0x42
+    GET_MAX_ACC = 0x42
+    SET_MAX_ACC = 0x43
     GET_ACCELERATION = 0x44
     GET_DRAG_FIFO = 0x44
     SET_DRAG_FIFO = 0x45
@@ -204,7 +217,7 @@ class ProtocolCode(object):
     GET_JOINT_CURRENT = 0x91
     SET_CURRENT_STATE = 0x92
     GET_POS_OVER = 0x94
-    CLEAR_ENCODERS_ERROR = 0x95
+    CLEAR_ENCODERS_ERROR = 0xEA
     GET_DOWN_ENCODERS = 0x96
 
     # planning speed
@@ -226,13 +239,17 @@ class ProtocolCode(object):
     GET_SERVO_LASTPDI = 0xE6
     SERVO_RESTORE = 0xE7
     SET_VOID_COMPENSATE = 0xE7
-    SET_ERROR_DETECT_MODE = 0xE8
-    GET_ERROR_DETECT_MODE = 0xE9
+    # SET_ERROR_DETECT_MODE = 0xE8
+    # GET_ERROR_DETECT_MODE = 0xE9
     
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
+    JOG_RPY = 0xF5
+    
+    GET_MONITOR_MODE = 0xFB
+    SET_MONITOR_MODE = 0xFC
     
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
@@ -316,6 +333,17 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
+    def __init__(self, debug=False):
+        """
+        Args:
+            debug    : whether show debug info
+        """
+        self._version = sys.version_info[:2][0]
+        self.debug = debug
+        setup_logging(self.debug)
+        self.log = logging.getLogger(__name__)
+        self.calibration_parameters = calibration_parameters
+        
     def _mesg(self, genre, *args, **kwargs):
         """
         Args:
@@ -387,6 +415,9 @@ class DataProcessor(object):
 
     def _int2angle(self, _int):
         return round(_int / 100.0, 3)
+    
+    def _int3angle(self, _int):
+        return round(_int / 1000, 3)
 
     def _int2coord(self, _int):
         return round(_int / 10.0, 2)
@@ -668,7 +699,12 @@ def write(self, command, method=None):
         # self._serial_port.reset_input_buffer()
         command_log = ""
         for i in command:
-            command_log += hex(i)[2:] + " "
+            if isinstance(i, str):
+                command_log += i[2:] + " "
+            else:
+                data = hex(i)[2:]
+                if len(data) == 1: data = "0" + data
+                command_log += data + " "
         self.log.debug("_write: {}".format(command_log))
         self._serial_port.write(command)
         self._serial_port.flush()
