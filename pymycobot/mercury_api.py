@@ -63,6 +63,7 @@ class MercuryCommandGenerator(DataProcessor):
                 ProtocolCode.MERCURY_SET_BASE_COORD,
                 ProtocolCode.OVER_LIMIT_RETURN_ZERO,
                 ProtocolCode.JOG_BASE_INCREMENT_COORD,
+                ProtocolCode.WRITE_MOVE_C,
                 ProtocolCode.JOG_RPY]:
             wait_time = 300
             is_in_position = True
@@ -500,7 +501,6 @@ class MercuryCommandGenerator(DataProcessor):
                         self.send_jog_command = False
                         continue
                     res = self._process_received(datas)
-
                     if self.check_python_version() == 2:
                         command_log = ""
                         for d in datas:
@@ -511,6 +511,13 @@ class MercuryCommandGenerator(DataProcessor):
                         for d in datas:
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
+                    if datas[3] == 0x5D:
+                        debug_data = []
+                        for i in range(4, 32, 4):
+                            byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
+                            debug_data.append(byte_value)
+                        self.log.debug("_read : {}".format(debug_data))
+                        continue
                     if res == []:
                         continue
                     with self.lock:
