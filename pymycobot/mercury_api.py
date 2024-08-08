@@ -601,7 +601,7 @@ class MercuryCommandGenerator(DataProcessor):
             else:
                 start.append(self._angle2int(transpoint[index]))
                 end.append(self._angle2int(endpoint[index]))
-        return self._mesg(ProtocolCode.WRITE_MOVE_C, start, end, speed)
+        return self._mesg(ProtocolCode.WRITE_MOVE_C, start, end, speed, has_reply=True)
 
     def focus_all_servos(self):
         """Lock all joints"""
