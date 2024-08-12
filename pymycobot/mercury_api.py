@@ -66,24 +66,24 @@ class MercuryCommandGenerator(CommandGenerator):
             elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                            ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
                 wait_time = 3
-            elif genre in [
-                ProtocolCode.SEND_ANGLE,
-                ProtocolCode.SEND_ANGLES,
-                ProtocolCode.SEND_COORD,
-                ProtocolCode.SEND_COORDS,
-                ProtocolCode.JOG_ANGLE,
-                ProtocolCode.JOG_COORD,
-                ProtocolCode.JOG_INCREMENT,
-                ProtocolCode.JOG_INCREMENT_COORD,
-                ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
-                ProtocolCode.MERCURY_SET_BASE_COORDS,
-                ProtocolCode.MERCURY_JOG_BASE_COORD,
-                ProtocolCode.MERCURY_SET_BASE_COORD]:
-                wait_time = 300
-                is_in_position = True
-                if genre == ProtocolCode.SEND_ANGLE and real_command[4] in [11, 12, 13]:
-                    wait_time = 0.1
-                    is_in_position = False
+            # elif genre in [
+            #     ProtocolCode.SEND_ANGLE,
+            #     ProtocolCode.SEND_ANGLES,
+            #     ProtocolCode.SEND_COORD,
+            #     ProtocolCode.SEND_COORDS,
+            #     ProtocolCode.JOG_ANGLE,
+            #     ProtocolCode.JOG_COORD,
+            #     ProtocolCode.JOG_INCREMENT,
+            #     ProtocolCode.JOG_INCREMENT_COORD,
+            #     ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
+            #     ProtocolCode.MERCURY_SET_BASE_COORDS,
+            #     ProtocolCode.MERCURY_JOG_BASE_COORD,
+            #     ProtocolCode.MERCURY_SET_BASE_COORD]:
+            #     wait_time = 300
+            #     is_in_position = True
+            #     if genre == ProtocolCode.SEND_ANGLE and real_command[4] in [11, 12, 13]:
+            #         wait_time = 0.1
+            #         is_in_position = False
             need_break = False
             data = None
             while True and time.time() - t < wait_time:
@@ -567,7 +567,7 @@ class MercuryCommandGenerator(CommandGenerator):
         """Set error detection mode"""
         return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
 
-    def sync_send_angles(self, degrees, speed, timeout=15):
+    def sync_send_angles(self, degrees, speed, timeout=300):
         """Send the angle in synchronous state and return when the target point is reached
 
         Args:
@@ -584,19 +584,34 @@ class MercuryCommandGenerator(CommandGenerator):
             time.sleep(0.1)
         return 0
 
-    def sync_send_coords(self, coords, speed, mode=None, timeout=15):
+    def sync_send_coords(self, coords, speed, timeout=300):
         """Send the coord in synchronous state and return when the target point is reached
 
         Args:
             coords: a list of coord values(List[float])
-            speed: (int) 0 ~ 100
-            mode: (int): 0 - angular（default）, 1 - linear
-            timeout: default 7s.
+            speed: (int) 1 ~ 100
+            timeout: default 300s.
         """
         t = time.time()
-        self.send_coords(coords, speed, mode)
+        self.send_coords(coords, speed)
         while time.time() - t < timeout:
             if self.is_in_position(coords, 1) == 1:
+                return 1
+            time.sleep(0.1)
+        return 0
+    
+    def sync_send_base_coords(self, base_coords, speed, timeout=300):
+        """Send the coord in synchronous state and return when the target point is reached
+
+        Args:
+            coords: a list of coord values(List[float])
+            speed: (int) 1 ~ 100
+            timeout: default 300s.
+        """
+        t = time.time()
+        self.send_base_coords(base_coords, speed)
+        while time.time() - t < timeout:
+            if self.is_moving() == 0:
                 return 1
             time.sleep(0.1)
         return 0
