@@ -81,6 +81,9 @@ class MercuryCommandGenerator(CommandGenerator):
                 ProtocolCode.MERCURY_SET_BASE_COORD]:
                 wait_time = 300
                 is_in_position = True
+                if genre == ProtocolCode.SEND_ANGLE and real_command[4] in [11, 12, 13]:
+                    wait_time = 0.1
+                    is_in_position = False
             need_break = False
             data = None
             while True and time.time() - t < wait_time:
