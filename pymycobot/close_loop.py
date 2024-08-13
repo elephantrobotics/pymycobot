@@ -38,7 +38,7 @@ class CloseLoop(CommandGenerator):
             self.no_return = True
         elif t == False:
             self.no_return = False
-        is_in_position = False
+        # is_in_position = False
         with self.lock:
             self.write_command.append(genre)
             if self.__class__.__name__ == "Pro630Client":
@@ -60,20 +60,21 @@ class CloseLoop(CommandGenerator):
             elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                         ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
                 wait_time = 3
-            elif genre in close_loop:
-                wait_time = 300
-                is_in_position = True
+            # elif genre in close_loop:
+            #     wait_time = 300
+            #     is_in_position = True
             need_break = False
             data = None
             while True and time.time() - t < wait_time:
                 for v in self.read_command:
-                    if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87' and genre in close_loop:
-                        need_break = True
-                        with self.lock:
-                            self.read_command.remove(v)
-                            self.write_command.remove(genre)
-                            return 1
-                    elif genre == v[3]:
+                    # if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87' and genre in close_loop:
+                    #     need_break = True
+                    #     with self.lock:
+                    #         self.read_command.remove(v)
+                    #         self.write_command.remove(genre)
+                    #         return 1
+                    # elif genre == v[3]:
+                    if genre == v[3]:
                         need_break = True
                         data = v
                         with self.lock:
@@ -199,7 +200,8 @@ class CloseLoop(CommandGenerator):
                     datas = b''
                 if datas:
                     res = self._process_received(datas)
-                    
+                    if res != [] and res[3] == 0x5b:
+                        continue
                     if self.check_python_version() == 2:
                         command_log = ""
                         for d in datas:
