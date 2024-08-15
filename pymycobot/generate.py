@@ -733,9 +733,9 @@ class CommandGenerator(DataProcessor):
         if gripper_type is not None:
             self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
                                         gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type, has_reply=True)
         else:
-            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, has_reply=True)
             
 
     def set_gripper_calibration(self):
