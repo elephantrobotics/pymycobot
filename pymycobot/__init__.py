@@ -29,6 +29,8 @@ from pymycobot.myarmm import MyArmM
 from pymycobot.myarmc import MyArmC
 from pymycobot.pro630 import Pro630
 from pymycobot.pro630client import Pro630Client
+from pymycobot.pro400 import Pro400
+
 __all__ = [
     "MyCobot",
     "CommandGenerator",
@@ -55,7 +57,8 @@ __all__ = [
     "MyArmM",
     "MyArmC",
     "Pro630",
-    "Pro630Client"
+    "Pro630Client",
+    "Pro400"
 ]
 
 __version__ = "3.5.0a6" 
