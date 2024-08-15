@@ -469,7 +469,8 @@ class DataProcessor(object):
         elif data == b'\xfe\xfe\x04[\x01\r\x87':
             # 水星到位反馈
             return 1
-        
+        elif data == b'\xfe\xfe\x03\x16\x01\xfa':
+            return 1
         data = bytearray(data)
         data_len = len(data)
         # Get valid header: 0xfe0xfe
