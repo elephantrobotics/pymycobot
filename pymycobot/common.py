@@ -329,7 +329,7 @@ class DataProcessor(object):
             
         elif genre in [76, 77]:
             command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
-        elif genre == 115 and self.__class__.__name__ not in  ["MyArmC", "MyArmM", "Mercury","MercurySocket", "Pro630", "Pro630Client"]:
+        elif genre == 115 and self.__class__.__name__ not in  ["MyArmC", "MyArmM", "Mercury","MercurySocket", "Pro630", "Pro630Client", "Pro400Client"]:
             command_data = [command_data[1],command_data[3]]
         LEN = len(command_data) + 2
         
@@ -341,7 +341,7 @@ class DataProcessor(object):
             ]
         if command_data:
             command.extend(command_data)
-        if self.__class__.__name__ in ["Mercury", "MercurySocket", "Pro630", "Pro630Client"]:
+        if self.__class__.__name__ in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client"]:
             command[2] += 1
             command.extend(self.crc_check(command))
         else:
@@ -433,7 +433,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre in [ProtocolCode.SET_ENCODERS_DRAG] and index in [0, 1] and _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client"]:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG] and index in [0, 1] and _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client"]:
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -446,7 +446,7 @@ class DataProcessor(object):
                 if isinstance(args[index], str):
                     processed_args.append(args[index])
                 else:
-                    if genre == ProtocolCode.SET_SERVO_DATA and _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client"] and index == 2:
+                    if genre == ProtocolCode.SET_SERVO_DATA and _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client"] and index == 2:
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
@@ -690,7 +690,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
          wait_time = 0.3
     if timeout is not None:
         wait_time = timeout
-    if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client"]:
+    if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client"]:
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
@@ -742,7 +742,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
             k += 1
-            if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client"]:
+            if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client"]:
                 if data_len == 3:
                     datas += data
                     crc = self._serial_port.read(2)
