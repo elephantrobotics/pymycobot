@@ -41,7 +41,7 @@ class CloseLoop(CommandGenerator):
         # is_in_position = False
         with self.lock:
             self.write_command.append(genre)
-            if self.__class__.__name__ == "Pro630Client":
+            if self.__class__.__name__ in ["Pro630Client", "Pro400Client"]:
                 self._write(self._flatten(real_command), "socket")
                 time.sleep(0.01)
             else:

@@ -210,7 +210,7 @@ class CommandGenerator(DataProcessor):
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id=id, angle=degree, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True)
 
     # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, angles, speed):
@@ -225,7 +225,7 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
         angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed)
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
 
     def get_coords(self):
         """Get the coords from robot arm, coordinate system based on base.
@@ -251,7 +251,7 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, id=id, coord = coord, speed=speed)
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
+        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed, has_reply=True)
 
     def send_coords(self, coords, speed, mode=None):
         """Send all coords to robot arm.
@@ -272,7 +272,7 @@ class CommandGenerator(DataProcessor):
         if mode is not None:
             return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
         else:
-            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed)
+            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True)
 
     def is_in_position(self, data, id=0):
         """Judge whether in the position.
@@ -733,9 +733,9 @@ class CommandGenerator(DataProcessor):
         if gripper_type is not None:
             self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
                                         gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type, has_reply=True)
         else:
-            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, has_reply=True)
             
 
     def set_gripper_calibration(self):
