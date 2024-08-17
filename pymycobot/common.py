@@ -465,11 +465,9 @@ class DataProcessor(object):
             data = str(data)[2:-1].split(": ")
             return data[1][0:-9], data[-1]
         elif not data:
-            return []
+            return None
         elif data == b'\xfe\xfe\x04[\x01\r\x87':
             # 水星到位反馈
-            return 1
-        elif data == b'\xfe\xfe\x03\x16\x01\xfa':
             return 1
         data = bytearray(data)
         data_len = len(data)
@@ -487,7 +485,7 @@ class DataProcessor(object):
             header_i += 1
             header_j += 1
         else:
-            return []
+            return None
         if arm in [6, 7, 8]:
             data_len = data[header_i + 2] - 2
         elif arm == 12:

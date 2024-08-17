@@ -63,7 +63,7 @@ __all__ = [
     "Pro400Client"
 ]
 
-__version__ = "3.5.0a6" 
+__version__ = "3.5.0a7" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
