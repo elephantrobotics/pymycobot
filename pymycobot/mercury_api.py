@@ -17,6 +17,7 @@ class MercuryCommandGenerator(DataProcessor):
         self.write_command = []
         self.read_command = []
         self.send_jog_command = False
+        self.sync_mode = True
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -64,7 +65,7 @@ class MercuryCommandGenerator(DataProcessor):
                 ProtocolCode.OVER_LIMIT_RETURN_ZERO,
                 ProtocolCode.JOG_BASE_INCREMENT_COORD,
                 ProtocolCode.WRITE_MOVE_C,
-                ProtocolCode.JOG_RPY]:
+                ProtocolCode.JOG_RPY] and self.sync_mode:
             wait_time = 300
             is_in_position = True
         elif genre in [ProtocolCode.SERVO_RESTORE]:
@@ -196,8 +197,9 @@ class MercuryCommandGenerator(DataProcessor):
                 byte_value = int.from_bytes(
                     valid_data, byteorder='big', signed=True)
                 res.append(byte_value)
-            for i in range(1, 4):
-                res.append(valid_data[i])
+            else:
+                for i in range(1, 4):
+                    res.append(valid_data[i])
         elif data_len == 7:
             # if genre ==ProtocolCode.GET_TORQUE_COMP:
             for i in range(0, data_len):
@@ -375,6 +377,8 @@ class MercuryCommandGenerator(DataProcessor):
             return self._int2angle(res[0])
         elif genre == ProtocolCode.GET_ANGLES:
             return [self._int3angle(angle) for angle in res]
+        elif genre == ProtocolCode.COBOTX_GET_ANGLE:
+            return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
             if len(res) == 23:
                 i = 9
@@ -886,11 +890,20 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS)
 
     def power_on(self):
-        """Open communication with Atom."""
-        return self._mesg(ProtocolCode.POWER_ON)
+        """Power on the robot
+        
+        Return:
+            1: success
+            2: failed
+        """
+        res = self._mesg(ProtocolCode.POWER_ON)
+        if res == 1:
+            self.get_limit_switch()
+        time.sleep(1)
+        return res
 
     def power_off(self):
-        """Close communication with Atom."""
+        """Robot power outage"""
         with self.lock:
             self.read_command.clear()
         return self._mesg(ProtocolCode.POWER_OFF)
@@ -1763,15 +1776,22 @@ class MercuryCommandGenerator(DataProcessor):
             state (int): 0 - close. 1 - open
         """
         self.calibration_parameters(class_name = self.__class__.__name__, limit_mode=limit_mode, state=state)
+        if limit_mode == 2 and state == 0:
+            self.sync_mode = False
+        elif limit_mode == 2 and state == 1:
+            self.sync_mode = True
         return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
     
     def get_limit_switch(self):
         """Get the limit switches
         
         Return:
-            list : [sync state, Location out of tolerance state], 0 - close. 1 - open
+            list : [Location out of tolerance state, sync state], 0 - close. 1 - open
         """
-        return self._mesg(ProtocolCode.GET_LIMIT_SWITCH)
+        res = self._mesg(ProtocolCode.GET_LIMIT_SWITCH)
+        if isinstance(res, list) and res[1] == 0:
+            self.sync_mode = False
+        return res
     
     def solve_inv_kinematics(self, new_coords, old_angles):
         """_summary_
@@ -1832,3 +1852,22 @@ class MercuryCommandGenerator(DataProcessor):
     
     def get_servo_encoders(self):
         return self._mesg(ProtocolCode.GET_ENCODERS)
+    
+    def set_base_io_output(self, pin_no, pin_signal):
+        """Set the base output IO status
+
+        Args:
+            pin_no: pin port number. range 1 ~ 6
+            pin_signal: 0 - low. 1 - high.
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+
+    def get_base_io_input(self, pin_no):
+        """Get the input IO status of the base
+
+        Args:
+            pin_no: (int) pin port number. range 1 ~ 6
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no)
+        return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)

@@ -196,7 +196,9 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                 raise exception_class("The range of current is {} ~ {}, but the received is {}".format(current_min, current_max, value))
         elif parameter == 'end_direction':
             check_0_or_1(parameter, value, [1, 2, 3], value_type, exception_class, int)
-
+        elif parameter == "pin_no":
+            if  "Mercury" in class_name:
+                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, exception_class, int)
 def calibration_parameters(**kwargs):
     with open(os.path.dirname(os.path.abspath(__file__))+"/robot_limit.json") as f:
         robot_limit = json.load(f)
@@ -277,6 +279,7 @@ def calibration_parameters(**kwargs):
             elif parameter == "max_time":
                 if value < 0:
                     raise MercuryDataException("The parameter max_time must be greater than or equal to 0, but received {}".format(value))
+            public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
