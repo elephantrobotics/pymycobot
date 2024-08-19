@@ -25,9 +25,10 @@ class ElephantRobot(object):
     def start_client(self):
         try:
             self.tcp_client.connect(self.ADDR)
-            return ""
+            return True
         except Exception as e:
-            return e
+            print(e)
+            return False
 
     def stop_client(self):
         self.tcp_client.close()
@@ -78,7 +79,7 @@ class ElephantRobot(object):
             return -9999
 
     def invalid_coords(self):
-        coords = [-1, -2, -3, -4, -1, -1]
+        coords = [-1.0, -2.0, -3.0, -4.0, -1.0, -1.0]
         return coords
 
     def get_angles(self):
