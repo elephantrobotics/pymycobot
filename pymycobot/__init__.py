@@ -36,6 +36,10 @@ from pymycobot.mecharm270 import MechArm270
 from pymycobot.mycobot280 import MyCobot280
 from pymycobot.mycobot320 import MyCobot320
 from pymycobot.myarm300 import MyArm300
+from pymycobot.mybuddy280 import MyBuddy280
+from pymycobot.ultraArmP340 import ultraArmP340
+from pymycobot.myarmc650 import MyArmC650
+from pymycobot.myarmm750 import MyArmM750
 
 __all__ = [
     "MyCobot",
@@ -70,7 +74,11 @@ __all__ = [
     "MechArm270",
     "MyCobot280",
     "MyCobot320",
-    "MyArm300"
+    "MyArm300",
+    "MyBuddy280",
+    "ultraArmP340",
+    "myarmc650",
+    "myarmm750"
 ]
 
 __version__ = "3.5.0a7" 
