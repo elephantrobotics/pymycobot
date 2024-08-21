@@ -31,6 +31,11 @@ from pymycobot.pro630 import Pro630
 from pymycobot.pro630client import Pro630Client
 from pymycobot.pro400 import Pro400
 from pymycobot.pro400client import Pro400Client
+from pymycobot.mypalletizer260 import MyPalletizer260
+from pymycobot.mecharm270 import MechArm270
+from pymycobot.mycobot280 import MyCobot280
+from pymycobot.mycobot320 import MyCobot320
+from pymycobot.myarm300 import MyArm300
 
 __all__ = [
     "MyCobot",
@@ -60,7 +65,12 @@ __all__ = [
     "Pro630",
     "Pro630Client",
     "Pro400",
-    "Pro400Client"
+    "Pro400Client",
+    "MyPalletizer260",
+    "MechArm270",
+    "MyCobot280",
+    "MyCobot320",
+    "MyArm300"
 ]
 
 __version__ = "3.5.0a7" 
