@@ -66,7 +66,6 @@ class MyCobot280(CommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
-        
 
     _write = write
     _read = read
@@ -90,7 +89,7 @@ class MyCobot280(CommandGenerator):
                 return self._res(real_command, has_reply, genre)
         else:
             return self._res(real_command, has_reply, genre)
-            
+
     def _res(self, real_command, has_reply, genre):
         try_count = 0
         while try_count < 3:
@@ -104,7 +103,9 @@ class MyCobot280(CommandGenerator):
         if genre == ProtocolCode.SET_SSID_PWD:
             return None
         res = self._process_received(data, genre)
-        if res is not None and isinstance(res, list) and len(res) == 1:
+        if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
+                                                                                         ProtocolCode.GET_JOINT_MIN_ANGLE,
+                                                                                         ProtocolCode.GET_JOINT_MAX_ANGLE]:
             return res[0]
         if genre in [
             ProtocolCode.ROBOT_VERSION,
@@ -206,7 +207,7 @@ class MyCobot280(CommandGenerator):
             if f == 1:
                 break
             time.sleep(0.1)
-        return self
+        return 1
 
     def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -223,7 +224,7 @@ class MyCobot280(CommandGenerator):
             if self.is_in_position(coords, 1) == 1:
                 break
             time.sleep(0.1)
-        return self
+        return 1
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -247,13 +248,13 @@ class MyCobot280(CommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
-    
+
     def close(self):
         self._serial_port.close()
-        
+
     def open(self):
         self._serial_port.open()
-        
+
     def get_acceleration(self):
         """get acceleration"""
         return self._process_single(
@@ -267,3 +268,5 @@ class MyCobot280(CommandGenerator):
             acc: int
         """
         return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
+
+
