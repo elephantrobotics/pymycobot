@@ -909,19 +909,6 @@ class CommandGenerator(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
 
-    def init_eletric_gripper(self):  # TODO 22-5-19 need test
-        """Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper) (only for 320)"""
-        return self._mesg(ProtocolCode.INIT_ELETRIC_GRIPPER)
-
-    def set_eletric_gripper(self, status):  # TODO 22-5-19 need test
-        """Set Electric Gripper Mode (only for 320)
-        
-        Args:
-            status: 0 - open, 1 - close.
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, status=status)
-        return self._mesg(ProtocolCode.SET_ELETRIC_GRIPPER, status)
-
     def set_encoders_drag(self, encoders, speeds):  # TODO 22-5-19 need test
         """Send all encoders and speeds
         
@@ -1024,11 +1011,4 @@ class CommandGenerator(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
 
-    def set_void_compensate(self, mode):
-        """Set void compensation mode
 
-        Args:
-            mode (int): 0 - close, 1 - open
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_VOID_COMPENSATE, mode)

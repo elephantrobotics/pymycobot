@@ -243,14 +243,6 @@ class MyCobot320(CommandGenerator):
         self.gpio.setup(pin, self.gpio.OUT)
         self.gpio.output(pin, v)
 
-    def get_servo_speeds(self):
-        """Get joint speed (Only for mycobot 320)
-
-        Return:
-            unit step/s
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
-
     def get_servo_currents(self):
         """Get joint current (Only for mycobot 320)
 
@@ -258,26 +250,6 @@ class MyCobot320(CommandGenerator):
             0 ~ 3250 mA
         """
         return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
-
-    def get_servo_voltages(self):
-        """Get joint voltages (Only for mycobot 320)
-
-        Return:
-            volts < 24 V
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, has_reply=True)
-
-    def get_servo_status(self):
-        """Get joint status (Only for mycobot 320)
-
-        Return:
-            [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error, a value of 1 indicates an error
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_STATUS, has_reply=True)
-
-    def get_servo_temps(self):
-        """Get joint temperature (Only for mycobot 320)"""
-        return self._mesg(ProtocolCode.GET_SERVO_TEMPS, has_reply=True)
 
     def init_eletric_gripper(self):  # TODO 22-5-19 need test
         """Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper) (only for 320)"""
@@ -320,3 +292,12 @@ class MyCobot320(CommandGenerator):
             mode: 0 - transparent transmission. 1 - Port Mode.
         """
         return self._mesg(ProtocolCode.GET_GRIPPER_MODE, has_reply=True)
+
+    def set_void_compensate(self, mode):
+        """Set void compensation mode
+
+        Args:
+            mode (int): 0 - close, 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_VOID_COMPENSATE, mode)
