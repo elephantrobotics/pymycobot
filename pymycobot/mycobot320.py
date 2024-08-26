@@ -303,16 +303,20 @@ class MyCobot320(CommandGenerator):
     def open(self):
         self._serial_port.open()
 
-    def get_acceleration(self):
-        """get acceleration"""
-        return self._process_single(
-            self._mesg(ProtocolCode.GET_ACCELERATION, has_reply=True)
-        )
+    def set_gripper_mode(self, mode):
+        """Set gripper mode
 
-    def set_acceleration(self, acc):
-        """Set speed for all moves
-        
         Args:
-            acc: int
+            mode: 0 - transparent transmission. 1 - Port Mode.
+
         """
-        return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_GRIPPER_MODE, mode)
+
+    def get_gripper_mode(self):
+        """Get gripper mode
+
+        Return:
+            mode: 0 - transparent transmission. 1 - Port Mode.
+        """
+        return self._mesg(ProtocolCode.GET_GRIPPER_MODE, has_reply=True)

@@ -255,18 +255,50 @@ class MyCobot280(CommandGenerator):
     def open(self):
         self._serial_port.open()
 
-    def get_acceleration(self):
-        """get acceleration"""
-        return self._process_single(
-            self._mesg(ProtocolCode.GET_ACCELERATION, has_reply=True)
-        )
+    def set_HTS_gripper_torque(self, torque):
+        """Set new adaptive gripper torque
 
-    def set_acceleration(self, acc):
-        """Set speed for all moves
-        
         Args:
-            acc: int
-        """
-        return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
+            torque (int): 150 ~ 980
 
+        Return:
+            0: Set failed
+            1: Set successful
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, torque=torque)
+        return self._mesg(ProtocolCode.SetHTSGripperTorque, [torque], has_reply=True)
+
+    def get_HTS_gripper_torque(self):
+        """Get gripper torque
+
+        Returns:
+            int: 150 ~ 980
+        """
+        return self._mesg(ProtocolCode.GetHTSGripperTorque, has_reply=True)
+
+    def get_gripper_protect_current(self):
+        """Get the gripper protection current
+
+        Returns:
+            int: 1 ~ 500
+        """
+        return self._mesg(ProtocolCode.GetGripperProtectCurrent, has_reply=True)
+
+    def init_gripper(self):
+        """Initialize gripper
+
+        Returns:
+            int: 0 or 1 (1 - success)
+        """
+        return self._mesg(ProtocolCode.InitGripper, has_reply=True)
+
+    def set_gripper_protect_current(self, current):
+        """Set the gripper protection current
+
+        Args:
+            current (int): 1 ~ 500
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, current=current)
+
+        return self._mesg(ProtocolCode.SetGripperProtectCurrent, [current])
 
