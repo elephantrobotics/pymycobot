@@ -945,14 +945,6 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
     
-    def get_servo_currents(self):
-        """Get joint current (Only for mycobot 320)
-        
-        Return: 
-            0 ~ 3250 mA
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
-    
     def get_servo_voltages(self):
         """Get joint voltages (Only for mycobot 320)
         

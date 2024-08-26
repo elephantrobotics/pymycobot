@@ -3,7 +3,16 @@
 from __future__ import absolute_import
 import datetime
 import sys
+from pymycobot.mycobot280 import MyCobot280
+from pymycobot.mypalletizer260 import MyPalletizer260
+from pymycobot.mecharm270 import MechArm270
 
+from pymycobot.mycobot320 import MyCobot320
+from pymycobot.myarm300 import MyArm300
+from pymycobot.mybuddy280 import MyBuddy280
+from pymycobot.ultraArmP340 import ultraArmP340
+from pymycobot.myarmc650 import MyArmC650
+from pymycobot.myarmm750 import MyArmM750
 from pymycobot.generate import CommandGenerator
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.mycobot import MyCobot
@@ -31,17 +40,18 @@ from pymycobot.pro630 import Pro630
 from pymycobot.pro630client import Pro630Client
 from pymycobot.pro400 import Pro400
 from pymycobot.pro400client import Pro400Client
-from pymycobot.mypalletizer260 import MyPalletizer260
-from pymycobot.mecharm270 import MechArm270
-from pymycobot.mycobot280 import MyCobot280
-from pymycobot.mycobot320 import MyCobot320
-from pymycobot.myarm300 import MyArm300
-from pymycobot.mybuddy280 import MyBuddy280
-from pymycobot.ultraArmP340 import ultraArmP340
-from pymycobot.myarmc650 import MyArmC650
-from pymycobot.myarmm750 import MyArmM750
+
 
 __all__ = [
+    "MyPalletizer260",
+    "MechArm270",
+    "MyCobot280",
+    "MyCobot320",
+    "MyArm300",
+    "MyBuddy280",
+    "ultraArmP340",
+    "myarmc650",
+    "myarmm750",
     "MyCobot",
     "CommandGenerator",
     "Angle",
@@ -70,15 +80,7 @@ __all__ = [
     "Pro630Client",
     "Pro400",
     "Pro400Client",
-    "MyPalletizer260",
-    "MechArm270",
-    "MyCobot280",
-    "MyCobot320",
-    "MyArm300",
-    "MyBuddy280",
-    "ultraArmP340",
-    "myarmc650",
-    "myarmm750"
+
 ]
 
 __version__ = "3.5.0a7" 

@@ -508,13 +508,12 @@ class DataProcessor(object):
             elif arm == 12:
                 data_pos = header_i + 5
         valid_data = data[data_pos : data_pos + data_len]
-
         # process valid data
         res = []
-        # if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
-        #     for i in valid_data:
-        #         res.append(i)
-        #     return res    
+        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
+            for i in valid_data:
+                res.append(i)
+            return res
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             ignor_t = (
                 ProtocolCode.GET_SERVO_CURRENTS,
