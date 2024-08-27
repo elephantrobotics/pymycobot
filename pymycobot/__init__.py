@@ -6,7 +6,8 @@ import sys
 from pymycobot.mycobot280 import MyCobot280
 from pymycobot.mypalletizer260 import MyPalletizer260
 from pymycobot.mecharm270 import MechArm270
-
+from pymycobot.mycobo280tsocket import MyCobot280Socket
+from pymycobot.mycobot320socket import MyCobot320Socket
 from pymycobot.mycobot320 import MyCobot320
 from pymycobot.myarm300 import MyArm300
 from pymycobot.mybuddy280 import MyBuddy280
@@ -80,6 +81,8 @@ __all__ = [
     "Pro630Client",
     "Pro400",
     "Pro400Client",
+    "MyCobot280Socket",
+    "MyCobot320Socket"
 
 ]
 

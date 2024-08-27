@@ -695,6 +695,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             wait_time = 3
         elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
             wait_time = 300
+    data = b""
+
     if method is not None:
         if genre == 177:
             while True:
