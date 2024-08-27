@@ -220,7 +220,7 @@ class MercuryCommandGenerator(CommandGenerator):
             elif data_len == 56:
                 for i in range(0, data_len, 8):
                     byte_value_send = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    byte_value_current = int.from_bytes(valid_data[i+4:i+4], byteorder='big', signed=True)
+                    byte_value_current = int.from_bytes(valid_data[i+4:i+8], byteorder='big', signed=True)
                     res.append([byte_value_send, byte_value_current])
             else:
                 if genre in [
