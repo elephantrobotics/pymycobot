@@ -744,8 +744,9 @@ class Phoenix:
             return False
 
         for i in range(6):
-            self._servo_init_can_output(Joint(i))
-            self._servo_clear_encoder_error(Joint(i))
+            if self.get_joint_error_mask(Joint(i)) & (1 << 16):
+                self._servo_init_can_output(Joint(i))
+                self._servo_clear_encoder_error(Joint(i))
 
         os.system("halcmd setp or2.0.in1 1")
         return True
