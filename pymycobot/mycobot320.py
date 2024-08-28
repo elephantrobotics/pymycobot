@@ -104,7 +104,10 @@ class MyCobot320(CommandGenerator):
         if genre == ProtocolCode.SET_SSID_PWD:
             return None
         res = self._process_received(data, genre)
-        if res is not None and isinstance(res, list) and len(res) == 1:
+        if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
+                                                                                         ProtocolCode.GET_JOINT_MIN_ANGLE,
+                                                                                         ProtocolCode.GET_JOINT_MAX_ANGLE,
+                                                                                         ProtocolCode.SOFTWARE_VERSION]:
             return res[0]
         if genre in [
             ProtocolCode.ROBOT_VERSION,
@@ -206,7 +209,7 @@ class MyCobot320(CommandGenerator):
             if f == 1:
                 break
             time.sleep(0.1)
-        return self
+        return 1
 
     def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -223,7 +226,7 @@ class MyCobot320(CommandGenerator):
             if self.is_in_position(coords, 1) == 1:
                 break
             time.sleep(0.1)
-        return self
+        return 1
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -301,3 +304,12 @@ class MyCobot320(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_VOID_COMPENSATE, mode)
+
+    def get_servo_last_pdi(self, id):
+        """Obtain the pdi of a single steering gear before modification
+
+        Args:
+            id: 1 - 6
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id_pdi=id)
+        return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, id, has_reply=True)

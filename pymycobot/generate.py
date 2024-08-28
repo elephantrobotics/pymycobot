@@ -151,23 +151,6 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)
 
-    def set_free_mode(self, flag):
-        """set to free mode
-        
-        Args:
-            flag: 0/1
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
-        return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
-
-    def is_free_mode(self):
-        """Check if it is free mode
-        
-        Return:
-            0/1
-        """
-        return self._process_single(self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True))
-
     # MDI mode and operation
     def get_angles(self):
         """ Get the angle of all joints.
@@ -598,16 +581,6 @@ class CommandGenerator(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, rgb=[r, g, b])
         return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
 
-    def set_pin_mode(self, pin_no, pin_mode):
-        """Set the state mode of the specified pin in atom.
-
-        Args:
-            pin_no   (int): pin number.
-            pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_mode=pin_mode)
-        return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
-
     def set_digital_output(self, pin_no, pin_signal):
         """Set the terminal atom io status
 
@@ -626,34 +599,6 @@ class CommandGenerator(DataProcessor):
     # def set_pwm_mode(self, mode):
     #     # TODO 280协议中无
     #     return self._mesg(ProtocolCode.SET_PWM_MODE, mode)
-
-    def set_pwm_output(self, channel, frequency, pin_val):
-        """ PWM control 
-
-        Args:
-            channel (int): IO number.
-            frequency (int): clock frequency
-            pin_val (int): Duty cycle 0 ~ 256; 128 means 50%
-        """
-        return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
-
-    def get_gripper_value(self, gripper_type=None):
-        """Get the value of gripper.
-        
-        Args:
-            gripper_type (int): default 1
-                1: Adaptive gripper
-                3: Parallel gripper
-                4: Flexible gripper
-
-        Return: 
-            gripper value (int)
-        """
-        if gripper_type is None:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
-        else:
-            self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
 
     def set_gripper_state(self, flag, speed, _type_1=None):
         """Set gripper switch state
@@ -695,16 +640,6 @@ class CommandGenerator(DataProcessor):
     def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
         return self._mesg(ProtocolCode.SET_GRIPPER_CALIBRATION)
-
-    def is_gripper_moving(self):
-        """Judge whether the gripper is moving or not
-
-        Returns:
-            0 - not moving
-            1 - is moving
-            -1- error data
-        """
-        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
 
     # Basic
     def set_basic_output(self, pin_no, pin_signal):
@@ -950,26 +885,9 @@ class CommandGenerator(DataProcessor):
         """Clear robot error message"""
         return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply=True)
 
-    def move_round(self):
-        """Drive the 9g steering gear clockwise for one revolution
-        """
-        return self._mesg(ProtocolCode.move_round)
-
     def get_basic_version(self):
         """Get basic firmware version"""
         return self._mesg(ProtocolCode.GET_BASIC_VERSION, has_reply=True)
-
-    def set_transponder_mode(self, mode):
-        """Set basic communication mode
-        
-        Args:
-            mode: 0 - Turn off transparent transmission，1 - Open transparent transmission
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode, has_reply=True)
-
-    def get_transponder_mode(self):
-        return self._mesg(ProtocolCode.GET_COMMUNICATE_MODE, has_reply=True)
 
     def get_angles_coords(self):
         """Get basic communication mode"""
@@ -982,14 +900,6 @@ class CommandGenerator(DataProcessor):
             float: version number.
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
-
-    def set_four_pieces_zero(self):
-        """Set the zero position of the four-piece motor
-
-        Returns:
-            int: 0 or 1 (1 - success)
-        """
-        return self._mesg(ProtocolCode.SET_FOUR_PIECES_ZERO, has_reply=True)
 
     def jog_rpy(self, end_direction, direction, speed):
         """Rotate the end around a fixed axis in the base coordinate system
