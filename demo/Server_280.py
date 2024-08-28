@@ -127,10 +127,8 @@ class MycobotServer(object):
                                 res = bytes(GPIO.input(command[4]))
 
                             self.write(command)
-                            print('command:', command)
                             # if command[3] in has_return:
                             res = self.read(command)
-                            print('resresres:', res)
                             self.logger.info("return datas: {}".format([hex(v) for v in res]))
 
                             conn.sendall(res)
