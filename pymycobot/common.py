@@ -263,6 +263,7 @@ class ProtocolCode(object):
     GET_SERVOS_ENCODER_DRAG = 0xEF
     RESTORE_SERVO_SYSTEM_PARAM = 0x0a
     GET_SERVO_D = 0xE8
+    SET_SERVO_P = 0x70
     # IIC
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
