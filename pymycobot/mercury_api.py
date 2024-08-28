@@ -3,9 +3,21 @@
 
 import time
 import struct
+import functools
 
 from pymycobot.error import calibration_parameters, MercuryRobotException
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
+
+def restrict_serial_port(func):
+    """
+    装饰器，用于限制特定串口号的函数调用。
+    """
+    @functools.wraps(func)
+    def wrapper(instance, *args, **kwargs):
+        if instance._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
+            raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
+        return func(*args, **kwargs)
+    return wrapper
 
 class MercuryCommandGenerator(DataProcessor):
     _write = write
@@ -18,18 +30,6 @@ class MercuryCommandGenerator(DataProcessor):
         self.read_command = []
         self.send_jog_command = False
         self.sync_mode = True
-        
-    # def restrict_serial_port(cls):
-    #     """
-    #     装饰器，用于限制特定串口号的函数调用。
-    #     """
-    #     def decorator(func):
-    #         def wrapper(*args, **kwargs):
-    #             if cls._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
-    #                 raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
-    #             return func(*args, **kwargs)
-    #         return wrapper
-    #     return decorator
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -719,6 +719,7 @@ class MercuryCommandGenerator(DataProcessor):
         """get base coords"""
         return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS)
 
+    @restrict_serial_port
     def send_base_coord(self, axis, coord, speed):
         """Single coordinate control with the torso base as the coordinate system
 
@@ -739,6 +740,7 @@ class MercuryCommandGenerator(DataProcessor):
             coord = self._angle2int(coord)
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed)
 
+    @restrict_serial_port
     def send_base_coords(self, coords, speed):
         """Full coordinate control
 
@@ -753,6 +755,7 @@ class MercuryCommandGenerator(DataProcessor):
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed)
 
+    @restrict_serial_port
     def jog_base_coord(self, axis, direction, speed, sync=True):
         """Single-coordinate unidirectional motion control
 
@@ -1414,6 +1417,7 @@ class MercuryCommandGenerator(DataProcessor):
         self.send_jog_command = True
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
 
+    @restrict_serial_port
     def jog_base_increment_coord(self, axis_id, increment, speed):
         """Single coordinate incremental motion control
 
