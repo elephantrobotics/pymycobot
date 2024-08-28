@@ -37,6 +37,8 @@ class MyPalletizerDataException(Exception):
 class MyBuddyDataException(Exception):
     pass
 
+class MercuryRobotException(Exception):
+    pass
 
 def check_boolean(b):
     if b != 0 and b != 1:
@@ -207,6 +209,7 @@ def calibration_parameters(**kwargs):
     if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
+            print("parameter: ", parameter)
             if parameter == 'joint_id ' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MercuryDataException)
             elif parameter == 'angle':
@@ -289,6 +292,15 @@ def calibration_parameters(**kwargs):
             elif parameter == "axis":
                 if value not in [1,2,3]:
                     raise MercuryDataException("The parameter {} only supports 1, 2, 3, but received {}".format(parameter, value))
+            elif parameter == "threshold_value":
+                if value < 50 or value > 250:
+                    raise MercuryDataException("The parameter {} only supports 50 ~ 250, but received {}".format(parameter, value))
+            elif parameter == "comp_value":
+                if value < 0 or value > 250:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 250, but received {}".format(parameter, value))
+            elif parameter == "shoot_value":
+                if value < -300 or value > 300:
+                    raise MercuryDataException("The parameter {} only supports -300 ~ 300, but received {}".format(parameter, value))
             public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:

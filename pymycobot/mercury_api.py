@@ -4,7 +4,7 @@
 import time
 import struct
 
-from pymycobot.error import calibration_parameters
+from pymycobot.error import calibration_parameters, MercuryRobotException
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
 
 class MercuryCommandGenerator(DataProcessor):
@@ -18,6 +18,18 @@ class MercuryCommandGenerator(DataProcessor):
         self.read_command = []
         self.send_jog_command = False
         self.sync_mode = True
+        
+    # def restrict_serial_port(cls):
+    #     """
+    #     装饰器，用于限制特定串口号的函数调用。
+    #     """
+    #     def decorator(func):
+    #         def wrapper(*args, **kwargs):
+    #             if cls._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
+    #                 raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
+    #             return func(*args, **kwargs)
+    #         return wrapper
+    #     return decorator
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -702,6 +714,7 @@ class MercuryCommandGenerator(DataProcessor):
             time.sleep(0.1)
         return 0
 
+    @restrict_serial_port
     def get_base_coords(self):
         """get base coords"""
         return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS)
@@ -1019,8 +1032,9 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, _type=_type)
         return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id, _type)
 
-    def set_pos_over_shoot(self, value):
-        return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, [value*100])
+    def set_pos_over_shoot(self, shoot_value):
+        self.calibration_parameters(class_name=self.__class__.__name__, shoot_value=shoot_value)
+        return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, [shoot_value*100])
 
     def get_pos_over_shoot(self):
         return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT)
@@ -1095,30 +1109,33 @@ class MercuryCommandGenerator(DataProcessor):
             mode (int): 0 - disable, 1 - enable
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_COLLISION_MODE, mode)
 
-    def set_collision_threshold(self, joint_id, value=100):
+    def set_collision_threshold(self, joint_id, threshold_value=100):
         """Set joint collision threshold
 
         Args:
             joint_id (int): joint ID， range 1 ~ 6
-            value (int): Collision threshold, range is 50 ~ 250, default is 100, the smaller the value, the easier it is to trigger a collision
+            threshold_value (int): Collision threshold, range is 50 ~ 250, default is 100, the smaller the value, the easier it is to trigger a collision
         """
-        return self._mesg(ProtocolCode.SET_COLLISION_THRESHOLD, joint_id, value)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, threshold_value=threshold_value)
+        return self._mesg(ProtocolCode.SET_COLLISION_THRESHOLD, joint_id, threshold_value)
 
     def get_collision_threshold(self):
         """Get joint collision threshold
         """
         return self._mesg(ProtocolCode.GET_COLLISION_THRESHOLD)
 
-    def set_torque_comp(self, joint_id, value=100):
+    def set_torque_comp(self, joint_id, comp_value=100):
         """Set joint torque compensation
 
         Args:
             joint_id (int): joint ID， range 1 ~ 6
-            value (int): Compensation value, range is 0 ~ 250, default is 100, The smaller the value, the harder it is to drag the joint
+            comp_value (int): Compensation value, range is 0 ~ 250, default is 100, The smaller the value, the harder it is to drag the joint
         """
-        return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, value)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, comp_value=comp_value)
+        return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, comp_value)
 
     def get_torque_comp(self):
         """Get joint torque compensation
@@ -1391,7 +1408,7 @@ class MercuryCommandGenerator(DataProcessor):
 
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, direction=direction)
+            class_name=self.__class__.__name__, coord_id=coord_id, direction=direction, speed=speed)
         if sync:
             return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, has_reply=True)
         self.send_jog_command = True
@@ -1447,18 +1464,18 @@ class MercuryCommandGenerator(DataProcessor):
             1: _description_
         """
         self.calibration_parameters(lass_name=self.__class__.__name__, mode=mode, max_speed=max_speed)
-        return self._mesg(ProtocolCode.SET_SPEED, max_speed)
+        return self._mesg(ProtocolCode.SET_SPEED, mode, [max_speed])
 
     def set_max_acc(self, mode, max_acc):
         """Set maximum acceleration
 
         Args:
             mode (int): 0 - angle acceleration. 1 - coord acceleration.
-            max_acc (int): maximum acceleration value. Angular acceleration range is 1~150°/s. Coordinate acceleration range is 1~400mm/s
+            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 150°/s. Coordinate acceleration range is 1 ~ 400mm/s
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, mode=mode, max_acc=max_acc)
-        return self._mesg(ProtocolCode.SET_MAX_ACC, mode, max_acc)
+        return self._mesg(ProtocolCode.SET_MAX_ACC, mode, [max_acc])
 
     def get_max_acc(self, mode):
         """Get maximum acceleration
@@ -1630,11 +1647,13 @@ class MercuryCommandGenerator(DataProcessor):
                 1 : Adaptive gripper. default to adaptive gripper
                 2 : Parallel Gripper
         """
+        
         if gripper_type is not None:
             self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
                                         gripper_type=gripper_type)
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
         else:
+            self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed)
             return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
         
     def set_gripper_calibration(self):
