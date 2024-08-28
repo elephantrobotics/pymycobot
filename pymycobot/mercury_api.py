@@ -1016,6 +1016,7 @@ class MercuryCommandGenerator(DataProcessor):
                 3-The number of exceptions sent by the end
                 4-The number of exceptions read by the end
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, _type=_type)
         return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id, _type)
 
     def set_pos_over_shoot(self, value):
@@ -1033,6 +1034,7 @@ class MercuryCommandGenerator(DataProcessor):
         Returns:
             int: 1 - Stop completion
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, deceleration=deceleration)
         self.is_stop = time.time()
         if deceleration == 1:
             return self._mesg(ProtocolCode.STOP, 1)
@@ -1048,6 +1050,8 @@ class MercuryCommandGenerator(DataProcessor):
         Returns:
             int: 1 - pause completion
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, deceleration=deceleration)
+        
         self.is_stop = time.time()
         if deceleration == 1:
             return self._mesg(ProtocolCode.PAUSE, 1)
@@ -1073,6 +1077,7 @@ class MercuryCommandGenerator(DataProcessor):
             mode (int): 0 - location mode, 1 - torque mode
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
 
     def get_control_mode(self):
@@ -1247,11 +1252,11 @@ class MercuryCommandGenerator(DataProcessor):
             class_name=self.__class__.__name__, id=id, angle=degree, speed=speed)
         return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True)
 
-    def send_coord(self, id, coord, speed):
+    def send_coord(self, coord_id, coord, speed):
         """Send one coord to robot arm.
 
         Args:
-            id (int): coord id, range 1 ~ 6
+            coord_id (int): coord id, range 1 ~ 6
             coord (float): coord value.
                 The coord range of `X` is -351.11 ~ 566.92.
                 The coord range of `Y` is -645.91 ~ 272.12.
@@ -1263,9 +1268,9 @@ class MercuryCommandGenerator(DataProcessor):
         """
 
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=id, coord=coord, speed=speed)
-        value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed, has_reply=True)
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+        value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
+        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True)
 
     def send_coords(self, coords, speed):
         """Send all coords to robot arm.
@@ -1366,7 +1371,7 @@ class MercuryCommandGenerator(DataProcessor):
             52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id, direction=direction)
+            class_name=self.__class__.__name__, id=joint_id, direction=direction, speed=speed)
         if sync:
             return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, has_reply=True)
         self.send_jog_command = True
@@ -1818,10 +1823,11 @@ class MercuryCommandGenerator(DataProcessor):
         """Rotate the end point around the fixed axis of the base coordinate system
 
         Args:
-            axis (int): _description_
+            axis (int): 1 ~ 3. 1 - Roll, 2 - Pitch, 3 - Yaw
             direction (int): 1 - Forward. 0 - Reverse.
             speed (int): 1 ~ 100.
         """
+        self.calibration_parameters(class_name = self.__class__.__name__, axis=axis, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, has_reply=True)
     
     def get_collision_mode(self):

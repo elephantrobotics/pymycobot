@@ -79,7 +79,7 @@ def check_0_or_1(parameter, value, range_data, value_type, exception_class, _typ
     
 def check_id(value, id_list, exception_class):
     raise exception_class(
-        "The id not right, should be in {0}, but received {1}.".format(
+        "The joint_id not right, should be in {0}, but received {1}.".format(
         id_list, value
         )
     )
@@ -88,7 +88,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
     for parameter in parameter_list[1:]:
         value = kwargs.get(parameter, None)
         value_type = type(value)
-        if parameter == 'id' and value not in robot_limit[class_name][parameter]:
+        if parameter == 'joint_id' and value not in robot_limit[class_name][parameter]:
             check_id(value, robot_limit[class_name][parameter], exception_class)
         elif parameter == 'rgb':
             check_rgb_value(value, exception_class, class_name)
@@ -126,7 +126,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
         # TODO 280/320共用MyCobot，无法进行数据限位
         # elif parameter == 'coords':
         #     check_coords(value, robot_limit, class_name, exception_class)
-        elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+        elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'state', 'deceleration']:
             check_0_or_1(parameter, value, [0, 1], value_type, exception_class, int)
         elif parameter == 'acceleration':
             check_value_type(parameter, value_type, exception_class, int)
@@ -135,8 +135,8 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     "{} value not right, should be 1 ~ 100, the received is {}".format(parameter, value)
                 )
         elif parameter == 'angle':
-            id = kwargs.get('id', None)
-            index = robot_limit[class_name]['id'][id-1] - 1
+            joint_id = kwargs.get('joint_id', None)
+            index = robot_limit[class_name]['joint_id'][joint_id-1] - 1
             if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                 raise exception_class(
                     "angle value not right, should be {0} ~ {1}, but received {2}".format(
@@ -177,13 +177,13 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             check_value_type(parameter, value_type, exception_class, int)
             # if  "MyCobot" in class_name or "MechArm" in class_name:
             #     if value < 1 or value > 6:
-            #             raise exception_class("The range of id is 1 ~ 6, but the received is {}".format(value))
+            #             raise exception_class("The range of joint_id is 1 ~ 6, but the received is {}".format(value))
             if "MyPalletizer" in class_name:
                 if value < 1 or value > 4:
-                        raise exception_class("The range of id is 1 ~ 4, but the received is {}".format(value))
+                        raise exception_class("The range of joint_id is 1 ~ 4, but the received is {}".format(value))
             elif "MyArm" in class_name or "MyCobot" in class_name or "MechArm" in class_name:
                 if value < 1 or value > 7:
-                        raise exception_class("The range of id is 1 ~ 7, but the received is {}".format(value))
+                        raise exception_class("The range of joint_id is 1 ~ 7, but the received is {}".format(value))
         elif parameter == "torque":
             torque_min = 150
             torque_max = 980
@@ -207,38 +207,39 @@ def calibration_parameters(**kwargs):
     if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
-            if parameter == 'id' and value not in robot_limit[class_name][parameter]:
+            if parameter == 'joint_id ' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MercuryDataException)
             elif parameter == 'angle':
-                id = kwargs.get('id', None)
-                if id in [11,12,13]:
-                    index = robot_limit[class_name]['id'][id-4] - 4
+                joint_id = kwargs.get('joint_id', None)
+                if joint_id in [11,12,13]:
+                    index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
                 else:
-                    index = robot_limit[class_name]['id'][id-1] - 1
+                    index = robot_limit[class_name]['joint_id'][joint_id-1] - 1
                 if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                     raise MercuryDataException(
                         "angle value not right, should be {0} ~ {1}, but received {2}".format(
                             robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index], value
                         )
                     )
-            # elif parameter == 'angles':
-            #     if len(value) not in [7, 10]:
-            #         raise MercuryDataException("The length of `angles` must be 7 or 10.")
-            #     for idx, angle in enumerate(value):
-            #         if not MIN_ANGLE <= angle <= MAX_ANGLE:
-            #             raise MercuryDataException(
-            #                 "Has invalid angle value, error on index {0}. angle should be {1} ~ {2}.".format(
-            #                     idx, MIN_ANGLE, MAX_ANGLE
-            #                 )
-            #             )
+            elif parameter == 'angles':
+                if len(value) not in [7, 10]:
+                    raise MercuryDataException("The length of `angles` must be 7 or 10.")
+                for idx, angle in enumerate(value):
+                    joint_id = idx+1
+                    angle_min = robot_limit[class_name]["angles_min"][idx]
+                    angle_max = robot_limit[class_name]["angles_max"][idx]
+                    if angle < angle_min or angle > angle_max:
+                        raise MercuryDataException(
+                            "Joint {} angle value of {} exceeds the limit, with a limit range of {} ~ {}.".format(joint_id, angle, angle_min, angle_max)
+                        )
 
             elif parameter == 'coord':
                 
-                index = kwargs.get('id', None) - 1
+                index = kwargs.get('coord_id', None) - 1
                 if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
                     raise MercuryDataException(
-                        "coord value not right, should be {0} ~ {1}, but received {2}".format(
-                            robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index], value
+                        "The coord value of {} exceeds the limit, and the limit range is {} ~ {}".format(
+                            value, robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index]
                         )
                     )
             elif parameter == 'coords':
@@ -279,6 +280,15 @@ def calibration_parameters(**kwargs):
             elif parameter == "max_time":
                 if value < 0:
                     raise MercuryDataException("The parameter max_time must be greater than or equal to 0, but received {}".format(value))
+            elif parameter == "limit_mode":
+                if value not in [1,2]:
+                    raise MercuryDataException("The parameter {} only supports 1, 2, but received {}".format(parameter, value))
+            elif parameter == "_type":
+                if value not in [1,2,3,4]:
+                    raise MercuryDataException("The parameter {} only supports 1, 2, 3, 4, but received {}".format(parameter, value))
+            elif parameter == "axis":
+                if value not in [1,2,3]:
+                    raise MercuryDataException("The parameter {} only supports 1, 2, 3, but received {}".format(parameter, value))
             public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
