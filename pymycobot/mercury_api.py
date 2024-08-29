@@ -443,7 +443,8 @@ class MercuryCommandGenerator(CommandGenerator):
                                 else:
                                     datas = b"\xfe"
                                     pre = k
-                    # else:
+                    else:
+                        time.sleep(0.001)
                     #     print("no data", flush=True)
                 else:
                     datas = b''

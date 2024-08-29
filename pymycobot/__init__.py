@@ -23,7 +23,7 @@ from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
 from pymycobot.mecharmsocket import MechArmSocket
-from pymycobot.mercurychassis import MercuryChassis
+from pymycobot.mercurychassis import ChassisControl
 from pymycobot.mercurysocket import MercurySocket
 from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.myarmm import MyArmM
@@ -49,7 +49,7 @@ __all__ = [
     "MyAgv",
     "MechArmSocket",
     "MyArmSocket",
-    "MercuryChassis",
+    "ChassisControl",
     "MercurySocket",
     "Phoenix",
     "MyArmM",
