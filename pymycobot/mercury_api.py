@@ -40,7 +40,10 @@ class MercuryCommandGenerator(CommandGenerator):
         is_in_position = False
         with self.lock:
             self.write_command.append(genre)
-            self._write(self._flatten(real_command))
+            if self.__class__.__name__ == "Mercury":
+                self._write(self._flatten(real_command))
+            elif self.__class__.__name__ == "MercurySocket":
+                self._write(self._flatten(real_command), method="socket")
         if genre in [
                 ProtocolCode.SEND_ANGLE,
                 ProtocolCode.SEND_ANGLES,
