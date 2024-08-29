@@ -67,7 +67,6 @@ class CommandGenerator(DataProcessor):
 
         # Atom IO
             set_color() *
-            set_pin_mode()
             set_digital_output()
             get_digital_input()
             set_pwm_mode() x
@@ -139,18 +138,6 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
 
-    def read_next_error(self):
-        """Robot Error Detection
-        
-        Return:
-            list len 7.
-            0 : No abnormality
-            1 : Communication disconnected
-            2 : Unstable communication
-            3 : Servo abnormality
-        """
-        return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)
-
     # MDI mode and operation
     def get_angles(self):
         """ Get the angle of all joints.
@@ -166,23 +153,18 @@ class CommandGenerator(DataProcessor):
         Args:
             id : Joint id(genre.Angle)
                     for mycobot / mecharm: int 1-6.
-                    for mypalletizer: int 1-4.
-                    for myArm or Mercury: Joint id 1 - 7.
             angle : angle value(float).
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=degree, speed=speed)
         return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True)
 
-    # @check_parameters(Command.SEND_ANGLES)
     def send_angles(self, angles, speed):
         """Send the angles of all joints to robot arm.
 
         Args:
             angles: a list of angle values(List[float]).
                         for mycobot / mecharm: len 6.
-                        for mypalletizer: len 4.
-                        for myArm: len 7.
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
@@ -207,7 +189,6 @@ class CommandGenerator(DataProcessor):
         Args:
             id(int) : coord id(genre.Coord)\n
                         for mycobot / mecharm / myArm: int 1-6.\n
-                        for mypalletizer: int 1-4.
             coord(float) : coord value, mm
             speed(int) : 1 ~ 100
         """
@@ -221,9 +202,8 @@ class CommandGenerator(DataProcessor):
         Args:
             coords: a list of coords value(List[float]).
                         for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
-                        for mypalletizer: [x, y, z, θ]
             speed : (int) 1 ~ 100
-            mode : (int) 0 - angluar, 1 - linear (mypalletizer 340 does not require this parameter)
+            mode : (int) 0 - angluar, 1 - linear
         """
         self.calibration_parameters(class_name=self.__class__.__name__, coords=coords, speed=speed)
         coord_list = []
@@ -242,8 +222,6 @@ class CommandGenerator(DataProcessor):
         Args:
             data: A data list, angles or coords.
                     for mycobot / mecharm: len 6.
-                    for mypalletizer: len 4
-                    for myArm: angles len 7, coords len 6.
             id: 1 - coords, 0 - angles
 
         Return:
@@ -283,8 +261,6 @@ class CommandGenerator(DataProcessor):
         Args:
             joint_id: int
                     for mycobot / mecharm: int 1-6.\n
-                    for mypalletizer: int 1-4.
-                    for myArm: Joint id 1 - 7.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -296,8 +272,7 @@ class CommandGenerator(DataProcessor):
 
         Args:
             coord_id: int
-                    for mycobot / mecharm / myArm: int 1-6.\n
-                    for mypalletizer: int 1-4.
+                    for mycobot / mecharm: int 1-6.\n
             direction: 0 - decrease, 1 - increase
             speed: int (1 - 100)
         """
@@ -310,19 +285,11 @@ class CommandGenerator(DataProcessor):
         Args:
             joint_id:
                 for mycobot / mecharm: int 1-6.
-                for mypalletizer: int 1-4.
-                for myArm: Joint id 1 - 7.
-            increment: 
+            increment:
             speed: int (0 - 100)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
-
-    """
-    def jog_stop(self):
-        # Stop jog moving (Atom 7.0 Delete this interface)
-        return self._mesg(ProtocolCode.JOG_STOP)
-    """
 
     def pause(self):
         """Pause movement"""
@@ -352,9 +319,7 @@ class CommandGenerator(DataProcessor):
         Args:
             joint_id: int
                 for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
                 for mycobot gripper: Joint id 7
-                for myArm: Joint id 1 - 7.
             encoder: The value of the set encoder.
             speed : 1 - 100
         """
@@ -368,9 +333,7 @@ class CommandGenerator(DataProcessor):
         Args:
             joint_id: (int)
                 for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
                 for mycobot gripper: Joint id 7
-                for myArm: Joint id 1 - 7.
         """
         self.calibration_parameters(class_name=self.__class__.__name__, encode_id=joint_id)
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
@@ -381,8 +344,6 @@ class CommandGenerator(DataProcessor):
         Args:
             encoders: A encoder list.
                 for mycobot / mecharm: len 6.
-                for mypalletizer: len 4
-                for myArm: len 7.
             sp: speed 1 ~ 100
         """
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
@@ -396,20 +357,6 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_ENCODERS, has_reply=True)
 
     # Running status and Settings
-    """
-    def get_speed(self):
-        return self._mesg(ProtocolCode.GET_SPEED, has_reply=True)
-
-    def set_speed(self, speed):
-        self.calibration_parameters(class_name = self.__class__.__name__, speed=speed)
-        return self._mesg(ProtocolCode.SET_SPEED, speed)
-    """
-    """
-    def get_feed_override(self):
-        return self._process_single(
-            self._mesg(Command.GET_FEED_OVERRIDE, has_reply=True)
-        )
-    """
 
     def get_joint_min_angle(self, joint_id):
         """Gets the minimum movement angle of the specified joint
@@ -596,10 +543,6 @@ class CommandGenerator(DataProcessor):
         # TODO pin_no范围未知
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
-    # def set_pwm_mode(self, mode):
-    #     # TODO 280协议中无
-    #     return self._mesg(ProtocolCode.SET_PWM_MODE, mode)
-
     def set_gripper_state(self, flag, speed, _type_1=None):
         """Set gripper switch state
 
@@ -697,178 +640,6 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_TOF_DISTANCE, has_reply=True)
 
-    def set_tool_reference(self, coords):
-        """Set tool coordinate system
-        
-        Args:
-            coords: a list of coords value(List[float])
-                for mycobot / mecharm:[x(mm), y, z, rx(angle), ry, rz]
-                for mypalletizer 340: [x, y, z]
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SET_TOOL_REFERENCE, coord_list)
-
-    def get_tool_reference(self):
-        """Get tool coordinate system """
-        return self._mesg(ProtocolCode.GET_TOOL_REFERENCE, has_reply=True)
-
-    def set_world_reference(self, coords):
-        """Set the world coordinate system
-        
-        Args:
-            coords: a list of coords value(List[float])
-                for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
-
-    def get_world_reference(self):
-        """Get the world coordinate system"""
-        return self._mesg(ProtocolCode.GET_WORLD_REFERENCE, has_reply=True)
-
-    def set_reference_frame(self, rftype):
-        """Set the base coordinate system
-        
-        Args:
-            rftype: 0 - base 1 - tool.
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, rftype=rftype)
-        return self._mesg(ProtocolCode.SET_REFERENCE_FRAME, rftype)
-
-    def get_reference_frame(self):
-        """Get the base coordinate system
-        
-        Return: 
-            0 - base 1 - tool.
-        """
-        return self._mesg(ProtocolCode.GET_REFERENCE_FRAME, has_reply=True)
-
-    def set_movement_type(self, move_type):
-        """Set movement type
-        
-        Args:
-            move_type: 1 - movel, 0 - moveJ
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, move_type=move_type)
-        return self._mesg(ProtocolCode.SET_MOVEMENT_TYPE, move_type)
-
-    def get_movement_type(self):
-        """Get movement type
-        
-        Return: 
-            1 - movel, 0 - moveJ
-        """
-        return self._mesg(ProtocolCode.GET_MOVEMENT_TYPE, has_reply=True)
-
-    def set_end_type(self, end):
-        """Set end coordinate system
-        
-        Args:
-            end: int
-                0 - flange, 1 - tool
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, end=end)
-        return self._mesg(ProtocolCode.SET_END_TYPE, end)
-
-    def get_end_type(self):
-        """Get end coordinate system
-        
-        Return: 
-            0 - flange, 1 - tool
-        """
-        return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
-
-    def get_servo_speeds(self):
-        """Get joint speed (Only for mycobot 320/280)
-        
-        Return: 
-            unit step/s
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
-
-    def get_servo_voltages(self):
-        """Get joint voltages (Only for mycobot 320/280)
-        
-        Return: 
-            volts < 24 V
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, has_reply=True)
-
-    def get_servo_status(self):
-        """Get joint status (Only for mycobot 320/280)
-        
-        Return: 
-            [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error, a value of 1 indicates an error
-        """
-        return self._mesg(ProtocolCode.GET_SERVO_STATUS, has_reply=True)
-
-    def get_servo_temps(self):
-        """Get joint temperature (Only for mycobot 320/280)"""
-        return self._mesg(ProtocolCode.GET_SERVO_TEMPS, has_reply=True)
-
-    def set_joint_max(self, id, angle):
-        """Set the joint maximum angle
-        
-        Args:
-            id: int.
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for mycobot gripper: Joint id 7
-                for myArm: Joint id 1 - 7.
-            angle: 0 ~ 180 
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
-
-    def set_joint_min(self, id, angle):
-        """Set the joint minimum angle
-        
-        Args:
-            id: int.
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for mycobot gripper: Joint id 7
-                for myArm: Joint id 1 - 7.
-            angle: 0 ~ 180 
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
-
-    def set_encoders_drag(self, encoders, speeds):  # TODO 22-5-19 need test
-        """Send all encoders and speeds
-        
-        Args:
-            encoders: encoders list.
-            speeds: Obtained by the get_servo_speeds() method 
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, encoders=encoders, speeds=speeds)
-        return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
-
-    def set_fresh_mode(self, mode):  # TODO 22-5-19 need test
-        """Set command refresh mode
-        
-        Args:
-            mode: int.
-                1 - Always execute the latest command first.
-                0 - Execute instructions sequentially in the form of a queue.
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
-
-    def get_fresh_mode(self):
-        """Query sports mode"""
-        return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
-
     def get_error_information(self):
         """Obtaining robot error information
         
@@ -881,35 +652,9 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ERROR_INFO, has_reply=True)
 
-    def clear_error_information(self):
-        """Clear robot error message"""
-        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply=True)
-
     def get_basic_version(self):
         """Get basic firmware version"""
         return self._mesg(ProtocolCode.GET_BASIC_VERSION, has_reply=True)
 
-    def get_angles_coords(self):
-        """Get basic communication mode"""
-        return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply=True)
-
-    def get_atom_version(self):
-        """Get atom firmware version.
-
-        Returns:
-            float: version number.
-        """
-        return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
-
-    def jog_rpy(self, end_direction, direction, speed):
-        """Rotate the end around a fixed axis in the base coordinate system
-
-        Args:
-            end_direction (int):  Roll, Pitch, Yaw (1-3)
-            direction (int): 1 - forward rotation, 0 - reverse rotation
-            speed (int): 1 ~ 100
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
-        return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
 
 

@@ -18,31 +18,70 @@ class MechArm270(CommandGenerator):
     Supported methods:
 
         # Overall status
-            Look at parent class: `CommandGenerator`.
+            clear_error_information()
+            set_fresh_mode()
+            get_fresh_mode()
+            read_next_error()
+            Other at parent class: `CommandGenerator`.
 
         # MDI mode and operation
             get_radians()
             send_radians()
             sync_send_angles() *
             sync_send_coords() *
+            get_angles_coords()
             Other look at parent class: `CommandGenerator`.
 
         # JOG mode and operation
-            Look at parent class: `CommandGenerator`.
+            jog_rpy()
+            set_HTS_gripper_torque()
+            get_HTS_gripper_torque()
+            get_gripper_protect_current()
+            init_gripper()
+            set_gripper_protect_current()
+            Other at parent class: `CommandGenerator`.
 
         # Running status and Settings
-            Look at parent class: `CommandGenerator`.
+            set_joint_max()
+            set_joint_min()
+            Other at parent class: `CommandGenerator`.
 
         # Servo control
             Look at parent class: `CommandGenerator`.
 
         # Atom IO
-            Look at parent class: `CommandGenerator`.
+            set_pin_mode()
+            get_gripper_value()
+            is_gripper_moving()
+            set_pwm_output()
+            Other at parent class: `CommandGenerator`.
 
         # Basic
-            Look at parent class: `CommandGenerator`.
+            set_transponder_mode()
+            get_transponder_mode()
+            Other at parent class: `CommandGenerator`.
+
+        # Servo state value
+            get_servo_speeds()
+            get_servo_voltages()
+            get_servo_status()
+            get_servo_temps()
+
+        # Coordinate transformation
+            set_tool_reference()
+            get_tool_reference()
+            set_world_reference()
+            get_world_reference()
+            set_reference_frame()
+            get_reference_frame()
+            set_movement_type()
+            get_movement_type()
+            set_end_type()
+            get_end_type()
 
         # Other
+            close()
+            open()
             wait() *
     """
 
@@ -109,8 +148,6 @@ class MechArm270(CommandGenerator):
                                                                                          ProtocolCode.SOFTWARE_VERSION]:
             return res[0]
         if genre in [
-            ProtocolCode.ROBOT_VERSION,
-            ProtocolCode.GET_ROBOT_ID,
             ProtocolCode.IS_POWER_ON,
             ProtocolCode.IS_CONTROLLER_CONNECTED,
             ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
@@ -172,6 +209,39 @@ class MechArm270(CommandGenerator):
         else:
             return res
 
+    def clear_error_information(self):
+        """Clear robot error message"""
+        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply=True)
+
+    # Overall Status
+    def read_next_error(self):
+        """Robot Error Detection
+
+        Return:
+            list len 6.
+            0 : No abnormality
+            1 : Communication disconnected
+            2 : Unstable communication
+            3 : Servo abnormality
+        """
+        return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)
+
+    def set_fresh_mode(self, mode):
+        """Set command refresh mode
+
+        Args:
+            mode: int.
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
+
+    def get_fresh_mode(self):
+        """Query sports mode"""
+        return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
+
+    # MDI mode and operation
     def get_radians(self):
         """Get the radians of all joints
 
@@ -227,6 +297,10 @@ class MechArm270(CommandGenerator):
             time.sleep(0.1)
         return 1
 
+    def get_angles_coords(self):
+        """Get joint angles and coordinates"""
+        return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply=True)
+
     # Basic for raspberry pi.
     def gpio_init(self):
         """Init GPIO module, and set BCM mode."""
@@ -245,16 +319,17 @@ class MechArm270(CommandGenerator):
         self.gpio.setup(pin, self.gpio.OUT)
         self.gpio.output(pin, v)
 
-    # Other
-    def wait(self, t):
-        time.sleep(t)
-        return self
+    # JOG mode and operation
+    def jog_rpy(self, end_direction, direction, speed):
+        """Rotate the end around a fixed axis in the base coordinate system
 
-    def close(self):
-        self._serial_port.close()
-
-    def open(self):
-        self._serial_port.open()
+        Args:
+            end_direction (int):  Roll, Pitch, Yaw (1-3)
+            direction (int): 1 - forward rotation, 0 - reverse rotation
+            speed (int): 1 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
+        return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
 
     def set_HTS_gripper_torque(self, torque):
         """Set new adaptive gripper torque
@@ -303,6 +378,34 @@ class MechArm270(CommandGenerator):
 
         return self._mesg(ProtocolCode.SetGripperProtectCurrent, [current])
 
+    # Running Status and Settings
+    def set_joint_max(self, id, angle):
+        """Set the joint maximum angle
+
+        Args:
+            id: int.
+                for mycobot / mecharm: Joint id 1 - 6
+                for mypalletizer: Joint id 1 - 4
+                for mycobot gripper: Joint id 7
+                for myArm: Joint id 1 - 7.
+            angle: 0 ~ 180
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
+
+    def set_joint_min(self, id, angle):
+        """Set the joint minimum angle
+
+        Args:
+            id: int.
+                Joint id 1 - 6
+                for mycobot gripper: Joint id 7
+            angle: 0 ~ 180
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
+
+    # Atom IO
     def set_pin_mode(self, pin_no, pin_mode):
         """Set the state mode of the specified pin in atom.
 
@@ -351,6 +454,7 @@ class MechArm270(CommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
 
+    # communication mode
     def set_transponder_mode(self, mode):
         """Set basic communication mode
 
@@ -367,3 +471,137 @@ class MechArm270(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_COMMUNICATE_MODE, has_reply=True)
 
+    # servo state value
+    def get_servo_speeds(self):
+        """Get joint speed
+
+        Return:
+            A list unit step/s
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
+
+    def get_servo_voltages(self):
+        """Get joint voltages
+
+        Return:
+            A list volts < 24 V
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_VOLTAGES, has_reply=True)
+
+    def get_servo_status(self):
+        """Get joint status
+
+        Return:
+            [voltage, sensor, temperature, current, angle, overload], a value of 0 means no error, a value of 1 indicates an error
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_STATUS, has_reply=True)
+
+    def get_servo_temps(self):
+        """Get joint temperature
+
+        Return:
+            A list unit ℃
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_TEMPS, has_reply=True)
+
+    # Coordinate transformation
+    def set_tool_reference(self, coords):
+        """Set tool coordinate system
+
+        Args:
+            coords: a list of coords value(List[float])
+                    [x(mm), y, z, rx(angle), ry, rz]
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_TOOL_REFERENCE, coord_list)
+
+    def get_tool_reference(self):
+        """Get tool coordinate system """
+        return self._mesg(ProtocolCode.GET_TOOL_REFERENCE, has_reply=True)
+
+    def set_world_reference(self, coords):
+        """Set the world coordinate system
+
+        Args:
+            coords: a list of coords value(List[float])
+                    [x(mm), y, z, rx(angle), ry, rz]\n
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
+
+    def get_world_reference(self):
+        """Get the world coordinate system"""
+        return self._mesg(ProtocolCode.GET_WORLD_REFERENCE, has_reply=True)
+
+    def set_reference_frame(self, rftype):
+        """Set the base coordinate system
+
+        Args:
+            rftype: 0 - base 1 - tool.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, rftype=rftype)
+        return self._mesg(ProtocolCode.SET_REFERENCE_FRAME, rftype)
+
+    def get_reference_frame(self):
+        """Get the base coordinate system
+
+        Return:
+            0 - base 1 - tool.
+        """
+        return self._mesg(ProtocolCode.GET_REFERENCE_FRAME, has_reply=True)
+
+    def set_movement_type(self, move_type):
+        """Set movement type
+
+        Args:
+            move_type: 1 - movel, 0 - moveJ
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, move_type=move_type)
+        return self._mesg(ProtocolCode.SET_MOVEMENT_TYPE, move_type)
+
+    def get_movement_type(self):
+        """Get movement type
+
+        Return:
+            1 - movel, 0 - moveJ
+        """
+        return self._mesg(ProtocolCode.GET_MOVEMENT_TYPE, has_reply=True)
+
+    def set_end_type(self, end):
+        """Set end coordinate system
+
+        Args:
+            end: int
+                0 - flange, 1 - tool
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, end=end)
+        return self._mesg(ProtocolCode.SET_END_TYPE, end)
+
+    def get_end_type(self):
+        """Get end coordinate system
+
+        Return:
+            0 - flange, 1 - tool
+        """
+        return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
+
+    # Other
+    def wait(self, t):
+        time.sleep(t)
+        return self
+
+    def close(self):
+        self._serial_port.close()
+
+    def open(self):
+        self._serial_port.open()

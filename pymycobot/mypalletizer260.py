@@ -125,14 +125,10 @@ class MyPalletizer260(CommandGenerator):
 
             if has_reply:
                 data = self._read(genre)
-                # print(data)
                 res = self._process_received(data, genre)
                 if res == []:
                     return None
                 if genre in [
-                    ProtocolCode.ROBOT_VERSION,
-                    ProtocolCode.SOFTWARE_VERSION,
-                    ProtocolCode.GET_ROBOT_ID,
                     ProtocolCode.IS_POWER_ON,
                     ProtocolCode.IS_CONTROLLER_CONNECTED,
                     ProtocolCode.IS_PAUSED,
@@ -173,7 +169,7 @@ class MyPalletizer260(CommandGenerator):
                     ProtocolCode.GET_JOINT_MIN_ANGLE,
                     ProtocolCode.GET_JOINT_MAX_ANGLE,
                 ]:
-                    return self._int2angle(res[0]) if res else 0
+                    return self._int2coord(res[0]) if res else 0
                 elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION,
                                ProtocolCode.GET_ATOM_VERSION]:
                     return self._int2coord(self._process_single(res))
@@ -191,6 +187,7 @@ class MyPalletizer260(CommandGenerator):
                     return res
             return None
 
+    # MDI mode and operation
     def get_radians(self):
         """Get all angle return a list
 
@@ -292,7 +289,7 @@ class MyPalletizer260(CommandGenerator):
             data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))
-            for idx in range(3, 6):
+            for idx in range(3, 4):
                 data_list.append(self._angle2int(data[idx]))
         elif id == 0:
             self.calibration_parameters(class_name=self.__class__.__name__, angles=data)
@@ -301,6 +298,25 @@ class MyPalletizer260(CommandGenerator):
             raise Exception("id is not right, please input 0 or 1")
 
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, id, has_reply=True)
+
+    def sync_send_angles(self, degrees, speed, timeout=15):
+        t = time.time()
+        self.send_angles(degrees, speed)
+        while time.time() - t < timeout:
+            f = self.is_moving()
+            if not f:
+                break
+            time.sleep(0.1)
+        return 1
+
+    def sync_send_coords(self, coords, speed, timeout=15):
+        t = time.time()
+        self.send_coords(coords, speed)
+        while time.time() - t < timeout:
+            if not self.is_moving():
+                break
+            time.sleep(0.1)
+        return 1
 
     # JOG mode and operation
     def jog_angle(self, joint_id, direction, speed):
@@ -350,6 +366,10 @@ class MyPalletizer260(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
+    def jog_stop(self):
+        """Stop jog moving"""
+        return self._mesg(ProtocolCode.JOG_STOP)
+
     def set_encoder(self, joint_id, encoder, speed):
         """Set a single joint rotation to the specified potential value.
 
@@ -383,12 +403,46 @@ class MyPalletizer260(CommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
 
+    # Running Status and Settings
+    def get_speed(self):
+        """
+        Get speed
+        """
+        return self._mesg(ProtocolCode.GET_SPEED, has_reply=True)
+
+    def set_speed(self, speed):
+        """
+        Set speed
+        :param speed: 0-100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
+        return self._mesg(ProtocolCode.SET_SPEED, speed)
+
+    def get_feed_override(self):
+        return self._process_single(
+            self._mesg(ProtocolCode.GET_FEED_OVERRIDE, has_reply=True)
+        )
+
+    def get_acceleration(self):
+        """get acceleration"""
+        return self._process_single(
+            self._mesg(ProtocolCode.GET_ACCELERATION, has_reply=True)
+        )
+
+    def set_acceleration(self, acc):
+        """Set speed for all moves
+
+        Args:
+            acc: int
+        """
+        return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
+
     def get_joint_min_angle(self, joint_id):
         """Gets the minimum movement angle of the specified joint
 
         Args:
             joint_id:
-                for mypalletizer: Joint id 1 - 4
+                for mypalletizer: Joint id 0 - 3
         Return:
             angle value(float)
         """
@@ -406,6 +460,28 @@ class MyPalletizer260(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
+
+    def set_joint_min(self, id, angle):
+        """Set the joint minimum angle
+
+        Args:
+            id: int.
+                Joint id 0 - 3
+            angle: 0 ~ 180
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
+
+    def set_joint_max(self, id, angle):
+        """Set the joint maximum angle
+
+        Args:
+            id: int.
+                Joint id 0 - 3
+            angle: 0 ~ 180
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
 
     # Servo control
     def is_servo_enable(self, servo_id):
@@ -473,16 +549,6 @@ class MyPalletizer260(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
 
-    def joint_brake(self, joint_id):
-        """Make it stop when the joint is in motion, and the buffer distance is positively related to the existing speed
-
-        Args:
-            joint_id:
-                for mypalletizer: Joint id 1 - 4
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
-        return self._mesg(ProtocolCode.JOINT_BRAKE, joint_id)
-
     def release_servo(self, servo_id, mode=None):
         """Power off designated servo
 
@@ -509,51 +575,6 @@ class MyPalletizer260(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
-    def set_tool_reference(self, coords):
-        """Set tool coordinate system
-
-        Args:
-            coords: a list of coords value(List[float])
-                for mypalletizer 340: [x, y, z]
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SET_TOOL_REFERENCE, coord_list)
-
-    def set_joint_min(self, id, angle):
-        """Set the joint minimum angle
-
-        Args:
-            id: int.
-                for mypalletizer: Joint id 1 - 4
-            angle: 0 ~ 180
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
-
-    def sync_send_angles(self, degrees, speed, timeout=15):
-        t = time.time()
-        self.send_angles(degrees, speed)
-        while time.time() - t < timeout:
-            f = self.is_moving()
-            if not f:
-                break
-            time.sleep(0.1)
-        return self
-
-    def sync_send_coords(self, coords, speed, mode, timeout=15):
-        t = time.time()
-        self.send_coords(coords, speed, mode)
-        while time.time() - t < timeout:
-            if not self.is_moving():
-                break
-            time.sleep(0.1)
-        return self
-
     # Basic for raspberry pi.
     def gpio_init(self):
         """Init GPIO module.
@@ -573,22 +594,49 @@ class MyPalletizer260(CommandGenerator):
         self.gpio.setup(pin, self.gpio.OUT)
         self.gpio.setup(pin, v)
 
+    # Atom IO
+    def set_pin_mode(self, pin_no, pin_mode):
+        """Set the state mode of the specified pin in atom.
+
+        Args:
+            pin_no   (int): pin number.
+            pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_mode=pin_mode)
+        return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
+
+    def get_gripper_value(self, gripper_type=None):
+        """Get the value of gripper.
+
+        Args:
+            gripper_type (int): default 1
+                1: Adaptive gripper
+                3: Parallel gripper
+                4: Flexible gripper
+
+        Return:
+            gripper value (int)
+        """
+        if gripper_type is None:
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
+        else:
+            self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
+            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
+
+    def is_gripper_moving(self):
+        """Judge whether the gripper is moving or not
+
+        Returns:
+            0 - not moving
+            1 - is moving
+            -1- error data
+        """
+        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
+
     # Other
     def wait(self, t):
         time.sleep(t)
         return self
-
-    def get_accie_data(self, value):
-        """Get gyroscope data
-        
-        Args:
-            value: 
-                0 - Get data from a 3-axis gyroscope.\n
-                1 - Get data from a 2-axis gyroscope.
-            
-        """
-        data_list = [[25, 21], [26, 32]]
-        return self._mesg(ProtocolCode.GET_ACCEI_DATA, data_list[1] if value else data_list[0], has_reply=True)
 
     def close(self):
         self._serial_port.close()
