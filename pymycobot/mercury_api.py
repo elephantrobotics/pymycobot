@@ -3,21 +3,12 @@
 
 import time
 import struct
-import functools
+import locale
 
-from pymycobot.error import calibration_parameters, MercuryRobotException
+from pymycobot.error import calibration_parameters, restrict_serial_port
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
+from pymycobot.robot_info import _interpret_status_code
 
-def restrict_serial_port(func):
-    """
-    装饰器，用于限制特定串口号的函数调用。
-    """
-    @functools.wraps(func)
-    def wrapper(instance, *args, **kwargs):
-        if instance._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
-            raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
-        return func(*args, **kwargs)
-    return wrapper
 
 class MercuryCommandGenerator(DataProcessor):
     _write = write
@@ -30,6 +21,9 @@ class MercuryCommandGenerator(DataProcessor):
         self.read_command = []
         self.send_jog_command = False
         self.sync_mode = True
+        self.language, _ = locale.getdefaultlocale()
+        if self.language not in ["zh_CN", "en_US"]:
+            self.language = "en_US"
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -165,7 +159,7 @@ class MercuryCommandGenerator(DataProcessor):
                 return data[5]
             elif data[2] == 4:
                 # print("到位或者失败反馈")
-                return data[4]
+                return _interpret_status_code(self.language, data[4])
         # print("111 4: ",data_pos, data_len, genre)
         valid_data = data[data_pos: data_pos + data_len]
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
@@ -1168,14 +1162,14 @@ class MercuryCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_MODEL_DIRECTION)
 
-    def set_model_direction(self, id, direction):
+    def set_model_direction(self, joint_id, direction):
         """Set the direction of the robot model
 
         Args:
-            id (int): joint ID, 1 ~ 7.
+            joint_id (int): joint ID, 1 ~ 7.
             direction (int): 0 - forward, 1 - backward
         """
-        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, id, direction)
+        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
 
     def get_filter_len(self, rank):
         """Get the filter length
@@ -1207,26 +1201,31 @@ class MercuryCommandGenerator(DataProcessor):
     def clear_zero_pos(self):
         return self._mesg(ProtocolCode.CLEAR_ZERO_POS)
 
-    def set_servo_cw(self, joint_id, err_angle):
+    @restrict_serial_port
+    def set_servo_cw(self, head_id, err_angle):
         """Set the joint in-place feedback error angle
 
         Args:
-            joint_id (int): Joint ID, 11 or 12.
+            head_id (int): Joint ID, 11 or 12.
             err_angle (float): Error range is 0 ~ 5.
         """
-        return self._mesg(ProtocolCode.SET_SERVO_CW, joint_id, [self._angle2int(err_angle)])
+        self.calibration_parameters(class_name=self.__class__.__name__, head_id=head_id, err_angle=err_angle)
+        return self._mesg(ProtocolCode.SET_SERVO_CW, head_id, [self._angle2int(err_angle)])
 
-    def get_servo_cw(self, joint_id):
+    @restrict_serial_port
+    def get_servo_cw(self, head_id):
         """Get the joint in-place feedback error angle
 
         Args:
-            joint_id (int): Joint ID, 11 or 12.
+            head_id (int): Joint ID, 11 or 12.
 
         Returns:
             float: Error angle, range is 0 ~ 5.
         """
-        return self._mesg(ProtocolCode.GET_SERVO_CW, joint_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, head_id=head_id)
+        return self._mesg(ProtocolCode.GET_SERVO_CW, head_id)
 
+    @restrict_serial_port
     def clear_waist_queue(self):
         """Clear the cache points of the three motors in the torso
         """
@@ -1252,7 +1251,7 @@ class MercuryCommandGenerator(DataProcessor):
         """Send the angles of all joints to robot arm.
 
         Args:
-            angles: a list of angle values(List[float]). len 6.
+            angles: a list of angle values(List[float]). len 7.
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(
@@ -1260,17 +1259,17 @@ class MercuryCommandGenerator(DataProcessor):
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
 
-    def send_angle(self, id, degree, speed):
+    def send_angle(self, joint_id, degree, speed):
         """Send one angle of joint to robot arm.
 
         Args:
-            id : Joint id(genre.Angle)， int 1-6.
+            joint_id : Joint id(genre.Angle)， int 1-7.
             angle : angle value(float).
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=id, angle=degree, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True)
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=degree, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(degree)], speed, has_reply=True)
 
     def send_coord(self, coord_id, coord, speed):
         """Send one coord to robot arm.
@@ -1515,33 +1514,33 @@ class MercuryCommandGenerator(DataProcessor):
             class_name=self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id)
 
-    def set_joint_max_angle(self, id, angle):
+    def set_joint_max_angle(self, joint_id, angle):
         """Set the maximum angle of the joint (must not exceed the maximum angle specified for the joint)
 
         Args:
-            id (int): Joint id 1 - 6  or 11 ~ 12
+            joint_id (int): Joint id 1 - 6  or 11 ~ 12
             angle: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
 
         Return:
             1 - success
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, angle)
 
-    def set_joint_min_angle(self, id, angle):
+    def set_joint_min_angle(self, joint_id, angle):
         """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
 
         Args:
-            id (int): Joint id 1 - 6.
+            joint_id (int): Joint id 1 - 6.
             angle: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
 
         Return:
             1 - success
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
+            class_name=self.__class__.__name__, id=joint_id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, angle)
 
     def is_servo_enable(self, servo_id):
         """To detect the connection state of a single joint

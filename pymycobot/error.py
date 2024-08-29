@@ -1,6 +1,6 @@
 # coding=utf-8
-import json
-import os
+import functools
+from pymycobot.robot_info import RobotLimit
 # In order to adapt to the atom side, ID of 0-5 or 1-6 are allowed.
 # In order to support end control, ID 7 is allowed.
 MIN_ID = 0
@@ -202,14 +202,13 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             if  "Mercury" in class_name:
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, exception_class, int)
 def calibration_parameters(**kwargs):
-    with open(os.path.dirname(os.path.abspath(__file__))+"/robot_limit.json") as f:
-        robot_limit = json.load(f)
+    # with open(os.path.dirname(os.path.abspath(__file__))+"/robot_limit.json") as f:
+    robot_limit = RobotLimit.robot_limit
     parameter_list = list(kwargs.keys())
     class_name =  kwargs.get("class_name", None)
     if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
-            print("parameter: ", parameter)
             if parameter == 'joint_id ' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MercuryDataException)
             elif parameter == 'angle':
@@ -301,6 +300,12 @@ def calibration_parameters(**kwargs):
             elif parameter == "shoot_value":
                 if value < -300 or value > 300:
                     raise MercuryDataException("The parameter {} only supports -300 ~ 300, but received {}".format(parameter, value))
+            elif parameter == "head_id":
+                if value not in [11,12]:
+                    raise MercuryDataException("The parameter {} only supports 11, 12, but received {}".format(parameter, value))
+            elif parameter == "err_angle":
+                if value < 0 or value > 5:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 5, but received {}".format(parameter, value))
             public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
@@ -329,3 +334,15 @@ def calibration_parameters(**kwargs):
         public_check(parameter_list, kwargs, robot_limit, class_name, MechArmDataException)
     elif class_name in ["MyArm", "MyArmSocket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MyArmDataException)
+        
+
+def restrict_serial_port(func):
+    """
+    装饰器，用于限制特定串口号的函数调用。
+    """
+    @functools.wraps(func)
+    def wrapper(instance, *args, **kwargs):
+        if instance._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
+            raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
+        return func(*args, **kwargs)
+    return wrapper
