@@ -12,7 +12,7 @@ from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MyArm300(CommandGenerator):
+class MyArm(CommandGenerator):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -54,7 +54,7 @@ class MyArm300(CommandGenerator):
             timeout  : default 0.1
             debug    : whether show debug info
         """
-        super(MyArm300, self).__init__(debug)
+        super(MyArm, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
         self._serial_port = serial.Serial()
@@ -81,7 +81,7 @@ class MyArm300(CommandGenerator):
                 has_reply: Whether there is a return value to accept.
         """
         real_command, has_reply = super(
-            MyArm300, self)._mesg(genre, *args, **kwargs)
+            MyArm, self)._mesg(genre, *args, **kwargs)
         command = self._flatten(real_command)
         with self.lock:
             self._write(command)
