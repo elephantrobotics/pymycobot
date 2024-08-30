@@ -296,24 +296,6 @@ class MechArmSocket(CommandGenerator):
         """Get joint angles and coordinates"""
         return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply=True)
 
-    # Basic for raspberry pi.
-    def gpio_init(self):
-        """Init GPIO module, and set BCM mode."""
-        import RPi.GPIO as GPIO  # type: ignore
-
-        GPIO.setmode(GPIO.BCM)
-        self.gpio = GPIO
-
-    def gpio_output(self, pin, v):
-        """Set GPIO output value.
-
-        Args:
-            pin: (int)pin number.
-            v: (int) 0 / 1
-        """
-        self.gpio.setup(pin, self.gpio.OUT)
-        self.gpio.output(pin, v)
-
     # JOG mode and operation
     def jog_rpy(self, end_direction, direction, speed):
         """Rotate the end around a fixed axis in the base coordinate system
