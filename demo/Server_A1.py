@@ -63,6 +63,7 @@ class MercuryServer(object):
         self.serial_num = serial_num
         self.baud = baud
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind((host, port))
         print("Binding succeeded!")
         self.s.listen(1)

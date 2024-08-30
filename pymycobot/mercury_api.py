@@ -1,27 +1,36 @@
 
 # coding=utf-8
 
-import sys
-import logging
 import time
 import struct
+import locale
 
-from pymycobot.log import setup_logging
-from pymycobot.error import calibration_parameters
-from pymycobot.generate import CommandGenerator
-from pymycobot.common import ProtocolCode, write, read
+from pymycobot.error import calibration_parameters, restrict_serial_port
+from pymycobot.common import DataProcessor, ProtocolCode, write, read
+from pymycobot.robot_info import _interpret_status_code
 
 
-class MercuryCommandGenerator(CommandGenerator):
+class MercuryCommandGenerator(DataProcessor):
     _write = write
     _read = read
-
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        self.is_stop = False
+        # self.is_stop = False
         self.write_command = []
         self.read_command = []
+        self.send_jog_command = False
+        self.sync_mode = True
+        self.language, _ = locale.getdefaultlocale()
+        if self.language not in ["zh_CN", "en_US"]:
+            self.language = "en_US"
+            
+    def _send_command(self, genre, real_command):
+        self.write_command.append(genre)
+        if self.__class__.__name__ == "Mercury":
+            self._write(self._flatten(real_command))
+        elif self.__class__.__name__ == "MercurySocket":
+            self._write(self._flatten(real_command), method="socket")
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -38,44 +47,104 @@ class MercuryCommandGenerator(CommandGenerator):
         real_command, has_reply = super(
             MercuryCommandGenerator, self)._mesg(genre, *args, **kwargs)
         is_in_position = False
+        is_get_return = False
+        lost_times = 0
         with self.lock:
             self.write_command.append(genre)
-            self._write(self._flatten(real_command))
-        # if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-        #     has_reply = True
-        if has_reply:
+            if self.__class__.__name__ == "Mercury":
+                self._write(self._flatten(real_command))
+            elif self.__class__.__name__ == "MercurySocket":
+                self._write(self._flatten(real_command), method="socket")
             t = time.time()
-            wait_time = 0.1
+            wait_time = 0.15
             if genre == ProtocolCode.POWER_ON:
                 wait_time = 8
             elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
-                           ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
+                        ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP, ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
                 wait_time = 3
-            # elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-            #     wait_time = 300
-            #     is_in_position = True
+            elif genre in [
+                    ProtocolCode.SEND_ANGLE,
+                    ProtocolCode.SEND_ANGLES,
+                    ProtocolCode.SEND_COORD,
+                    ProtocolCode.SEND_COORDS,
+                    ProtocolCode.JOG_ANGLE,
+                    ProtocolCode.JOG_COORD,
+                    ProtocolCode.JOG_INCREMENT,
+                    ProtocolCode.JOG_INCREMENT_COORD,
+                    ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
+                    ProtocolCode.MERCURY_SET_BASE_COORDS,
+                    ProtocolCode.MERCURY_JOG_BASE_COORD,
+                    ProtocolCode.MERCURY_SET_BASE_COORD,
+                    ProtocolCode.OVER_LIMIT_RETURN_ZERO,
+                    ProtocolCode.JOG_BASE_INCREMENT_COORD,
+                    ProtocolCode.WRITE_MOVE_C,
+                    ProtocolCode.JOG_RPY]:
+                wait_time = 300
+                is_in_position = True
+            elif genre in [ProtocolCode.SERVO_RESTORE]:
+                wait_time = 0.3
             need_break = False
             data = None
             while True and time.time() - t < wait_time:
+                # print("--------------", time.time() - t)
                 for v in self.read_command:
-                    if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87':
+
+                    # v == b'\xfe\xfe\x04[\x01\r\x87'
+                    if is_in_position and v[2] == 0x04 and v[3] == 0x5b:
+                        # print(-1)
+                        # print("到位反馈", flush=True)
+                        is_get_return = True
                         need_break = True
+                        data = v
                         with self.lock:
                             self.read_command.remove(v)
                             self.write_command.remove(genre)
-                            return 1
+
+                    elif genre == v[3] and v[2] == 5 and v[4] == 0xFF:
+                        # 通信闭环
+                        # print(-2)
+                        # print("闭环", flush=True)
+                        is_get_return = True
+                        with self.lock:
+                            self.read_command.remove(v)
+                        if has_reply == False:
+                            # print(-3)
+                            # print("仅闭环退出", flush=True)
+                            need_break = True
+                            data = v
                     elif genre == v[3]:
+                        # print(-4)
+                        # print("正常读取", flush=True)
                         need_break = True
                         data = v
                         with self.lock:
                             self.read_command.remove(v)
                             self.write_command.remove(genre)
                         break
-                if need_break or self.is_stop:
-                    self.is_stop = False
+
+                if is_in_position and time.time() - t > 0.2 and is_get_return == False:
+                    # 运动指令丢失，重发
+                    # print("运动指令丢失，重发", flush=True)
+                    lost_times += 1
+                    with self.lock:
+                        self.write_command.append(genre)
+                if need_break:
+                    # print("退出", flush=True)
                     break
-                time.sleep(0.01)
+                if lost_times > 2:
+                    # 重传3次失败，返回-1
+                    # print("重传3次失败，返回-1", flush=True)
+                    return -1
+                if t < self.is_stop and genre != ProtocolCode.STOP:
+                    # 打断除了stop指令外的其他指令的等待
+                    self.is_stop = 0
+                    break
+                time.sleep(0.001)
+            else:
+                # print("---超时---")
+                pass
             if data is None:
+                # print("未拿到数据")
                 return data
             res = []
             data = bytearray(data)
@@ -118,23 +187,28 @@ class MercuryCommandGenerator(CommandGenerator):
             elif data_len == 3:
                 res.append(self._decode_int16(valid_data[1:]))
             elif data_len == 4:
-                if genre == ProtocolCode.COBOTX_GET_ANGLE:
+                if genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_ENCODER]:
                     byte_value = int.from_bytes(
                         valid_data, byteorder='big', signed=True)
                     res.append(byte_value)
-                for i in range(1, 4):
-                    res.append(valid_data[i])
+                else:
+                    for i in range(1, 4):
+                        res.append(valid_data[i])
             elif data_len == 7:
-                error_list = [i for i in valid_data]
-                for i in error_list:
-                    if i in range(16, 23):
-                        res.append(1)
-                    elif i in range(23, 29):
-                        res.append(2)
-                    elif i in range(32, 112):
-                        res.append(3)
-                    else:
-                        res.append(i)
+                # if genre ==ProtocolCode.GET_TORQUE_COMP:
+                for i in range(0, data_len):
+                    res.append(valid_data[i])
+                # else:
+                #     error_list = [i for i in valid_data]
+                #     for i in error_list:
+                #         if i in range(16, 23):
+                #             res.append(1)
+                #         elif i in range(23, 29):
+                #             res.append(2)
+                #         elif i in range(32, 112):
+                #             res.append(3)
+                #         else:
+                #             res.append(i)
             elif data_len == 28:
                 for i in range(0, data_len, 4):
                     byte_value = int.from_bytes(
@@ -164,14 +238,14 @@ class MercuryCommandGenerator(CommandGenerator):
                         one = valid_data[i: i + 2]
                         res.append(self._decode_int16(one))
                         i += 2
-            elif data_len == 30:
+            elif data_len == 37:
                 i = 0
                 res = []
-                while i < 30:
-                    if i < 9 or i >= 23:
+                while i < data_len:
+                    if i < 9:
                         res.append(valid_data[i])
                         i += 1
-                    elif i < 23:
+                    else:
                         one = valid_data[i: i + 2]
                         res.append(self._decode_int16(one))
                         i += 2
@@ -228,7 +302,7 @@ class MercuryCommandGenerator(CommandGenerator):
                 ProtocolCode.GET_FRESH_MODE,
                 ProtocolCode.GET_GRIPPER_MODE,
                 ProtocolCode.SET_SSID_PWD,
-                ProtocolCode.GET_ERROR_DETECT_MODE,
+                # ProtocolCode.GET_ERROR_DETECT_MODE,
                 ProtocolCode.POWER_ON,
                 ProtocolCode.POWER_OFF,
                 ProtocolCode.RELEASE_ALL_SERVOS,
@@ -240,10 +314,14 @@ class MercuryCommandGenerator(CommandGenerator):
                 ProtocolCode.IS_BTN_CLICKED,
                 ProtocolCode.GET_CONTROL_MODE,
                 ProtocolCode.GET_VR_MODE,
-                ProtocolCode.GET_FILTER_LEN
+                ProtocolCode.GET_FILTER_LEN,
+                ProtocolCode.MERCURY_ERROR_COUNTS,
+                ProtocolCode.GET_MAX_ACC,
+                ProtocolCode.GET_MONITOR_MODE,
+                ProtocolCode.GET_COLLISION_MODE
             ]:
                 return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES]:
+            elif genre in [ProtocolCode.GET_DRAG_FIFO]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [
                 ProtocolCode.GET_COORDS,
@@ -289,43 +367,42 @@ class MercuryCommandGenerator(CommandGenerator):
                             if res[i] == 1:
                                 r.append(i)
                 return r
-            elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, ProtocolCode.GET_CW]:
+            elif genre in [ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, ProtocolCode.GET_SERVO_CW]:
+                return self._int2angle(res[0])
+            elif genre == ProtocolCode.GET_ANGLES:
+                return [self._int3angle(angle) for angle in res]
+            elif genre == ProtocolCode.COBOTX_GET_ANGLE:
                 return self._int2angle(res[0])
             elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
-                same_error = []
                 if len(res) == 23:
-                    index = 9
+                    i = 9
+                    for i in range(9, len(res)):
+                        if res[i] != 0:
+                            data = bin(res[i])[2:]
+                            res[i] = []
+                            while len(data) != 16:
+                                data = "0"+data
+                            for j in range(16):
+                                if data[j] != "0":
+                                    res[i].append(15-j)
+                    return res
                 else:
-                    index = 10
-                for i in range(index, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                error_id = 15-j
-                                if error_id in [0,3,5,6]:
-                                    if error_id not in same_error:
-                                        same_error.append(error_id)
-                                        if error_id in [3,6]:
-                                            continue
-                                        res[i].append(error_id)
-                                else:
-                                    res[i].append(error_id)
-                        if res[i] == []:
-                            res[i] = 0
-                return res
+                    for i in range(10, len(res)):
+                        if res[i] != 0:
+                            data = bin(res[i])[2:]
+                            res[i] = []
+                            while len(data) != 16:
+                                data = "0"+data
+                            for j in range(16):
+                                if data[j] != "0":
+                                    res[i].append(15-j)
+                    return res
             else:
                 return res
 
     def _process_received(self, data):
         if not data:
             return []
-        elif data == b'\xfe\xfe\x04[\x01\r\x87':
-            # 水星到位反馈
-            return data
 
         data = bytearray(data)
         data_len = len(data)
@@ -334,13 +411,12 @@ class MercuryCommandGenerator(CommandGenerator):
         while header_j < data_len - 4:
             if self._is_frame_header(data, header_i, header_j):
                 cmd_id = data[header_i + 3]
-                if cmd_id in self.write_command:
-                    break
+                if cmd_id in self.write_command or cmd_id == 0x5B:
+                    return data
             header_i += 1
             header_j += 1
         else:
             return []
-        return data
 
     def read_thread(self, method=None):
         while True:
@@ -349,7 +425,7 @@ class MercuryCommandGenerator(CommandGenerator):
             k = 0
             pre = 0
             t = time.time()
-            wait_time = 0.1
+            wait_time = 0.5
             if method is not None:
                 try:
                     self.sock.settimeout(wait_time)
@@ -360,66 +436,72 @@ class MercuryCommandGenerator(CommandGenerator):
                             datas += hex(ord(i))
                 except:
                     data = b""
-                if self.check_python_version() == 2:
-                    command_log = ""
-                    for d in data:
-                        command_log += hex(ord(d))[2:] + " "
-                    self.log.debug("_read : {}".format(command_log))
-                    # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-                else:
-                    command_log = ""
-                    for d in data:
-                        command_log += hex(d)[2:] + " "
-                    self.log.debug("_read : {}".format(command_log))
-                if data:
+                if data != b"":
+                    if self.send_jog_command and datas[3] == 0x5b:
+                        self.send_jog_command = False
+                        continue
+                    if self.check_python_version() == 2:
+                        command_log = ""
+                        for d in data:
+                            command_log += hex(ord(d))[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
+                        # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                    else:
+                        command_log = ""
+                        for d in data:
+                            command_log += hex(d)[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
                     res = self._process_received(data)
-                    with self.lock:
-                        self.read_command.append(res)
+                    if res != []:
+                        with self.lock:
+                            self.read_command.append(res)
             else:
                 while True and time.time() - t < wait_time:
-                    try:
-                        if self._serial_port.inWaiting() > 0:
-                            data = self._serial_port.read()
-                            k += 1
-                            if data_len == 3:
+                    if self._serial_port.inWaiting() > 0:
+                        data = self._serial_port.read()
+                        k += 1
+                        # print(datas, flush=True)
+                        if data_len == 3:
+                            datas += data
+                            crc = self._serial_port.read(2)
+                            if self.crc_check(datas) == [v for v in crc]:
+                                datas += crc
+                                break
+                        if data_len == 1 and data == b"\xfa":
+                            datas += data
+                            # if [i for i in datas] == command:
+                            #     datas = b''
+                            #     data_len = -1
+                            #     k = 0
+                            #     pre = 0
+                            #     continue
+                            # break
+                        elif len(datas) == 2:
+                            data_len = struct.unpack("b", data)[0]
+                            datas += data
+                        elif len(datas) > 2 and data_len > 0:
+                            datas += data
+                            data_len -= 1
+                        elif data == b"\xfe":
+                            if datas == b"":
                                 datas += data
-                                crc = self._serial_port.read(2)
-                                if self.crc_check(datas) == [v for v in crc]:
-                                    datas+=crc
-                                    break
-                            if data_len == 1 and data == b"\xfa":
-                                datas += data
-                                # if [i for i in datas] == command:
-                                #     datas = b''
-                                #     data_len = -1
-                                #     k = 0
-                                #     pre = 0
-                                #     continue
-                                # break
-                            elif len(datas) == 2:
-                                data_len = struct.unpack("b", data)[0]
-                                datas += data
-                            elif len(datas) > 2 and data_len > 0:
-                                datas += data
-                                data_len -= 1
-                            elif data == b"\xfe":
-                                if datas == b"":
+                                pre = k
+                            else:
+                                if k - 1 == pre:
                                     datas += data
-                                    pre = k
                                 else:
-                                    if k - 1 == pre:
-                                        datas += data
-                                    else:
-                                        datas = b"\xfe"
-                                        pre = k
-                    except Exception as e:
-                        time.sleep(0.1)
-                        self.log.error(e)
+                                    datas = b"\xfe"
+                                    pre = k
+                    # else:
+                    #     print("no data", flush=True)
                 else:
                     datas = b''
-                if datas:
+                if datas != b'':
+                    # print("read:", datas)
+                    if self.send_jog_command and datas[3] == 0x5b:
+                        self.send_jog_command = False
+                        continue
                     res = self._process_received(datas)
-
                     if self.check_python_version() == 2:
                         command_log = ""
                         for d in datas:
@@ -430,10 +512,68 @@ class MercuryCommandGenerator(CommandGenerator):
                         for d in datas:
                             command_log += hex(d)[2:] + " "
                         self.log.debug("_read : {}".format(command_log))
-                    if res != []:
-                        with self.lock:
-                            self.read_command.append(res)
+                    if datas[3] == 0x5D:
+                        debug_data = []
+                        for i in range(4, 32, 4):
+                            byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
+                            debug_data.append(byte_value)
+                        self.log.debug("_read : {}".format(debug_data))
+                        continue
+                    if res == []:
+                        continue
+                    with self.lock:
+                        self.read_command.append(res)
                 # return datas
+            time.sleep(0.001)
+
+    def get_system_version(self):
+        """get system version"""
+        return self._mesg(ProtocolCode.SOFTWARE_VERSION)
+
+    def get_atom_version(self):
+        """Get atom firmware version.
+
+        Returns:
+            float: version number.
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_VERSION)
+
+    def is_power_on(self):
+        """Adjust robot arm status
+
+        Return:
+            1 - power on
+            0 - power off
+            -1 - error data
+        """
+        return self._mesg(ProtocolCode.IS_POWER_ON)
+
+    def get_coords(self, angles=None):
+        """Get the coords from robot arm, coordinate system based on base. The target angle can be passed in, and the coordinate position corresponding to the target angle can be obtained.
+        
+        Args:
+            angles (list): The angles of six joints. e.g. [0, 0, 0, 0, 0, 0]
+
+        Return:
+            list : A float list of coord . [x, y, z, rx, ry, rz].
+
+        """
+        if angles is None:
+            return self._mesg(ProtocolCode.GET_COORDS)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, angles=angles)
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles)
+
+    def is_paused(self):
+        """Judge whether the manipulator pauses or not.
+
+        Return:
+            1 - paused
+            0 - not paused
+            -1 - error
+        """
+        return self._mesg(ProtocolCode.IS_PAUSED)
 
     def set_solution_angles(self, angle, speed):
         """Set zero space deflection angle value
@@ -446,16 +586,15 @@ class MercuryCommandGenerator(CommandGenerator):
             class_name=self.__class__.__name__, speed=speed, solution_angle=angle
         )
         return self._mesg(
-            ProtocolCode.COBOTX_SET_SOLUTION_ANGLES, [
-                self._angle2int(angle)], speed
+            ProtocolCode.COBOTX_SET_SOLUTION_ANGLES, [self._angle2int(angle)], speed, has_reply=True
         )
 
     def get_solution_angles(self):
         """Get zero space deflection angle value"""
-        return self._mesg(ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, has_reply=True)
+        return self._mesg(ProtocolCode.COBOTX_GET_SOLUTION_ANGLES)
 
     def write_move_c(self, transpoint, endpoint, speed):
-        """_summary_
+        """Circular trajectory motion
 
         Args:
             transpoint (list): Arc passing point coordinates
@@ -471,19 +610,19 @@ class MercuryCommandGenerator(CommandGenerator):
             else:
                 start.append(self._angle2int(transpoint[index]))
                 end.append(self._angle2int(endpoint[index]))
-        return self._mesg(ProtocolCode.WRITE_MOVE_C, start, end, speed)
+        return self._mesg(ProtocolCode.WRITE_MOVE_C, start, end, speed, has_reply=True)
 
     def focus_all_servos(self):
         """Lock all joints"""
-        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS, has_reply=True)
+        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
 
     def go_home(self, robot, speed=10):
         """Control the machine to return to the zero position.
 
         Args:
             robot (int): 
-                1 - Mercury A1 
-                2 - Mercury B1 or X1
+                1 - left arm
+                2 - right arm
             speed (int): 1 ~ 100
         Return:
             1 : All motors return to zero position.
@@ -505,7 +644,16 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, id=joint_id)
-        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id, has_reply=True)
+        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
+
+    def get_angles(self):
+        """ Get the angle of all joints.
+
+        Return:
+            list: A float list of all angle.
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES)
+    
 
     def servo_restore(self, joint_id):
         """Abnormal recovery of joints
@@ -519,24 +667,24 @@ class MercuryCommandGenerator(CommandGenerator):
         self.calibration_parameters(
             class_name=self.__class__.__name__, servo_restore=joint_id
         )
-        self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+        return self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
 
-    def set_error_detect_mode(self, mode):
-        """Set error detection mode. Turn off without saving, default to open state
+    # def set_error_detect_mode(self, mode):
+    #     """Set error detection mode. Turn off without saving, default to open state
 
-        Return:
-            mode : 0 - close 1 - open.
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, mode=mode
-        )
-        self._mesg(ProtocolCode.SET_ERROR_DETECT_MODE, mode)
+    #     Return:
+    #         mode : 0 - close 1 - open.
+    #     """
+    #     self.calibration_parameters(
+    #         class_name=self.__class__.__name__, mode=mode
+    #     )
+    #     self._mesg(ProtocolCode.SET_ERROR_DETECT_MODE, mode)
 
-    def get_error_detect_mode(self):
-        """Set error detection mode"""
-        return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
-    
-    def sync_send_angles(self, degrees, speed, timeout=30):
+    # def get_error_detect_mode(self):
+    #     """Set error detection mode"""
+    #     return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
+
+    def sync_send_angles(self, degrees, speed, timeout=15):
         """Send the angle in synchronous state and return when the target point is reached
 
         Args:
@@ -553,34 +701,25 @@ class MercuryCommandGenerator(CommandGenerator):
             time.sleep(0.1)
         return 0
 
-    def sync_send_coords(self, coords, speed, mode=None, timeout=30):
-        """Send the coord in synchronous state and return when the target point is reached
-
-        Args:
-            coords: a list of coord values(List[float])
-            speed: (int) 0 ~ 100
-            mode: (int): 0 - angular（default）, 1 - linear
-            timeout: default 7s.
-        """
-        t = time.time()
-        self.send_coords(coords, speed, mode)
-        while time.time() - t < timeout:
-            if self.is_in_position(coords, 1) == 1:
-                return 1
-            time.sleep(0.1)
-        return 0
-
+    @restrict_serial_port
     def get_base_coords(self):
         """get base coords"""
-        return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS, has_reply=True)
+        return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS)
 
+    @restrict_serial_port
     def send_base_coord(self, axis, coord, speed):
-        """_summary_
+        """Single coordinate control with the torso base as the coordinate system
 
         Args:
-            axis (_type_): _description_
-            coord (_type_): _description_
-            speed (_type_): _description_
+            axis (int): 1 to 6 correspond to x, y, z, rx, ry, rz
+            coord (float): coord value.
+                The coord range of `X` is -351.11 ~ 566.92.
+                The coord range of `Y` is -645.91 ~ 272.12.
+                The coord range of `Y` is -262.91 ~ 655.13.
+                The coord range of `RX` is -180 ~ 180.
+                The coord range of `RY` is -180 ~ 180.
+                The coord range of `RZ` is -180 ~ 180.
+            speed (int): 1 ~ 100
         """
         if axis < 4:
             coord = self._coord2int(coord)
@@ -588,12 +727,13 @@ class MercuryCommandGenerator(CommandGenerator):
             coord = self._angle2int(coord)
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed)
 
+    @restrict_serial_port
     def send_base_coords(self, coords, speed):
-        """_summary_
+        """Full coordinate control
 
         Args:
-            coords (_type_): _description_
-            speed (_type_): _description_
+            coords (list): coordinate value, [x, y, z, rx, ry, rz]
+            speed (int): 1 ~ 100
         """
         coord_list = []
         for idx in range(3):
@@ -602,14 +742,29 @@ class MercuryCommandGenerator(CommandGenerator):
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed)
 
-    def jog_base_coord(self, axis, direction, speed):
-        """_summary_
+    @restrict_serial_port
+    def jog_base_coord(self, axis, direction, speed, sync=True):
+        """Single-coordinate unidirectional motion control
 
         Args:
-            axis (_type_): _description_
-            direction (_type_): _description_
-            speed (_type_): _description_
+            axis (int): 1 ~ 6 correspond to [x, y, z, rx, ry, rz]
+            direction (int): Direction of movement. 0 or 1.
+            speed (int): 1 ~ 100.
+            sync (bool): Whether to wait for the movement to complete. Default to True.
+            
+        Return:
+            0: End of exercise.
+            1 ~ 7: Corresponding joint exceeds limit.
+            16 ~ 19: Collision protection.
+            32 ~ 35: Coordinates have no adjacent solutions.
+            49: Not powered on.
+            50: Motor abnormality.
+            51: Motor encoder error
+            52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
+        if sync:
+            return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed, has_reply=True)
+        self.send_jog_command = True
         return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed)
 
     def drag_teach_save(self):
@@ -622,22 +777,22 @@ class MercuryCommandGenerator(CommandGenerator):
 
     def drag_teach_pause(self):
         """Pause recording of dragging teaching point"""
-        self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
 
-    def is_gripper_moving(self, mode=None):
-        """Judge whether the gripper is moving or not
+    # def is_gripper_moving(self, mode=None):
+    #     """Judge whether the gripper is moving or not
 
-        Args:
-            mode: 1 - pro gripper(default)  2 - Parallel gripper
+    #     Args:
+    #         mode: 1 - pro gripper(default)  2 - Parallel gripper
 
-        Returns:
-            0 - not moving
-            1 - is moving
-            -1- error data
-        """
-        if mode:
-            return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
-        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
+    #     Returns:
+    #         0 - not moving
+    #         1 - is moving
+    #         -1- error data
+    #     """
+    #     if mode:
+    #         return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, mode, has_reply=True)
+    #     return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
 
     def set_gripper_enabled(self, value):
         """Pro adaptive gripper enable setting
@@ -658,97 +813,108 @@ class MercuryCommandGenerator(CommandGenerator):
             1 : pressed.
             0 : not pressed.
         """
-        return self._mesg(ProtocolCode.IS_BTN_CLICKED, has_reply=True)
+        return self._mesg(ProtocolCode.IS_BTN_CLICKED)
 
-    def tool_serial_restore(self):
-        """485 factory reset
-        """
-        return self._mesg(ProtocolCode.TOOL_SERIAL_RESTORE)
+    # def tool_serial_restore(self):
+    #     """485 factory reset
+    #     """
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_RESTORE)
 
-    def tool_serial_ready(self):
-        """Set up 485 communication
+    # def tool_serial_ready(self):
+    #     """Set up 485 communication
 
-        Return:
-            0 : not set
-            1 : Setup completed
-        """
-        return self._mesg(ProtocolCode.TOOL_SERIAL_READY, has_reply=True)
+    #     Return:
+    #         0 : not set
+    #         1 : Setup completed
+    #     """
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_READY, has_reply=True)
 
-    def tool_serial_available(self):
-        """Read 485 buffer length
+    # def tool_serial_available(self):
+    #     """Read 485 buffer length
 
-        Return:
-            485 buffer length available for reading
-        """
-        return self._mesg(ProtocolCode.TOOL_SERIAL_AVAILABLE, has_reply=True)
+    #     Return:
+    #         485 buffer length available for reading
+    #     """
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_AVAILABLE, has_reply=True)
 
-    def tool_serial_read_data(self, data_len):
-        """Read fixed length data. Before reading, read the buffer length first. After reading, the data will be cleared
+    # def tool_serial_read_data(self, data_len):
+    #     """Read fixed length data. Before reading, read the buffer length first. After reading, the data will be cleared
 
-        Args:
-            data_len (int): The number of bytes to be read, range 1 ~ 45
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, data_len=data_len)
-        return self._mesg(ProtocolCode.TOOL_SERIAL_READ_DATA, data_len, has_reply=True)
+    #     Args:
+    #         data_len (int): The number of bytes to be read, range 1 ~ 45
+    #     """
+    #     self.calibration_parameters(
+    #         class_name=self.__class__.__name__, data_len=data_len)
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_READ_DATA, data_len, has_reply=True)
 
-    def tool_serial_write_data(self, command):
-        """End 485 sends data， Data length range is 1 ~ 45 bytes
+    # def tool_serial_write_data(self, command):
+    #     """End 485 sends data， Data length range is 1 ~ 45 bytes
 
-        Args:
-            command : data instructions
+    #     Args:
+    #         command : data instructions
 
-        Return:
-            number of bytes received
-        """
-        return self._mesg(ProtocolCode.TOOL_SERIAL_WRITE_DATA, command, has_reply=True)
+    #     Return:
+    #         number of bytes received
+    #     """
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_WRITE_DATA, command, has_reply=True)
 
-    def tool_serial_flush(self):
-        """Clear 485 buffer
-        """
-        return self._mesg(ProtocolCode.TOOL_SERIAL_FLUSH)
+    # def tool_serial_flush(self):
+    #     """Clear 485 buffer
+    #     """
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_FLUSH)
 
-    def tool_serial_peek(self):
-        """View the first data in the buffer, the data will not be cleared
+    # def tool_serial_peek(self):
+    #     """View the first data in the buffer, the data will not be cleared
 
-        Return:
-            1 byte data
-        """
-        return self._mesg(ProtocolCode.TOOL_SERIAL_PEEK, has_reply=True)
+    #     Return:
+    #         1 byte data
+    #     """
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_PEEK, has_reply=True)
 
-    def tool_serial_set_baud(self, baud=115200):
-        """Set 485 baud rate, default 115200
+    # def tool_serial_set_baud(self, baud=115200):
+    #     """Set 485 baud rate, default 115200
 
-        Args:
-            baud (int): baud rate
-        """
-        return self._mesg(ProtocolCode.TOOL_SERIAL_SET_BAUD, baud)
+    #     Args:
+    #         baud (int): baud rate
+    #     """
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_SET_BAUD, baud)
 
-    def tool_serial_set_timeout(self, max_time):
-        """Set 485 timeout in milliseconds, default 30ms
+    # def tool_serial_set_timeout(self, max_time):
+    #     """Set 485 timeout in milliseconds, default 30ms
 
-        Args:
-            max_time (int): timeout
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, max_time=max_time)
-        return self._mesg(ProtocolCode.TOOL_SERIAL_SET_TIME_OUT, max_time)
+    #     Args:
+    #         max_time (int): timeout
+    #     """
+    #     self.calibration_parameters(
+    #         class_name=self.__class__.__name__, max_time=max_time)
+    #     return self._mesg(ProtocolCode.TOOL_SERIAL_SET_TIME_OUT, max_time)
 
     def get_robot_status(self):
-        return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS, has_reply=True)
+        return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS)
 
     def power_on(self):
-        """Open communication with Atom."""
-        return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
+        """Power on the robot
+        
+        Return:
+            1: success
+            2: failed
+        """
+        res = self._mesg(ProtocolCode.POWER_ON)
+        if res == 1:
+            self.get_limit_switch()
+        time.sleep(1)
+        return res
 
     def power_off(self):
-        """Close communication with Atom."""
-        return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
+        """Robot power outage"""
+        with self.lock:
+            self.read_command.clear()
+        return self._mesg(ProtocolCode.POWER_OFF)
 
     def release_all_servos(self):
         """Relax all joints
         """
-        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, has_reply=True)
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
 
     def focus_servo(self, servo_id):
         """Power on designated servo
@@ -758,7 +924,7 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
     def release_servo(self, servo_id):
         """Power off designated servo
@@ -768,12 +934,12 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id, has_reply=True)
-    
+        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
+
     def get_robot_type(self):
         """Get robot type
         """
-        return self._mesg(ProtocolCode.GET_ROBOT_ID, has_reply=True)
+        return self._mesg(ProtocolCode.GET_ROBOT_ID)
 
     def get_zero_pos(self):
         """Read the zero encoder value
@@ -781,7 +947,7 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             list: The values of the zero encoders of the seven joints
         """
-        return self._mesg(ProtocolCode.GET_ZERO_POS, has_reply=True)
+        return self._mesg(ProtocolCode.GET_ZERO_POS)
 
     def is_init_calibration(self):
         """Check if the robot is initialized for calibration
@@ -789,7 +955,7 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             bool: True if the robot is initialized for calibration, False otherwise
         """
-        return self._mesg(ProtocolCode.IS_INIT_CALIBRATION, has_reply=True)
+        return self._mesg(ProtocolCode.IS_INIT_CALIBRATION)
 
     def set_break(self, joint_id, value):
         """Set break point
@@ -804,15 +970,15 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, id=joint_id, value=value)
-        return self._mesg(ProtocolCode.SET_BREAK, joint_id, value, has_reply=True)
+        return self._mesg(ProtocolCode.SET_BREAK, joint_id, value)
 
     def over_limit_return_zero(self):
         """Return to zero when the joint is over the limit
         """
-        return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO)
+        return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO, has_reply=True)
 
     def jog_increment_angle(self, joint_id, increment, speed):
-        """angle step mode
+        """Single angle incremental motion control. 
 
         Args:
             joint_id: Joint id 1 - 7.
@@ -821,10 +987,10 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, id=joint_id, speed=speed)
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, has_reply=True)
 
     def jog_increment_coord(self, coord_id, increment, speed):
-        """coord step mode
+        """Single coordinate incremental motion control. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the job_base_increment_coord interface
 
         Args:
             coord_id: axis id 1 - 6.
@@ -834,11 +1000,11 @@ class MercuryCommandGenerator(CommandGenerator):
         self.calibration_parameters(
             class_name=self.__class__.__name__, id=coord_id, speed=speed)
         value = self._coord2int(
-            increment) if id <= 3 else self._angle2int(increment)
-        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed)
+            increment) if coord_id <= 3 else self._angle2int(increment)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True)
     
     def get_quick_move_info(self):
-        return self._mesg(ProtocolCode.GET_QUICK_INFO, has_reply=True)
+        return self._mesg(ProtocolCode.GET_QUICK_INFO)
 
     
     def drag_teach_clean(self):
@@ -857,22 +1023,17 @@ class MercuryCommandGenerator(CommandGenerator):
                 3-The number of exceptions sent by the end
                 4-The number of exceptions read by the end
         """
-        return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id, _type, has_reply=True)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, _type=_type)
+        return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id, _type)
 
-    def set_pos_over_shoot(self, value):
-        """Set position deviation value
-
-        Args:
-            value (_type_): _description_
-        """
-        return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, [value*100])
+    def set_pos_over_shoot(self, shoot_value):
+        self.calibration_parameters(class_name=self.__class__.__name__, shoot_value=shoot_value)
+        return self._mesg(ProtocolCode.MERCURY_SET_POS_OVER_SHOOT, [shoot_value*100])
 
     def get_pos_over_shoot(self):
-        """Get position deviation value
-        """
-        return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, has_reply=True)
+        return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT)
 
-    def stop(self, deceleration=False):
+    def stop(self, deceleration=0):
         """Robot stops moving
 
         Args:
@@ -881,14 +1042,14 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 1 - Stop completion
         """
-        self.is_stop = True
-        if deceleration:
-            return self._mesg(ProtocolCode.STOP, 1, has_reply=True)
+        self.calibration_parameters(class_name=self.__class__.__name__, deceleration=deceleration)
+        # self.is_stop = time.time()
+        if deceleration == 1:
+            return self._mesg(ProtocolCode.STOP, 1)
         else:
-            return self._mesg(ProtocolCode.STOP, has_reply=True)
-        
+            return self._mesg(ProtocolCode.STOP)
 
-    def pause(self, deceleration=False):
+    def pause(self, deceleration=0):
         """Robot pauses movement
 
         Args:
@@ -897,22 +1058,25 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 1 - pause completion
         """
-        if deceleration:
-            return self._mesg(ProtocolCode.PAUSE, 1, has_reply=True)
+        self.calibration_parameters(class_name=self.__class__.__name__, deceleration=deceleration)
+        
+        # self.is_stop = time.time()
+        if deceleration == 1:
+            return self._mesg(ProtocolCode.PAUSE, 1)
         else:
-            return self._mesg(ProtocolCode.PAUSE, has_reply=True)
+            return self._mesg(ProtocolCode.PAUSE)
 
     def get_modified_version(self):
-        return self._mesg(ProtocolCode.ROBOT_VERSION, has_reply=True)
+        return self._mesg(ProtocolCode.ROBOT_VERSION)
 
     def get_pos_over(self):
-        return self._mesg(ProtocolCode.GET_POS_OVER, has_reply=True)
+        return self._mesg(ProtocolCode.GET_POS_OVER)
 
-    def clear_encoders_error(self):
-        return self._mesg(ProtocolCode.CLEAR_ENCODERS_ERROR)
+    def clear_encoders_error(self, joint_id):
+        return self._mesg(ProtocolCode.CLEAR_ENCODERS_ERROR, joint_id)
 
     def get_down_encoders(self):
-        return self._mesg(ProtocolCode.GET_DOWN_ENCODERS, has_reply=True)
+        return self._mesg(ProtocolCode.GET_DOWN_ENCODERS)
 
     def set_control_mode(self, mode):
         """Set robot motion mode
@@ -921,6 +1085,7 @@ class MercuryCommandGenerator(CommandGenerator):
             mode (int): 0 - location mode, 1 - torque mode
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
 
     def get_control_mode(self):
@@ -929,7 +1094,7 @@ class MercuryCommandGenerator(CommandGenerator):
         Returns:
             int: 0 - location mode, 1 - torque mode
         """
-        return self._mesg(ProtocolCode.GET_CONTROL_MODE, has_reply=True)
+        return self._mesg(ProtocolCode.GET_CONTROL_MODE)
 
     def set_collision_mode(self, mode):
         """Set collision detection mode
@@ -938,45 +1103,48 @@ class MercuryCommandGenerator(CommandGenerator):
             mode (int): 0 - disable, 1 - enable
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_COLLISION_MODE, mode)
 
-    def set_collision_threshold(self, joint_id, value=100):
+    def set_collision_threshold(self, joint_id, threshold_value=100):
         """Set joint collision threshold
 
         Args:
-            joint_id (int): joint ID， range 1 ~ 7
-            value (int): Collision threshold, range is 50 ~ 250, default is 100, the smaller the value, the easier it is to trigger a collision
+            joint_id (int): joint ID， range 1 ~ 6
+            threshold_value (int): Collision threshold, range is 50 ~ 250, default is 100, the smaller the value, the easier it is to trigger a collision
         """
-        return self._mesg(ProtocolCode.SET_COLLISION_THRESHOLD, joint_id, value)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, threshold_value=threshold_value)
+        return self._mesg(ProtocolCode.SET_COLLISION_THRESHOLD, joint_id, threshold_value)
 
     def get_collision_threshold(self):
         """Get joint collision threshold
         """
-        return self._mesg(ProtocolCode.GET_COLLISION_THRESHOLD, has_reply=True)
+        return self._mesg(ProtocolCode.GET_COLLISION_THRESHOLD)
 
-    def set_torque_comp(self, joint_id, value=100):
+    def set_torque_comp(self, joint_id, comp_value=100):
         """Set joint torque compensation
 
         Args:
-            joint_id (int): joint ID， range 1 ~ 7
-            value (int): Compensation value, range is 0 ~ 250, default is 100, The smaller the value, the harder it is to drag the joint
+            joint_id (int): joint ID， range 1 ~ 6
+            comp_value (int): Compensation value, range is 0 ~ 250, default is 100, The smaller the value, the harder it is to drag the joint
         """
-        return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, value)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, comp_value=comp_value)
+        return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, comp_value)
 
     def get_torque_comp(self):
         """Get joint torque compensation
         """
-        return self._mesg(ProtocolCode.GET_TORQUE_COMP, has_reply=True)
+        return self._mesg(ProtocolCode.GET_TORQUE_COMP)
 
     def power_on_only(self):
         """Only turn on the power
         """
-        return self._mesg(ProtocolCode.POWER_ON_ONLY, has_reply=True)
+        return self._mesg(ProtocolCode.POWER_ON_ONLY)
 
     def get_vr_mode(self):
         """Check if the robot is in VR mode
         """
-        return self._mesg(ProtocolCode.GET_VR_MODE, has_reply=True)
+        return self._mesg(ProtocolCode.GET_VR_MODE)
 
     def set_vr_mode(self, mode):
         """Set VR mode
@@ -989,16 +1157,16 @@ class MercuryCommandGenerator(CommandGenerator):
     def get_model_direction(self):
         """Get the direction of the robot model
         """
-        return self._mesg(ProtocolCode.GET_MODEL_DIRECTION, has_reply=True)
+        return self._mesg(ProtocolCode.GET_MODEL_DIRECTION)
 
-    def set_model_direction(self, id, direction):
+    def set_model_direction(self, joint_id, direction):
         """Set the direction of the robot model
 
         Args:
-            id (int): joint ID, 1 ~ 7.
+            joint_id (int): joint ID, 1 ~ 7.
             direction (int): 0 - forward, 1 - backward
         """
-        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, id, direction)
+        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
 
     def get_filter_len(self, rank):
         """Get the filter length
@@ -1011,7 +1179,7 @@ class MercuryCommandGenerator(CommandGenerator):
                 4 : Coordinate velocity fusion filter
                 5 : Drag teaching sampling period
         """
-        return self._mesg(ProtocolCode.GET_FILTER_LEN, rank, has_reply=True)
+        return self._mesg(ProtocolCode.GET_FILTER_LEN, rank)
 
     def set_filter_len(self, rank, value):
         """Set the filter length
@@ -1027,30 +1195,627 @@ class MercuryCommandGenerator(CommandGenerator):
         """
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
 
-    def set_cw(self, joint_id, err_angle):
-        """_summary_
+    def clear_zero_pos(self):
+        return self._mesg(ProtocolCode.CLEAR_ZERO_POS)
+
+    @restrict_serial_port
+    def set_servo_cw(self, head_id, err_angle):
+        """Set the joint in-place feedback error angle
 
         Args:
-            joint_id (_type_): 11 or 12
-            err_angle (_type_): 0 ~ 5
+            head_id (int): Joint ID, 11 or 12.
+            err_angle (float): Error range is 0 ~ 5.
         """
-        return self._mesg(ProtocolCode.SET_CW, joint_id, [self._angle2int(err_angle)])
+        self.calibration_parameters(class_name=self.__class__.__name__, head_id=head_id, err_angle=err_angle)
+        return self._mesg(ProtocolCode.SET_SERVO_CW, head_id, [self._angle2int(err_angle)])
 
-    def get_cw(self, joint_id):
-        """_summary_
+    @restrict_serial_port
+    def get_servo_cw(self, head_id):
+        """Get the joint in-place feedback error angle
 
         Args:
-            joint_id (_type_): 11 or 12
+            head_id (int): Joint ID, 11 or 12.
 
         Returns:
-            _type_: _description_
+            float: Error angle, range is 0 ~ 5.
         """
-        return self._mesg(ProtocolCode.GET_CW, joint_id, has_reply=True)
+        self.calibration_parameters(class_name=self.__class__.__name__, head_id=head_id)
+        return self._mesg(ProtocolCode.GET_SERVO_CW, head_id)
 
+    @restrict_serial_port
     def clear_waist_queue(self):
-        """_summary_
+        """Clear the cache points of the three motors in the torso
         """
         return self._mesg(ProtocolCode.CLEAR_WAIST_QUEUE)
+
+    def clear_error_information(self):
+        """Clear robot error message"""
+        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO)
+
+    def get_error_information(self):
+        """Obtaining robot error information
+
+        Return:
+            0: No error message.
+            1 ~ 6: The corresponding joint exceeds the limit position.
+            16 ~ 19: Collision protection.
+            32: Kinematics inverse solution has no solution.
+            33 ~ 34: Linear motion has no adjacent solution.
+        """
+        return self._mesg(ProtocolCode.GET_ERROR_INFO)
+
+    def send_angles(self, angles, speed):
+        """Send the angles of all joints to robot arm.
+
+        Args:
+            angles: a list of angle values(List[float]). len 7.
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, angles=angles, speed=speed)
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
+
+    def send_angle(self, joint_id, degree, speed):
+        """Send one angle of joint to robot arm.
+
+        Args:
+            joint_id : Joint id(genre.Angle)， int 1-7.
+            degree : angle value(float).
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(degree)], speed, has_reply=True)
+
+    def send_coord(self, coord_id, coord, speed):
+        """Send one coord to robot arm.
+
+        Args:
+            coord_id (int): coord id, range 1 ~ 6
+            coord (float): coord value.
+                The coord range of `X` is -351.11 ~ 566.92.
+                The coord range of `Y` is -645.91 ~ 272.12.
+                The coord range of `Y` is -262.91 ~ 655.13.
+                The coord range of `RX` is -180 ~ 180.
+                The coord range of `RY` is -180 ~ 180.
+                The coord range of `RZ` is -180 ~ 180.
+            speed (int): 1 ~ 100
+        """
+
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+        value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
+        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True)
+
+    def send_coords(self, coords, speed):
+        """Send all coords to robot arm.
+
+        Args:
+            coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
+                The coord range of `X` is -351.11 ~ 566.92.
+                The coord range of `Y` is -645.91 ~ 272.12.
+                The coord range of `Y` is -262.91 ~ 655.13.
+                The coord range of `RX` is -180 ~ 180.
+                The coord range of `RY` is -180 ~ 180.
+                The coord range of `RZ` is -180 ~ 180.
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords, speed=speed)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True)
+
+    def resume(self):
+        """Recovery movement"""
+        return self._mesg(ProtocolCode.RESUME)
+
+    def set_servo_calibration(self, servo_id):
+        """The current position of the calibration joint actuator is the angle zero point, 
+
+        Args:
+            servo_id: Serial number of articulated steering gear. Joint id 1 - 6
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, id=servo_id)
+        return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
+    
+    def set_servos_calibration(self):
+        for id in range(1, 8):
+            self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, id)
+
+    def is_in_position(self, data, id=0):
+        """Judge whether in the position.
+
+        Args:
+            data: A data list, angles or coords. angles len 6, coords len 6.
+            id: 1 - coords, 0 - angles
+
+        Return:
+            1 - True\n
+            0 - False\n
+            -1 - Error
+        """
+        if id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, coords=data)
+            data_list = []
+            for idx in range(3):
+                data_list.append(self._coord2int(data[idx]))
+            for idx in range(3, 6):
+                data_list.append(self._angle2int(data[idx]))
+        elif id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, angles=data)
+            data_list = [self._angle2int(i) for i in data]
+        else:
+            raise Exception("id is not right, please input 0 or 1")
+
+        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, id)
+
+    def is_moving(self):
+        """Detect if the robot is moving
+
+        Return:
+            0 - not moving
+            1 - is moving
+            -1 - error data
+        """
+        return self._mesg(ProtocolCode.IS_MOVING)
+
+    def jog_angle(self, joint_id, direction, speed, sync=False):
+        """Jog control angle.
+
+        Args:
+            joint_id (int): Joint id 1 - 6.
+            direction (int): 0 - decrease, 1 - increase
+            speed (int): int range 1 - 100
+            sync (bool, optional): Waiting for the exercise to end. Defaults to False.
+
+        Return:
+            0: End of exercise.
+            1 ~ 7: Corresponding joint exceeds limit.
+            16 ~ 19: Collision protection.
+            32 ~ 35: Coordinates have no adjacent solutions.
+            49: Not powered on.
+            50: Motor abnormality.
+            51: Motor encoder error
+            52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, id=joint_id, direction=direction, speed=speed)
+        if sync:
+            return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, has_reply=True)
+        self.send_jog_command = True
+        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed)
+
+    def jog_coord(self, coord_id, direction, speed, sync=False):
+        """Jog control coord. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the jog_base_coord interface
+
+        Args:
+            coord_id (int): int 1-6
+            direction (int): 0 - decrease, 1 - increase
+            speed (int): 1 - 100
+            sync (bool, optional): Waiting for the exercise to end. Defaults to False.
+
+        Returns:
+            1: End of the Movement
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, direction=direction, speed=speed)
+        if sync:
+            return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, has_reply=True)
+        self.send_jog_command = True
+        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
+
+    @restrict_serial_port
+    def jog_base_increment_coord(self, axis_id, increment, speed):
+        """Single coordinate incremental motion control
+
+        Args:
+            axis_id (int): axis id, range 1 ~ 6 corresponds to [x,y,z,rx,ry,rz]
+            increment (float): Incremental value
+            speed (int): speed
+            
+        Return:
+            0: End of exercise.
+            1 ~ 7: Corresponding joint exceeds limit.
+            16 ~ 19: Collision protection.
+            32 ~ 35: Coordinates have no adjacent solutions.
+            49: Not powered on.
+            50: Motor abnormality.
+            51: Motor encoder error
+            52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=axis_id, speed=speed)
+        coord_list = []
+        if axis_id < 4:
+            coord_list.append(self._coord2int(increment))
+        else:
+            coord_list.append(self._angle2int(increment))
+        return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, coord_list, speed, has_reply=True)
+
+    def get_max_speed(self, mode):
+        """Get maximum speed
+        
+        Args:
+            mode (int): 0 - angle speed. 1 - coord speed.
+            
+        Return: 
+            angle speed range 1 ~ 150°/s. coord speed range 1 ~ 200mm/s
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.GET_SPEED, mode)
+
+    def set_max_speed(self, mode, max_speed):
+        """Set maximum speed
+
+        Args:
+            mode (int): 0 - angle speed. 1 - coord speed.
+            max_speed (int): angle speed range 1 ~ 150°/s. coord speed range 1 ~ 200mm/s
+
+        Returns:
+            1: _description_
+        """
+        self.calibration_parameters(lass_name=self.__class__.__name__, mode=mode, max_speed=max_speed)
+        return self._mesg(ProtocolCode.SET_SPEED, mode, [max_speed])
+
+    def set_max_acc(self, mode, max_acc):
+        """Set maximum acceleration
+
+        Args:
+            mode (int): 0 - angle acceleration. 1 - coord acceleration.
+            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 150°/s. Coordinate acceleration range is 1 ~ 400mm/s
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, mode=mode, max_acc=max_acc)
+        return self._mesg(ProtocolCode.SET_MAX_ACC, mode, [max_acc])
+
+    def get_max_acc(self, mode):
+        """Get maximum acceleration
+
+        Args:
+            mode (int): 0 - angle acceleration. 1 - coord acceleration.
+        """
+        return self._mesg(ProtocolCode.GET_MAX_ACC, mode)
+
+    def get_joint_min_angle(self, joint_id):
+        """Gets the minimum movement angle of the specified joint
+
+        Args: 
+            joint_id: Joint id 1 - 6 or 11 ~ 12
+
+        Return:
+            angle value(float)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, id=joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id)
+
+    def get_joint_max_angle(self, joint_id):
+        """Gets the maximum movement angle of the specified joint
+
+        Args:
+            joint_id: Joint id 1 - 6 or 11 ~ 12
+
+        Return:
+            angle value(float)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, id=joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id)
+
+    def set_joint_max_angle(self, joint_id, angle):
+        """Set the maximum angle of the joint (must not exceed the maximum angle specified for the joint)
+
+        Args:
+            joint_id (int): Joint id 1 - 6  or 11 ~ 12
+            angle: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
+
+        Return:
+            1 - success
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, angle)
+
+    def set_joint_min_angle(self, joint_id, angle):
+        """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
+
+        Args:
+            joint_id (int): Joint id 1 - 6.
+            angle: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
+
+        Return:
+            1 - success
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, id=joint_id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, angle)
+
+    def is_servo_enable(self, servo_id):
+        """To detect the connection state of a single joint
+
+        Args:
+            servo_id: Joint id 1 - 6
+
+        Return:
+            0 - disable
+            1 - enable
+            -1 - error
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
+        return self._mesg(ProtocolCode.IS_SERVO_ENABLE, servo_id)
+
+    def is_all_servo_enable(self):
+        """Detect the connection status of all joints
+
+        Return:
+            0 - disable
+            1 - enable
+            -1 - error
+        """
+        return self._mesg(ProtocolCode.IS_ALL_SERVO_ENABLE)
+
+    def get_servo_data(self, servo_id, address, mode):
+        """Read the data parameter of the specified address of the steering gear.
+
+        Args:
+            servo_id: Joint id 11 or 12
+            address: Data address. range 5 ~ 69
+            mode: 1 - indicates that value is one byte(default), 2 - represents a value of two bytes.
+
+        Return:
+            values 0 - 4096
+        """
+        if mode not in [1, 2]:
+            raise Exception("mode must be 1 or 2")
+        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id, address=address)
+        return self._mesg(
+            ProtocolCode.GET_SERVO_DATA, servo_id, address, mode
+        )
+        
+    def set_servo_data(self, servo_id, address, value, mode):
+        """Set the data parameters of the specified address of the steering gear
+
+        Args:
+            servo_id: Joint id 11 or 12
+            address: Data address. range 5 ~ 69
+            value: 0 - 4096
+            mode: 1 - indicates that value is one byte(default), 2 - represents a value of two bytes.
+        """
+        if mode not in [1, 2]:
+            raise Exception("mode must be 1 or 2")
+        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id, address=address)
+        if mode == 1:
+            return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, address, value, mode)
+        else:
+            return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, address, [value], mode)
+
+    def get_servo_speeds(self):
+        """Get joint speed
+        
+        Return: 
+            unit step/s
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_SPEED)
+    
+    def get_servo_currents(self):
+        """Get joint current
+        
+        Return: 
+            0 ~ 5000 mA
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_CURRENTS)
+    
+    def get_servo_status(self):
+        """Get joint status
+        
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_STATUS)
+    
+    def set_gripper_state(self, flag, speed, gripper_type=None):
+        """Set gripper switch state
+
+        Args:
+            flag  (int): 0 - open, 1 - close
+            speed (int): 1 ~ 100
+            gripper_type (int): default 1
+                1 : Adaptive gripper. default to adaptive gripper
+                2 : Parallel Gripper
+        """
+        if gripper_type is None:
+            self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed)
+            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
+        else:
+            self.calibration_parameters(class_name = self.__class__.__name__, flag=flag, speed=speed, gripper_type=gripper_type)
+            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, gripper_type)
+        
+    def set_gripper_value(self, gripper_value, speed, gripper_type=None):
+        """Set gripper value
+
+        Args:
+            gripper_value (int): 0 ~ 100
+            speed (int): 1 ~ 100
+            gripper_type (int): default 1
+                1 : Adaptive gripper. default to adaptive gripper
+                2 : Parallel Gripper
+        """
+        
+        if gripper_type is not None:
+            self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
+                                        gripper_type=gripper_type)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
+        else:
+            self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed)
+            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+        
+    def set_gripper_calibration(self):
+        """Set the current position to zero, set current position value is `2048`."""
+        return self._mesg(ProtocolCode.SET_GRIPPER_CALIBRATION)
+    
+    def set_gripper_mode(self, mode):
+        """Set gripper mode
+        
+        Args:
+            mode: 0 - transparent transmission. 1 - Port Mode.
+        
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_GRIPPER_MODE, mode)
+    
+    def get_gripper_mode(self):
+        """Get gripper mode
+        
+        Return:
+            mode: 0 - transparent transmission. 1 - Port Mode.
+        """
+        return self._mesg(ProtocolCode.GET_GRIPPER_MODE)
+    
+    def set_color(self, r=0, g=0, b=0):
+        """Set the light color on the top of the robot end.
+
+        Args:
+            r (int): 0 ~ 255
+            g (int): 0 ~ 255
+            b (int): 0 ~ 255
+
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, rgb=[r, g, b])
+        return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
+    
+    def set_digital_output(self, pin_no, pin_signal):
+        """Set the end-of-arm IO status
+
+        Args:
+            pin_no (int): 1 or 2
+            pin_signal (int): 0 / 1
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
+        return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
+
+    def get_digital_input(self, pin_no):
+        """Read the end-of-arm IO status
+
+        Args:
+            pin_no (int): 1 or 2
+
+        Returns:
+            int: 0 or 1
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no)
+        return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no)
+
+    def get_world_reference(self):
+        """Get the world coordinate system"""
+        return self._mesg(ProtocolCode.GET_WORLD_REFERENCE)
+    
+    def set_tool_reference(self, coords):
+        """Set tool coordinate system
+        
+        Args:
+            coords: a list of coords value(List[float])
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_TOOL_REFERENCE, coord_list)
+    
+    def get_tool_reference(self):
+        """Get tool coordinate system """
+        return self._mesg(ProtocolCode.GET_TOOL_REFERENCE)
+    
+    def set_reference_frame(self, rftype):
+        """Set the base coordinate system
+        
+        Args:
+            rftype: 0 - base 1 - tool.
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, rftype=rftype)
+        return self._mesg(ProtocolCode.SET_REFERENCE_FRAME, rftype)
+    
+    def get_reference_frame(self):
+        """Get the base coordinate system
+        
+        Return: 
+            0 - base 1 - tool.
+        """
+        return self._mesg(ProtocolCode.GET_REFERENCE_FRAME)
+    
+    def set_movement_type(self, move_type):
+        """Set movement type
+        
+        Args:
+            move_type: 1 - movel, 0 - moveJ
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, move_type=move_type)
+        return self._mesg(ProtocolCode.SET_MOVEMENT_TYPE, move_type)
+    
+    def get_movement_type(self):
+        """Get movement type
+        
+        Return: 
+            1 - movel, 0 - moveJ
+        """
+        return self._mesg(ProtocolCode.GET_MOVEMENT_TYPE)
+    
+    def set_end_type(self, end):
+        """Set end coordinate system
+        
+        Args:
+            end: int
+                0 - flange, 1 - tool
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, end=end)
+        return self._mesg(ProtocolCode.SET_END_TYPE, end)
+    
+    def get_end_type(self):
+        """Get end coordinate system
+        
+        Return: 
+            0 - flange, 1 - tool
+        """
+        return self._mesg(ProtocolCode.GET_END_TYPE)
+        
+    def get_monitor_mode(self):
+        return self._mesg(ProtocolCode.GET_MONITOR_MODE)
+    
+    def set_monitor_mode(self,mode):
+        return self._mesg(ProtocolCode.SET_MONITOR_MODE, mode)
+    
+    def set_limit_switch(self, limit_mode, state):
+        """Set the limit switches. No save after power off
+
+        Args:
+            limit_mode (int): 1 - Location out of tolerance. 2 - Synchronous control
+            state (int): 0 - close. 1 - open
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, limit_mode=limit_mode, state=state)
+        if limit_mode == 2 and state == 0:
+            self.sync_mode = False
+        elif limit_mode == 2 and state == 1:
+            self.sync_mode = True
+        return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
+    
+    def get_limit_switch(self):
+        """Get the limit switches
+        
+        Return:
+            list : [Location out of tolerance state, sync state], 0 - close. 1 - open
+        """
+        res = self._mesg(ProtocolCode.GET_LIMIT_SWITCH)
+        if isinstance(res, list) and res[1] == 0:
+            self.sync_mode = False
+        return res
     
     def solve_inv_kinematics(self, new_coords, old_angles):
         """_summary_
@@ -1062,14 +1827,72 @@ class MercuryCommandGenerator(CommandGenerator):
             coord_list.append(self._angle2int(angle))
         angles = [self._angle2int(angle) for angle in old_angles]
         return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
-
-        # 7/29
+    
     def get_drag_fifo(self):
-        return self._mesg(ProtocolCode.GET_DRAG_FIFO, has_reply=True)
+        return self._mesg(ProtocolCode.GET_DRAG_FIFO)
     
     def set_drag_fifo(self, angles):
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SET_DRAG_FIFO, angles)
     
     def get_drag_fifo_len(self):
-        return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN, has_reply=True)
+        return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN)
+    
+    def jog_rpy(self, axis, direction, speed):
+        """Rotate the end point around the fixed axis of the base coordinate system
+
+        Args:
+            axis (int): 1 ~ 3. 1 - Roll, 2 - Pitch, 3 - Yaw
+            direction (int): 1 - Forward. 0 - Reverse.
+            speed (int): 1 ~ 100.
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, axis=axis, direction=direction, speed=speed)
+        return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, has_reply=True)
+    
+    def get_collision_mode(self):
+        """Get collision detection status
+        
+        Return:
+            1 - open
+            0 - close
+        """
+        return self._mesg(ProtocolCode.GET_COLLISION_MODE)
+    
+    def set_electric_gripper(self, mode):
+        """Set the state of the electric gripper
+
+        Args:
+            mode (int): 0 - open. 1 - close
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_ELECTRIC_GRIPPER, mode)
+    
+    def init_electric_gripper(self):
+        """Electric Gripper Initialization
+        """
+        return self._mesg(ProtocolCode.INIT_ELECTRIC_GRIPPER)
+    
+    def get_servo_encoder(self, id):
+        return self._mesg(ProtocolCode.GET_ENCODER, id)
+    
+    def get_servo_encoders(self):
+        return self._mesg(ProtocolCode.GET_ENCODERS)
+    
+    def set_base_io_output(self, pin_no, pin_signal):
+        """Set the base output IO status
+
+        Args:
+            pin_no: pin port number. range 1 ~ 6
+            pin_signal: 0 - low. 1 - high.
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+
+    def get_base_io_input(self, pin_no):
+        """Get the input IO status of the base
+
+        Args:
+            pin_no: (int) pin port number. range 1 ~ 6
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no)
+        return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
