@@ -38,13 +38,17 @@ class ProtocolCode(object):
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
     
-    SET_CW = 0x0B
-    GET_CW = 0x0C
+    CLEAR_ZERO_POS = 0x0A
+    SET_SERVO_CW = 0x0B
+    GET_SERVO_CW = 0x0C
     CLEAR_WAIST_QUEUE = 0x0D
+    SET_LIMIT_SWITCH = 0x0E
+    GET_LIMIT_SWITCH = 0x0F
     
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
+    JOG_INCREMENT_BASE_COORD = 0x37
     InitGripper = 0x38
     SetGripperProtectCurrent = 0x39
 
@@ -91,11 +95,14 @@ class ProtocolCode(object):
     JOG_ABSOLUTE = 0x31
     JOG_COORD = 0x32
     JOG_INCREMENT = 0x33
+    JOG_INCREMENT_COORD = 0x34
+    
     JOG_STOP = 0x34
     JOG_INCREMENT_COORD = 0x34
     
     COBOTX_GET_SOLUTION_ANGLES = 0x35
     COBOTX_SET_SOLUTION_ANGLES = 0x36
+    JOG_BASE_INCREMENT_COORD = 0x37
     
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
@@ -107,8 +114,13 @@ class ProtocolCode(object):
     GET_SPEED = 0x40
     SET_SPEED = 0x41
     GET_FEED_OVERRIDE = 0x42
+    GET_MAX_ACC = 0x42
+    SET_MAX_ACC = 0x43
     GET_ACCELERATION = 0x44
+    GET_DRAG_FIFO = 0x44
+    SET_DRAG_FIFO = 0x45
     SET_ACCELERATION = 0x45
+    GET_DRAG_FIFO_LEN = 0x46
     GET_JOINT_MIN_ANGLE = 0x4A
     GET_JOINT_MAX_ANGLE = 0x4B
     SET_JOINT_MIN = 0x4C
@@ -150,6 +162,7 @@ class ProtocolCode(object):
 
     GET_ACCEI_DATA = 0x73
     SET_COLLISION_MODE = 0x74
+    GET_COLLISION_MODE = 0xFD
     SET_COLLISION_THRESHOLD = 0x75
     GET_COLLISION_THRESHOLD = 0x76
     SET_TORQUE_COMP = 0x77
@@ -217,7 +230,7 @@ class ProtocolCode(object):
     GET_JOINT_CURRENT = 0x91
     SET_CURRENT_STATE = 0x92
     GET_POS_OVER = 0x94
-    CLEAR_ENCODERS_ERROR = 0x95
+    CLEAR_ENCODERS_ERROR = 0xEA
     GET_DOWN_ENCODERS = 0x96
 
     # planning speed
@@ -239,13 +252,17 @@ class ProtocolCode(object):
     GET_SERVO_LASTPDI = 0xE6
     SERVO_RESTORE = 0xE7
     SET_VOID_COMPENSATE = 0xE7
-    SET_ERROR_DETECT_MODE = 0xE8
-    GET_ERROR_DETECT_MODE = 0xE9
+    # SET_ERROR_DETECT_MODE = 0xE8
+    # GET_ERROR_DETECT_MODE = 0xE9
     
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
+    JOG_RPY = 0xF5
+    
+    GET_MONITOR_MODE = 0xFB
+    SET_MONITOR_MODE = 0xFC
     
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
@@ -332,26 +349,34 @@ class MercuryServer(object):
         self.baud = baud
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.lock = threading.Lock()
         self.s.bind((host, port))
         print("Binding succeeded!")
         self.s.listen(1)
         self.conn = None
         self.stop = False
-        self.connected = False
+        self.sync_mode = True
+        self.connected_event = threading.Event()
+        self.read_thread = threading.Thread(target=self.read)
+        self.read_thread.daemon = True
+        self.read_thread.start()
         self.mc = serial.Serial(self.serial_num, self.baud, timeout=0.1)
         self.connect()
+        
 
     def connect(self):
         while True:
             try:
                 print("waiting connect!------------------")
+                self.connected_event.clear()
+                time.sleep(0.1)
                 self.conn, addr = self.s.accept()
-                # self.connected = True
+                self.mc.reset_input_buffer()
                 while True:
                     try:
                         print("waiting data--------")
                         data = self.conn.recv(1024)
-                        self.connected = True
+                        self.connected_event.set()
                         command = []
                         for v in data:
                             command.append(v)
@@ -363,18 +388,11 @@ class MercuryServer(object):
                         else:
                             self.logger.info("get command: {}".format(
                                 [hex(v) for v in command]))
-                            # command = self.re_data_2(command)
-
                             self.write(command)
-                            if command[3] == 0x29:
-                                self.connected = False
-                            if command[3] in has_return or (command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]):
-                                # res = self.read(command)
-                                self.read_thread = threading.Thread(target=self.read, args=(command,), daemon=True)
-                                self.read_thread.start()
                     except ConnectionResetError:
-                        self.connected = False
-                        pass
+                        print("close disconnect!")
+                        self.connected_event.clear()
+                        time.sleep(0.1)
                     except Exception as e:
                         self.logger.error(traceback.format_exc())
                         break
@@ -415,70 +433,64 @@ class MercuryServer(object):
         self.mc.write(command)
         self.mc.flush()
 
-    def read(self, command):
-        datas = b""
-        data_len = -1
-        k = 0
-        pre = 0
-        t = time.time()
-        wait_time = 0.1
-        if command[3] == 0x10:
-            wait_time = 8
-        elif command[3] in [0x11, 0x13, 0x18, 0x56, 0x57, 0x29]:
-            wait_time = 3
-        elif command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-            wait_time = 300
-        while True and time.time() - t < wait_time and self.connected:
-            if self.mc.inWaiting() > 0:
-                data = self.mc.read()
-                # print("read data: ", data)
-                # if data != b"":
-                #     print(data, datas)
-                k += 1
-                if data_len == 3:
-                    datas += data
-                    crc = self.mc.read(2)
-                    if self.crc_check(datas) == [v for v in crc]:
-                        datas+=crc
-                        break
-                if data_len == 1 and data == b"\xfa":
-                    datas += data
-                    # if [i for i in datas] == command:
-                    #     datas = b''
-                    #     data_len = -1
-                    #     k = 0
-                    #     pre = 0
-                    #     continue
-                    break
-                elif len(datas) == 2:
-                    data_len = struct.unpack("b", data)[0]
-                    datas += data
-                elif len(datas) > 2 and data_len > 0:
-                    datas += data
-                    data_len -= 1
-                    # if len(datas) == 4:
-                    #     if datas[-1] != command[3]:
-                    #         datas = b''
-                    #         data_len = -1
-                    #         k = 0
-                    #         pre = 0
-                    #         continue
-                elif data == b"\xfe":
-                    if datas == b"":
-                        datas += data
-                        pre = k
+    def read(self):
+        while 1:
+            if not self.connected_event.is_set():
+                time.sleep(0.1)
+                continue
+            datas = b""
+            data_len = -1
+            k = 0
+            pre = 0
+            t = time.time()
+            wait_time = 0.1
+            data = None
+            while True and time.time() - t < wait_time:
+                try:
+                    if self.mc.inWaiting() > 0:
+                            data = self.mc.read()
+                            k += 1
+                            # print(datas, flush=True)
+                            if data_len == 3:
+                                datas += data
+                                crc = self.mc.read(2)
+                                if self.crc_check(datas) == [v for v in crc]:
+                                    datas += crc
+                                    if self.conn is not None:
+                                        self.logger.info("return datas: {}".format([hex(v) for v in datas]))
+                                        self.conn.sendall(datas)
+                                    break
+                            if data_len == 1 and data == b"\xfa":
+                                datas += data
+                                # if [i for i in datas] == command:
+                                #     datas = b''
+                                #     data_len = -1
+                                #     k = 0
+                                #     pre = 0
+                                #     continue
+                                # break
+                            elif len(datas) == 2:
+                                data_len = struct.unpack("b", data)[0]
+                                datas += data
+                            elif len(datas) > 2 and data_len > 0:
+                                datas += data
+                                data_len -= 1
+                            elif data == b"\xfe":
+                                if datas == b"":
+                                    datas += data
+                                    pre = k
+                                else:
+                                    if k - 1 == pre:
+                                        datas += data
+                                    else:
+                                        datas = b"\xfe"
+                                        pre = k
                     else:
-                        if k - 1 == pre:
-                            datas += data
-                        else:
-                            datas = b"\xfe"
-                            pre = k
-        if self.conn is not None:
-            self.logger.info("return datas: {}".format([hex(v) for v in datas]))
-            
-            self.conn.sendall(datas)
-            datas = b''
-        return datas
+                        # print(".",end="",flush=True)    
+                        time.sleep(0.001)
+                except Exception as e:
+                    self.logger.error(traceback.format_exc())
+                    # break
 
     def re_data_2(self, command):
         r2 = re.compile(r'[[](.*?)[]]')
@@ -487,12 +499,19 @@ class MercuryServer(object):
         data_list = [int(i) for i in data_list]
         return data_list
 
-
 if __name__ == "__main__":
-    ifname = "wlan0"
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack(
-        '256s', bytes(ifname, encoding="utf8")))[20:24])
-    PORT = 9000
+    ifname = ["eth0", "wlan0"]
+    for i in ifname:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', bytes(i, encoding="utf8")))[20:24])
+            PORT = 9000
+            if i == "wlan0":
+                print("***------ wireless connection ------***")
+            else:
+                print("***------ wired connection ------***")
+            break
+        except:
+            pass
     print("ip: {} port: {}".format(HOST, PORT))
     MercuryServer(HOST, PORT, "/dev/ttyAMA1", 115200)

@@ -90,7 +90,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
     for parameter in parameter_list[1:]:
         value = kwargs.get(parameter, None)
         value_type = type(value)
-        if parameter == 'joint_id' and value not in robot_limit[class_name][parameter]:
+        if parameter == 'id' and value not in robot_limit[class_name][parameter]:
             check_id(value, robot_limit[class_name][parameter], exception_class)
         elif parameter == 'rgb':
             check_rgb_value(value, exception_class, class_name)
@@ -137,7 +137,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     "{} value not right, should be 1 ~ 100, the received is {}".format(parameter, value)
                 )
         elif parameter == 'angle':
-            joint_id = kwargs.get('joint_id', None)
+            joint_id = kwargs.get('id', None)
             index = robot_limit[class_name]['joint_id'][joint_id-1] - 1
             if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                 raise exception_class(
@@ -209,9 +209,10 @@ def calibration_parameters(**kwargs):
     if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
-            if parameter == 'joint_id ' and value not in robot_limit[class_name][parameter]:
-                check_id(value, robot_limit[class_name][parameter], MercuryDataException)
-            elif parameter == 'angle':
+            if parameter == 'joint_id':
+                if value not in robot_limit[class_name][parameter]:
+                    check_id(value, robot_limit[class_name][parameter], MercuryDataException)
+            elif parameter == 'degree':
                 joint_id = kwargs.get('joint_id', None)
                 if joint_id in [11,12,13]:
                     index = robot_limit[class_name]['joint_id'][joint_id-4] - 4

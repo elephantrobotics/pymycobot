@@ -24,6 +24,13 @@ class MercuryCommandGenerator(DataProcessor):
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
+            
+    def _send_command(self, genre, real_command):
+        self.write_command.append(genre)
+        if self.__class__.__name__ == "Mercury":
+            self._write(self._flatten(real_command))
+        elif self.__class__.__name__ == "MercurySocket":
+            self._write(self._flatten(real_command), method="socket")
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -43,11 +50,7 @@ class MercuryCommandGenerator(DataProcessor):
         is_get_return = False
         lost_times = 0
         with self.lock:
-            self.write_command.append(genre)
-            if self.__class__.__name__ == "Mercury":
-                self._write(self._flatten(real_command))
-            elif self.__class__.__name__ == "MercurySocket":
-                self._write(self._flatten(real_command), method="socket")
+            self._send_command(genre, real_command)
         t = time.time()
         wait_time = 0.15
         if genre == ProtocolCode.POWER_ON:
@@ -78,6 +81,9 @@ class MercuryCommandGenerator(DataProcessor):
             wait_time = 0.3
         need_break = False
         data = None
+        timeout = 0.5
+        if self.__class__.__name__ == "MercurySocket":
+            timeout = 1
         while True and time.time() - t < wait_time:
             # print("--------------", time.time() - t)
             for v in self.read_command:
@@ -115,12 +121,11 @@ class MercuryCommandGenerator(DataProcessor):
                         self.write_command.remove(genre)
                     break
 
-            if is_in_position and time.time() - t > 0.2 and is_get_return == False:
+            if is_in_position and time.time() - t > timeout and is_get_return == False:
                 # 运动指令丢失，重发
-                # print("运动指令丢失，重发", flush=True)
                 lost_times += 1
                 with self.lock:
-                    self.write_command.append(genre)
+                    self._send_command(genre, real_command)
             if need_break:
                 # print("退出", flush=True)
                 break
@@ -437,7 +442,7 @@ class MercuryCommandGenerator(DataProcessor):
             k = 0
             pre = 0
             t = time.time()
-            wait_time = 0.15
+            wait_time = 0.5
             if method is not None:
                 try:
                     self.sock.settimeout(wait_time)
@@ -448,24 +453,27 @@ class MercuryCommandGenerator(DataProcessor):
                             datas += hex(ord(i))
                 except:
                     data = b""
-                if self.check_python_version() == 2:
-                    command_log = ""
-                    for d in data:
-                        command_log += hex(ord(d))[2:] + " "
-                    self.log.debug("_read : {}".format(command_log))
-                    # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-                else:
-                    command_log = ""
-                    for d in data:
-                        command_log += hex(d)[2:] + " "
-                    self.log.debug("_read : {}".format(command_log))
-                if data:
+                if data != b"":
+                    if self.send_jog_command and datas[3] == 0x5b:
+                        self.send_jog_command = False
+                        continue
+                    if self.check_python_version() == 2:
+                        command_log = ""
+                        for d in data:
+                            command_log += hex(ord(d))[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
+                        # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                    else:
+                        command_log = ""
+                        for d in data:
+                            command_log += hex(d)[2:] + " "
+                        self.log.debug("_read : {}".format(command_log))
                     res = self._process_received(data)
-                    with self.lock:
-                        self.read_command.append(res)
+                    if res != []:
+                        with self.lock:
+                            self.read_command.append(res)
             else:
                 while True and time.time() - t < wait_time:
-                    # print("r", end=" ", flush=True)
                     if self._serial_port.inWaiting() > 0:
                         data = self._serial_port.read()
                         k += 1
@@ -505,7 +513,7 @@ class MercuryCommandGenerator(DataProcessor):
                     #     print("no data", flush=True)
                 else:
                     datas = b''
-                if datas:
+                if datas != b'':
                     # print("read:", datas)
                     if self.send_jog_command and datas[3] == 0x5b:
                         self.send_jog_command = False
@@ -533,6 +541,7 @@ class MercuryCommandGenerator(DataProcessor):
                     with self.lock:
                         self.read_command.append(res)
                 # return datas
+            time.sleep(0.001)
 
     def get_system_version(self):
         """get system version"""
@@ -1264,11 +1273,11 @@ class MercuryCommandGenerator(DataProcessor):
 
         Args:
             joint_id : Joint id(genre.Angle)， int 1-7.
-            angle : angle value(float).
+            degree : angle value(float).
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, angle=degree, speed=speed)
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree, speed=speed)
         return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(degree)], speed, has_reply=True)
 
     def send_coord(self, coord_id, coord, speed):
