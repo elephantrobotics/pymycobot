@@ -18,6 +18,7 @@ class MechArm270(CommandGenerator):
     Supported methods:
 
         # Overall status
+            get_error_information()
             clear_error_information()
             set_fresh_mode()
             get_fresh_mode()
@@ -208,6 +209,19 @@ class MechArm270(CommandGenerator):
             return r
         else:
             return res
+
+    # System Status
+    def get_error_information(self):
+        """Obtaining robot error information
+
+        Return:
+            0: No error message.
+            1 ~ 6: The corresponding joint exceeds the limit position.
+            16 ~ 19: Collision protection.
+            32: Kinematics inverse solution has no solution.
+            33 ~ 34: Linear motion has no adjacent solution.
+        """
+        return self._mesg(ProtocolCode.GET_ERROR_INFO, has_reply=True)
 
     def clear_error_information(self):
         """Clear robot error message"""
