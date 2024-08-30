@@ -16,7 +16,7 @@ class MercuryCommandGenerator(DataProcessor):
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        self.is_stop = False
+        # self.is_stop = False
         self.write_command = []
         self.read_command = []
         self.send_jog_command = False
@@ -128,10 +128,10 @@ class MercuryCommandGenerator(DataProcessor):
                 # 重传3次失败，返回-1
                 # print("重传3次失败，返回-1", flush=True)
                 return -1
-            if t < self.is_stop and genre != ProtocolCode.STOP:
-                # 打断除了stop指令外的其他指令的等待
-                self.is_stop = 0
-                break
+            # if t < self.is_stop and genre != ProtocolCode.STOP:
+            #     # 打断除了stop指令外的其他指令的等待
+            #     self.is_stop = 0
+            #     break
             time.sleep(0.001)
         else:
             # print("---超时---")
@@ -1046,7 +1046,7 @@ class MercuryCommandGenerator(DataProcessor):
             int: 1 - Stop completion
         """
         self.calibration_parameters(class_name=self.__class__.__name__, deceleration=deceleration)
-        self.is_stop = time.time()
+        # self.is_stop = time.time()
         if deceleration == 1:
             return self._mesg(ProtocolCode.STOP, 1)
         else:
@@ -1063,7 +1063,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, deceleration=deceleration)
         
-        self.is_stop = time.time()
+        # self.is_stop = time.time()
         if deceleration == 1:
             return self._mesg(ProtocolCode.PAUSE, 1)
         else:
