@@ -51,42 +51,100 @@ class MercuryCommandGenerator(DataProcessor):
         lost_times = 0
         with self.lock:
             self.write_command.append(genre)
-            self._write(self._flatten(real_command))
-        # if genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-        #     has_reply = True
-        if has_reply:
+            if self.__class__.__name__ == "Mercury":
+                self._write(self._flatten(real_command))
+            elif self.__class__.__name__ == "MercurySocket":
+                self._write(self._flatten(real_command), method="socket")
             t = time.time()
-            wait_time = 0.1
+            wait_time = 0.15
             if genre == ProtocolCode.POWER_ON:
                 wait_time = 8
             elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
-                           ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
+                        ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP, ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
                 wait_time = 3
-            # elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
-            #     wait_time = 300
-            #     is_in_position = True
+            elif genre in [
+                    ProtocolCode.SEND_ANGLE,
+                    ProtocolCode.SEND_ANGLES,
+                    ProtocolCode.SEND_COORD,
+                    ProtocolCode.SEND_COORDS,
+                    ProtocolCode.JOG_ANGLE,
+                    ProtocolCode.JOG_COORD,
+                    ProtocolCode.JOG_INCREMENT,
+                    ProtocolCode.JOG_INCREMENT_COORD,
+                    ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
+                    ProtocolCode.MERCURY_SET_BASE_COORDS,
+                    ProtocolCode.MERCURY_JOG_BASE_COORD,
+                    ProtocolCode.MERCURY_SET_BASE_COORD,
+                    ProtocolCode.OVER_LIMIT_RETURN_ZERO,
+                    ProtocolCode.JOG_BASE_INCREMENT_COORD,
+                    ProtocolCode.WRITE_MOVE_C,
+                    ProtocolCode.JOG_RPY]:
+                wait_time = 300
+                is_in_position = True
+            elif genre in [ProtocolCode.SERVO_RESTORE]:
+                wait_time = 0.3
             need_break = False
             data = None
             while True and time.time() - t < wait_time:
+                # print("--------------", time.time() - t)
                 for v in self.read_command:
-                    if is_in_position and v == b'\xfe\xfe\x04[\x01\r\x87':
+
+                    # v == b'\xfe\xfe\x04[\x01\r\x87'
+                    if is_in_position and v[2] == 0x04 and v[3] == 0x5b:
+                        # print(-1)
+                        # print("到位反馈", flush=True)
+                        is_get_return = True
                         need_break = True
+                        data = v
                         with self.lock:
                             self.read_command.remove(v)
                             self.write_command.remove(genre)
-                            return 1
+
+                    elif genre == v[3] and v[2] == 5 and v[4] == 0xFF:
+                        # 通信闭环
+                        # print(-2)
+                        # print("闭环", flush=True)
+                        is_get_return = True
+                        with self.lock:
+                            self.read_command.remove(v)
+                        if has_reply == False:
+                            # print(-3)
+                            # print("仅闭环退出", flush=True)
+                            need_break = True
+                            data = v
                     elif genre == v[3]:
+                        # print(-4)
+                        # print("正常读取", flush=True)
                         need_break = True
                         data = v
                         with self.lock:
                             self.read_command.remove(v)
                             self.write_command.remove(genre)
                         break
-                if need_break or self.is_stop:
-                    self.is_stop = False
+
+                if is_in_position and time.time() - t > 0.2 and is_get_return == False:
+                    # 运动指令丢失，重发
+                    # print("运动指令丢失，重发", flush=True)
+                    lost_times += 1
+                    with self.lock:
+                        self.write_command.append(genre)
+                if need_break:
+                    # print("退出", flush=True)
                     break
-                time.sleep(0.01)
+                if lost_times > 2:
+                    # 重传3次失败，返回-1
+                    # print("重传3次失败，返回-1", flush=True)
+                    return -1
+                if t < self.is_stop and genre != ProtocolCode.STOP:
+                    # 打断除了stop指令外的其他指令的等待
+                    self.is_stop = 0
+                    break
+                time.sleep(0.001)
+            else:
+                # print("---超时---")
+                pass
             if data is None:
+                # print("未拿到数据")
                 return data
             res = []
             data = bytearray(data)
@@ -126,221 +184,221 @@ class MercuryCommandGenerator(DataProcessor):
                 elif genre in [ProtocolCode.GET_ERROR_INFO]:
                     return [self._decode_int8(valid_data[1:])]
                 res.append(self._decode_int16(valid_data))
-        elif data_len == 3:
-            res.append(self._decode_int16(valid_data[1:]))
-        elif data_len == 4:
-            if genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_ENCODER]:
-                byte_value = int.from_bytes(
-                    valid_data, byteorder='big', signed=True)
-                res.append(byte_value)
-            else:
-                for i in range(1, 4):
+            elif data_len == 3:
+                res.append(self._decode_int16(valid_data[1:]))
+            elif data_len == 4:
+                if genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_ENCODER]:
+                    byte_value = int.from_bytes(
+                        valid_data, byteorder='big', signed=True)
+                    res.append(byte_value)
+                else:
+                    for i in range(1, 4):
+                        res.append(valid_data[i])
+            elif data_len == 7:
+                # if genre ==ProtocolCode.GET_TORQUE_COMP:
+                for i in range(0, data_len):
                     res.append(valid_data[i])
-        elif data_len == 7:
-            # if genre ==ProtocolCode.GET_TORQUE_COMP:
-            for i in range(0, data_len):
-                res.append(valid_data[i])
-            # else:
-            #     error_list = [i for i in valid_data]
-            #     for i in error_list:
-            #         if i in range(16, 23):
-            #             res.append(1)
-            #         elif i in range(23, 29):
-            #             res.append(2)
-            #         elif i in range(32, 112):
-            #             res.append(3)
-            #         else:
-            #             res.append(i)
-        elif data_len == 28:
-            for i in range(0, data_len, 4):
-                byte_value = int.from_bytes(
-                    valid_data[i:i+4], byteorder='big', signed=True)
-                res.append(byte_value)
-        elif data_len == 40 and genre == ProtocolCode.GET_ANGLES_COORDS:
-            i = 0
-            while i < data_len:
-                if i < 28:
+                # else:
+                #     error_list = [i for i in valid_data]
+                #     for i in error_list:
+                #         if i in range(16, 23):
+                #             res.append(1)
+                #         elif i in range(23, 29):
+                #             res.append(2)
+                #         elif i in range(32, 112):
+                #             res.append(3)
+                #         else:
+                #             res.append(i)
+            elif data_len == 28:
+                for i in range(0, data_len, 4):
                     byte_value = int.from_bytes(
                         valid_data[i:i+4], byteorder='big', signed=True)
                     res.append(byte_value)
-                    i += 4
-                else:
-                    one = valid_data[i: i + 2]
-                    res.append(self._decode_int16(one))
-                    i += 2
-        elif data_len == 40 and genre == ProtocolCode.MERCURY_ROBOT_STATUS:
-            # 右臂上位机错误
-            i = 0
-            res = []
-            while i < data_len:
-                if i < 10 or i >= 30:
-                    res.append(valid_data[i])
-                    i += 1
-                elif i < 30:
-                    one = valid_data[i: i + 2]
-                    res.append(self._decode_int16(one))
-                    i += 2
-        elif data_len == 37:
-            i = 0
-            res = []
-            while i < data_len:
-                if i < 9:
-                    res.append(valid_data[i])
-                    i += 1
-                else:
-                    one = valid_data[i: i + 2]
-                    res.append(self._decode_int16(one))
-                    i += 2
-        elif data_len == 38:
-            i = 0
-            res = []
-            while i < data_len:
-                if i < 10 or i >= 30:
-                    res.append(valid_data[i])
-                    i += 1
-                elif i < 38:
-                    one = valid_data[i: i + 2]
-                    res.append(self._decode_int16(one))
-                    i += 2
-        elif data_len == 56:
-            for i in range(0, data_len, 8):
-                byte_value_send = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                byte_value_current = int.from_bytes(valid_data[i+4:i+4], byteorder='big', signed=True)
-                res.append([byte_value_send, byte_value_current])
-        else:
-            if genre in [
-                ProtocolCode.GET_SERVO_VOLTAGES,
-                ProtocolCode.GET_SERVO_STATUS,
-                ProtocolCode.GET_SERVO_TEMPS,
-            ]:
-                for i in range(data_len):
-                    data1 = self._decode_int8(valid_data[i: i + 1])
-                    res.append(0xFF & data1 if data1 < 0 else data1)
-            res.append(self._decode_int8(valid_data))
-        if res == []:
-            return None
+            elif data_len == 40 and genre == ProtocolCode.GET_ANGLES_COORDS:
+                i = 0
+                while i < data_len:
+                    if i < 28:
+                        byte_value = int.from_bytes(
+                            valid_data[i:i+4], byteorder='big', signed=True)
+                        res.append(byte_value)
+                        i += 4
+                    else:
+                        one = valid_data[i: i + 2]
+                        res.append(self._decode_int16(one))
+                        i += 2
+            elif data_len == 40 and genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+                # 右臂上位机错误
+                i = 0
+                res = []
+                while i < data_len:
+                    if i < 10 or i >= 30:
+                        res.append(valid_data[i])
+                        i += 1
+                    elif i < 30:
+                        one = valid_data[i: i + 2]
+                        res.append(self._decode_int16(one))
+                        i += 2
+            elif data_len == 37:
+                i = 0
+                res = []
+                while i < data_len:
+                    if i < 9:
+                        res.append(valid_data[i])
+                        i += 1
+                    else:
+                        one = valid_data[i: i + 2]
+                        res.append(self._decode_int16(one))
+                        i += 2
+            elif data_len == 38:
+                i = 0
+                res = []
+                while i < data_len:
+                    if i < 10 or i >= 30:
+                        res.append(valid_data[i])
+                        i += 1
+                    elif i < 38:
+                        one = valid_data[i: i + 2]
+                        res.append(self._decode_int16(one))
+                        i += 2
+            elif data_len == 56:
+                for i in range(0, data_len, 8):
+                    byte_value_send = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    byte_value_current = int.from_bytes(valid_data[i+4:i+4], byteorder='big', signed=True)
+                    res.append([byte_value_send, byte_value_current])
+            else:
+                if genre in [
+                    ProtocolCode.GET_SERVO_VOLTAGES,
+                    ProtocolCode.GET_SERVO_STATUS,
+                    ProtocolCode.GET_SERVO_TEMPS,
+                ]:
+                    for i in range(data_len):
+                        data1 = self._decode_int8(valid_data[i: i + 1])
+                        res.append(0xFF & data1 if data1 < 0 else data1)
+                res.append(self._decode_int8(valid_data))
+            if res == []:
+                return None
 
-        if genre in [
-            ProtocolCode.ROBOT_VERSION,
-            ProtocolCode.GET_ROBOT_ID,
-            ProtocolCode.IS_POWER_ON,
-            ProtocolCode.IS_CONTROLLER_CONNECTED,
-            ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
-            ProtocolCode.IS_IN_POSITION,
-            ProtocolCode.IS_MOVING,
-            ProtocolCode.IS_SERVO_ENABLE,
-            ProtocolCode.IS_ALL_SERVO_ENABLE,
-            ProtocolCode.GET_SERVO_DATA,
-            ProtocolCode.GET_DIGITAL_INPUT,
-            ProtocolCode.GET_GRIPPER_VALUE,
-            ProtocolCode.IS_GRIPPER_MOVING,
-            ProtocolCode.GET_SPEED,
-            ProtocolCode.GET_ENCODER,
-            ProtocolCode.GET_BASIC_INPUT,
-            ProtocolCode.GET_TOF_DISTANCE,
-            ProtocolCode.GET_END_TYPE,
-            ProtocolCode.GET_MOVEMENT_TYPE,
-            ProtocolCode.GET_REFERENCE_FRAME,
-            ProtocolCode.GET_FRESH_MODE,
-            ProtocolCode.GET_GRIPPER_MODE,
-            ProtocolCode.SET_SSID_PWD,
-            # ProtocolCode.GET_ERROR_DETECT_MODE,
-            ProtocolCode.POWER_ON,
-            ProtocolCode.POWER_OFF,
-            ProtocolCode.RELEASE_ALL_SERVOS,
-            ProtocolCode.RELEASE_SERVO,
-            ProtocolCode.FOCUS_ALL_SERVOS,
-            ProtocolCode.FOCUS_SERVO,
-            ProtocolCode.STOP,
-            ProtocolCode.SET_BREAK,
-            ProtocolCode.IS_BTN_CLICKED,
-            ProtocolCode.GET_CONTROL_MODE,
-            ProtocolCode.GET_VR_MODE,
-            ProtocolCode.GET_FILTER_LEN,
-            ProtocolCode.MERCURY_ERROR_COUNTS,
-            ProtocolCode.GET_MAX_ACC,
-            ProtocolCode.GET_MONITOR_MODE,
-            ProtocolCode.GET_COLLISION_MODE
-        ]:
-            return self._process_single(res)
-        elif genre in [ProtocolCode.GET_DRAG_FIFO]:
-            return [self._int2angle(angle) for angle in res]
-        elif genre in [
-            ProtocolCode.GET_COORDS,
-            ProtocolCode.MERCURY_GET_BASE_COORDS,
-            ProtocolCode.GET_TOOL_REFERENCE,
-            ProtocolCode.GET_WORLD_REFERENCE,
-        ]:
-            if res:
+            if genre in [
+                ProtocolCode.ROBOT_VERSION,
+                ProtocolCode.GET_ROBOT_ID,
+                ProtocolCode.IS_POWER_ON,
+                ProtocolCode.IS_CONTROLLER_CONNECTED,
+                ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+                ProtocolCode.IS_IN_POSITION,
+                ProtocolCode.IS_MOVING,
+                ProtocolCode.IS_SERVO_ENABLE,
+                ProtocolCode.IS_ALL_SERVO_ENABLE,
+                ProtocolCode.GET_SERVO_DATA,
+                ProtocolCode.GET_DIGITAL_INPUT,
+                ProtocolCode.GET_GRIPPER_VALUE,
+                ProtocolCode.IS_GRIPPER_MOVING,
+                ProtocolCode.GET_SPEED,
+                ProtocolCode.GET_ENCODER,
+                ProtocolCode.GET_BASIC_INPUT,
+                ProtocolCode.GET_TOF_DISTANCE,
+                ProtocolCode.GET_END_TYPE,
+                ProtocolCode.GET_MOVEMENT_TYPE,
+                ProtocolCode.GET_REFERENCE_FRAME,
+                ProtocolCode.GET_FRESH_MODE,
+                ProtocolCode.GET_GRIPPER_MODE,
+                ProtocolCode.SET_SSID_PWD,
+                # ProtocolCode.GET_ERROR_DETECT_MODE,
+                ProtocolCode.POWER_ON,
+                ProtocolCode.POWER_OFF,
+                ProtocolCode.RELEASE_ALL_SERVOS,
+                ProtocolCode.RELEASE_SERVO,
+                ProtocolCode.FOCUS_ALL_SERVOS,
+                ProtocolCode.FOCUS_SERVO,
+                ProtocolCode.STOP,
+                ProtocolCode.SET_BREAK,
+                ProtocolCode.IS_BTN_CLICKED,
+                ProtocolCode.GET_CONTROL_MODE,
+                ProtocolCode.GET_VR_MODE,
+                ProtocolCode.GET_FILTER_LEN,
+                ProtocolCode.MERCURY_ERROR_COUNTS,
+                ProtocolCode.GET_MAX_ACC,
+                ProtocolCode.GET_MONITOR_MODE,
+                ProtocolCode.GET_COLLISION_MODE
+            ]:
+                return self._process_single(res)
+            elif genre in [ProtocolCode.GET_DRAG_FIFO]:
+                return [self._int2angle(angle) for angle in res]
+            elif genre in [
+                ProtocolCode.GET_COORDS,
+                ProtocolCode.MERCURY_GET_BASE_COORDS,
+                ProtocolCode.GET_TOOL_REFERENCE,
+                ProtocolCode.GET_WORLD_REFERENCE,
+            ]:
+                if res:
+                    r = []
+                    for idx in range(3):
+                        r.append(self._int2coord(res[idx]))
+                    for idx in range(3, 6):
+                        r.append(self._int2angle(res[idx]))
+                    return r
+                else:
+                    return res
+            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+                return [self._int2coord(angle) for angle in res]
+            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+                return self._int2coord(self._process_single(res))
+            elif genre in [
+                ProtocolCode.GET_JOINT_MAX_ANGLE,
+                ProtocolCode.GET_JOINT_MIN_ANGLE,
+            ]:
+                return self._int2coord(res[0])
+            elif genre == ProtocolCode.GET_ANGLES_COORDS:
                 r = []
-                for idx in range(3):
-                    r.append(self._int2coord(res[idx]))
-                for idx in range(3, 6):
-                    r.append(self._int2angle(res[idx]))
+                for index in range(len(res)):
+                    if index < 7:
+                        r.append(self._int2angle(res[index]))
+                    elif index < 10:
+                        r.append(self._int2coord(res[index]))
+                    else:
+                        r.append(self._int2angle(res[index]))
                 return r
+            elif genre == ProtocolCode.GO_ZERO:
+                r = []
+                if res:
+                    if 1 not in res[1:]:
+                        return res[0]
+                    else:
+                        for i in range(1, len(res)):
+                            if res[i] == 1:
+                                r.append(i)
+                return r
+            elif genre in [ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, ProtocolCode.GET_SERVO_CW]:
+                return self._int2angle(res[0])
+            elif genre == ProtocolCode.GET_ANGLES:
+                return [self._int3angle(angle) for angle in res]
+            elif genre == ProtocolCode.COBOTX_GET_ANGLE:
+                return self._int2angle(res[0])
+            elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+                if len(res) == 23:
+                    i = 9
+                    for i in range(9, len(res)):
+                        if res[i] != 0:
+                            data = bin(res[i])[2:]
+                            res[i] = []
+                            while len(data) != 16:
+                                data = "0"+data
+                            for j in range(16):
+                                if data[j] != "0":
+                                    res[i].append(15-j)
+                    return res
+                else:
+                    for i in range(10, len(res)):
+                        if res[i] != 0:
+                            data = bin(res[i])[2:]
+                            res[i] = []
+                            while len(data) != 16:
+                                data = "0"+data
+                            for j in range(16):
+                                if data[j] != "0":
+                                    res[i].append(15-j)
+                    return res
             else:
                 return res
-        elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-            return [self._int2coord(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
-            return self._int2coord(self._process_single(res))
-        elif genre in [
-            ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ProtocolCode.GET_JOINT_MIN_ANGLE,
-        ]:
-            return self._int2coord(res[0])
-        elif genre == ProtocolCode.GET_ANGLES_COORDS:
-            r = []
-            for index in range(len(res)):
-                if index < 7:
-                    r.append(self._int2angle(res[index]))
-                elif index < 10:
-                    r.append(self._int2coord(res[index]))
-                else:
-                    r.append(self._int2angle(res[index]))
-            return r
-        elif genre == ProtocolCode.GO_ZERO:
-            r = []
-            if res:
-                if 1 not in res[1:]:
-                    return res[0]
-                else:
-                    for i in range(1, len(res)):
-                        if res[i] == 1:
-                            r.append(i)
-            return r
-        elif genre in [ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.MERCURY_GET_POS_OVER_SHOOT, ProtocolCode.GET_SERVO_CW]:
-            return self._int2angle(res[0])
-        elif genre == ProtocolCode.GET_ANGLES:
-            return [self._int3angle(angle) for angle in res]
-        elif genre == ProtocolCode.COBOTX_GET_ANGLE:
-            return self._int2angle(res[0])
-        elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
-            if len(res) == 23:
-                i = 9
-                for i in range(9, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
-            else:
-                for i in range(10, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
-        else:
-            return res
 
     def _process_received(self, data):
         if not data:
