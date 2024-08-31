@@ -187,6 +187,24 @@ class MyPalletizer260(CommandGenerator):
                     return res
             return None
 
+    # Overall Status
+    def set_free_mode(self, flag):
+        """set to free mode
+
+        Args:
+            flag: 0/1
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
+        return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
+
+    def is_free_mode(self):
+        """Check if it is free mode
+
+        Return:
+            0/1
+        """
+        return self._process_single(self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True))
+
     # MDI mode and operation
     def get_radians(self):
         """Get all angle return a list

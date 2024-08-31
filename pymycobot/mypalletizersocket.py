@@ -19,7 +19,9 @@ class MyPalletizerSocket(CommandGenerator):
     Supported methods:
 
         # Overall status
-            Look at parent class: `CommandGenerator`.
+            set_free_mode()
+            is_free_mode()
+            Other at parent class: `CommandGenerator`.
 
         # MDI mode and operation
             get_radians()
@@ -150,6 +152,24 @@ class MyPalletizerSocket(CommandGenerator):
                 else:
                     return res
             return None
+
+    # Overall Status
+    def set_free_mode(self, flag):
+        """set to free mode
+
+        Args:
+            flag: 0/1
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
+        return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
+
+    def is_free_mode(self):
+        """Check if it is free mode
+
+        Return:
+            0/1
+        """
+        return self._process_single(self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True))
 
     # MDI mode and operation
     def get_radians(self):
