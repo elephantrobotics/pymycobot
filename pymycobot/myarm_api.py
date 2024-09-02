@@ -5,6 +5,8 @@ from __future__ import division
 import sys
 import logging
 import threading
+import time
+
 from pymycobot.common import ProtocolCode, write, read, DataProcessor
 from pymycobot.error import calibration_parameters
 from pymycobot.log import setup_logging
@@ -52,7 +54,7 @@ class MyArmAPI(DataProcessor):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-
+        time.sleep(0.01)
         real_command, has_reply = super(MyArmAPI, self)._mesg(genre, *args, **kwargs)
         command = self._flatten(real_command)
         with self.lock:
@@ -284,7 +286,7 @@ class MyArmAPI(DataProcessor):
         Args:
             servo_id (int): 0-254
         """
-        return self._mesg(ProtocolCode.SERVO_RESTORE, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_P, servo_id, has_reply=True)
 
     def set_servo_d(self, servo_id, data):
         """Sets the proportional factor for the position ring D of the specified servo motor
