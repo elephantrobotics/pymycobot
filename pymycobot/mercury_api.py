@@ -177,6 +177,9 @@ class MercuryCommandGenerator(DataProcessor):
         elif data_len == 2:
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
+            elif genre in [ProtocolCode.GET_LIMIT_SWITCH]:
+                for i in valid_data:
+                    res.append(i)
             elif genre in [ProtocolCode.GET_ERROR_INFO]:
                 return [self._decode_int8(valid_data[1:])]
             res.append(self._decode_int16(valid_data))
