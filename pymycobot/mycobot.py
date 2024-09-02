@@ -125,7 +125,8 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
                     ProtocolCode.SetHTSGripperTorque,
                     ProtocolCode.GetGripperProtectCurrent,
                     ProtocolCode.InitGripper,
-                    ProtocolCode.SET_FOUR_PIECES_ZERO
+                    ProtocolCode.SET_FOUR_PIECES_ZERO,
+                    ProtocolCode.SET_BASIC_OUTPUT
                 ]:
                     return self._process_single(res)
                 elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:

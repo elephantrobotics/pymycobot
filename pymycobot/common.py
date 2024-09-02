@@ -523,8 +523,7 @@ class DataProcessor(object):
             data_len = data[header_i + 3] - 2
         elif arm == 14:
             data_len = data[header_i + 2] - 3
-            
-        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
+        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT, ProtocolCode.SET_BASIC_OUTPUT]
         if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
             data_pos = header_i + 4
         elif cmd_id in unique_data:
