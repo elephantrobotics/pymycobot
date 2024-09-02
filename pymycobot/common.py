@@ -264,6 +264,7 @@ class ProtocolCode(object):
     RESTORE_SERVO_SYSTEM_PARAM = 0x0a
     GET_SERVO_D = 0xE8
     SET_SERVO_P = 0x70
+    GET_SERVO_P = 0xE7
     # IIC
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
@@ -729,6 +730,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             wait_time = 1
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
+            self.log.debug("data: {}".format(data))
             k += 1
             if _class in ["Mercury", "MercurySocket"]:
                 if data_len == 3:
@@ -743,7 +745,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                     if genre in (
                         ProtocolCode.GET_ATOM_PRESS_STATUS,
                         ProtocolCode.GET_SERVO_MOTOR_COUNTER_CLOCKWISE,
-                        ProtocolCode.GET_SERVO_MOTOR_CLOCKWISE
+                        ProtocolCode.GET_SERVO_MOTOR_CLOCKWISE,
+                        ProtocolCode.GET_SERVO_P,
                     ) and _class in ["MyArmM", "MyArmC", "MyArmAPI"]:
                         break
                     datas = b''
