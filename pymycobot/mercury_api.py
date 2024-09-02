@@ -50,11 +50,7 @@ class MercuryCommandGenerator(DataProcessor):
         is_get_return = False
         lost_times = 0
         with self.lock:
-            self.write_command.append(genre)
-            if self.__class__.__name__ == "Mercury":
-                self._write(self._flatten(real_command))
-            elif self.__class__.__name__ == "MercurySocket":
-                self._write(self._flatten(real_command), method="socket")
+            self._send_command(genre, real_command)
         t = time.time()
         wait_time = 0.15
         if genre == ProtocolCode.POWER_ON:
@@ -127,7 +123,7 @@ class MercuryCommandGenerator(DataProcessor):
                 # print("运动指令丢失，重发", flush=True)
                 lost_times += 1
                 with self.lock:
-                    self.write_command.append(genre)
+                    self._send_command(genre, real_command)
             if need_break:
                 # print("退出", flush=True)
                 break
