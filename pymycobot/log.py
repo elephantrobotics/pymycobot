@@ -5,6 +5,7 @@ import logging.handlers
 
 
 def setup_logging(debug=False):
+    logging.basicConfig()
     root_logger = logging.getLogger()
 
     debug_fomatter = logging.Formatter(
@@ -20,8 +21,10 @@ def setup_logging(debug=False):
         "python_debug.log", maxBytes=100*1024*1024, backupCount=1)
         save.setFormatter(debug_fomatter)
         root_logger.addHandler(save)
+        root_logger.setLevel(logging.DEBUG)
     else:
         logger_handle.setLevel(logging.WARNING)
+        root_logger.setLevel(logging.WARNING)
 
     root_logger.addHandler(logger_handle)
-    root_logger.setLevel(0)
+    # root_logger.setLevel(0)
