@@ -419,109 +419,113 @@ class MercuryCommandGenerator(DataProcessor):
 
     def read_thread(self, method=None):
         while True:
-            datas = b""
-            data_len = -1
-            k = 0
-            pre = 0
-            t = time.time()
-            wait_time = 0.5
-            if method is not None:
-                try:
-                    self.sock.settimeout(wait_time)
-                    data = self.sock.recv(1024)
-                    if isinstance(data, str):
-                        datas = bytearray()
-                        for i in data:
-                            datas += hex(ord(i))
-                except:
-                    data = b""
-                if data != b"":
-                    if self.send_jog_command and datas[3] == 0x5b:
-                        self.send_jog_command = False
-                        continue
-                    if self.check_python_version() == 2:
-                        command_log = ""
-                        for d in data:
-                            command_log += hex(ord(d))[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                        # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+            try:
+                datas = b""
+                data_len = -1
+                k = 0
+                pre = 0
+                t = time.time()
+                wait_time = 0.5
+                if method is not None:
+                    try:
+                        self.sock.settimeout(wait_time)
+                        data = self.sock.recv(1024)
+                        if isinstance(data, str):
+                            datas = bytearray()
+                            for i in data:
+                                datas += hex(ord(i))
+                    except:
+                        data = b""
+                    if data != b"":
+                        if self.send_jog_command and datas[3] == 0x5b:
+                            self.send_jog_command = False
+                            continue
+                        if self.check_python_version() == 2:
+                            command_log = ""
+                            for d in data:
+                                command_log += hex(ord(d))[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                            # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                        else:
+                            command_log = ""
+                            for d in data:
+                                command_log += hex(d)[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                        res = self._process_received(data)
+                        if res != []:
+                            with self.lock:
+                                self.read_command.append(res)
+                else:
+                    while True and time.time() - t < wait_time:
+                        if self._serial_port.inWaiting() > 0:
+                            data = self._serial_port.read()
+                            k += 1
+                            # print(datas, flush=True)
+                            if data_len == 3:
+                                datas += data
+                                crc = self._serial_port.read(2)
+                                if self.crc_check(datas) == [v for v in crc]:
+                                    datas += crc
+                                    break
+                            if data_len == 1 and data == b"\xfa":
+                                datas += data
+                                # if [i for i in datas] == command:
+                                #     datas = b''
+                                #     data_len = -1
+                                #     k = 0
+                                #     pre = 0
+                                #     continue
+                                # break
+                            elif len(datas) == 2:
+                                data_len = struct.unpack("b", data)[0]
+                                datas += data
+                            elif len(datas) > 2 and data_len > 0:
+                                datas += data
+                                data_len -= 1
+                            elif data == b"\xfe":
+                                if datas == b"":
+                                    datas += data
+                                    pre = k
+                                else:
+                                    if k - 1 == pre:
+                                        datas += data
+                                    else:
+                                        datas = b"\xfe"
+                                        pre = k
+                        # else:
+                        #     print("no data", flush=True)
                     else:
-                        command_log = ""
-                        for d in data:
-                            command_log += hex(d)[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                    res = self._process_received(data)
-                    if res != []:
+                        datas = b''
+                    if datas != b'':
+                        # print("read:", datas)
+                        if self.send_jog_command and datas[3] == 0x5b:
+                            self.send_jog_command = False
+                            continue
+                        res = self._process_received(datas)
+                        if self.check_python_version() == 2:
+                            command_log = ""
+                            for d in datas:
+                                command_log += hex(ord(d))[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                        else:
+                            command_log = ""
+                            for d in datas:
+                                command_log += hex(d)[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                        if datas[3] == 0x5D:
+                            debug_data = []
+                            for i in range(4, 32, 4):
+                                byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
+                                debug_data.append(byte_value)
+                            self.log.debug("_read : {}".format(debug_data))
+                            continue
+                        if res == []:
+                            continue
                         with self.lock:
                             self.read_command.append(res)
-            else:
-                while True and time.time() - t < wait_time:
-                    if self._serial_port.inWaiting() > 0:
-                        data = self._serial_port.read()
-                        k += 1
-                        # print(datas, flush=True)
-                        if data_len == 3:
-                            datas += data
-                            crc = self._serial_port.read(2)
-                            if self.crc_check(datas) == [v for v in crc]:
-                                datas += crc
-                                break
-                        if data_len == 1 and data == b"\xfa":
-                            datas += data
-                            # if [i for i in datas] == command:
-                            #     datas = b''
-                            #     data_len = -1
-                            #     k = 0
-                            #     pre = 0
-                            #     continue
-                            # break
-                        elif len(datas) == 2:
-                            data_len = struct.unpack("b", data)[0]
-                            datas += data
-                        elif len(datas) > 2 and data_len > 0:
-                            datas += data
-                            data_len -= 1
-                        elif data == b"\xfe":
-                            if datas == b"":
-                                datas += data
-                                pre = k
-                            else:
-                                if k - 1 == pre:
-                                    datas += data
-                                else:
-                                    datas = b"\xfe"
-                                    pre = k
-                    # else:
-                    #     print("no data", flush=True)
-                else:
-                    datas = b''
-                if datas != b'':
-                    # print("read:", datas)
-                    if self.send_jog_command and datas[3] == 0x5b:
-                        self.send_jog_command = False
-                        continue
-                    res = self._process_received(datas)
-                    if self.check_python_version() == 2:
-                        command_log = ""
-                        for d in datas:
-                            command_log += hex(ord(d))[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                    else:
-                        command_log = ""
-                        for d in datas:
-                            command_log += hex(d)[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                    if datas[3] == 0x5D:
-                        debug_data = []
-                        for i in range(4, 32, 4):
-                            byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
-                            debug_data.append(byte_value)
-                        self.log.debug("_read : {}".format(debug_data))
-                        continue
-                    if res == []:
-                        continue
-                    with self.lock:
-                        self.read_command.append(res)
+                            
+            except:
+                pass
                 # return datas
             time.sleep(0.001)
 
