@@ -4,6 +4,8 @@
 import time
 import struct
 import locale
+import numpy as np
+import traceback
 
 from pymycobot.error import calibration_parameters, restrict_serial_port
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
@@ -24,6 +26,74 @@ class MercuryCommandGenerator(DataProcessor):
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
+        self.max_joint, self.min_joint = 0,0
+        
+            
+    def _joint_limit_init(self):
+        max_joint = np.zeros(7)
+        min_joint = np.zeros(7)
+        for i in range(7):
+            max_joint[i] = self.get_joint_max_angle(i + 1)
+            min_joint[i] = self.get_joint_min_angle(i + 1)
+        return max_joint, min_joint
+    
+    def _joint_limit_judge(self, angles):
+        offset = 3 
+        for i in range(7):
+            if self.min_joint[i] + offset < angles[i] < self.max_joint[i] - offset:
+                pass
+            else:
+                if self.language == "zh_CN":
+                    return f"当前角度为{angles[i]}, 角度范围为： {self.min_joint[i]} ~ {self.max_joint[i]}"
+                return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
+            
+    def _Singularity(self, angles):
+        singular_angles = [0, 180]  # Joint 6: 0 and 180 degrees are singular points
+        state = ""
+        offset = 5
+        for singular in singular_angles:
+            if singular - offset < angles[5] < singular + offset:
+                if self.language == "zh_CN":
+                    return f"在关节 6 处检测到奇点：{angles[5]} 度"
+                return f"Singularity detected at joint 6: {angles[5]} degrees"
+        return state
+
+    def _check_coords(self, new_coords, is_print=0):
+        first_three = new_coords[:3]
+        first_three[2] -= 83.64
+        info = ""
+        # Calculate the Euclidean norm (magnitude)
+        magnitude = np.linalg.norm(first_three)
+        if is_print == 1:
+            if self.language == "zh_CN":
+                info +=f"当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
+            else:
+                info +=f"Arm span is {magnitude}, max is {self.arm_span}"
+
+        # if magnitude > self.arm_span - 10:
+        #     if self.language == "zh_CN":
+        #         info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
+        #     else:
+        #         info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
+        return info
+
+    def _status_explain(self, status):
+        error_info = _interpret_status_code(self.language, status)
+        if error_info != "":
+            self.arm_span = 440
+        if 0x00 < status <= 0x07:
+            angles = self.get_angles()
+            if type(self.max_joint) == int and self.max_joint == 0:
+                self.max_joint, self.min_joint = self._joint_limit_init()
+            error_info+=self._joint_limit_judge(angles)
+        elif status in [32,33]:
+            error_coords = self.get_coords()
+            error_info += self._check_coords(error_coords, 1)
+        elif status == 36:
+            angles = self.get_angles()
+            error_info += self._Singularity(angles)
+        
+        return error_info
             
     def _send_command(self, genre, real_command):
         self.write_command.append(genre)
@@ -82,7 +152,7 @@ class MercuryCommandGenerator(DataProcessor):
         need_break = False
         data = None
         while True and time.time() - t < wait_time:
-            # print("--------------", time.time() - t)
+            # print("ERROR: ------", time.time() - t)
             for v in self.read_command:
 
                 # v == b'\xfe\xfe\x04[\x01\r\x87'
@@ -137,7 +207,7 @@ class MercuryCommandGenerator(DataProcessor):
                 break
             time.sleep(0.001)
         else:
-            # print("---超时---")
+            # print("ERROR: ---超时---"
             pass
         if data is None:
             # print("未拿到数据")
@@ -152,6 +222,17 @@ class MercuryCommandGenerator(DataProcessor):
             data_len -= 1
         else:
             data_pos = 4
+        if is_get_return:
+            data_len -= 1
+            data_pos += 1
+            if data[2] == 5:
+                # print("握手成功")
+                return data[5]
+            elif data[2] == 4:
+                res= self._status_explain(data[4])
+                if res != "":
+                    print(res)
+                return data[4]
         valid_data = data[data_pos: data_pos + data_len]
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
@@ -492,8 +573,8 @@ class MercuryCommandGenerator(DataProcessor):
                                     else:
                                         datas = b"\xfe"
                                         pre = k
-                        # else:
-                        #     print("no data", flush=True)
+                        else:
+                            time.sleep(0.001)
                     else:
                         datas = b''
                     if datas != b'':
@@ -523,10 +604,8 @@ class MercuryCommandGenerator(DataProcessor):
                             continue
                         with self.lock:
                             self.read_command.append(res)
-                            
-            except:
-                pass
-                # return datas
+            except Exception as e:
+                self.log.error("read error: {}".format(traceback.format_exc()))
             time.sleep(0.001)
 
     def get_system_version(self):
@@ -619,7 +698,7 @@ class MercuryCommandGenerator(DataProcessor):
         """Lock all joints"""
         return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
 
-    def go_home(self, robot, speed=10):
+    def go_home(self, robot=1, speed=20):
         """Control the machine to return to the zero position.
 
         Args:
@@ -646,7 +725,7 @@ class MercuryCommandGenerator(DataProcessor):
             joint_id (int): 1 ~ 7 or 11 ~ 13.
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id)
+            class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
 
     def get_angles(self):
@@ -919,25 +998,25 @@ class MercuryCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
 
-    def focus_servo(self, servo_id):
+    def focus_servo(self, joint_id):
         """Power on designated servo
 
         Args:
-            servo_id: int. joint id 1 - 7
+            joint_id: int. joint id 1 - 7
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.FOCUS_SERVO, joint_id)
 
-    def release_servo(self, servo_id):
+    def release_servo(self, joint_id):
         """Power off designated servo
 
         Args:
-            servo_id: int. joint id 1 - 7
+            joint_id: int. joint id 1 - 7
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.RELEASE_SERVO, joint_id)
 
     def get_robot_type(self):
         """Get robot type
@@ -972,7 +1051,7 @@ class MercuryCommandGenerator(DataProcessor):
             1 : success 
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id, value=value)
+            class_name=self.__class__.__name__, joint_id=joint_id, value=value)
         return self._mesg(ProtocolCode.SET_BREAK, joint_id, value)
 
     def over_limit_return_zero(self):
@@ -989,19 +1068,19 @@ class MercuryCommandGenerator(DataProcessor):
             speed: int (1 - 100)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id, speed=speed)
+            class_name=self.__class__.__name__, joint_id=joint_id, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, has_reply=True)
 
     def jog_increment_coord(self, coord_id, increment, speed):
         """Single coordinate incremental motion control. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the job_base_increment_coord interface
 
         Args:
-            coord_id: axis id 1 - 6.
+            joint_id: axis id 1 - 6.
             increment: 
             speed: int (1 - 100)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=coord_id, speed=speed)
+            class_name=self.__class__.__name__, coord_id=coord_id, speed=speed)
         value = self._coord2int(
             increment) if coord_id <= 3 else self._angle2int(increment)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True)
@@ -1317,33 +1396,33 @@ class MercuryCommandGenerator(DataProcessor):
         """Recovery movement"""
         return self._mesg(ProtocolCode.RESUME)
 
-    def set_servo_calibration(self, servo_id):
+    def set_servo_calibration(self, joint_id):
         """The current position of the calibration joint actuator is the angle zero point, 
 
         Args:
-            servo_id: Serial number of articulated steering gear. Joint id 1 - 6
+            joint_id: Serial number of articulated steering gear. Joint id 1 - 6
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, joint_id)
     
     def set_servos_calibration(self):
         for id in range(1, 8):
             self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, id)
 
-    def is_in_position(self, data, id=0):
+    def is_in_position(self, data, mode=0):
         """Judge whether in the position.
 
         Args:
             data: A data list, angles or coords. angles len 6, coords len 6.
-            id: 1 - coords, 0 - angles
+            mode: 1 - coords, 0 - angles
 
         Return:
             1 - True\n
             0 - False\n
             -1 - Error
         """
-        if id == 1:
+        if mode == 1:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, coords=data)
             data_list = []
@@ -1351,14 +1430,14 @@ class MercuryCommandGenerator(DataProcessor):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
                 data_list.append(self._angle2int(data[idx]))
-        elif id == 0:
+        elif mode == 0:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, angles=data)
             data_list = [self._angle2int(i) for i in data]
         else:
-            raise Exception("id is not right, please input 0 or 1")
+            raise Exception("mode is not right, please input 0 or 1")
 
-        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, id)
+        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
 
     def is_moving(self):
         """Detect if the robot is moving
@@ -1374,7 +1453,7 @@ class MercuryCommandGenerator(DataProcessor):
         """Jog control angle.
 
         Args:
-            joint_id (int): Joint id 1 - 6.
+            joint_id (int): Joint id 1 - 7.
             direction (int): 0 - decrease, 1 - increase
             speed (int): int range 1 - 100
             sync (bool, optional): Waiting for the exercise to end. Defaults to False.
@@ -1390,7 +1469,7 @@ class MercuryCommandGenerator(DataProcessor):
             52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id, direction=direction, speed=speed)
+            class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
         if sync:
             return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, has_reply=True)
         self.send_jog_command = True
@@ -1498,7 +1577,7 @@ class MercuryCommandGenerator(DataProcessor):
             angle value(float)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id)
+            class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id)
 
     def get_joint_max_angle(self, joint_id):
@@ -1511,7 +1590,7 @@ class MercuryCommandGenerator(DataProcessor):
             angle value(float)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id)
+            class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id)
 
     def set_joint_max_angle(self, joint_id, angle):
@@ -1539,22 +1618,22 @@ class MercuryCommandGenerator(DataProcessor):
             1 - success
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, id=joint_id, angle=angle)
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, angle)
 
-    def is_servo_enable(self, servo_id):
+    def is_servo_enable(self, joint_id):
         """To detect the connection state of a single joint
 
         Args:
-            servo_id: Joint id 1 - 6
+            joint_id: Joint id 1 - 7
 
         Return:
             0 - disable
             1 - enable
             -1 - error
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, id=servo_id)
-        return self._mesg(ProtocolCode.IS_SERVO_ENABLE, servo_id)
+        self.calibration_parameters(class_name = self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.IS_SERVO_ENABLE, joint_id)
 
     def is_all_servo_enable(self):
         """Detect the connection status of all joints
