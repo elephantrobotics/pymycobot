@@ -212,7 +212,7 @@ def calibration_parameters(**kwargs):
             if parameter == 'joint_id':
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryDataException)
-            elif parameter == 'degree':
+            elif parameter == 'angle':
                 joint_id = kwargs.get('joint_id', None)
                 if joint_id in [11,12,13]:
                     index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
@@ -248,11 +248,12 @@ def calibration_parameters(**kwargs):
             elif parameter == 'coords':
                 check_coords(value, robot_limit, class_name, MercuryDataException)
 
-            elif parameter == 'speed' and not 1 <= value <= 100:
-                raise MercuryDataException(
-                    "speed value not right, should be 1 ~ 100, the error speed is %s"
-                    % value
-                )
+            elif parameter == 'speed':
+                if not 1 <= value <= 100:
+                    raise MercuryDataException(
+                        "speed value not right, should be 1 ~ 100, the error speed is %s"
+                        % value
+                    )
 
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
@@ -307,7 +308,8 @@ def calibration_parameters(**kwargs):
             elif parameter == "err_angle":
                 if value < 0 or value > 5:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 5, but received {}".format(parameter, value))
-            public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
+            else:
+                public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)

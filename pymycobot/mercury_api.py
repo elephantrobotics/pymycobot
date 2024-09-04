@@ -257,7 +257,7 @@ class MercuryCommandGenerator(DataProcessor):
                     res.append(self._decode_int16(one))
         elif data_len == 2:
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:
-                return [self._decode_int8(valid_data[1:2])]
+                return self._decode_int8(valid_data[1:2])
             elif genre in [ProtocolCode.GET_LIMIT_SWITCH]:
                 for i in valid_data:
                     res.append(i)
@@ -357,7 +357,6 @@ class MercuryCommandGenerator(DataProcessor):
             res.append(self._decode_int8(valid_data))
         if res == []:
             return None
-
         if genre in [
             ProtocolCode.ROBOT_VERSION,
             ProtocolCode.GET_ROBOT_ID,
@@ -1338,17 +1337,17 @@ class MercuryCommandGenerator(DataProcessor):
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
 
-    def send_angle(self, joint_id, degree, speed):
+    def send_angle(self, joint_id, angle, speed):
         """Send one angle of joint to robot arm.
 
         Args:
             joint_id : Joint id(genre.Angle)， int 1-7.
-            degree : angle value(float).
+            angle : angle value(float).
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(degree)], speed, has_reply=True)
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True)
 
     def send_coord(self, coord_id, coord, speed):
         """Send one coord to robot arm.
