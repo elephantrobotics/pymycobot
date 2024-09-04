@@ -99,13 +99,15 @@ class MercuryServer(object):
                                     "return datas: {}".format([hex(v) for v in res]))
 
                                 conn.sendall(res)
+                    except ConnectionResetError:
+                        print("close disconnect!")
+                        time.sleep(0.1)
                     except Exception as e:
                         self.logger.error(traceback.format_exc())
-                        conn.sendall(str.encode(traceback.format_exc()))
                         break
             except Exception as e:
                 self.logger.error(traceback.format_exc())
-                conn.close()
+                self.conn.close()
                 self.mc.close()
                 
     def _encode_int16(self, data):
