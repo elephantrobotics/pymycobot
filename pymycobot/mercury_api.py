@@ -5,6 +5,7 @@ import time
 import struct
 import locale
 import numpy as np
+import traceback
 
 from pymycobot.error import calibration_parameters, restrict_serial_port
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
@@ -25,6 +26,8 @@ class MercuryCommandGenerator(DataProcessor):
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
+        self.max_joint, self.min_joint = 0,0
+        
             
     def _joint_limit_init(self):
         max_joint = np.zeros(7)
@@ -46,11 +49,10 @@ class MercuryCommandGenerator(DataProcessor):
             
     def _Singularity(self, angles):
         singular_angles = [0, 180]  # Joint 6: 0 and 180 degrees are singular points
-        state = 1
+        state = ""
         offset = 5
         for singular in singular_angles:
             if singular - offset < angles[5] < singular + offset:
-                state = 0
                 if self.language == "zh_CN":
                     return f"在关节 6 处检测到奇点：{angles[5]} 度"
                 return f"Singularity detected at joint 6: {angles[5]} degrees"
@@ -68,20 +70,27 @@ class MercuryCommandGenerator(DataProcessor):
             else:
                 info +=f"Arm span is {magnitude}, max is {self.arm_span}"
 
-        if magnitude > self.arm_span - 10:
-            if self.language == "zh_CN":
-                info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
-            else:
-                info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
+        # if magnitude > self.arm_span - 10:
+        #     if self.language == "zh_CN":
+        #         info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
+        #     else:
+        #         info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
         return info
 
-    def _status_explain(self, status, angles, error_coords):
+    def _status_explain(self, status):
         error_info = _interpret_status_code(self.language, status)
+        if error_info != "":
+            self.arm_span = 440
         if 0x00 < status <= 0x07:
+            angles = self.get_angles()
+            if self.max_joint == 0:
+                self.max_joint, self.min_joint = self._joint_limit_init()
             error_info+=self._joint_limit_judge(angles)
         elif status in [32,33]:
+            error_coords = self.get_coords()
             error_info += self._check_coords(error_coords, 1)
         elif status == 36:
+            angles = self.get_angles()
             error_info += self._Singularity(angles)
         
         return error_info
@@ -223,11 +232,7 @@ class MercuryCommandGenerator(DataProcessor):
                 # print("握手成功")
                 return data[5]
             elif data[2] == 4:
-                a = self.get_angles()
-                b = self.get_coords()
-                self.max_joint, self.min_joint = self._joint_limit_init()
-                self.arm_span = 440
-                res= self._status_explain(data[4], a, b)
+                res= self._status_explain(data[4])
                 if res != "":
                     print(res)
                 return data[4]
@@ -502,110 +507,112 @@ class MercuryCommandGenerator(DataProcessor):
 
     def read_thread(self, method=None):
         while True:
-            datas = b""
-            data_len = -1
-            k = 0
-            pre = 0
-            t = time.time()
-            wait_time = 0.5
-            if method is not None:
-                try:
-                    self.sock.settimeout(wait_time)
-                    data = self.sock.recv(1024)
-                    if isinstance(data, str):
-                        datas = bytearray()
-                        for i in data:
-                            datas += hex(ord(i))
-                except:
-                    data = b""
-                if data != b"":
-                    if self.send_jog_command and datas[3] == 0x5b:
-                        self.send_jog_command = False
-                        continue
-                    if self.check_python_version() == 2:
-                        command_log = ""
-                        for d in data:
-                            command_log += hex(ord(d))[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                        # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+            try:
+                datas = b""
+                data_len = -1
+                k = 0
+                pre = 0
+                t = time.time()
+                wait_time = 0.5
+                if method is not None:
+                    try:
+                        self.sock.settimeout(wait_time)
+                        data = self.sock.recv(1024)
+                        if isinstance(data, str):
+                            datas = bytearray()
+                            for i in data:
+                                datas += hex(ord(i))
+                    except:
+                        data = b""
+                    if data != b"":
+                        if self.send_jog_command and datas[3] == 0x5b:
+                            self.send_jog_command = False
+                            continue
+                        if self.check_python_version() == 2:
+                            command_log = ""
+                            for d in data:
+                                command_log += hex(ord(d))[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                            # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                        else:
+                            command_log = ""
+                            for d in data:
+                                command_log += hex(d)[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                        res = self._process_received(data)
+                        if res != []:
+                            with self.lock:
+                                self.read_command.append(res)
+                else:
+                    while True and time.time() - t < wait_time:
+                        if self._serial_port.inWaiting() > 0:
+                            data = self._serial_port.read()
+                            k += 1
+                            # print(datas, flush=True)
+                            if data_len == 3:
+                                datas += data
+                                crc = self._serial_port.read(2)
+                                if self.crc_check(datas) == [v for v in crc]:
+                                    datas += crc
+                                    break
+                            if data_len == 1 and data == b"\xfa":
+                                datas += data
+                                # if [i for i in datas] == command:
+                                #     datas = b''
+                                #     data_len = -1
+                                #     k = 0
+                                #     pre = 0
+                                #     continue
+                                # break
+                            elif len(datas) == 2:
+                                data_len = struct.unpack("b", data)[0]
+                                datas += data
+                            elif len(datas) > 2 and data_len > 0:
+                                datas += data
+                                data_len -= 1
+                            elif data == b"\xfe":
+                                if datas == b"":
+                                    datas += data
+                                    pre = k
+                                else:
+                                    if k - 1 == pre:
+                                        datas += data
+                                    else:
+                                        datas = b"\xfe"
+                                        pre = k
+                        else:
+                            time.sleep(0.001)
                     else:
-                        command_log = ""
-                        for d in data:
-                            command_log += hex(d)[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                    res = self._process_received(data)
-                    if res != []:
+                        datas = b''
+                    if datas != b'':
+                        # print("read:", datas)
+                        if self.send_jog_command and datas[3] == 0x5b:
+                            self.send_jog_command = False
+                            continue
+                        res = self._process_received(datas)
+                        if self.check_python_version() == 2:
+                            command_log = ""
+                            for d in datas:
+                                command_log += hex(ord(d))[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                        else:
+                            command_log = ""
+                            for d in datas:
+                                command_log += hex(d)[2:] + " "
+                            self.log.debug("_read : {}".format(command_log))
+                        if datas[3] == 0x5D:
+                            debug_data = []
+                            for i in range(4, 32, 4):
+                                byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
+                                debug_data.append(byte_value)
+                            self.log.debug("_read : {}".format(debug_data))
+                            continue
+                        if res == []:
+                            continue
                         with self.lock:
                             self.read_command.append(res)
-            else:
-                while True and time.time() - t < wait_time:
-                    if self._serial_port.inWaiting() > 0:
-                        data = self._serial_port.read()
-                        k += 1
-                        # print(datas, flush=True)
-                        if data_len == 3:
-                            datas += data
-                            crc = self._serial_port.read(2)
-                            if self.crc_check(datas) == [v for v in crc]:
-                                datas += crc
-                                break
-                        if data_len == 1 and data == b"\xfa":
-                            datas += data
-                            # if [i for i in datas] == command:
-                            #     datas = b''
-                            #     data_len = -1
-                            #     k = 0
-                            #     pre = 0
-                            #     continue
-                            # break
-                        elif len(datas) == 2:
-                            data_len = struct.unpack("b", data)[0]
-                            datas += data
-                        elif len(datas) > 2 and data_len > 0:
-                            datas += data
-                            data_len -= 1
-                        elif data == b"\xfe":
-                            if datas == b"":
-                                datas += data
-                                pre = k
-                            else:
-                                if k - 1 == pre:
-                                    datas += data
-                                else:
-                                    datas = b"\xfe"
-                                    pre = k
-                    # else:
-                    #     print("no data", flush=True)
-                else:
-                    datas = b''
-                if datas != b'':
-                    # print("read:", datas)
-                    if self.send_jog_command and datas[3] == 0x5b:
-                        self.send_jog_command = False
-                        continue
-                    res = self._process_received(datas)
-                    if self.check_python_version() == 2:
-                        command_log = ""
-                        for d in datas:
-                            command_log += hex(ord(d))[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                    else:
-                        command_log = ""
-                        for d in datas:
-                            command_log += hex(d)[2:] + " "
-                        self.log.debug("_read : {}".format(command_log))
-                    if datas[3] == 0x5D:
-                        debug_data = []
-                        for i in range(4, 32, 4):
-                            byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
-                            debug_data.append(byte_value)
-                        self.log.debug("_read : {}".format(debug_data))
-                        continue
-                    if res == []:
-                        continue
-                    with self.lock:
-                        self.read_command.append(res)
-                # return datas
+            except Exception as e:
+                self.log.error("read error: {}".format(traceback.format_exc()))
             time.sleep(0.001)
 
     def get_system_version(self):
