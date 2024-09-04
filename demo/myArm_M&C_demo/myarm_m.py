@@ -49,8 +49,8 @@ def main():
                 data = conn.recv(1024).decode('utf-8')
                 angle = processing_data(data)
                 m.set_joints_angle(angle, speed)
-             except MyArmDataException:
-                 pass
+            except MyArmDataException:
+                pass
             
 
 if __name__ == "__main__":
