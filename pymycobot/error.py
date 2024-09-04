@@ -312,7 +312,7 @@ def calibration_parameters(**kwargs):
         "joint_id": [1, 2, 3, 4, 5, 6, 7],
         "servo_id": [1, 2, 3, 4, 5, 6, 7, 8],
         "angles_min": [-168, -77, -86, -159, -95, -161, -118],
-        "angles_max": [172, 90, 91, 148, 84, 146, 0],
+        "angles_max": [172, 90, 91, 148, 84, 146, 2],
         "encoders_min": [137, 1163, 1035, 1013, 248, 979, 220, 706],
         "encoders_max": [4004, 2945, 3079, 3026, 3724, 2994, 3704, 2048],
     }
@@ -453,13 +453,13 @@ def calibration_parameters(**kwargs):
                 min_encoder = limit_info["encoders_min"][i]
                 if value < min_encoder or value > max_encoder:
                     raise MyArmDataException(
-                        "angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}"
+                        f"angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}"
                     )
             elif parameter == 'encoders':
                 for i, v in enumerate(value):
                     max_encoder = limit_info["encoders_max"][i]
                     min_encoder = limit_info["encoders_min"][i]
-                    if value < min_encoder or value > max_encoder:
+                    if v < min_encoder or v > max_encoder:
                         raise MyArmDataException(
                             f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}"
                         )

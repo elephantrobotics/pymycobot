@@ -5,6 +5,8 @@ from __future__ import division
 import sys
 import logging
 import threading
+import time
+
 from pymycobot.common import ProtocolCode, write, read, DataProcessor
 from pymycobot.error import calibration_parameters
 from pymycobot.log import setup_logging
@@ -52,7 +54,7 @@ class MyArmAPI(DataProcessor):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-
+        time.sleep(0.01)
         real_command, has_reply = super(MyArmAPI, self)._mesg(genre, *args, **kwargs)
         command = self._flatten(real_command)
         with self.lock:
@@ -96,6 +98,8 @@ class MyArmAPI(DataProcessor):
                     result = self._int2angle(result)
                 return result
             if genre in (ProtocolCode.GET_ATOM_PRESS_STATUS, ):
+                if self.__class__.__name__ == 'MyArmM':
+                    return res[0]
                 return res
             elif genre in [
                 ProtocolCode.GET_ANGLES, ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE,
@@ -115,7 +119,7 @@ class MyArmAPI(DataProcessor):
                     rank = [i for i, e in enumerate(reverse_bins) if e != '0']
                     result.append(rank)
                 return result
-            elif genre == ProtocolCode.GET_ROBOT_FIRMWARE_VERSION:
+            elif genre in (ProtocolCode.GET_ROBOT_FIRMWARE_VERSION, ProtocolCode.GET_ROBOT_TOOL_FIRMWARE_VERSION):
                 return self._int2coord(res[0])
             else:
                 return res
@@ -144,10 +148,6 @@ class MyArmAPI(DataProcessor):
         """Get the Robot Tool Firmware Version (End Atom)"""
         return self._mesg(ProtocolCode.GET_ROBOT_TOOL_FIRMWARE_VERSION, has_reply=True)
 
-    # def get_robot_serial_number(self):
-    #     """Get the bot number"""
-    #     return self._mesg(ProtocolCode.GET_ROBOT_SERIAL_NUMBER, has_reply=True)
-
     def set_robot_err_check_state(self, status):
         """Set Error Detection Status You can turn off error detection, but do not turn it off unless necessary
 
@@ -175,7 +175,8 @@ class MyArmAPI(DataProcessor):
 
     def set_recv_queue_max_len(self, max_len):
         """Set the total length of the receiving command queue"""
-        self._mesg(ProtocolCode.SET_RECV_QUEUE_SIZE, max_len, has_reply=True)
+        assert 0 < max_len <= 100, "queue size must be in range 1 - 100"
+        self._mesg(ProtocolCode.SET_RECV_QUEUE_SIZE, max_len)
 
     def get_recv_queue_len(self):
         """The current length of the read receive queue"""
@@ -275,7 +276,9 @@ class MyArmAPI(DataProcessor):
             data (int): 0-254
 
         """
-        self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE, servo_id, data)
+        assert 0 <= data <= 254, "data must be between 0 and 254"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
+        self._mesg(ProtocolCode.SET_SERVO_P, servo_id, data)
 
     def get_servo_p(self, servo_id):
         """Reads the position loop P scale factor of the specified servo motor
@@ -283,7 +286,7 @@ class MyArmAPI(DataProcessor):
         Args:
             servo_id (int): 0-254
         """
-        return self._mesg(ProtocolCode.SERVO_RESTORE, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_P, servo_id, has_reply=True)
 
     def set_servo_d(self, servo_id, data):
         """Sets the proportional factor for the position ring D of the specified servo motor
@@ -292,6 +295,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0-254
             data (int): 0-254
         """
+        assert 0 <= data <= 254, "data must be between 0 and 254"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, servo_id, data)
 
     def get_servo_d(self, servo_id):
@@ -309,6 +314,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 254
         """
+        assert 0 <= data <= 254, "data must be between 0 and 254"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE, servo_id, data)
 
     def get_servo_i(self, servo_id):
@@ -322,6 +329,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 32
         """
+        assert 0 <= data <= 32, "data must be between 0 and 32"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         self._mesg(ProtocolCode.SET_SERVO_MOTOR_CLOCKWISE, servo_id, data)
 
     def get_servo_cw(self, servo_id):
@@ -339,6 +348,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 32
         """
+        assert 0 <= data <= 32, "data must be between 0 and 32"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_MOTOR_COUNTER_CLOCKWISE, servo_id, data)
 
     def get_servo_cww(self, servo_id):
