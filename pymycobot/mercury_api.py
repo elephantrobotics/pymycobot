@@ -83,7 +83,7 @@ class MercuryCommandGenerator(DataProcessor):
             self.arm_span = 440
         if 0x00 < status <= 0x07:
             angles = self.get_angles()
-            if self.max_joint == 0:
+            if type(self.max_joint) == int and self.max_joint == 0:
                 self.max_joint, self.min_joint = self._joint_limit_init()
             error_info+=self._joint_limit_judge(angles)
         elif status in [32,33]:
