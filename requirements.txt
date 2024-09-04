@@ -3,3 +3,4 @@ python-can
 pytest
 flake8
 opencv-python
+numpy

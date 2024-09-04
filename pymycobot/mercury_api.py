@@ -4,6 +4,7 @@
 import time
 import struct
 import locale
+import numpy as np
 
 from pymycobot.error import calibration_parameters, restrict_serial_port
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
@@ -24,6 +25,66 @@ class MercuryCommandGenerator(DataProcessor):
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
+            
+    def _joint_limit_init(self):
+        max_joint = np.zeros(7)
+        min_joint = np.zeros(7)
+        for i in range(7):
+            max_joint[i] = self.get_joint_max_angle(i + 1)
+            min_joint[i] = self.get_joint_min_angle(i + 1)
+        return max_joint, min_joint
+    
+    def _joint_limit_judge(self, angles):
+        offset = 3 
+        for i in range(7):
+            if self.min_joint[i] + offset < angles[i] < self.max_joint[i] - offset:
+                pass
+            else:
+                if self.language == "zh_CN":
+                    return f"当前角度为{angles[i]}, 角度范围为： {self.min_joint[i]} ~ {self.max_joint[i]}"
+                return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
+            
+    def _Singularity(self, angles):
+        singular_angles = [0, 180]  # Joint 6: 0 and 180 degrees are singular points
+        state = 1
+        offset = 5
+        for singular in singular_angles:
+            if singular - offset < angles[5] < singular + offset:
+                state = 0
+                if self.language == "zh_CN":
+                    return f"在关节 6 处检测到奇点：{angles[5]} 度"
+                return f"Singularity detected at joint 6: {angles[5]} degrees"
+        return state
+
+    def _check_coords(self, new_coords, is_print=0):
+        first_three = new_coords[:3]
+        first_three[2] -= 83.64
+        info = ""
+        # Calculate the Euclidean norm (magnitude)
+        magnitude = np.linalg.norm(first_three)
+        if is_print == 1:
+            if self.language == "zh_CN":
+                info +=f"当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
+            else:
+                info +=f"Arm span is {magnitude}, max is {self.arm_span}"
+
+        if magnitude > self.arm_span - 10:
+            if self.language == "zh_CN":
+                info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
+            else:
+                info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
+        return info
+
+    def _status_explain(self, status, angles, error_coords):
+        error_info = _interpret_status_code(self.language, status)
+        if 0x00 < status <= 0x07:
+            error_info+=self._joint_limit_judge(angles)
+        elif status in [32,33]:
+            error_info += self._check_coords(error_coords, 1)
+        elif status == 36:
+            error_info += self._Singularity(angles)
+        
+        return error_info
             
     def _send_command(self, genre, real_command):
         self.write_command.append(genre)
@@ -85,7 +146,7 @@ class MercuryCommandGenerator(DataProcessor):
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
         while True and time.time() - t < wait_time:
-            # print("--------------", time.time() - t)
+            # print("ERROR: ------", time.time() - t)
             for v in self.read_command:
 
                 # v == b'\xfe\xfe\x04[\x01\r\x87'
@@ -139,7 +200,7 @@ class MercuryCommandGenerator(DataProcessor):
             #     break
             time.sleep(0.001)
         else:
-            # print("---超时---")
+            # print("ERROR: ---超时---"
             pass
         if data is None:
             # print("未拿到数据")
@@ -160,12 +221,16 @@ class MercuryCommandGenerator(DataProcessor):
             data_pos += 1
             if data[2] == 5:
                 # print("握手成功")
-
                 return data[5]
             elif data[2] == 4:
-                # print("到位或者失败反馈")
-                return _interpret_status_code(self.language, data[4])
-        # print("111 4: ",data_pos, data_len, genre)
+                a = self.get_angles()
+                b = self.get_coords()
+                self.max_joint, self.min_joint = self._joint_limit_init()
+                self.arm_span = 440
+                res= self._status_explain(data[4], a, b)
+                if res != "":
+                    print(res)
+                return data[4]
         valid_data = data[data_pos: data_pos + data_len]
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             if (data_len == 8 or data_len == 9)and (genre == ProtocolCode.IS_INIT_CALIBRATION):
