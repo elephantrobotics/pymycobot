@@ -162,11 +162,11 @@ class ChassisControl:
     def go_straight(self, speed=0.2):
         """
         Forward control
-        :param speed: speed (float, optional): Movement speed. Defaults to 0.2. range 0 ~ 1
+        :param speed: speed (float, optional): Movement speed. Defaults to 0.2. range 0 ~ 0.5 m/s
         :return: None
         """
-        if speed < 0 or speed > 1:
-            raise Exception("The movement speed range is 0~1, but the received value is {}".format(speed))
+        if speed < 0 or speed > 0.5:
+            raise Exception("The movement speed range is 0~0.5, but the received value is {}".format(speed))
         self.Send_Data[0] = ProtocolCode.header
         self.Send_Data[1] = 0
         self.Send_Data[2] = 0
@@ -195,11 +195,11 @@ class ChassisControl:
     def go_back(self, speed=-0.2):
         """
         Back control
-        :param speed: speed (float, optional): Movement speed. Defaults to 0.25. range -1 ~ 0
+        :param speed: speed (float, optional): Movement speed. Defaults to -0.2. range -0.5 ~ 0 m/s
         :return: None
         """
-        if not -1 <= speed <= 0:
-            raise Exception("The movement speed range is -1~0, but the received value is {}".format(speed))
+        if not -0.5 <= speed <= 0:
+            raise Exception("The movement speed range is -0.5~0, but the received value is {}".format(speed))
         self.Send_Data = [0] * 11
         self.Send_Data[0] = ProtocolCode.header
         self.Send_Data[1] = 0
@@ -231,12 +231,12 @@ class ChassisControl:
     def turn_left(self, speed=0.2):
         """
         Left turn control
-        :param speed: speed (float, optional): Movement speed. Defaults to 0.2. range 0 ~ 1
+        :param speed: speed (float, optional): Movement speed. Defaults to 0.2. range 0 ~ 0.5 m/s
         :return: None
         """
 
-        if speed < 0 or speed > 1:
-            raise Exception("The movement speed range is 0~1, but the received value is {}".format(speed))
+        if speed < 0 or speed > 0.5:
+            raise Exception("The movement speed range is 0~5, but the received value is {}".format(speed))
         self.Send_Data = [0] * 11
         self.Send_Data[0] = ProtocolCode.header
         self.Send_Data[1] = 0
@@ -266,11 +266,11 @@ class ChassisControl:
     def turn_right(self, speed=-0.2):
         """
         Right turn control
-        :param speed: speed (float, optional): Movement speed. Defaults to -0.2. range -1 ~ 0
+        :param speed: speed (float, optional): Movement speed. Defaults to -0.2. range -0.5 ~ 0 m/s
         :return: None
         """
-        if not -1 <= speed <= 0:
-            raise Exception("The movement speed range is -1~0, but the received value is {}".format(speed))
+        if not -0.5 <= speed <= 0:
+            raise Exception("The movement speed range is -0.5~0, but the received value is {}".format(speed))
         self.Send_Data = [0] * 11
 
         self.Send_Data[0] = ProtocolCode.header
