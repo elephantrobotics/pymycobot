@@ -138,7 +138,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                 )
         elif parameter == 'angle':
             joint_id = kwargs.get('id', None)
-            index = robot_limit[class_name]['joint_id'][joint_id-1] - 1
+            index = robot_limit[class_name]['id'][joint_id-1] - 1
             if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                 raise exception_class(
                     "angle value not right, should be {0} ~ {1}, but received {2}".format(
