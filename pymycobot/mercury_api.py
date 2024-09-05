@@ -539,7 +539,7 @@ class MercuryCommandGenerator(DataProcessor):
                                 self.read_command.append(res)
                 else:
                     while True and time.time() - t < wait_time:
-                        if self._serial_port.inWaiting() > 0:
+                        if self._serial_port.isOpen() and self._serial_port.inWaiting() > 0:
                             data = self._serial_port.read()
                             k += 1
                             # print(datas, flush=True)
@@ -606,7 +606,8 @@ class MercuryCommandGenerator(DataProcessor):
                         with self.lock:
                             self.read_command.append(res)
             except Exception as e:
-                self.log.error("read error: {}".format(traceback.format_exc()))
+                # self.log.error("read error: {}".format(traceback.format_exc()))
+                pass
             time.sleep(0.001)
 
     def get_system_version(self):
