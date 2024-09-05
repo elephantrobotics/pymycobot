@@ -154,6 +154,7 @@ class MercuryCommandGenerator(DataProcessor):
         timeout = 0.5
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
+        interval_time = time.time()
         while True and time.time() - t < wait_time:
             # print("ERROR: ------", time.time() - t)
             for v in self.read_command:
@@ -207,6 +208,12 @@ class MercuryCommandGenerator(DataProcessor):
             #     # 打断除了stop指令外的其他指令的等待
             #     self.is_stop = 0
             #     break
+            if time.time() - interval_time > 1 and wait_time == 300:
+                interval_time = time.time()
+                if self.is_moving() == 0:
+                    with self.lock:
+                        self.write_command.remove(genre)
+                    return 0
             time.sleep(0.001)
         else:
             # print("ERROR: ---超时---"
