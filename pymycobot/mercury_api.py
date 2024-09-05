@@ -6,6 +6,7 @@ import struct
 import locale
 import numpy as np
 import traceback
+import json
 
 from pymycobot.error import calibration_parameters, restrict_serial_port
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
@@ -613,6 +614,20 @@ class MercuryCommandGenerator(DataProcessor):
                                 byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
                                 debug_data.append(byte_value)
                             self.log.debug("_read : {}".format(debug_data))
+                            continue
+                        elif datas[3] == 0x8E and datas[2] == 0x3B:
+                            debug_data = []
+                            all_debug_data = []
+                            for i in range(4, 60, 2):
+                                if i < 40:
+                                    data = self._decode_int16(datas[i:i+2]) / 1000
+                                else:
+                                    data = self._decode_int16(datas[i:i+2])
+                                debug_data.append(data)
+                                all_debug_data.append(debug_data)
+                            print(debug_data, len(debug_data))
+                            # with open("identify.txt", "w") as f:
+                            #     json.dump(all_debug_data, f, indent=2)
                             continue
                         if res == []:
                             continue
@@ -1987,3 +2002,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
+    
+    def set_identify_mode(self, mode):
+        return self._mesg(ProtocolCode.SET_IDENTIFY_MODE, mode)
+    
