@@ -4,6 +4,9 @@ from __future__ import division
 import time
 import struct
 import sys
+import locale
+
+from pymycobot.robot_info import Robot320Info
 
 
 class ProtocolCode(object):
@@ -514,7 +517,6 @@ class DataProcessor(object):
             ) or data_len == 6 and cmd_id in ignor_t:
                 for v in valid_data:
                     res.append(v)
-                return res
             elif data_len == 8 and arm == 14 and cmd_id == ProtocolCode.GET_DOWN_ENCODERS:
                 i = 0
                 while i < data_len:
@@ -522,9 +524,33 @@ class DataProcessor(object):
                     i+=4
                     res.append(byte_value)
                 return res
-            for header_i in range(0, len(valid_data), 2):
-                one = valid_data[header_i : header_i + 2]
-                res.append(self._decode_int16(one))
+            else:
+                for header_i in range(0, len(valid_data), 2):
+                    one = valid_data[header_i : header_i + 2]
+                    res.append(self._decode_int16(one))
+            error_key = None
+            if genre == ProtocolCode.GET_ROBOT_STATUS:
+                error_key = "robot_error"
+            if genre == ProtocolCode.GET_SERVO_STATUS:
+                error_key = "servo_error"
+            if error_key is not None:
+                robot_320_info = Robot320Info.error_info
+                locale_lang = locale.getdefaultlocale()[0]
+                if locale_lang not in ["zh_CN", "en_US"]:
+                    locale_lang = "en_US"
+                for i in range(len(res)):
+                    if res[i] != 0:
+                        data_bin = bin(res[i])[2:]
+                        error_list = []
+                        data_bin_len = len(data_bin)
+                        for j in range(data_bin_len):
+                            if data_bin[data_bin_len - 1 -j] != 0:
+                                error_list.append(j)
+                                if locale_lang == "zh_CN":
+                                    print("错误: 关节{} - {}".format(i+1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                                else:
+                                    print("Error: Joint{} - {}".format(i+1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                        res[i] = error_list
         elif data_len == 2:
             if genre in [
                 ProtocolCode.GET_PLAN_SPEED,
@@ -728,9 +754,11 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             return datas
         elif genre == ProtocolCode.GET_ACCEI_DATA:
             wait_time = 1
-        while True and time.time() - t < wait_time:
+        while True and time.time() - t < wait_time:  
+            # return b'\xfe\xfe\x0e\x19\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\xfa'   
+            return b'\xfe\xfe\x08\xe4\x00\x00\x00\x00\x00\x06\xfa'       
             data = self._serial_port.read()
-            self.log.debug("data: {}".format(data))
+            # self.log.debug("data: {}".format(data))
             k += 1
             if _class in ["Mercury", "MercurySocket"]:
                 if data_len == 3:
@@ -783,5 +811,5 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             for d in datas:
                 command_log += hex(d)[2:] + " "
             self.log.debug("_read : {}".format(command_log))
-            
+        print(datas)
         return datas
