@@ -240,17 +240,20 @@ class ElephantRobot(object):
 
     def get_digital_in(self, pin_number):
         command = "get_digital_in(" + str(pin_number) + ")\n"
-        self.send_command(command)
+        res = self.send_command(command)
+        return self.string_to_int(res)
 
     def get_digital_out(self, pin_number):
         command = "get_digital_out(" + str(pin_number) + ")\n"
         print(command)
-        self.send_command(command)
+        res = self.send_command(command)
+        return self.string_to_int(res)
 
     def get_joint_current(self, joint_number):
         command = "get_joint_current(" + str(joint_number) + ")\n"
         print(command)
-        self.send_command(command)
+        res = self.send_command(command)
+        return self.string_to_double(res)
 
     def set_digital_out(self, pin_number, pin_signal):
         command = "set_digital_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
