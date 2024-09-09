@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.5.0 (2024-9-9)
+
+- release v3.5.0
+- Added 320 abnormal status acquisition interface
+
 ## v3.4.9 (2024-7-18)
 
 - release v3.4.9
