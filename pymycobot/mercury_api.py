@@ -345,6 +345,33 @@ class MercuryCommandGenerator(DataProcessor):
                 byte_value_send = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                 byte_value_current = int.from_bytes(valid_data[i+4:i+4], byteorder='big', signed=True)
                 res.append([byte_value_send, byte_value_current])
+        elif data_len == 48:
+            i = 0
+            j = 0
+            res = [0, 0]
+            angles = []
+            coords = []
+            while i < data_len:
+                if i < 28:
+                    byte_value_send = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    angles.append(self._int2angle(byte_value_send))
+                    i+=4
+                elif i < 40:
+                    
+                    one = valid_data[i: i + 2]
+                    one = self._decode_int16(one)
+                    if j < 3:
+                        one = self._int2coord(one)
+                    else:
+                        one = self._int2angle(one)
+                    coords.append(one)
+                    j += 1
+                    i += 2
+                else:
+                    res.append(valid_data[i])
+                    i+=1
+            res[0] = angles
+            res[1] = coords
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
