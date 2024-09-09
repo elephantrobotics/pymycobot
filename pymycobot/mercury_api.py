@@ -128,25 +128,25 @@ class MercuryCommandGenerator(DataProcessor):
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                     ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP, ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
             wait_time = 3
-        elif genre in [
-                ProtocolCode.SEND_ANGLE,
-                ProtocolCode.SEND_ANGLES,
-                ProtocolCode.SEND_COORD,
-                ProtocolCode.SEND_COORDS,
-                ProtocolCode.JOG_ANGLE,
-                ProtocolCode.JOG_COORD,
-                ProtocolCode.JOG_INCREMENT,
-                ProtocolCode.JOG_INCREMENT_COORD,
-                ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
-                ProtocolCode.MERCURY_SET_BASE_COORDS,
-                ProtocolCode.MERCURY_JOG_BASE_COORD,
-                ProtocolCode.MERCURY_SET_BASE_COORD,
-                ProtocolCode.OVER_LIMIT_RETURN_ZERO,
-                ProtocolCode.JOG_BASE_INCREMENT_COORD,
-                ProtocolCode.WRITE_MOVE_C,
-                ProtocolCode.JOG_RPY]:
-            wait_time = 300
-            is_in_position = True
+        # elif genre in [
+        #         ProtocolCode.SEND_ANGLE,
+        #         ProtocolCode.SEND_ANGLES,
+        #         ProtocolCode.SEND_COORD,
+        #         ProtocolCode.SEND_COORDS,
+        #         ProtocolCode.JOG_ANGLE,
+        #         ProtocolCode.JOG_COORD,
+        #         ProtocolCode.JOG_INCREMENT,
+        #         ProtocolCode.JOG_INCREMENT_COORD,
+        #         ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
+        #         ProtocolCode.MERCURY_SET_BASE_COORDS,
+        #         ProtocolCode.MERCURY_JOG_BASE_COORD,
+        #         ProtocolCode.MERCURY_SET_BASE_COORD,
+        #         ProtocolCode.OVER_LIMIT_RETURN_ZERO,
+        #         ProtocolCode.JOG_BASE_INCREMENT_COORD,
+        #         ProtocolCode.WRITE_MOVE_C,
+        #         ProtocolCode.JOG_RPY]:
+        #     wait_time = 300
+        #     is_in_position = True
         elif genre in [ProtocolCode.SERVO_RESTORE]:
             wait_time = 0.3
         need_break = False
@@ -450,6 +450,8 @@ class MercuryCommandGenerator(DataProcessor):
             return self._int2angle(res[0])
         elif genre == ProtocolCode.GET_ANGLES:
             return [self._int3angle(angle) for angle in res]
+        elif genre == ProtocolCode.SOLVE_INV_KINEMATICS:
+            return [self._int2angle(angle) for angle in res]
         elif genre == ProtocolCode.COBOTX_GET_ANGLE:
             return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
