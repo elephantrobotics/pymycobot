@@ -1824,6 +1824,20 @@ class MercuryCommandGenerator(DataProcessor):
         """Get the world coordinate system"""
         return self._mesg(ProtocolCode.GET_WORLD_REFERENCE)
     
+    def set_world_reference(self, coords):
+        """Set the world coordinate system
+        
+        Args:
+            coords: a list of coords value(List[float]). [x(mm), y, z, rx(angle), ry, rz]
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
+    
     def set_tool_reference(self, coords):
         """Set tool coordinate system
         
@@ -2007,4 +2021,9 @@ class MercuryCommandGenerator(DataProcessor):
     
     def set_identify_mode(self, mode):
         return self._mesg(ProtocolCode.SET_IDENTIFY_MODE, mode)
+    
+    def get_identify_mode(self):
+        return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
+    
+    # def fourier_trajectories(self, trajectory):
     

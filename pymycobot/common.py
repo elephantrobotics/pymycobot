@@ -213,6 +213,7 @@ class ProtocolCode(object):
     WRITE_MOVE_C = 0x8C
     SOLVE_INV_KINEMATICS = 0x8D
     SET_IDENTIFY_MODE = 0x8E
+    GET_IDENTIFY_MODE = 0x8F
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
