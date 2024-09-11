@@ -307,6 +307,15 @@ def calibration_parameters(**kwargs):
             elif parameter == "err_angle":
                 if value < 0 or value > 5:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 5, but received {}".format(parameter, value))
+            elif parameter == "r":
+                if value < 0 or value > 655.5:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 655.5, but received {}".format(parameter, value))
+            elif parameter == "rank":
+                if value not in [0,1,2]:
+                    raise MercuryDataException("The parameter {} only supports 0 or 1 or 2, but received {}".format(parameter, value))
+            elif parameter == "move_type":
+                if value not in [0,2]:
+                    raise MercuryDataException("The parameter {} only supports 0 or 2, but received {}".format(parameter, value))
             public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
