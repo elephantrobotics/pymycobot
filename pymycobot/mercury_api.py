@@ -6,6 +6,7 @@ import struct
 import locale
 import numpy as np
 import traceback
+import json
 
 from pymycobot.error import calibration_parameters, restrict_serial_port
 from pymycobot.common import DataProcessor, ProtocolCode, write, read
@@ -22,6 +23,7 @@ class MercuryCommandGenerator(DataProcessor):
         self.write_command = []
         self.read_command = []
         self.send_jog_command = False
+        # 同步模式
         self.sync_mode = True
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
@@ -121,6 +123,7 @@ class MercuryCommandGenerator(DataProcessor):
         lost_times = 0
         with self.lock:
             self._send_command(genre, real_command)
+        if ProtocolCode
         t = time.time()
         wait_time = 0.15
         if genre == ProtocolCode.POWER_ON:
@@ -128,83 +131,97 @@ class MercuryCommandGenerator(DataProcessor):
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                     ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP, ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
             wait_time = 3
-        # elif genre in [
-        #         ProtocolCode.SEND_ANGLE,
-        #         ProtocolCode.SEND_ANGLES,
-        #         ProtocolCode.SEND_COORD,
-        #         ProtocolCode.SEND_COORDS,
-        #         ProtocolCode.JOG_ANGLE,
-        #         ProtocolCode.JOG_COORD,
-        #         ProtocolCode.JOG_INCREMENT,
-        #         ProtocolCode.JOG_INCREMENT_COORD,
-        #         ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
-        #         ProtocolCode.MERCURY_SET_BASE_COORDS,
-        #         ProtocolCode.MERCURY_JOG_BASE_COORD,
-        #         ProtocolCode.MERCURY_SET_BASE_COORD,
-        #         ProtocolCode.OVER_LIMIT_RETURN_ZERO,
-        #         ProtocolCode.JOG_BASE_INCREMENT_COORD,
-        #         ProtocolCode.WRITE_MOVE_C,
-        #         ProtocolCode.JOG_RPY]:
-        #     wait_time = 300
-        #     is_in_position = True
+        elif genre in [
+                ProtocolCode.SEND_ANGLE,
+                ProtocolCode.SEND_ANGLES,
+                ProtocolCode.SEND_COORD,
+                ProtocolCode.SEND_COORDS,
+                ProtocolCode.JOG_ANGLE,
+                ProtocolCode.JOG_COORD,
+                ProtocolCode.JOG_INCREMENT,
+                ProtocolCode.JOG_INCREMENT_COORD,
+                ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
+                ProtocolCode.MERCURY_SET_BASE_COORDS,
+                ProtocolCode.MERCURY_JOG_BASE_COORD,
+                ProtocolCode.MERCURY_SET_BASE_COORD,
+                ProtocolCode.OVER_LIMIT_RETURN_ZERO,
+                ProtocolCode.JOG_BASE_INCREMENT_COORD,
+                ProtocolCode.WRITE_MOVE_C,
+                ProtocolCode.JOG_RPY,
+                ProtocolCode.WRITE_MOVE_C_R] and self.sync_mode:
+            wait_time = 300
+            is_in_position = True
         elif genre in [ProtocolCode.SERVO_RESTORE]:
             wait_time = 0.3
         need_break = False
         data = None
+        timeout = 0.5
+        if self.__class__.__name__ == "MercurySocket":
+            timeout = 1
+        interval_time = time.time()
         while True and time.time() - t < wait_time:
-            # print("ERROR: ------", time.time() - t)
             for v in self.read_command:
-
-                # v == b'\xfe\xfe\x04[\x01\r\x87'
-                if is_in_position and v[2] == 0x04 and v[3] == 0x5b:
-                    # print(-1)
+                read_data = v[0]
+                if is_get_return and is_in_position and read_data[2] == 0x04 and read_data[3] == 0x5b:
+                    if v[1] < t:
+                        with self.lock:
+                            self.read_command.remove(v)
+                        continue
                     # print("到位反馈", flush=True)
                     is_get_return = True
                     need_break = True
-                    data = v
+                    data = read_data
                     with self.lock:
                         self.read_command.remove(v)
                         self.write_command.remove(genre)
 
-                elif genre == v[3] and v[2] == 5 and v[4] == 0xFF:
+                elif genre == read_data[3] and read_data[2] == 5 and read_data[4] == 0xFF:
                     # 通信闭环
                     # print(-2)
                     # print("闭环", flush=True)
                     is_get_return = True
                     with self.lock:
                         self.read_command.remove(v)
-                    if has_reply == False:
+                    if has_reply == False or self.sync_mode == False:
                         # print(-3)
                         # print("仅闭环退出", flush=True)
                         need_break = True
-                        data = v
-                elif genre == v[3]:
+                        data = read_data
+                elif genre == read_data[3]:
                     # print(-4)
                     # print("正常读取", flush=True)
                     need_break = True
-                    data = v
+                    data = read_data
                     with self.lock:
                         self.read_command.remove(v)
                         self.write_command.remove(genre)
                     break
 
-            if is_in_position and time.time() - t > 0.2 and is_get_return == False:
+            if is_in_position and not is_get_return and time.time() - t > timeout:
                 # 运动指令丢失，重发
                 # print("运动指令丢失，重发", flush=True)
                 lost_times += 1
+                # print("运动指令丢失，重发")
                 with self.lock:
                     self._send_command(genre, real_command)
             if need_break:
-                # print("退出", flush=True)
+                # print("正常退出", flush=True)
                 break
             if lost_times > 2:
                 # 重传3次失败，返回-1
                 # print("重传3次失败，返回-1", flush=True)
                 return -1
-            if t < self.is_stop and genre != ProtocolCode.STOP:
-                # 打断除了stop指令外的其他指令的等待
-                self.is_stop = 0
-                break
+            # if t < self.is_stop and genre != ProtocolCode.STOP:
+            #     # 打断除了stop指令外的其他指令的等待
+            #     self.is_stop = 0
+            #     break
+            if is_in_position and time.time() - interval_time > 1 and wait_time == 300:
+                interval_time = time.time()
+                if self.is_moving() == 0:
+                    # print("停止运动，退出")
+                    with self.lock:
+                        self.write_command.remove(genre)
+                    return 0
             time.sleep(0.001)
         else:
             # print("ERROR: ---超时---"
@@ -630,10 +647,30 @@ class MercuryCommandGenerator(DataProcessor):
                                 debug_data.append(byte_value)
                             self.log.debug("_read : {}".format(debug_data))
                             continue
-                        if res == []:
+                        elif datas[3] == 0x8E and datas[2] == 0x3B:
+                            debug_data = []
+                            all_debug_data = []
+                            for i in range(4, 60, 2):
+                                if i < 40:
+                                    data = self._decode_int16(datas[i:i+2]) / 1000
+                                else:
+                                    data = self._decode_int16(datas[i:i+2])
+                                debug_data.append(data)
+                                all_debug_data.append(debug_data)
+                            print(debug_data, len(debug_data))
+                            # with open("identify.txt", "w") as f:
+                            #     json.dump(all_debug_data, f, indent=2)
                             continue
+                        if res == []:
+                            # print("res is empty")
+                            continue
+                        # if datas[3] == 0x5b:
+                        #     print("等待加入到读取队列")
                         with self.lock:
-                            self.read_command.append(res)
+                            self.read_command.append([res, time.time()])
+                            # if datas[3] == 0x5b:
+                                # print("加入到读取队列成功")
+                            
             except Exception as e:
                 # self.log.error("read error: {}".format(traceback.format_exc()))
                 pass
@@ -1829,6 +1866,20 @@ class MercuryCommandGenerator(DataProcessor):
         """Get the world coordinate system"""
         return self._mesg(ProtocolCode.GET_WORLD_REFERENCE)
     
+    def set_world_reference(self, coords):
+        """Set the world coordinate system
+        
+        Args:
+            coords: a list of coords value(List[float]). [x(mm), y, z, rx(angle), ry, rz]
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
+    
     def set_tool_reference(self, coords):
         """Set tool coordinate system
         
@@ -1868,7 +1919,7 @@ class MercuryCommandGenerator(DataProcessor):
         """Set movement type
         
         Args:
-            move_type: 1 - movel, 0 - moveJ
+            move_type: 2 - movel, 0 - moveJ
         """
         self.calibration_parameters(class_name = self.__class__.__name__, move_type=move_type)
         return self._mesg(ProtocolCode.SET_MOVEMENT_TYPE, move_type)
@@ -2009,6 +2060,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
+<<<<<<< HEAD
 
     def set_world_reference(self, coords):
         """Set the world coordinate system
@@ -2018,9 +2070,35 @@ class MercuryCommandGenerator(DataProcessor):
                 for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
         """
         self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
+=======
+    
+    def set_identify_mode(self, mode):
+        return self._mesg(ProtocolCode.SET_IDENTIFY_MODE, mode)
+    
+    def get_identify_mode(self):
+        return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
+    
+    # def fourier_trajectories(self, trajectory):
+    
+    def write_move_c_r(self, coords, r, speed, rank=0):
+        """_summary_
+
+        Args:
+            coords (_type_): _description_
+            r (_type_): _description_
+            speed (_type_): _description_
+            rank (_type_): _description_
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords, r=r, speed=speed, rank=rank)
+>>>>>>> origin/mercury_close_loop
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
+<<<<<<< HEAD
         return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
+=======
+        return self._mesg(ProtocolCode.WRITE_MOVE_C_R, coord_list, [r*100], speed, rank, has_reply=True)
+>>>>>>> origin/mercury_close_loop

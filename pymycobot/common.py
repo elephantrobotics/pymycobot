@@ -215,6 +215,8 @@ class ProtocolCode(object):
     GET_END_TYPE = 0x8A
     WRITE_MOVE_C = 0x8C
     SOLVE_INV_KINEMATICS = 0x8D
+    SET_IDENTIFY_MODE = 0x8E
+    GET_IDENTIFY_MODE = 0x8F
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
@@ -223,6 +225,7 @@ class ProtocolCode(object):
     GET_POS_OVER = 0x94
     CLEAR_ENCODERS_ERROR = 0xEA
     GET_DOWN_ENCODERS = 0x96
+    WRITE_MOVE_C_R = 0x99
 
     # planning speed
     GET_PLAN_SPEED = 0xD0
