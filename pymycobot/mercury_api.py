@@ -197,7 +197,7 @@ class MercuryCommandGenerator(DataProcessor):
                         self.write_command.remove(genre)
                     break
 
-            if is_in_position and not is_get_return and time.time() - t > timeout:
+            if not is_get_return and time.time() - t > timeout:
                 # 运动指令丢失，重发
                 # print("运动指令丢失，重发", flush=True)
                 lost_times += 1
