@@ -123,7 +123,8 @@ class MercuryCommandGenerator(DataProcessor):
         lost_times = 0
         with self.lock:
             self._send_command(genre, real_command)
-        if ProtocolCode
+        if genre ==  ProtocolCode.STOP:
+            return
         t = time.time()
         wait_time = 0.15
         if genre == ProtocolCode.POWER_ON:
