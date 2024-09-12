@@ -125,11 +125,14 @@ class MercuryCommandGenerator(DataProcessor):
             self._send_command(genre, real_command)
         t = time.time()
         wait_time = 0.15
+        big_wait_time = False
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
+            big_wait_time = True
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                        ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP, ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
             wait_time = 3
+            big_wait_time = True
         elif genre in [
                 ProtocolCode.SEND_ANGLE,
                 ProtocolCode.SEND_ANGLES,
@@ -150,8 +153,10 @@ class MercuryCommandGenerator(DataProcessor):
                 ProtocolCode.WRITE_MOVE_C_R] and self.sync_mode:
             wait_time = 300
             is_in_position = True
+            big_wait_time = True
         elif genre in [ProtocolCode.SERVO_RESTORE]:
             wait_time = 0.3
+            big_wait_time = True
         need_break = False
         data = None
         timeout = 0.5
@@ -196,7 +201,7 @@ class MercuryCommandGenerator(DataProcessor):
                         self.write_command.remove(genre)
                     break
 
-            if not is_get_return and time.time() - t > timeout:
+            if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
                 # 运动指令丢失，重发
                 lost_times += 1
                 # print("运动指令丢失，重发")
