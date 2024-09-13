@@ -29,6 +29,7 @@ class MercuryCommandGenerator(DataProcessor):
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
         self.max_joint, self.min_joint = 0,0
+        self.all_debug_data = []
         
             
     def _joint_limit_init(self):
@@ -292,9 +293,11 @@ class MercuryCommandGenerator(DataProcessor):
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
-            if genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_ENCODER]:
+            if genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_ENCODER, ProtocolCode.GET_DYNAMIC_PARAMETERS]:
                 byte_value = int.from_bytes(
                     valid_data, byteorder='big', signed=True)
+                if genre in [ProtocolCode.GET_DYNAMIC_PARAMETERS]:
+                    byte_value /= 1000
                 res.append(byte_value)
             else:
                 for i in range(1, 4):
@@ -423,7 +426,8 @@ class MercuryCommandGenerator(DataProcessor):
             ProtocolCode.MERCURY_ERROR_COUNTS,
             ProtocolCode.GET_MAX_ACC,
             ProtocolCode.GET_MONITOR_MODE,
-            ProtocolCode.GET_COLLISION_MODE
+            ProtocolCode.GET_COLLISION_MODE,
+            ProtocolCode.GET_DYNAMIC_PARAMETERS
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_DRAG_FIFO]:
@@ -526,6 +530,7 @@ class MercuryCommandGenerator(DataProcessor):
             return []
 
     def read_thread(self, method=None):
+        
         while True:
             try:
                 datas = b""
@@ -629,15 +634,14 @@ class MercuryCommandGenerator(DataProcessor):
                             continue
                         elif datas[3] == 0x8E and datas[2] == 0x3B:
                             debug_data = []
-                            all_debug_data = []
+                            
                             for i in range(4, 60, 2):
                                 if i < 40:
                                     data = self._decode_int16(datas[i:i+2]) / 1000
                                 else:
                                     data = self._decode_int16(datas[i:i+2])
                                 debug_data.append(data)
-                                all_debug_data.append(debug_data)
-                            print(debug_data, len(debug_data))
+                            self.all_debug_data.append(debug_data)
                             # with open("identify.txt", "w") as f:
                             #     json.dump(all_debug_data, f, indent=2)
                             continue
@@ -2041,8 +2045,6 @@ class MercuryCommandGenerator(DataProcessor):
     def get_identify_mode(self):
         return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
     
-    # def fourier_trajectories(self, trajectory):
-    
     def write_move_c_r(self, coords, r, speed, rank=0):
         """_summary_
 
@@ -2060,3 +2062,18 @@ class MercuryCommandGenerator(DataProcessor):
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.WRITE_MOVE_C_R, coord_list, [r*100], speed, rank, has_reply=True)
+
+    def fourier_trajectories(self, trajectory):
+        self.calibration_parameters(class_name=self.__class__.__name__, trajectory=trajectory)
+        return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
+    
+    def get_dynamic_parameters(self ,add):
+        return self._mesg(ProtocolCode.GET_DYNAMIC_PARAMETERS, add)
+    
+    def set_dynamic_parameters(self, add, data):
+        return self._mesg(ProtocolCode.SET_DYNAMIC_PARAMETERS, add, [data*1000])
+    
+    def identify_print(self):
+        res = self.all_debug_data
+        self.all_debug_data = []
+        return res

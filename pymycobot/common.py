@@ -214,6 +214,9 @@ class ProtocolCode(object):
     SOLVE_INV_KINEMATICS = 0x8D
     SET_IDENTIFY_MODE = 0x8E
     GET_IDENTIFY_MODE = 0x8F
+    FOURIER_TRAJECTORIES = 0xF8
+    GET_DYNAMIC_PARAMETERS = 0x98
+    SET_DYNAMIC_PARAMETERS = 0x97
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
@@ -467,9 +470,9 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre in [ProtocolCode.SET_ENCODERS_DRAG] and index in [0, 1] and _class in ["Mercury", "MercurySocket"]:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SET_DYNAMIC_PARAMETERS] and index in [0, 1] and _class in ["Mercury", "MercurySocket"]:
                     for data in args[index]:
-                        byte_value = data.to_bytes(4, byteorder='big', signed=True)
+                        byte_value = int(data).to_bytes(4, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
                             res.append(byte_value[i])

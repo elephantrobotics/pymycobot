@@ -316,7 +316,11 @@ def calibration_parameters(**kwargs):
             elif parameter == "move_type":
                 if value not in [0,2]:
                     raise MercuryDataException("The parameter {} only supports 0 or 2, but received {}".format(parameter, value))
-            public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
+            elif parameter == "trajectory":
+                if value not in [0,1,2,3,4]:
+                    raise MercuryDataException("The parameter {} only supports [0,1,2,3,4], but received {}".format(parameter, value))
+            else:
+                public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
