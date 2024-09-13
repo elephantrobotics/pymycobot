@@ -1,6 +1,8 @@
 # coding=utf-8
 
 from __future__ import division
+
+import threading
 import time
 import math
 import socket
@@ -98,6 +100,7 @@ class MechArmSocket(CommandGenerator):
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
+        self.lock = threading.Lock()
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -119,14 +122,28 @@ class MechArmSocket(CommandGenerator):
         real_command, has_reply = super(
             MechArmSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        data = self._write(self._flatten(real_command), "socket")
-        if has_reply:
-            data = self._read(genre, method='socket')
+        # data = self._write(self._flatten(real_command), "socket")
+        with self.lock:
+            try_count = 0
+            while try_count < 3:
+                self._write(self._flatten(real_command), "socket")
+                data = self._read(genre, method='socket')
+                if data is not None and data != b'':
+                    break
+                try_count += 1
+            else:
+                return -1
             if genre == ProtocolCode.SET_SSID_PWD:
                 return None
             res = self._process_received(data, genre)
             if res == []:
                 return None
+            elif res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
+                ProtocolCode.GET_BASIC_VERSION,
+                ProtocolCode.GET_JOINT_MIN_ANGLE,
+                ProtocolCode.GET_JOINT_MAX_ANGLE,
+                ProtocolCode.SOFTWARE_VERSION]:
+                return res[0]
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
                 ProtocolCode.IS_POWER_ON,

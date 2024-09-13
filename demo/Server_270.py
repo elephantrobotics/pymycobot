@@ -122,11 +122,11 @@ class MechArmServer(object):
                                 res = bytes(GPIO.input(command[4]))
 
                             self.write(command)
-                            if command[3] in has_return:
-                                res = self.read(command)
-                                self.logger.info("return datas: {}".format([hex(v) for v in res]))
+                            # if command[3] in has_return:
+                            res = self.read(command)
+                            self.logger.info("return datas: {}".format([hex(v) for v in res]))
 
-                                conn.sendall(res)
+                            conn.sendall(res)
                     except Exception as e:
                         self.logger.error(traceback.format_exc())
                         conn.sendall(str.encode(traceback.format_exc()))
