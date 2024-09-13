@@ -2061,7 +2061,6 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
-<<<<<<< HEAD
 
     def set_world_reference(self, coords):
         """Set the world coordinate system
@@ -2071,7 +2070,12 @@ class MercuryCommandGenerator(DataProcessor):
                 for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
         """
         self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
-=======
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
     
     def set_identify_mode(self, mode):
         return self._mesg(ProtocolCode.SET_IDENTIFY_MODE, mode)
@@ -2092,14 +2096,9 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, coords=coords, r=r, speed=speed, rank=rank)
->>>>>>> origin/mercury_close_loop
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
-<<<<<<< HEAD
-        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
-=======
         return self._mesg(ProtocolCode.WRITE_MOVE_C_R, coord_list, [r*100], speed, rank, has_reply=True)
->>>>>>> origin/mercury_close_loop
