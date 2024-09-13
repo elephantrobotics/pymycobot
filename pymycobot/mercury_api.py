@@ -127,11 +127,14 @@ class MercuryCommandGenerator(DataProcessor):
             return
         t = time.time()
         wait_time = 0.15
+        big_wait_time = False
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
+            big_wait_time = True
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                     ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP, ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
             wait_time = 3
+            big_wait_time = True
         elif genre in [
                 ProtocolCode.SEND_ANGLE,
                 ProtocolCode.SEND_ANGLES,
@@ -152,8 +155,10 @@ class MercuryCommandGenerator(DataProcessor):
                 ProtocolCode.WRITE_MOVE_C_R] and self.sync_mode:
             wait_time = 300
             is_in_position = True
+            big_wait_time = True
         elif genre in [ProtocolCode.SERVO_RESTORE]:
             wait_time = 0.3
+            big_wait_time = True
         need_break = False
         data = None
         timeout = 0.5
@@ -161,44 +166,44 @@ class MercuryCommandGenerator(DataProcessor):
             timeout = 1
         interval_time = time.time()
         while True and time.time() - t < wait_time:
-            for v in self.read_command:
-                read_data = v[0]
-                if is_get_return and is_in_position and read_data[2] == 0x04 and read_data[3] == 0x5b:
-                    if v[1] < t:
-                        with self.lock:
-                            self.read_command.remove(v)
-                        continue
-                    # print("到位反馈", flush=True)
-                    is_get_return = True
-                    need_break = True
-                    data = read_data
-                    with self.lock:
-                        self.read_command.remove(v)
-                        self.write_command.remove(genre)
-
-                elif genre == read_data[3] and read_data[2] == 5 and read_data[4] == 0xFF:
-                    # 通信闭环
-                    # print(-2)
-                    # print("闭环", flush=True)
-                    is_get_return = True
-                    with self.lock:
-                        self.read_command.remove(v)
-                    if has_reply == False or self.sync_mode == False:
-                        # print(-3)
-                        # print("仅闭环退出", flush=True)
+            with self.lock_out:
+                for v in self.read_command:
+                    read_data = v[0]
+                    if is_get_return and is_in_position and read_data[2] == 0x04 and read_data[3] == 0x5b:
+                        if v[1] < t:
+                            with self.lock:
+                                self.read_command.remove(v)
+                            continue
+                        # print("到位反馈", flush=True)
+                        is_get_return = True
                         need_break = True
                         data = read_data
-                elif genre == read_data[3]:
-                    # print(-4)
-                    # print("正常读取", flush=True)
-                    need_break = True
-                    data = read_data
-                    with self.lock:
-                        self.read_command.remove(v)
-                        self.write_command.remove(genre)
-                    break
+                        with self.lock:
+                            self.read_command.remove(v)
+                            self.write_command.remove(genre)
 
-            if not is_get_return and time.time() - t > timeout:
+                    elif genre == read_data[3] and read_data[2] == 5 and read_data[4] == 0xFF:
+                        # 通信闭环
+                        # print(-2)
+                        # print("闭环", flush=True)
+                        is_get_return = True
+                        with self.lock:
+                            self.read_command.remove(v)
+                        if has_reply == False or self.sync_mode == False:
+                            # print(-3)
+                            # print("仅闭环退出", flush=True)
+                            need_break = True
+                            data = read_data
+                    elif genre == read_data[3]:
+                        # print(-4)
+                        # print("正常读取", flush=True)
+                        need_break = True
+                        data = read_data
+                        with self.lock:
+                            self.read_command.remove(v)
+                            self.write_command.remove(genre)
+                        break
+            if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
                 # 运动指令丢失，重发
                 # print("运动指令丢失，重发", flush=True)
                 lost_times += 1
