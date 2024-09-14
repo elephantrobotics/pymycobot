@@ -30,6 +30,8 @@ class MercuryCommandGenerator(DataProcessor):
             self.language = "en_US"
         self.max_joint, self.min_joint = 0,0
         self.all_debug_data = []
+        self.all_read_data = b""
+        
         
             
     def _joint_limit_init(self):
@@ -203,8 +205,13 @@ class MercuryCommandGenerator(DataProcessor):
                             self.write_command.remove(genre)
                         break
             if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
+                moving = self.is_moving()
+                if isinstance(moving, int):
+                    if moving != 0:
+                        continue
                 # 运动指令丢失，重发
                 lost_times += 1
+                t = time.time()
                 # print("运动指令丢失，重发")
                 with self.lock:
                     self._send_command(genre, real_command)
@@ -530,7 +537,6 @@ class MercuryCommandGenerator(DataProcessor):
             return []
 
     def read_thread(self, method=None):
-        
         while True:
             try:
                 datas = b""
@@ -572,11 +578,15 @@ class MercuryCommandGenerator(DataProcessor):
                     while True and time.time() - t < wait_time:
                         if self._serial_port.inWaiting() > 0:
                             data = self._serial_port.read()
+                            with open("all_log.txt", "a") as f:
+                                f.write(str(data)[2:-1])
+                            # self.log.info(all_read_data)
                             k += 1
                             # print(datas, flush=True)
                             if data_len == 3:
                                 datas += data
                                 crc = self._serial_port.read(2)
+                                self.all_read_data += data
                                 if self.crc_check(datas) == [v for v in crc]:
                                     datas += crc
                                     break
@@ -630,7 +640,7 @@ class MercuryCommandGenerator(DataProcessor):
                             for i in range(4, 32, 4):
                                 byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
                                 debug_data.append(byte_value)
-                            self.log.debug("_read : {}".format(debug_data))
+                            self.log.info("SERVO_COMMAND : {}".format(debug_data))
                             continue
                         elif datas[3] == 0x8E and datas[2] == 0x3B:
                             debug_data = []
@@ -642,8 +652,7 @@ class MercuryCommandGenerator(DataProcessor):
                                     data = self._decode_int16(datas[i:i+2])
                                 debug_data.append(data)
                             self.all_debug_data.append(debug_data)
-                            # with open("identify.txt", "w") as f:
-                            #     json.dump(all_debug_data, f, indent=2)
+                            
                             continue
                         if res == []:
                             # print("res is empty")
