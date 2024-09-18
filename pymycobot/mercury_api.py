@@ -44,43 +44,52 @@ class MercuryCommandGenerator(DataProcessor):
     
     def _joint_limit_judge(self, angles):
         offset = 3 
-        for i in range(7):
-            if self.min_joint[i] + offset < angles[i] < self.max_joint[i] - offset:
-                pass
-            else:
-                if self.language == "zh_CN":
-                    return f"当前角度为{angles[i]}, 角度范围为： {self.min_joint[i]} ~ {self.max_joint[i]}"
-                return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
+        try:
+            for i in range(7):
+                if self.min_joint[i] + offset < angles[i] < self.max_joint[i] - offset:
+                    pass
+                else:
+                    if self.language == "zh_CN":
+                        return f"当前角度为{angles[i]}, 角度范围为： {self.min_joint[i]} ~ {self.max_joint[i]}"
+                    return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
+        except TypeError:
+            return "joint limit error"
             
     def _Singularity(self, angles):
-        singular_angles = [0, 180]  # Joint 6: 0 and 180 degrees are singular points
-        state = ""
-        offset = 5
-        for singular in singular_angles:
-            if singular - offset < angles[5] < singular + offset:
-                if self.language == "zh_CN":
-                    return f"在关节 6 处检测到奇点：{angles[5]} 度"
-                return f"Singularity detected at joint 6: {angles[5]} degrees"
-        return state
+        try:
+            singular_angles = [0, 180]  # Joint 6: 0 and 180 degrees are singular points
+            state = ""
+            offset = 5
+            for singular in singular_angles:
+                if singular - offset < angles[5] < singular + offset:
+                    if self.language == "zh_CN":
+                        return f"在关节 6 处检测到奇点：{angles[5]} 度"
+                    return f"Singularity detected at joint 6: {angles[5]} degrees"
+            return state
+        except:
+            return "Singularity error"
 
     def _check_coords(self, new_coords, is_print=0):
-        first_three = new_coords[:3]
-        first_three[2] -= 83.64
-        info = ""
-        # Calculate the Euclidean norm (magnitude)
-        magnitude = np.linalg.norm(first_three)
-        if is_print == 1:
-            if self.language == "zh_CN":
-                info +=f"当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
-            else:
-                info +=f"Arm span is {magnitude}, max is {self.arm_span}"
+        try:
+            first_three = new_coords[:3]
+            first_three[2] -= 83.64
+            info = ""
+            # Calculate the Euclidean norm (magnitude)
+            magnitude = np.linalg.norm(first_three)
+            if is_print == 1:
+                if self.language == "zh_CN":
+                    info +=f"当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
+                else:
+                    info +=f"Arm span is {magnitude}, max is {self.arm_span}"
 
-        # if magnitude > self.arm_span - 10:
-        #     if self.language == "zh_CN":
-        #         info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
-        #     else:
-        #         info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
-        return info
+            # if magnitude > self.arm_span - 10:
+            #     if self.language == "zh_CN":
+            #         info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
+            #     else:
+            #         info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
+            return info
+        except:
+            return "check coords error"
 
     def _status_explain(self, status):
         error_info = _interpret_status_code(self.language, status)
@@ -232,7 +241,7 @@ class MercuryCommandGenerator(DataProcessor):
                     # print("停止运动，退出")
                     with self.lock:
                         self.write_command.remove(genre)
-                    return 0
+                    return -2
             time.sleep(0.001)
         else:
             # print("ERROR: ---超时---"
@@ -537,6 +546,7 @@ class MercuryCommandGenerator(DataProcessor):
             return []
 
     def read_thread(self, method=None):
+        all_data = b''
         while True:
             try:
                 datas = b""
@@ -578,8 +588,7 @@ class MercuryCommandGenerator(DataProcessor):
                     while True and time.time() - t < wait_time:
                         if self._serial_port.inWaiting() > 0:
                             data = self._serial_port.read()
-                            with open("all_log.txt", "a") as f:
-                                f.write(str(data)[2:-1])
+                            all_data+=data
                             # self.log.info(all_read_data)
                             k += 1
                             # print(datas, flush=True)
@@ -620,6 +629,9 @@ class MercuryCommandGenerator(DataProcessor):
                     else:
                         datas = b''
                     if datas != b'':
+                        with open("all_log.txt", "a") as f:
+                            f.write(str(all_data)[2:-1])
+                        all_data = b''
                         # print("read:", datas)
                         if self.send_jog_command and datas[3] == 0x5b:
                             self.send_jog_command = False
