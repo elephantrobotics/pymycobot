@@ -519,9 +519,15 @@ class Phoenix:
         for i in range(MAX_JOINTS * 2):
             self.g.newpin("U32-in-" + str(i).zfill(2), hal.HAL_U32, hal.HAL_IN)
 
+        # joint limits
         for i in range(MAX_JOINTS):
             self.g.newpin(str(i) + ".min_limit", hal.HAL_FLOAT, hal.HAL_OUT)
             self.g.newpin(str(i) + ".max_limit", hal.HAL_FLOAT, hal.HAL_OUT)
+
+        # axes limits
+        for i in Axis:
+            self.g.newpin(i.name + ".min_limit", hal.HAL_FLOAT, hal.HAL_IN)
+            self.g.newpin(i.name + ".max_limit", hal.HAL_FLOAT, hal.HAL_IN)
 
         self.g.newpin("esp32-btn", hal.HAL_BIT, hal.HAL_IN)
         self.g.newpin("esp32-led", hal.HAL_U32, hal.HAL_OUT)
@@ -1896,9 +1902,10 @@ class Phoenix:
         """
         self.s.poll()
         limits = []
-        for i, limit in enumerate(self.s.limit):
-            if self.s.axis_mask & (1 << i):
-                limits.append(limit)
+        for i in Axis:
+            limits.append(self.g[i.name + ".min_limit"])
+            limits.append(self.g[i.name + ".max_limit"])
+
         return limits
 
     def set_mdi_mode(self):
