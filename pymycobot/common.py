@@ -755,8 +755,6 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre == ProtocolCode.GET_ACCEI_DATA:
             wait_time = 1
         while True and time.time() - t < wait_time:  
-            # return b'\xfe\xfe\x0e\x19\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\xfa'   
-            return b'\xfe\xfe\x08\xe4\x00\x00\x00\x00\x00\x06\xfa'       
             data = self._serial_port.read()
             # self.log.debug("data: {}".format(data))
             k += 1
@@ -811,5 +809,4 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             for d in datas:
                 command_log += hex(d)[2:] + " "
             self.log.debug("_read : {}".format(command_log))
-        print(datas)
         return datas

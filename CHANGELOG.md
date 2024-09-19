@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.5.0 (2024-9-13)
+
+- release v3.6.0
+- add mycobot class  init delay 1.5S
+
+## v3.5.1 (2024-9-12)
+
+- release v3.5.1
+- fix bug
+
 ## v3.5.0 (2024-9-9)
 
 - release v3.5.0
