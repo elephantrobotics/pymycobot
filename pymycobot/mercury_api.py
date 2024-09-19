@@ -385,10 +385,13 @@ class MercuryCommandGenerator(DataProcessor):
                     res.append(self._decode_int16(one))
                     i += 2
         elif data_len == 56:
-            for i in range(0, data_len, 8):
+            i = 0
+            while i < data_len:
                 byte_value_send = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                byte_value_current = int.from_bytes(valid_data[i+4:i+4], byteorder='big', signed=True)
+                i+=4
+                byte_value_current = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                 res.append([byte_value_send, byte_value_current])
+                i+=4
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -546,7 +549,7 @@ class MercuryCommandGenerator(DataProcessor):
             return []
 
     def read_thread(self, method=None):
-        all_data = b''
+        # all_data = b''
         while True:
             try:
                 datas = b""
@@ -588,7 +591,7 @@ class MercuryCommandGenerator(DataProcessor):
                     while True and time.time() - t < wait_time:
                         if self._serial_port.inWaiting() > 0:
                             data = self._serial_port.read()
-                            all_data+=data
+                            # all_data+=data
                             # self.log.info(all_read_data)
                             k += 1
                             # print(datas, flush=True)
@@ -629,9 +632,9 @@ class MercuryCommandGenerator(DataProcessor):
                     else:
                         datas = b''
                     if datas != b'':
-                        with open("all_log.txt", "a") as f:
-                            f.write(str(all_data)[2:-1])
-                        all_data = b''
+                        # with open("all_log.txt", "a") as f:
+                        #     f.write(str(all_data)[2:-1])
+                        # all_data = b''
                         # print("read:", datas)
                         if self.send_jog_command and datas[3] == 0x5b:
                             self.send_jog_command = False
@@ -677,7 +680,8 @@ class MercuryCommandGenerator(DataProcessor):
                                 # print("加入到读取队列成功")
                             
             except Exception as e:
-                self.log.error("read error: {}".format(traceback.format_exc()))
+                # self.log.error("read error: {}".format(traceback.format_exc()))
+                pass
             time.sleep(0.001)
 
     def get_system_version(self):
@@ -1660,33 +1664,33 @@ class MercuryCommandGenerator(DataProcessor):
             class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id)
 
-    def set_joint_max_angle(self, joint_id, angle):
+    def set_joint_max_angle(self, joint_id, degree):
         """Set the maximum angle of the joint (must not exceed the maximum angle specified for the joint)
 
         Args:
             joint_id (int): Joint id 1 - 6  or 11 ~ 12
-            angle: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
+            degree: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
 
         Return:
             1 - success
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, angle)
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
 
-    def set_joint_min_angle(self, joint_id, angle):
+    def set_joint_min_angle(self, joint_id, degree):
         """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
 
         Args:
             joint_id (int): Joint id 1 - 6.
-            angle: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
+            degree: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
 
         Return:
             1 - success
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, angle)
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
 
     def is_servo_enable(self, joint_id):
         """To detect the connection state of a single joint
