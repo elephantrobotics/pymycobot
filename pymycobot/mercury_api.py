@@ -5,6 +5,7 @@ import time
 import struct
 import locale
 import numpy as np
+from datetime import datetime
 import traceback
 import json
 
@@ -631,10 +632,13 @@ class MercuryCommandGenerator(DataProcessor):
                             time.sleep(0.001)
                     else:
                         datas = b''
+                    # if all_data != b'':
+                    #     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    #     with open("all_log.txt", "a") as f:
+                    #         f.write(str(current_time)+str(all_data)[2:-1]+"\n")
+                    #     all_data = b''
                     if datas != b'':
-                        # with open("all_log.txt", "a") as f:
-                        #     f.write(str(all_data)[2:-1])
-                        # all_data = b''
+                        
                         # print("read:", datas)
                         if self.send_jog_command and datas[3] == 0x5b:
                             self.send_jog_command = False
@@ -2102,3 +2106,6 @@ class MercuryCommandGenerator(DataProcessor):
         res = self.all_debug_data
         self.all_debug_data = []
         return res
+    
+    def clear_encoder_error(self, joint_id):
+        return self._mesg(ProtocolCode.CLEAR_ENCODER_ERROR, joint_id)
