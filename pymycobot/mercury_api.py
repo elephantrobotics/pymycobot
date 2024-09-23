@@ -44,20 +44,20 @@ class MercuryCommandGenerator(CommandGenerator):
                 self._write(self._flatten(real_command))
             elif self.__class__.__name__ == "MercurySocket":
                 self._write(self._flatten(real_command), method="socket")
-        if genre in [
-                ProtocolCode.SEND_ANGLE,
-                ProtocolCode.SEND_ANGLES,
-                ProtocolCode.SEND_COORD,
-                ProtocolCode.SEND_COORDS,
-                ProtocolCode.JOG_ANGLE,
-                ProtocolCode.JOG_COORD,
-                ProtocolCode.JOG_INCREMENT,
-                ProtocolCode.JOG_INCREMENT_COORD,
-                ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
-                ProtocolCode.MERCURY_SET_BASE_COORDS,
-                ProtocolCode.MERCURY_JOG_BASE_COORD,
-                ProtocolCode.MERCURY_SET_BASE_COORD]:
-            has_reply = True
+        # if genre in [
+        #         ProtocolCode.SEND_ANGLE,
+        #         ProtocolCode.SEND_ANGLES,
+        #         ProtocolCode.SEND_COORD,
+        #         ProtocolCode.SEND_COORDS,
+        #         ProtocolCode.JOG_ANGLE,
+        #         ProtocolCode.JOG_COORD,
+        #         ProtocolCode.JOG_INCREMENT,
+        #         ProtocolCode.JOG_INCREMENT_COORD,
+        #         ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
+        #         ProtocolCode.MERCURY_SET_BASE_COORDS,
+        #         ProtocolCode.MERCURY_JOG_BASE_COORD,
+        #         ProtocolCode.MERCURY_SET_BASE_COORD]:
+        #     has_reply = True
         if has_reply:
             t = time.time()
             wait_time = 0.1
