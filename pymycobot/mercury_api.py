@@ -215,13 +215,13 @@ class MercuryCommandGenerator(DataProcessor):
                             self.write_command.remove(genre)
                         break
             if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
+                t = time.time()
                 moving = self.is_moving()
                 if isinstance(moving, int):
                     if moving != 0:
                         continue
                 # 运动指令丢失，重发
                 lost_times += 1
-                t = time.time()
                 # print("运动指令丢失，重发")
                 with self.lock:
                     self._send_command(genre, real_command)
