@@ -151,7 +151,7 @@ class MycobotServer(object):
         k = 0
         pre = 0
         t = time.time()
-        wait_time = 0.3
+        wait_time = 0.5
         if command[3] in [0x87, 0x54]:
             wait_time = 1
         while True and time.time() - t < wait_time:

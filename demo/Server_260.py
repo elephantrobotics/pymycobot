@@ -143,7 +143,7 @@ class MyPalletizerServer(object):
         k = 0
         pre = 0
         t = time.time()
-        wait_time = 0.1
+        wait_time = 0.3
         while True and time.time() - t < wait_time:
             data = self.mc.read()
             k += 1

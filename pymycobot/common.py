@@ -4,6 +4,7 @@ from __future__ import division
 import time
 import struct
 import sys
+import platform
 
 
 class ProtocolCode(object):
@@ -682,7 +683,10 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
     k = 0
     pre = 0
     t = time.time()
-    wait_time = 0.1   
+    if platform.system() == "Windows":
+        wait_time = 0.15
+    else:
+        wait_time = 0.5
     if method is not None:
          wait_time = 0.3
     if timeout is not None:
