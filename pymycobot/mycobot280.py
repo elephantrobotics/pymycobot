@@ -247,7 +247,7 @@ class MyCobot280(CommandGenerator):
         Return:
             0/1
         """
-        return self._process_single(self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True))
+        return self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True)
 
     def set_fresh_mode(self, mode):
         """Set command refresh mode

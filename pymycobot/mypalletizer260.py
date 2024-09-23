@@ -203,7 +203,7 @@ class MyPalletizer260(CommandGenerator):
         Return:
             0/1
         """
-        return self._process_single(self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True))
+        return self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True)
 
     # MDI mode and operation
     def get_radians(self):
