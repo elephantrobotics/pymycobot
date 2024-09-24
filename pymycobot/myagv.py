@@ -1,5 +1,7 @@
-
 import enum
+import queue
+import threading
+
 import serial
 import time
 import struct
@@ -7,6 +9,30 @@ import logging
 from pymycobot.log import setup_logging
 from pymycobot.common import DataProcessor
 from pymycobot.error import calibration_parameters
+
+"""
+应用层 -> 协议层 -> 传输层
+
+应用层:
+    1. 控制指令
+    2. 传感器数据
+    3. 位置信息
+    4. 状态信息
+    5. 其他信息
+    
+协议层:
+    1. 数据包格式
+    2. 数据包校验
+    3. 数据包解析
+    4. 数据包封装
+    5. 数据包发送
+    6. 数据包接收
+传输层：
+    1. 串口
+    2. 网络
+    3. 其他传输方式
+"""
+
 
 class ProtocolCode(enum.Enum):
     HEADER = 0xFE
@@ -19,6 +45,7 @@ class ProtocolCode(enum.Enum):
     GET_GYRO_STATE = [0x01, 0x08]
     GET_MODIFIED_VERSION = [0x01, 0x09]
 
+
 class MyAgv(DataProcessor):
     def __init__(self, port="/dev/ttyAMA0", baudrate="115200", timeout=0.1, debug=False):
         self.debug = debug
@@ -30,23 +57,24 @@ class MyAgv(DataProcessor):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
-        
+        self.__movement = False
+
     def _write(self, command):
         self._serial_port.reset_input_buffer()
         self.log.debug("_write: {}".format([hex(i) for i in command]))
         self._serial_port.write(command)
         self._serial_port.flush()
-        
-    def _read(self, command):
+
+    def _read(self, command) -> bytes:
         datas = b''
         k = 0
         pre = 0
         end = 5
         t = time.time()
-        if command[k-1] == 29:
+        if command[k - 1] == 29:
             end = 28
-        elif command[k-1] == 41:
-            end = 40
+        elif command[k - 1] == 44:
+            end = 43
         while time.time() - t < 0.2:
             data = self._serial_port.read()
             k += 1
@@ -54,16 +82,16 @@ class MyAgv(DataProcessor):
                 if datas[-2] == 0x01 and datas[-1] == 0x05:
                     end = 7
                 datas += data
-                
+
             elif len(datas) == end:
                 datas += data
                 break
             elif len(datas) > 4:
                 datas += data
-            
+
             elif len(datas) >= 2:
                 data_len = struct.unpack("b", data)[0]
-                if command[-1] == 29 or command[-1] == 41 or data_len == command[k-1]:
+                if command[-1] == 29 or command[-1] == 44 or data_len == command[k - 1]:
                     datas += data
                 else:
                     datas = b''
@@ -86,9 +114,7 @@ class MyAgv(DataProcessor):
             datas = b''
         self.log.debug("_read: {}".format([hex(data) for data in datas]))
         return datas
-            
-        
-        
+
     def _mesg(self, genre, *args, **kwargs):
         """
 
@@ -134,11 +160,10 @@ class MyAgv(DataProcessor):
                 elif genre == ProtocolCode.GET_MOTORS_CURRENT.value:
                     return self._decode_int16(data[4:6])
                 elif genre == ProtocolCode.GET_BATTERY_INFO.value:
-                    res = []
                     byte_1 = bin(data[4])[2:]
-                    res =[]
+                    res = []
                     while len(byte_1) != 6:
-                        byte_1 = "0"+byte_1
+                        byte_1 = "0" + byte_1
                     res.append(byte_1)
                     res.append(self._int2coord(data[5]))
                     res.append(self._int2coord(data[6]))
@@ -148,9 +173,9 @@ class MyAgv(DataProcessor):
                         res[1] = 0
                     return res
                 return data[4]
-            # print(res)
+
         return None
-    
+
     def set_led(self, mode, R, G, B):
         """Set up LED lights
 
@@ -160,19 +185,19 @@ class MyAgv(DataProcessor):
             G (int): 0 ~ 255
             B (int): 0 ~ 255
         """
-        calibration_parameters(class_name = self.__class__.__name__, rgb=[R,G,B], led_mode=mode)
+        calibration_parameters(class_name=self.__class__.__name__, rgb=[R, G, B], led_mode=mode)
         return self._mesg(ProtocolCode.SET_LED.value, mode, R, G, B)
-    
+
     def get_firmware_version(self):
         """Get firmware version number
         """
-        return self._mesg(ProtocolCode.GET_FIRMWARE_VERSION.value, has_reply = True)
-    
+        return self._mesg(ProtocolCode.GET_FIRMWARE_VERSION.value, has_reply=True)
+
     def get_motors_current(self):
         """Get the total current of the motor
         """
-        return self._mesg(ProtocolCode.GET_MOTORS_CURRENT.value, has_reply = True)
-    
+        return self._mesg(ProtocolCode.GET_MOTORS_CURRENT.value, has_reply=True)
+
     def get_battery_info(self):
         """Read battery information
         
@@ -191,155 +216,191 @@ class MyAgv(DataProcessor):
                 battery_1_voltage : Battery 1 voltage in volts.
                 battery_2_voltage : Battery 2 voltage in volts.
         """
-        return self._mesg(ProtocolCode.GET_BATTERY_INFO.value, has_reply = True)
-    
-    # def move_control(self, direction_1, direction_2, direction_3):
-    #     """Control the car to rotate forward, backward, left, right and forward/counterclockwise
+        return self._mesg(ProtocolCode.GET_BATTERY_INFO.value, has_reply=True)
 
-    #     Args:
-    #         direction_1 (int): Control forward or backward: 0 ~ 127 is backward, 129 ~ 255 is forward, 128 is stop.
-    #         direction_2 (int): control left and right movement: 0 ~ 127 is right, 129 ~ 255 is left, 128 is stop.
-    #         direction_3 (int): control rotation: 0 ~ 127 is clockwise, 129 ~ 255 is counterclockwise, 128 is stop.
-    #     """
-    #     calibration_parameters(class_name = self.__class__.__name__, direction_1=direction_1, direction_2=direction_2,direction_3=direction_3)
-    #     return self._mesg(direction_1, direction_2, direction_3)
-    
-    def go_ahead(self, go_speed, timeout=5):
-        """Control the car to move forward. Send control commands every 100ms. with a default motion time of 5 seconds.
+    def __basic_move_control(self, *genre, timeout: int = 5):
+        t = time.time()
+        self.__movement = True
+        while time.time() - t < timeout and self.__movement is True:
+            self._mesg(*genre)
+            time.sleep(0.05)
+        self.stop()
+
+    def go_ahead(self, speed: int, timeout: int = 5):
+        """
+        Control the car to move forward. 
+        Send control commands every 100ms. 
+        with a default motion time of 5 seconds.
 
         Args:
-            go_speed (int): 1 ~ 127 is forward.
+            speed (int): 1 ~ 127 is forward.
             timeout (int): default 5 s.
         """
-        # go_speed (int): 129 ~ 255 is forward
-        calibration_parameters(class_name = self.__class__.__name__, data=go_speed)
-        t = time.time()
-        while time.time() - t < timeout:
-            self._mesg(128+go_speed, 128, 128)
-            time.sleep(0.1)
-        self.stop()
-        
-    def retreat(self, back_speed, timeout=5):
-        """Control the car back. Send control commands every 100ms. with a default motion time of 5 seconds
+        if not (0 < speed < 128):
+            raise ValueError("speed must be between 1 and 127")
+        self.__basic_move_control(128 + speed, 128, 128, timeout=timeout)
+
+    def retreat(self, speed, timeout=5):
+        """
+        Control the car back. Send control commands every 100ms. 
+        with a default motion time of 5 seconds
 
         Args:
-            back_speed (int): 1 ~ 127 is backward
+            speed (int): 1 ~ 127 is backward
             timeout (int): default 5 s.
         """
-        calibration_parameters(class_name = self.__class__.__name__, data=back_speed)
-        t = time.time()
-        while time.time() - t < timeout:
-            self._mesg(128-back_speed, 128, 128)
-            time.sleep(0.1)
-        self.stop()
-        
-    def pan_left(self, pan_left_speed, timeout=5):
-        """Control the car to pan to the left. Send control commands every 100ms. with a default motion time of 5 seconds
+        if not (0 < speed < 128):
+            raise ValueError("back_speed must be between 1 and 127")
+        self.__basic_move_control(128 - speed, 128, 128, timeout=timeout)
+
+    def pan_left(self, speed, timeout=5):
+        """
+        Control the car to pan to the left. 
+        Send control commands every 100ms. with a default motion time of 5 seconds
 
         Args:
-            pan_left_speed (int): 1 ~ 127
+            speed (int): 1 ~ 127
             timeout (int): default 5 s.
         """
-        # pan_left_speed (int): 129 ~ 255
-        calibration_parameters(class_name = self.__class__.__name__, data=pan_left_speed)
-        t = time.time()
-        while time.time() - t < timeout:
-            self._mesg(128, 128+pan_left_speed, 128)
-            time.sleep(0.1)
-        self.stop()
-        
-    def pan_right(self, pan_right_speed, timeout=5):
-        """Control the car to pan to the right. Send control commands every 100ms. with a default motion time of 5 seconds
+        if not (0 < speed < 128):
+            raise ValueError("pan_left_speed must be between 1 and 127")
+        self.__basic_move_control(128, 128, 128 + speed, timeout=timeout)
 
+    def pan_right(self, speed: int, timeout=5):
+        """
+        Control the car to pan to the right. 
+        Send control commands every 100ms. with a default motion time of 5 seconds
+        
         Args:
-            pan_right_speed (int): 1 ~ 127
+            speed (int): 1 ~ 127
             timeout (int): default 5 s.
         """
-        calibration_parameters(class_name = self.__class__.__name__, pan_right_speed=pan_right_speed)
-        t = time.time()
-        while time.time() - t < timeout:
-            self._mesg(128, 128-pan_right_speed, 128)
-            time.sleep(0.1)
-        self.stop()
-        
-    def clockwise_rotation(self, rotate_right_speed, timeout=5):
-        """Control the car to rotate clockwise. Send control commands every 100ms. with a default motion time of 5 seconds
+        if not (0 < speed < 128):
+            raise ValueError("pan_right_speed must be between 1 and 127")
+        self.__basic_move_control(128, 128 - speed, 128, timeout=timeout)
 
+    def clockwise_rotation(self, speed: int, timeout=5):
+        """
+        Control the car to rotate clockwise. 
+        Send control commands every 100ms. with a default motion time of 5 seconds
+        
         Args:
-            clockwise_rotation_speed (int): 1 ~ 127
+            speed (int): 1 ~ 127
             timeout (int): default 5 s.
         """
-        calibration_parameters(class_name = self.__class__.__name__, rotate_right_speed=rotate_right_speed)
-        t = time.time()
-        while time.time() - t < timeout:
-            self._mesg(128, 128, 128-rotate_right_speed)
-            time.sleep(0.1)
-        self.stop()
-        
-        
-    def counterclockwise_rotation(self, rotate_left_speed, timeout=5):
-        """Control the car to rotate counterclockwise. Send control commands every 100ms. with a default motion time of 5 seconds
+        if speed < 1 or speed > 127:
+            raise ValueError("speed must be between 1 and 127")
+        self.__basic_move_control(128, 128, 128 - speed, timeout=timeout)
 
+    def counterclockwise_rotation(self, speed: int, timeout=5):
+        """
+        Control the car to rotate counterclockwise. 
+        Send control commands every 100ms. with a default motion time of 5 seconds
         Args:
-            clockwise_rotation_speed (int): 1 ~ 127
+            speed (int): 1 ~ 127
             timeout (int): default 5 s.
         """
-        calibration_parameters(class_name = self.__class__.__name__, rotate_left_speed=rotate_left_speed)
-        t = time.time()
-        while time.time() - t < timeout:
-            self._mesg(128, 128, 128+rotate_left_speed)
-            time.sleep(0.1)
-        self.stop()
-        
+        if speed < 1 or speed > 127:
+            raise ValueError("speed must be between 1 and 127")
+        self.__basic_move_control(128, 128, 128 + speed, timeout=timeout)
+
     def stop(self):
-        """stop motion
+        """stop-motion"""
+        if self.__movement is True:
+            self._mesg(128, 128, 128)
+            self.__movement = False
+
+    def get_mcu_info(self, version: float = None) -> list:
         """
-        self._mesg(128, 128, 128)
-        
-    def get_mcu_info(self, version=1.0):
-        """"""
+        Get MCU information
+        Args:
+            version (float): firmware version, default None, auto-detect
+        Returns:
+            MCU Version(list):
+                version 1.0:
+                    0-3: vx, vy, vz,
+                    3-6: ax, ay, az,
+                    6-9: wx, wy, wz,
+                    10: battery status[str](
+                        0-1: battery 2/1 interface access
+                        2: The power adapter is plugged in
+                        3: Plug in the charging pile
+                        4-5: battery 1/2 LED status
+                        ),
+                    11-13: batter1/2 voltage,
+                    13-15: battery1/2 current
+                version 1.1:
+                    15-18: Angle range (rollover, pitch, yaw)
+                    18: battery status 1 - normal, 0 - abnormal
+                    19: MPU status 1 - normal, 0 - abnormal
+                    20-24: stall state 1 - stalled, 0 - normal
+                    24-28: encoder status 1 - normal, 0 - abnormal
+        """
+        if version is None:
+            version = self.get_firmware_version()
+
         if version == 1.0:
             data_len = 29
         else:
-            data_len = 41
-        datas = self._read([0xfe, 0xfe, data_len])
+            data_len = 44
+
         res = []
-        index = 2
-        while index < len(datas) - 1:
-            if index < 5:
+        index = 0
+        datas = self._read([0xfe, 0xfe, data_len])
+        if not datas:
+            return res
+
+        datas = datas[2:][:-1]  # header and footer frames are not counted
+        while index < len(datas):
+            if index in range(0, 3):
                 res.append(datas[index])
-                index+=1
-            elif index < 17 or (index >= 20 and index < 28):
-                res.append(self._decode_int16(datas[index:index+2]))
-                index+=2
-            elif index >= 28 and index <= 32:
-                res.append(self._int2angle(self._decode_int16(datas[index:index+2])))
-                index+=2
-            elif index == 17:
+                index += 1
+
+            elif index in range(3, 15, 2):
+                res.append(self._decode_int16(datas[index:index + 2]))
+                index += 2
+
+            elif index == 15:
                 byte_1 = bin(datas[index])[2:]
-                while len(byte_1) != 6:
-                        byte_1 = "0"+byte_1
+                while len(byte_1) < 6:
+                    byte_1 = "0" + byte_1
                 res.append(byte_1)
-                index+=1
-                
-            elif index < 20 or (index > 32 and index < 41):
-                res.append(self._int2coord(datas[index]))
-                index+=1
-                
+                index += 1
+
+            elif index in (16, 17):
+                res.append(datas[index] / 10)
+                index += 1
+
+            elif index in range(18, 26, 2):
+                res.append(self._int2angle(self._decode_int16(datas[index:index + 2])))
+                index += 2
+
+            elif index in range(26, 32, 2):
+                res.append(self._int2angle(self._decode_int16(datas[index:index + 2])))
+                index += 2
+
+            elif index in range(32, 42, 1):
+                res.append(datas[index])
+                index += 1
+            else:
+                index += 1
+
         return res
-    
+
     def restore(self):
         """Motor stall recovery"""
         self._mesg(ProtocolCode.RESTORE.value, 1)
-        
+
     def set_gyro_state(self, state=1):
         """Set gyroscope calibration status (save after power failure)
 
         Args:
             state (int, optional): 1 - open. 0 - close. Defaults to 1.
         """
+        if state not in (0, 1):
+            raise ValueError("state must be 0 or 1")
         self._mesg(ProtocolCode.SET_GYRO_STATE.value, state)
-        
+
     def get_gyro_state(self):
         """Get gyroscope calibration status
 
@@ -347,11 +408,11 @@ class MyAgv(DataProcessor):
             1 - open
             0 - close
         """
-        return self._mesg(ProtocolCode.GET_GYRO_STATE.value, has_reply = True)
-    
+        return self._mesg(ProtocolCode.GET_GYRO_STATE.value, has_reply=True)
+
     def get_modified_version(self):
-        return self._mesg(ProtocolCode.GET_MODIFIED_VERSION.value, has_reply = True)
-    
+        return self._mesg(ProtocolCode.GET_MODIFIED_VERSION.value, has_reply=True)
+
     # def get_battery_voltage(self, num=1):
     #     """Get battery voltage
 
