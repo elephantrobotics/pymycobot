@@ -1,8 +1,13 @@
 # ChangeLog for pymycobot
 
-## v3.5.0 (2024-9-13)
+## v3.5.3 (2024-9-24)
 
-- release v3.6.0
+- release v3.5.3
+- Fix(mycobotpro630): Remove clear_encoder_error() calls
+
+## v3.5.2 (2024-9-13)
+
+- release v3.5.2
 - add mycobot class  init delay 1.5S
 
 ## v3.5.1 (2024-9-12)
