@@ -1,7 +1,4 @@
 import enum
-import queue
-import threading
-
 import serial
 import time
 import struct
@@ -9,29 +6,6 @@ import logging
 from pymycobot.log import setup_logging
 from pymycobot.common import DataProcessor
 from pymycobot.error import calibration_parameters
-
-"""
-应用层 -> 协议层 -> 传输层
-
-应用层:
-    1. 控制指令
-    2. 传感器数据
-    3. 位置信息
-    4. 状态信息
-    5. 其他信息
-    
-协议层:
-    1. 数据包格式
-    2. 数据包校验
-    3. 数据包解析
-    4. 数据包封装
-    5. 数据包发送
-    6. 数据包接收
-传输层：
-    1. 串口
-    2. 网络
-    3. 其他传输方式
-"""
 
 
 class ProtocolCode(enum.Enum):
