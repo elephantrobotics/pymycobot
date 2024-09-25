@@ -397,9 +397,9 @@ def calibration_parameters(**kwargs):
                 if value < 1 or value > 127:
                     raise MyAgvDataException("The range of {} is 1 ~ 127, but the received value is {}".format(parameter, value))
     
-    elif class_name in ["MyCobot", "MyCobotSocket"]:
+    elif class_name in ["MyCobot", "MyCobotSocket", "MyCobot280", "MyCobot320", "MyCobot280Socket", "MyCobot320Socket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MyCobotDataException)
-    elif class_name in ["MechArm", "MechArmSocket"]:
+    elif class_name in ["MechArm", "MechArmSocket", "MechArm270"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MechArmDataException)
     elif class_name in ["MyArm", "MyArmSocket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MyArmDataException)
