@@ -7,7 +7,7 @@ import socket
 import threading
 
 from pymycobot.generate import CommandGenerator
-from pymycobot.common import ProtocolCode, write, read
+from pymycobot.common import ProtocolCode, write, read, ProGripper
 from pymycobot.error import calibration_parameters
 
 
@@ -72,6 +72,24 @@ class MyCobot320Socket(CommandGenerator):
             get_movement_type()
             set_end_type()
             get_end_type()
+
+        # Force Control Gripper
+            set_pro_gripper()
+            get_pro_gripper()
+            set_pro_gripper_angle()
+            get_pro_gripper_angle()
+            set_pro_gripper_open()
+            set_pro_gripper_close()
+            set_pro_gripper_calibration()
+            get_pro_gripper_status()
+            set_pro_gripper_torque()
+            get_pro_gripper_torque()
+            set_pro_gripper_speed()
+            get_pro_gripper_default_speed()
+            set_pro_gripper_abs_angle()
+            set_pro_gripper_pause()
+            set_pro_gripper_resume()
+            set_pro_gripper_stop()
 
         # Other
             wait() *
@@ -160,9 +178,12 @@ class MyCobot320Socket(CommandGenerator):
                 ProtocolCode.GetHTSGripperTorque,
                 ProtocolCode.GetGripperProtectCurrent,
                 ProtocolCode.InitGripper,
-                ProtocolCode.SET_FOUR_PIECES_ZERO
+                ProtocolCode.SET_FOUR_PIECES_ZERO,
+                ProtocolCode.SET_TOQUE_GRIPPER,
             ]:
                 return self._process_single(res)
+            elif genre in [ProtocolCode.GET_TOQUE_GRIPPER]:
+                return self._process_high_low_bytes(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
@@ -561,6 +582,175 @@ class MyCobot320Socket(CommandGenerator):
             pin_no: (int) pin id.
         """
         return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no, has_reply=True)
+
+    # Force Control Gripper
+    def set_pro_gripper(self, gripper_id, address, value):
+        """Setting the force-controlled gripper parameters
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            address (int): Corresponding to the command sequence number in the force-controlled gripper protocol
+            value : Parameters in the force-controlled gripper protocol
+        """
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [value])
+
+    def get_pro_gripper(self, gripper_id, address):
+        """Get the force-controlled gripper parameters
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            address (int): Corresponding to the command sequence number in the force-controlled gripper protocol
+        """
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [address])
+
+    def set_pro_gripper_angle(self, gripper_id, gripper_angle):
+        """ Setting the angle of the force-controlled gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            gripper_angle (int): 0 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, gripper_angle)
+
+    def get_pro_gripper_angle(self, gripper_id):
+        """ Setting the angle of the force-controlled gripper
+
+        Return:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE)
+
+    def set_pro_gripper_open(self, gripper_id):
+        """ Open force-controlled gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper_angle(gripper_id, 100)
+
+    def set_pro_gripper_close(self, gripper_id):
+        """ close force-controlled gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper_angle(gripper_id, 0)
+
+    def set_pro_gripper_calibration(self, gripper_id):
+        """ Setting the gripper jaw zero position
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_CALIBRATION, 0)
+
+    def get_pro_gripper_status(self, gripper_id):
+        """ Get the clamping status of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            0 - Moving
+            1 - Stopped moving, no clamping detected
+            2 - Stopped moving, clamping detected
+            3 - After clamping detected, the object fell
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_STATUS)
+
+    def set_pro_gripper_torque(self, gripper_id, torque_value):
+        """ Setting gripper torque
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            torque_value (int): 100 ~ 300
+
+        Return:
+            0: Set failed
+            1: Set successful
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, torque_value=[gripper_id, torque_value])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_TORQUE, torque_value)
+
+    def get_pro_gripper_torque(self, gripper_id):
+        """ Setting gripper torque
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            torque_value (int): 100 ~ 300
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_TORQUE)
+
+    def set_pro_gripper_speed(self, gripper_id, speed):
+        """ Set the gripper speed
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            speed (int): 1 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_speed=[gripper_id, speed])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_SPEED, speed)
+
+    def get_pro_gripper_default_speed(self, gripper_id):
+        """ Get the default gripper speed
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            speed (int): 1 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_DEFAULT_SPEED)
+
+    def set_pro_gripper_abs_angle(self, gripper_id, gripper_angle):
+        """ Set the gripper speed
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            gripper_angle (int): 0 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ABS_ANGLE, gripper_angle)
+
+    def set_pro_gripper_pause(self, gripper_id):
+        """ Pause movement
+
+        Args:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_PAUSE, 0)
+
+    def set_pro_gripper_resume(self, gripper_id):
+        """ Resume movement
+
+        Args:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_RESUME, 0)
+
+    def set_pro_gripper_stop(self, gripper_id):
+        """ Stop movement
+
+        Args:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_STOP, 0)
 
     # Other
     def wait(self, t):

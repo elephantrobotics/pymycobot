@@ -7,6 +7,21 @@ import sys
 import platform
 
 
+class ProGripper(object):
+    SET_GRIPPER_ANGLE = 11
+    GET_GRIPPER_ANGLE = 12
+    SET_GRIPPER_CALIBRATION = 13
+    GET_GRIPPER_STATUS = 14
+    SET_GRIPPER_TORQUE = 27
+    GET_GRIPPER_TORQUE = 28
+    SET_GRIPPER_SPEED = 32
+    GET_GRIPPER_DEFAULT_SPEED = 33
+    SET_GRIPPER_ABS_ANGLE = 36
+    SET_GRIPPER_PAUSE = 37
+    SET_GRIPPER_RESUME = 38
+    SET_GRIPPER_STOP = 39
+
+
 class ProtocolCode(object):
     # BASIC
     HEADER = 0xFE
@@ -18,14 +33,14 @@ class ProtocolCode(object):
     GET_ROBOT_ID = 0x03
     OVER_LIMIT_RETURN_ZERO = 0x04
     SET_ROBOT_ID = 0x04
-    
+
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
-    
+
     SET_POS_SWITCH = 0x0B
     GET_POS_SWITCH = 0x0C
-    
+
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
@@ -77,10 +92,10 @@ class ProtocolCode(object):
     JOG_INCREMENT = 0x33
     JOG_STOP = 0x34
     JOG_INCREMENT_COORD = 0x34
-    
+
     COBOTX_GET_SOLUTION_ANGLES = 0x35
     COBOTX_SET_SOLUTION_ANGLES = 0x36
-    
+
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
     SET_ENCODERS = 0x3C
@@ -110,8 +125,7 @@ class ProtocolCode(object):
     SET_GRIPPER_ENABLED = 0x58
     GET_ZERO_POS = 0x59
     IS_INIT_CALIBRATION = 0x5A
-    
-    
+
     # ATOM IO
     SET_PIN_MODE = 0x60
     SET_DIGITAL_OUTPUT = 0x61
@@ -144,7 +158,6 @@ class ProtocolCode(object):
     SET_MODEL_DIRECTION = 0x7D
     GET_FILTER_LEN = 0x7E
     SET_FILTER_LEN = 0x7F
-    
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -222,14 +235,16 @@ class ProtocolCode(object):
     GET_SERVO_LASTPDI = 0xE6
     SERVO_RESTORE = 0xE7
     SET_VOID_COMPENSATE = 0xE7
-    SET_ERROR_DETECT_MODE = 0xE8
-    GET_ERROR_DETECT_MODE = 0xE9
-    
+    SET_TOQUE_GRIPPER = 0xE8
+    GET_TOQUE_GRIPPER = 0xE9
+    # SET_ERROR_DETECT_MODE = 0xE8
+    # GET_ERROR_DETECT_MODE = 0xE9
+
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
-    
+
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
     MERCURY_DRAG_TECH_PAUSE = 0x72
@@ -327,19 +342,20 @@ class DataProcessor(object):
         if genre == 178:
             # 修改wifi端口
             command_data = self._encode_int16(command_data)
-            
+
         elif genre in [76, 77]:
-            command_data = [command_data[0]] + self._encode_int16(command_data[1]*10)
-        elif genre == 115 and self.__class__.__name__ not in  ["MyArmC", "MyArmM", "Mercury","MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
-            command_data = [command_data[1],command_data[3]]
+            command_data = [command_data[0]] + self._encode_int16(command_data[1] * 10)
+        elif genre == 115 and self.__class__.__name__ not in ["MyArmC", "MyArmM", "Mercury", "MercurySocket", "Pro630",
+                                                              "Pro630Client", "Pro400Client", "Pro400"]:
+            command_data = [command_data[1], command_data[3]]
         LEN = len(command_data) + 2
-        
+
         command = [
-                ProtocolCode.HEADER,
-                ProtocolCode.HEADER,
-                LEN,
-                genre,
-            ]
+            ProtocolCode.HEADER,
+            ProtocolCode.HEADER,
+            LEN,
+            genre,
+        ]
         if command_data:
             command.extend(command_data)
         if self.__class__.__name__ in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
@@ -387,7 +403,7 @@ class DataProcessor(object):
 
     def _int2coord(self, _int):
         return round(_int / 10.0, 2)
-    
+
     @classmethod
     def crc_check(cls, command):
         crc = 0xffff
@@ -395,7 +411,7 @@ class DataProcessor(object):
             crc ^= command[index]
             for _ in range(8):
                 if crc & 1 == 1:
-                    crc >>=  1
+                    crc >>= 1
                     crc ^= 0xA001
                 else:
                     crc >>= 1
@@ -407,6 +423,7 @@ class DataProcessor(object):
             if isinstance(crc_res[i], str):
                 crc_res[i] = ord(crc_res[i])
         return crc_res
+
     # def encode_int16(self, data):
     #     encoded_data = []
 
@@ -434,7 +451,12 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre in [ProtocolCode.SET_ENCODERS_DRAG] and index in [0, 1] and _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG] and index in [0, 1] and _class in ["Mercury",
+                                                                                                "MercurySocket",
+                                                                                                "Pro630",
+                                                                                                "Pro630Client",
+                                                                                                "Pro400Client",
+                                                                                                "Pro400"]:
                     for data in args[index]:
                         byte_value = data.to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -447,7 +469,9 @@ class DataProcessor(object):
                 if isinstance(args[index], str):
                     processed_args.append(args[index])
                 else:
-                    if genre == ProtocolCode.SET_SERVO_DATA and _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"] and index == 2:
+                    if genre == ProtocolCode.SET_SERVO_DATA and _class in ["Mercury", "MercurySocket", "Pro630",
+                                                                           "Pro630Client", "Pro400Client",
+                                                                           "Pro400"] and index == 2:
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
@@ -493,7 +517,7 @@ class DataProcessor(object):
             data_len = data[header_i + 3] - 2
         elif arm == 14:
             data_len = data[header_i + 2] - 3
-            
+
         unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
         if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
             data_pos = header_i + 4
@@ -508,10 +532,11 @@ class DataProcessor(object):
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
-        valid_data = data[data_pos : data_pos + data_len]
+        valid_data = data[data_pos: data_pos + data_len]
         # process valid data
         res = []
-        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
+        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS,
+                     ProtocolCode.GO_ZERO]:
             for i in valid_data:
                 res.append(i)
             return res
@@ -533,12 +558,12 @@ class DataProcessor(object):
             elif data_len == 8 and arm == 14 and cmd_id == ProtocolCode.GET_DOWN_ENCODERS:
                 i = 0
                 while i < data_len:
-                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    i+=4
+                    byte_value = int.from_bytes(valid_data[i:i + 4], byteorder='big', signed=True)
+                    i += 4
                     res.append(byte_value)
                 return res
             for header_i in range(0, len(valid_data), 2):
-                one = valid_data[header_i : header_i + 2]
+                one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
         elif data_len == 2:
             if genre in [
@@ -561,45 +586,45 @@ class DataProcessor(object):
                 byte_value = int.from_bytes(valid_data, byteorder='big', signed=True)
                 res.append(byte_value)
                 return res
-            for i in range(1,4):
+            for i in range(1, 4):
                 res.append(valid_data[i])
         elif data_len == 7:
             error_list = [i for i in valid_data]
             for i in error_list:
-                if i in range(16,23):
+                if i in range(16, 23):
                     res.append(1)
-                elif i in range(23,29):
+                elif i in range(23, 29):
                     res.append(2)
-                elif i in range(32,112):
+                elif i in range(32, 112):
                     res.append(3)
                 else:
                     res.append(i)
         elif data_len == 28:
             for i in range(0, data_len, 4):
-                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                res.append(byte_value) 
+                byte_value = int.from_bytes(valid_data[i:i + 4], byteorder='big', signed=True)
+                res.append(byte_value)
         elif data_len == 40:
             i = 0
             while i < data_len:
                 if i < 28:
-                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    res.append(byte_value) 
-                    i+=4
+                    byte_value = int.from_bytes(valid_data[i:i + 4], byteorder='big', signed=True)
+                    res.append(byte_value)
+                    i += 4
                 else:
-                    one = valid_data[i : i + 2]
+                    one = valid_data[i: i + 2]
                     res.append(self._decode_int16(one))
-                    i+=2
+                    i += 2
         elif data_len == 30:
             i = 0
             res = []
             while i < 30:
                 if i < 9 or i >= 23:
                     res.append(valid_data[i])
-                    i+=1
+                    i += 1
                 elif i < 23:
-                    one = valid_data[i : i + 2]
+                    one = valid_data[i: i + 2]
                     res.append(self._decode_int16(one))
-                    i+=2
+                    i += 2
             return res
         elif data_len == 38:
             i = 0
@@ -607,20 +632,21 @@ class DataProcessor(object):
             while i < data_len:
                 if i < 10 or i >= 30:
                     res.append(valid_data[i])
-                    i+=1
+                    i += 1
                 elif i < 38:
-                    one = valid_data[i : i + 2]
+                    one = valid_data[i: i + 2]
                     res.append(self._decode_int16(one))
-                    i+=2
+                    i += 2
             return res
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
                 ProtocolCode.GET_SERVO_STATUS,
                 ProtocolCode.GET_SERVO_TEMPS,
+                ProtocolCode.GET_TOQUE_GRIPPER,
             ]:
                 for i in range(data_len):
-                    data1 = self._decode_int8(valid_data[i : i + 1])
+                    data1 = self._decode_int8(valid_data[i: i + 1])
                     res.append(0xFF & data1 if data1 < 0 else data1)
                 return res
             res.append(self._decode_int8(valid_data))
@@ -631,6 +657,19 @@ class DataProcessor(object):
 
     def _process_single(self, data):
         return data[0] if data else -1
+
+    def _process_high_low_bytes(self, data):
+        if not data:
+            return -1
+
+        if len(data) < 2:
+            return -1
+
+        # Get the last two bits, low and high
+        low_byte = data[-1]
+        high_byte = data[-2]
+        combined_value = (high_byte << 8) | low_byte
+        return combined_value
 
     @staticmethod
     def check_python_version():
@@ -654,7 +693,7 @@ def write(self, command, method=None):
             else:
                 log_command += hex(i)[2:] + " "
         self.log.debug("_write: {}".format(log_command))
-                
+
         py_version = DataProcessor.check_python_version()
         if py_version == 2:
             self.sock.sendall("".join([chr(b) for b in command]))
@@ -688,7 +727,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
     else:
         wait_time = 0.5
     if method is not None:
-         wait_time = 0.3
+        wait_time = 0.3
     if timeout is not None:
         wait_time = timeout
     if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
@@ -697,7 +736,10 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                        ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP]:
             wait_time = 3
-        elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
+        elif genre in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD,
+                       ProtocolCode.SEND_COORDS, ProtocolCode.JOG_ANGLE, ProtocolCode.JOG_COORD,
+                       ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD,
+                       ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
             wait_time = 300
     data = b""
 
@@ -718,7 +760,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                 data = self.sock.recv(1024)
                 if isinstance(data, str):
                     datas = bytearray()
-                    for i in data:   
+                    for i in data:
                         datas += hex(ord(i))
             except:
                 data = b""
@@ -750,7 +792,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                     datas += data
                     crc = self._serial_port.read(2)
                     if DataProcessor.crc_check(datas) == [v for v in crc]:
-                        datas+=crc
+                        datas += crc
                         break
             if data_len == 1 and data == b"\xfa":
                 datas += data
@@ -789,5 +831,5 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             for d in datas:
                 command_log += hex(d)[2:] + " "
             self.log.debug("_read : {}".format(command_log))
-            
+
         return datas
