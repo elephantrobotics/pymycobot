@@ -205,10 +205,10 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             if "MyCobot" in class_name or "MechArm" in class_name:
                 if len(value) != 6:
                     raise exception_class("The length of `encoders` must be 6.")
-            elif "MyPalletizer" in class_name:
+            elif class_name in ["MyPalletizer", "MyPalletizer260"]:
                 if len(value) != 4:
                     raise exception_class("The length of `encoders` must be 4.")
-            elif "MyPalletizer" in class_name:
+            elif "MyArm" in class_name:
                 if len(value) != 7:
                     raise exception_class("The length of `encoders` must be 7.")
             for data in value:
@@ -221,7 +221,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                 if len(value) not in [6, 7]:
                     raise exception_class(
                         "The length of `speeds` must be 6. but the received value is {}".format(value))
-            elif "MyPalletizer" in class_name:
+            elif class_name in ["MyPalletizer", "MyPalletizer260"]:
                 if len(value) != 4:
                     raise exception_class("The length of `speeds` must be 4.")
             elif "MyArm" in class_name:
@@ -237,7 +237,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             if "MyCobot" in class_name or "MechArm" in class_name:
                 if value < 1 or value > 6:
                     raise exception_class("The range of id is 1 ~ 6, but the received is {}".format(value))
-            if "MyPalletizer" in class_name:
+            if class_name in ["MyPalletizer", "MyPalletizer260"]:
                 if value < 1 or value > 4:
                     raise exception_class("The range of id is 1 ~ 4, but the received is {}".format(value))
             elif "MyArm" in class_name or "MyCobot" in class_name or "MechArm" in class_name:
@@ -324,6 +324,13 @@ def calibration_parameters(**kwargs):
             "coords_min": [-272, -272, -36, -180, -180, -180],
             "coords_max": [272, 272, 408.9, 180, 180, 180]
         },
+        "MechArm270": {
+            "id": [1, 2, 3, 4, 5, 6, 7],
+            "angles_min": [-165, -90, -180, -165, -115, -175],
+            "angles_max": [165, 90, 70, 165, 115, 175],
+            "coords_min": [-272, -272, -36, -180, -180, -180],
+            "coords_max": [272, 272, 408.9, 180, 180, 180]
+        },
         "MechArmSocket": {
             "id": [1, 2, 3, 4, 5, 6, 7],
             "angles_min": [-165, -90, -180, -165, -115, -175],
@@ -346,6 +353,13 @@ def calibration_parameters(**kwargs):
             "coords_max": [310, 310, 480, 180, 180, 180]
         },
         "MyPalletizer": {
+            "id": [1, 2, 3, 4, 7],
+            "angles_min": [-162, -2, -92, -180],
+            "angles_max": [162, 90, 60, 180],
+            "coords_min": [-260, -260, -15, -180],
+            "coords_max": [260, 260, 357.58, 180]
+        },
+        "MyPalletizer260": {
             "id": [1, 2, 3, 4, 7],
             "angles_min": [-162, -2, -92, -180],
             "angles_max": [162, 90, 60, 180],
