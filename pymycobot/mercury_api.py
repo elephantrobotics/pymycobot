@@ -10,7 +10,7 @@ import traceback
 import json
 
 from pymycobot.error import calibration_parameters, restrict_serial_port
-from pymycobot.common import DataProcessor, ProtocolCode, write, read
+from pymycobot.common import DataProcessor, ProtocolCode, write, read, ProGripper
 from pymycobot.robot_info import _interpret_status_code
 
 
@@ -2109,3 +2109,45 @@ class MercuryCommandGenerator(DataProcessor):
     
     def clear_encoder_error(self, joint_id):
         return self._mesg(ProtocolCode.CLEAR_ENCODER_ERROR, joint_id)
+    
+    def set_pro_gripper(self, gripper_id, address, value=0):
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [value])
+    
+    def get_pro_gripper(self, gripper_id, address):
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, address)
+    
+    def set_pro_gripper_angle(self, gripper_id, angle):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, angle)
+    
+    def get_pro_gripper_angle(self, gripper_id):
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE)
+    
+    def set_pro_gripper_calibration(self, gripper_id):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_CALIBRATION)
+    
+    def get_pro_gripper_status(self, gripper_id):
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_STATUS)
+    
+    def set_pro_gripper_torque(self, gripper_id, torque):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_TORQUE, torque)
+    
+    def get_pro_gripper_torque(self, gripper_id):
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_TORQUE)
+    
+    def set_pro_gripper_speed(self, gripper_id, speed):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_SPEED, speed)
+    
+    def get_pro_gripper_speed(self, gripper_id):
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_SPEED)
+    
+    def set_pro_gripper_abs_angle(self, gripper_id, angle):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ABS_ANGLE, angle, has_return=True)
+    
+    def set_pro_gripper_pause(self, gripper_id):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_PAUSE)
+    
+    def set_pro_gripper_stop(self, gripper_id):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_STOP)
+    
+    def set_pro_gripper_resume(self, gripper_id):
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_RESUME)

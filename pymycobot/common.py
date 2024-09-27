@@ -9,6 +9,20 @@ import sys
 from pymycobot.log import setup_logging
 from pymycobot.error import calibration_parameters
 
+class ProGripper(object):
+    SET_GRIPPER_ANGLE = 11
+    GET_GRIPPER_ANGLE = 12
+    SET_GRIPPER_CALIBRATION = 13
+    GET_GRIPPER_STATUS = 14
+    SET_GRIPPER_TORQUE = 27
+    GET_GRIPPER_TORQUE = 28
+    SET_GRIPPER_SPEED = 32
+    GET_GRIPPER_SPEED = 33
+    SET_GRIPPER_ABS_ANGLE = 36
+    SET_GRIPPER_PAUSE = 37
+    SET_GRIPPER_RESUME = 38
+    SET_GRIPPER_STOP = 39
+
 
 class ProtocolCode(object):
     # BASIC
@@ -246,6 +260,8 @@ class ProtocolCode(object):
     GET_SERVO_LASTPDI = 0xE6
     SERVO_RESTORE = 0xE7
     SET_VOID_COMPENSATE = 0xE7
+    SET_TOQUE_GRIPPER = 0xE8
+    GET_TOQUE_GRIPPER = 0xE9
     # SET_ERROR_DETECT_MODE = 0xE8
     # GET_ERROR_DETECT_MODE = 0xE9
     

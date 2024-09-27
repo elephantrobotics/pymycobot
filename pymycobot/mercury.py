@@ -40,6 +40,11 @@ class Mercury(MercuryCommandGenerator):
         except serial.serialutil.SerialException as e:
             self._serial_port.close()
             time.sleep(0.5)
+            self._serial_port = serial.Serial()
+            self._serial_port.port = port
+            self._serial_port.baudrate = baudrate
+            self._serial_port.timeout = timeout
+            self._serial_port.rts = False
             self._serial_port.open()
         self.get_limit_switch()
 
