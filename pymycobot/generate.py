@@ -151,8 +151,7 @@ class CommandGenerator(DataProcessor):
         """Send one angle of joint to robot arm.
 
         Args:
-            id : Joint id(genre.Angle)
-                    for mycobot / mecharm: int 1-6.
+            id : Joint id(genre.Angle) int 1-6.
             angle : angle value(float).
             speed : (int) 1 ~ 100
         """
@@ -163,8 +162,7 @@ class CommandGenerator(DataProcessor):
         """Send the angles of all joints to robot arm.
 
         Args:
-            angles: a list of angle values(List[float]).
-                        for mycobot / mecharm: len 6.
+            angles: a list of angle values(List[float]). len 6.
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
@@ -175,10 +173,8 @@ class CommandGenerator(DataProcessor):
         """Get the coords from robot arm, coordinate system based on base.
 
         Return:
-            list : A float list of coord .
-                for mycobot / mecharm: [x, y, z, rx, ry, rz].
-                for mypalletizer: [x, y, z, θ].
-                for myArm: [x, y, z, rx, ry, rz].
+            list : A float list of coord .[x, y, z, rx, ry, rz]
+
         
         """
         return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
@@ -187,8 +183,7 @@ class CommandGenerator(DataProcessor):
         """Send one coord to robot arm. 
 
         Args:
-            id(int) : coord id(genre.Coord)\n
-                        for mycobot / mecharm / myArm: int 1-6.\n
+            id(int) : coord id(genre.Coord) int 1-6.
             coord(float) : coord value, mm
             speed(int) : 1 ~ 100
         """
@@ -200,8 +195,7 @@ class CommandGenerator(DataProcessor):
         """Send all coords to robot arm.
 
         Args:
-            coords: a list of coords value(List[float]).
-                        for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
+            coords: a list of coords value(List[float]).[x(mm), y, z, rx(angle), ry, rz]\n
             speed : (int) 1 ~ 100
             mode : (int) 0 - angluar, 1 - linear
         """
@@ -220,8 +214,7 @@ class CommandGenerator(DataProcessor):
         """Judge whether in the position.
 
         Args:
-            data: A data list, angles or coords.
-                    for mycobot / mecharm: len 6.
+            data: A data list, angles or coords.len 6.
             id: 1 - coords, 0 - angles
 
         Return:
@@ -259,8 +252,7 @@ class CommandGenerator(DataProcessor):
         """Jog control angle.
 
         Args:
-            joint_id: int
-                    for mycobot / mecharm: int 1-6.\n
+            joint_id: int 1-6.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -271,8 +263,7 @@ class CommandGenerator(DataProcessor):
         """Jog control coord.
 
         Args:
-            coord_id: int
-                    for mycobot / mecharm: int 1-6.\n
+            coord_id: int 1-6
             direction: 0 - decrease, 1 - increase
             speed: int (1 - 100)
         """
@@ -283,8 +274,7 @@ class CommandGenerator(DataProcessor):
         """step mode
 
         Args:
-            joint_id:
-                for mycobot / mecharm: int 1-6.
+            joint_id: int 1-6.
             increment:
             speed: int (0 - 100)
         """
@@ -317,9 +307,8 @@ class CommandGenerator(DataProcessor):
         """Set a single joint rotation to the specified potential value.
 
         Args:
-            joint_id: int
-                for mycobot / mecharm: Joint id 1 - 6
-                for mycobot gripper: Joint id 7
+            joint_id: int  1 - 6
+                for gripper: Joint id 7
             encoder: The value of the set encoder.
             speed : 1 - 100
         """
@@ -331,9 +320,8 @@ class CommandGenerator(DataProcessor):
         """Obtain the specified joint potential value.
 
         Args:
-            joint_id: (int)
-                for mycobot / mecharm: Joint id 1 - 6
-                for mycobot gripper: Joint id 7
+            joint_id: (int) 1 - 6
+                for gripper: Joint id 7
         """
         self.calibration_parameters(class_name=self.__class__.__name__, encode_id=joint_id)
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
@@ -342,8 +330,7 @@ class CommandGenerator(DataProcessor):
         """Set the six joints of the manipulator to execute synchronously to the specified position.
 
         Args:
-            encoders: A encoder list.
-                for mycobot / mecharm: len 6.
+            encoders: A encoder list. len 6.
             sp: speed 1 ~ 100
         """
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
@@ -362,10 +349,7 @@ class CommandGenerator(DataProcessor):
         """Gets the minimum movement angle of the specified joint
 
         Args: 
-            joint_id:
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: Joint id 1 - 7.
+            joint_id: 1 - 6
 
         Return:
             angle value(float)
@@ -377,10 +361,7 @@ class CommandGenerator(DataProcessor):
         """Gets the maximum movement angle of the specified joint
         
         Args:
-            joint_id:
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: Joint id 1 - 7.
+            joint_id: 1 - 6
 
         Return:
             angle value(float)
@@ -393,11 +374,7 @@ class CommandGenerator(DataProcessor):
         """To detect the connection state of a single joint
 
         Args:
-            servo_id:
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: Joint id 1 - 7.
-
+            servo_id: 1 - 6
         Return:
             0 - disable
             1 - enable
@@ -420,10 +397,7 @@ class CommandGenerator(DataProcessor):
         """Set the data parameters of the specified address of the steering gear
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: joint id 1 - 7
+            servo_id: Serial number of articulated steering gear. 1 - 6
             data_id: Data address.
             value: 0 - 4096
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
@@ -440,10 +414,7 @@ class CommandGenerator(DataProcessor):
         """Read the data parameter of the specified address of the steering gear.
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: joint id 1 - 7
+            servo_id: Serial number of articulated steering gear.1 - 6
             data_id: Data address.
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
 
@@ -465,10 +436,7 @@ class CommandGenerator(DataProcessor):
             and the corresponding potential value is 2048.
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: joint id 1 - 7
+            servo_id: Serial number of articulated steering gear. 1 - 6
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
@@ -477,10 +445,7 @@ class CommandGenerator(DataProcessor):
         """Make it stop when the joint is in motion, and the buffer distance is positively related to the existing speed
         
         Args:
-            joint_id: 
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: joint id 1 - 7
+            joint_id:  1 - 6
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.JOINT_BRAKE, joint_id)
@@ -489,10 +454,8 @@ class CommandGenerator(DataProcessor):
         """Power off designated servo
 
         Args:
-            servo_id: int
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: joint id 1 - 7
+            servo_id: int 1 - 6
+
             mode: Default damping, set to 1, cancel damping
         """
         if mode is None:
@@ -507,10 +470,7 @@ class CommandGenerator(DataProcessor):
         """Power on designated servo
 
         Args:
-            servo_id: int
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for myArm: joint id 1 - 7
+            servo_id: int 1 - 6
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)

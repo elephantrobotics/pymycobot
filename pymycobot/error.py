@@ -42,6 +42,10 @@ class MyPalletizerDataException(Exception):
     pass
 
 
+class MyPalletizer260DataException(Exception):
+    pass
+
+
 class MyBuddyDataException(Exception):
     pass
 
@@ -405,7 +409,6 @@ def calibration_parameters(**kwargs):
     }
     parameter_list = list(kwargs.keys())
     class_name = kwargs.get("class_name", None)
-    print('class_name:', class_name)
     if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
@@ -864,12 +867,74 @@ def calibration_parameters(**kwargs):
                         raise MyCobot320DataException(
                             "'address' in {} cannot be one of the following values: {}, but the received value is {}".format(
                                 parameter, invalid_addresses, address))
-    elif class_name in ["MechArm", "MechArmSocket", "MechArm270"]:
+    elif class_name in ["MechArm", "MechArmSocket"]:
+        public_check(parameter_list, kwargs, robot_limit, class_name, MechArmDataException)
+    elif class_name in ["MechArm270", "MechArmSocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
             value_type = type(value)
+            if parameter == 'id' and value not in robot_limit[class_name][parameter]:
+                check_id(value, robot_limit[class_name][parameter], MechArmDataException)
+            elif parameter == 'rgb':
+                check_rgb_value(value, MechArmDataException, class_name)
+            elif parameter == 'value':
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if value < 0 or value > 4096:
+                    raise MechArmDataException(
+                        "The range of {} is 0 ~ 4096, but the received value is {}".format(parameter, value))
+            elif parameter == 'pin_mode':
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if value not in [0, 1, 2]:
+                    raise MechArmDataException(
+                        "The data supported by parameter {} is 0 or 1 or 2, but the received value is {}".format(
+                            parameter,
+                            value))
+            elif parameter == 'pin_signal':
+                check_0_or_1(parameter, value, [0, 1], value_type, MechArmDataException, int)
+            elif parameter == 'speed':
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if not 1 <= value <= 100:
+                    raise MechArmDataException(
+                        "speed value not right, should be 1 ~ 100, the received speed is %s"
+                        % value
+                    )
+            elif parameter == 'flag':
+                check_0_or_1(parameter, value, [0, 1, 254], value_type, MechArmDataException, int)
+            elif parameter == 'gripper_type':
+                check_0_or_1(parameter, value, [1, 3, 4], value_type, MechArmDataException, int)
+            elif parameter == '_type_1':
+                check_0_or_1(parameter, value, [1, 2, 3, 4], value_type, MechArmDataException, int)
+                # if value not in [0, 1, 10]:
+                #     raise exception_class("The data supported by parameter {} is 0 or 1 or 10, but the received value is {}".format(parameter, value))
+            elif parameter == 'gripper_value':
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if value < 0 or value > 100:
+                    raise MechArmDataException(
+                        "The range of {} is 0 ~ 100, but the received value is {}".format(parameter, value))
+            elif parameter in ['account', 'password']:
+                check_value_type(parameter, value_type, MechArmDataException, str)
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+                check_0_or_1(parameter, value, [0, 1], value_type, MechArmDataException, int)
+            elif parameter == 'acceleration':
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if not 1 <= value <= 100:
+                    raise MechArmDataException(
+                        "{} value not right, should be 1 ~ 100, the received is {}".format(parameter, value)
+                    )
             if parameter == "angles":
                 check_angles(value, robot_limit, class_name, MechArmDataException)
+            elif parameter == 'angle':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1
+                if value < robot_limit[class_name]["angles_min"][index] or value > \
+                        robot_limit[class_name]["angles_max"][
+                            index]:
+                    raise MechArmDataException(
+                        "angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index],
+                            value
+                        )
+                    )
             elif parameter == "coords":
                 check_coords(value, robot_limit, class_name, MechArmDataException)
             elif parameter == 'coord':
@@ -878,13 +943,323 @@ def calibration_parameters(**kwargs):
 
                 if value < robot_limit[class_name]["coords_min"][index] or value > \
                         robot_limit[class_name]["coords_max"][index]:
-                    raise MyCobot320DataException(
+                    raise MechArmDataException(
                         "Coordinate value not right, should be {0} ~ {1}, but received {2}".format(
                             robot_limit[class_name]["coords_min"][index],
                             robot_limit[class_name]["coords_max"][index],
                             value
                         )
                     )
-        public_check(parameter_list, kwargs, robot_limit, class_name, MechArmDataException)
+            elif parameter == 'encoders':
+                if len(value) != 6:
+                    raise MechArmDataException("The length of `encoders` must be 6.")
+                for data in value:
+                    data_type = type(data)
+                    check_value_type(parameter, data_type, MechArmDataException, int)
+                    if data < 0 or data > 4096:
+                        raise MechArmDataException(
+                            "The range of encoder is 0 ~ 4096, but the received value is {}".format(data))
+            elif parameter == 'speeds':
+                if len(value) not in [6, 7]:
+                    raise MechArmDataException(
+                        "The length of `speeds` must be 6. but the received value is {}".format(value))
+                for data in value:
+                    data_type = type(data)
+                    check_value_type(parameter, data_type, MechArmDataException, int)
+                    if data < 0 or data > 3400:
+                        raise MechArmDataException(
+                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+            elif parameter in ['servo_id_pdi', 'encode_id']:
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if value < 1 or value > 6:
+                    raise MechArmDataException("The range of id is 1 ~ 6, but the received is {}".format(value))
+            elif parameter == "torque":
+                torque_min = 150
+                torque_max = 980
+                if value < torque_min or value > torque_max:
+                    raise MechArmDataException(
+                        "The range of torque is {} ~ {}, but the received is {}".format(torque_min, torque_max, value))
+            elif parameter == "current":
+                current_min = 1
+                current_max = 500
+                if value < current_min or value > current_max:
+                    raise MechArmDataException(
+                        "The range of current is {} ~ {}, but the received is {}".format(current_min, current_max,
+                                                                                         value))
+            elif parameter == 'end_direction':
+                check_0_or_1(parameter, value, [1, 2, 3], value_type, MechArmDataException, int)
     elif class_name in ["MyArm", "MyArmSocket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MyArmDataException)
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter == 'id' and value not in robot_limit[class_name][parameter]:
+                check_id(value, robot_limit[class_name][parameter], MyArmDataException)
+            elif parameter == 'rgb':
+                check_rgb_value(value, MyArmDataException, class_name)
+            elif parameter == 'value':
+                check_value_type(parameter, value_type, MyArmDataException, int)
+                if value < 0 or value > 4096:
+                    raise MyArmDataException(
+                        "The range of {} is 0 ~ 4096, but the received value is {}".format(parameter, value))
+            elif parameter == 'pin_mode':
+                check_value_type(parameter, value_type, MyArmDataException, int)
+                if value not in [0, 1, 2]:
+                    raise MyArmDataException(
+                        "The data supported by parameter {} is 0 or 1 or 2, but the received value is {}".format(
+                            parameter,
+                            value))
+            elif parameter == 'pin_signal':
+                check_0_or_1(parameter, value, [0, 1], value_type, MyArmDataException, int)
+            elif parameter == 'speed':
+                check_value_type(parameter, value_type, MyArmDataException, int)
+                if not 1 <= value <= 100:
+                    raise MyArmDataException(
+                        "speed value not right, should be 1 ~ 100, the received speed is %s"
+                        % value
+                    )
+            elif parameter == 'flag':
+                check_0_or_1(parameter, value, [0, 1, 254], value_type, MyArmDataException, int)
+            elif parameter == 'gripper_type':
+                check_0_or_1(parameter, value, [1, 3, 4], value_type, MyArmDataException, int)
+            elif parameter == '_type_1':
+                check_0_or_1(parameter, value, [1, 2, 3, 4], value_type, MyArmDataException, int)
+                # if value not in [0, 1, 10]:
+                #     raise exception_class("The data supported by parameter {} is 0 or 1 or 10, but the received value is {}".format(parameter, value))
+            elif parameter == 'gripper_value':
+                check_value_type(parameter, value_type, MyArmDataException, int)
+                if value < 0 or value > 100:
+                    raise MyArmDataException(
+                        "The range of {} is 0 ~ 100, but the received value is {}".format(parameter, value))
+            elif parameter in ['account', 'password']:
+                check_value_type(parameter, value_type, MyArmDataException, str)
+            elif parameter == 'coords':
+                check_coords(value, robot_limit, class_name, MyArmDataException)
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+                check_0_or_1(parameter, value, [0, 1], value_type, MyArmDataException, int)
+            elif parameter == 'acceleration':
+                check_value_type(parameter, value_type, MyArmDataException, int)
+                if not 1 <= value <= 100:
+                    raise MyArmDataException(
+                        "{} value not right, should be 1 ~ 100, the received is {}".format(parameter, value)
+                    )
+            elif parameter == "angles":
+                if not isinstance(value, list):
+                    raise MyArmDataException("`angles` must be a list.")
+                # Check angles
+                if len(value) != 7:
+                    raise MyArmDataException("The length of `angles` must be 7.")
+                for idx, angle in enumerate(value):
+                    if not robot_limit[class_name]["angles_min"][idx] <= angle <= robot_limit[class_name]["angles_max"][
+                        idx]:
+                        raise MyArmDataException(
+                            "Has invalid angle value, error on index {0}. Received {3} but angle should be {1} ~ {2}.".format(
+                                idx, robot_limit[class_name]["angles_min"][idx],
+                                robot_limit[class_name]["angles_max"][idx], angle
+                            )
+                        )
+            elif parameter == 'angle':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1
+                if value < robot_limit[class_name]["angles_min"][index] or value > \
+                        robot_limit[class_name]["angles_max"][
+                            index]:
+                    raise MyArmDataException(
+                        "angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index],
+                            value
+                        )
+                    )
+            elif parameter == 'coord':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
+
+                if value < robot_limit[class_name]["coords_min"][index] or value > \
+                        robot_limit[class_name]["coords_max"][index]:
+                    raise MechArmDataException(
+                        "Coordinate value not right, should be {0} ~ {1}, but received {2}".format(
+                            robot_limit[class_name]["coords_min"][index],
+                            robot_limit[class_name]["coords_max"][index],
+                            value
+                        )
+                    )
+            elif parameter == 'encoders':
+                if len(value) != 7:
+                    raise MyArmDataException("The length of `encoders` must be 7.")
+                for data in value:
+                    data_type = type(data)
+                    check_value_type(parameter, data_type, MyArmDataException, int)
+                    if data < 0 or data > 4096:
+                        raise MyArmDataException(
+                            "The range of encoder is 0 ~ 4096, but the received value is {}".format(data))
+            elif parameter == 'speeds':
+                if len(value) != 7:
+                    raise MyArmDataException("The length of `speeds` must be 7.")
+                for data in value:
+                    data_type = type(data)
+                    check_value_type(parameter, data_type, MyArmDataException, int)
+                    if data < 0 or data > 3400:
+                        raise MyArmDataException(
+                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+            elif parameter in ['servo_id_pdi', 'encode_id']:
+                check_value_type(parameter, value_type, MyArmDataException, int)
+                if value < 1 or value > 7:
+                    raise MyArmDataException("The range of id is 1 ~ 7, but the received is {}".format(value))
+            elif parameter == "torque":
+                torque_min = 150
+                torque_max = 980
+                if value < torque_min or value > torque_max:
+                    raise MyArmDataException(
+                        "The range of torque is {} ~ {}, but the received is {}".format(torque_min, torque_max, value))
+            elif parameter == "current":
+                current_min = 1
+                current_max = 500
+                if value < current_min or value > current_max:
+                    raise MyArmDataException(
+                        "The range of current is {} ~ {}, but the received is {}".format(current_min, current_max,
+                                                                                         value))
+            elif parameter == 'end_direction':
+                check_0_or_1(parameter, value, [1, 2, 3], value_type, MyArmDataException, int)
+    elif class_name in ["MyPalletizer260", "MyPalletizerSocket"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter == 'id' and value not in robot_limit[class_name][parameter]:
+                check_id(value, robot_limit[class_name][parameter], MyPalletizer260DataException)
+            elif parameter == 'rgb':
+                check_rgb_value(value, MyPalletizer260DataException, class_name)
+            elif parameter == 'value':
+                check_value_type(parameter, value_type, MyPalletizer260DataException, int)
+                if value < 0 or value > 4096:
+                    raise MyPalletizer260DataException(
+                        "The range of {} is 0 ~ 4096, but the received value is {}".format(parameter, value))
+            elif parameter == 'pin_mode':
+                check_value_type(parameter, value_type, MyPalletizer260DataException, int)
+                if value not in [0, 1, 2]:
+                    raise MyPalletizer260DataException(
+                        "The data supported by parameter {} is 0 or 1 or 2, but the received value is {}".format(
+                            parameter,
+                            value))
+            elif parameter == 'pin_signal':
+                check_0_or_1(parameter, value, [0, 1], value_type, MyPalletizer260DataException, int)
+            elif parameter == 'speed':
+                check_value_type(parameter, value_type, MyPalletizer260DataException, int)
+                if not 1 <= value <= 100:
+                    raise MyPalletizer260DataException(
+                        "speed value not right, should be 1 ~ 100, the received speed is %s"
+                        % value
+                    )
+            elif parameter == 'flag':
+                check_0_or_1(parameter, value, [0, 1, 254], value_type, MyPalletizer260DataException, int)
+            elif parameter == 'gripper_type':
+                check_0_or_1(parameter, value, [1, 3, 4], value_type, MyPalletizer260DataException, int)
+            elif parameter == '_type_1':
+                check_0_or_1(parameter, value, [1, 2, 3, 4], value_type, MyPalletizer260DataException, int)
+                # if value not in [0, 1, 10]:
+                #     raise exception_class("The data supported by parameter {} is 0 or 1 or 10, but the received value is {}".format(parameter, value))
+            elif parameter == 'gripper_value':
+                check_value_type(parameter, value_type, MyPalletizer260DataException, int)
+                if value < 0 or value > 100:
+                    raise MyPalletizer260DataException(
+                        "The range of {} is 0 ~ 100, but the received value is {}".format(parameter, value))
+            elif parameter in ['account', 'password']:
+                check_value_type(parameter, value_type, MyPalletizer260DataException, str)
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+                check_0_or_1(parameter, value, [0, 1], value_type, MyPalletizer260DataException, int)
+            elif parameter == 'acceleration':
+                check_value_type(parameter, value_type, MyPalletizer260DataException, int)
+                if not 1 <= value <= 100:
+                    raise MyPalletizer260DataException(
+                        "{} value not right, should be 1 ~ 100, the received is {}".format(parameter, value)
+                    )
+            elif parameter == "angles":
+                if not isinstance(value, list):
+                    raise MyPalletizer260DataException("`angles` must be a list.")
+                # Check angles
+                if len(value) != 4:
+                    raise MyPalletizer260DataException("The length of `angles` must be 4.")
+                for idx, angle in enumerate(value):
+                    if not robot_limit[class_name]["angles_min"][idx] <= angle <= robot_limit[class_name]["angles_max"][
+                        idx]:
+                        raise MyPalletizer260DataException(
+                            "Has invalid angle value, error on index {0}. Received {3} but angle should be {1} ~ {2}.".format(
+                                idx, robot_limit[class_name]["angles_min"][idx],
+                                robot_limit[class_name]["angles_max"][idx], angle
+                            )
+                        )
+            elif parameter == 'angle':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1
+                if value < robot_limit[class_name]["angles_min"][index] or value > \
+                        robot_limit[class_name]["angles_max"][
+                            index]:
+                    raise MyPalletizer260DataException(
+                        "angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index],
+                            value
+                        )
+                    )
+            elif parameter == "coords":
+                if not isinstance(value, list):
+                    raise MyPalletizer260DataException("`coords` must be a list.")
+                if len(value) != 4:
+                    raise MyPalletizer260DataException("The length of `coords` must be 4.")
+                for idx, coord in enumerate(value):
+                    if not robot_limit[class_name]["coords_min"][idx] <= coord <= robot_limit[class_name]["coords_max"][
+                        idx]:
+                        raise MyPalletizer260DataException(
+                            "Has invalid coord value, error on index {0}. received {3} .but angle should be {1} ~ {2}.".format(
+                                idx, robot_limit[class_name]["coords_min"][idx],
+                                robot_limit[class_name]["coords_max"][idx], coord
+                            )
+                        )
+            elif parameter == 'coord':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
+
+                if value < robot_limit[class_name]["coords_min"][index] or value > \
+                        robot_limit[class_name]["coords_max"][index]:
+                    raise MechArmDataException(
+                        "Coordinate value not right, should be {0} ~ {1}, but received {2}".format(
+                            robot_limit[class_name]["coords_min"][index],
+                            robot_limit[class_name]["coords_max"][index],
+                            value
+                        )
+                    )
+            elif parameter == 'encoders':
+                if len(value) != 4:
+                    raise MyPalletizer260DataException("The length of `encoders` must be 4.")
+                for data in value:
+                    data_type = type(data)
+                    check_value_type(parameter, data_type, MyPalletizer260DataException, int)
+                    if data < 0 or data > 4096:
+                        raise MyPalletizer260DataException(
+                            "The range of encoder is 0 ~ 4096, but the received value is {}".format(data))
+            elif parameter == 'speeds':
+                if len(value) != 4:
+                    raise MyPalletizer260DataException("The length of `speeds` must be 4.")
+                for data in value:
+                    data_type = type(data)
+                    check_value_type(parameter, data_type, MyPalletizer260DataException, int)
+                    if data < 0 or data > 3400:
+                        raise MyPalletizer260DataException(
+                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+            elif parameter in ['servo_id_pdi', 'encode_id']:
+                check_value_type(parameter, value_type, MyPalletizer260DataException, int)
+                if value < 1 or value > 4:
+                    raise MyPalletizer260DataException("The range of id is 1 ~ 4, but the received is {}".format(value))
+            elif parameter == "torque":
+                torque_min = 150
+                torque_max = 980
+                if value < torque_min or value > torque_max:
+                    raise MyPalletizer260DataException(
+                        "The range of torque is {} ~ {}, but the received is {}".format(torque_min, torque_max, value))
+            elif parameter == "current":
+                current_min = 1
+                current_max = 500
+                if value < current_min or value > current_max:
+                    raise MyPalletizer260DataException(
+                        "The range of current is {} ~ {}, but the received is {}".format(current_min, current_max,
+                                                                                         value))
+            elif parameter == 'end_direction':
+                check_0_or_1(parameter, value, [1, 2, 3], value_type, MyPalletizer260DataException, int)

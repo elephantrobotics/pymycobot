@@ -343,11 +343,8 @@ class MyCobot320Socket(CommandGenerator):
         """Set the joint maximum angle
 
         Args:
-            id: int.
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for mycobot gripper: Joint id 7
-                for myArm: Joint id 1 - 7.
+            id: int. 1 - 6
+
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
@@ -398,7 +395,7 @@ class MyCobot320Socket(CommandGenerator):
 
     # servo state value
     def get_servo_currents(self):
-        """Get joint current (Only for mycobot 320)
+        """Get joint current
 
         Return:
             0 ~ 3250 mA

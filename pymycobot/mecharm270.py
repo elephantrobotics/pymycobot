@@ -397,11 +397,7 @@ class MechArm270(CommandGenerator):
         """Set the joint maximum angle
 
         Args:
-            id: int.
-                for mycobot / mecharm: Joint id 1 - 6
-                for mypalletizer: Joint id 1 - 4
-                for mycobot gripper: Joint id 7
-                for myArm: Joint id 1 - 7.
+            id: int 1 - 6
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
@@ -413,7 +409,7 @@ class MechArm270(CommandGenerator):
         Args:
             id: int.
                 Joint id 1 - 6
-                for mycobot gripper: Joint id 7
+                for gripper: Joint id 7
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)

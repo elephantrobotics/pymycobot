@@ -183,8 +183,7 @@ class MyArm(CommandGenerator):
         """Send one angle of joint to robot arm.
 
         Args:
-            id : Joint id(genre.Angle)
-                    for myArm300: Joint id 1 - 7.
+            id : Joint id(genre.Angle) 1 - 7.
             angle : angle value(float).
             speed : (int) 1 ~ 100
         """
@@ -196,8 +195,7 @@ class MyArm(CommandGenerator):
         """Send the angles of all joints to robot arm.
 
         Args:
-            angles: a list of angle values(List[float]).
-                        for myArm300: len 7.
+            angles: a list of angle values(List[float]).len 7.
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
@@ -341,8 +339,7 @@ class MyArm(CommandGenerator):
         """Jog control angle.
 
         Args:
-            joint_id: int
-                    for myArm300: Joint id 1 - 7.
+            joint_id: int 1 - 7.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -353,8 +350,7 @@ class MyArm(CommandGenerator):
         """Jog control coord.
 
         Args:
-            coord_id: int
-                    for myArm300: int 1-6.\n
+            coord_id: int 1-6.\n
             direction: 0 - decrease, 1 - increase
             speed: int (1 - 100)
         """
@@ -365,8 +361,7 @@ class MyArm(CommandGenerator):
         """Jog absolute angle
 
         Args:
-            joint_id: int
-                    for myArm: Joint id 1 - 7.
+            joint_id: int 1 - 7.
             angle: -180 ~ 180
             speed: int (1 - 100)
         """
@@ -377,8 +372,7 @@ class MyArm(CommandGenerator):
         """step mode
 
         Args:
-            joint_id:
-                for myArm: Joint id 1 - 7.
+            joint_id: int 1 - 7.
             increment:
             speed: int (0 - 100)
         """
@@ -389,8 +383,7 @@ class MyArm(CommandGenerator):
         """Set a single joint rotation to the specified potential value.
 
         Args:
-            joint_id: int
-                for myArm300: Joint id 1 - 7.
+            joint_id: int 1 - 7.
             encoder: The value of the set encoder.
             speed : 1 - 100
         """
@@ -402,8 +395,7 @@ class MyArm(CommandGenerator):
         """Obtain the specified joint potential value.
 
         Args:
-            joint_id: (int)
-                for myArm300: Joint id 1 - 7.
+            joint_id: (int) 1 - 7.
         """
         self.calibration_parameters(class_name=self.__class__.__name__, encode_id=joint_id)
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
@@ -412,8 +404,7 @@ class MyArm(CommandGenerator):
         """Set the six joints of the manipulator to execute synchronously to the specified position.
 
         Args:
-            encoders: A encoder list.
-                for myArm300: len 7.
+            encoders: A encoder list.len 7.
             sp: speed 1 ~ 100
         """
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
@@ -432,8 +423,7 @@ class MyArm(CommandGenerator):
         """Gets the minimum movement angle of the specified joint
 
         Args:
-            joint_id:
-                for myArm300: Joint id 1 - 7.
+            joint_id: int 1 - 7.
 
         Return:
             angle value(float)
@@ -445,8 +435,7 @@ class MyArm(CommandGenerator):
         """Gets the maximum movement angle of the specified joint
 
         Args:
-            joint_id:
-                for myArm300: Joint id 1 - 7.
+            joint_id: int 1 - 7.
 
         Return:
             angle value(float)
@@ -459,8 +448,7 @@ class MyArm(CommandGenerator):
         """To detect the connection state of a single joint
 
         Args:
-            servo_id:
-                for myArm300: Joint id 1 - 7.
+            servo_id: Joint id 1 - 7.
 
         Return:
             0 - disable
@@ -474,8 +462,7 @@ class MyArm(CommandGenerator):
         """Set the data parameters of the specified address of the steering gear
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for myArm300: joint id 1 - 7
+            servo_id: Serial number of articulated steering gear.joint id 1 - 7
             data_id: Data address.
             value: 0 - 4096
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
@@ -492,8 +479,7 @@ class MyArm(CommandGenerator):
         """Read the data parameter of the specified address of the steering gear.
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for myArm300: joint id 1 - 7
+            servo_id: Serial number of articulated steering gear.joint id 1 - 7
             data_id: Data address.
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
 
@@ -515,8 +501,7 @@ class MyArm(CommandGenerator):
             and the corresponding potential value is 2048.
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for myArm300: joint id 1 - 7
+            servo_id: Serial number of articulated steering gear. joint id 1 - 7
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
@@ -525,8 +510,7 @@ class MyArm(CommandGenerator):
         """Make it stop when the joint is in motion, and the buffer distance is positively related to the existing speed
 
         Args:
-            joint_id:
-                for myArm300: joint id 1 - 7
+            joint_id: int 1 - 7
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
         return self._mesg(ProtocolCode.JOINT_BRAKE, joint_id)
@@ -535,8 +519,7 @@ class MyArm(CommandGenerator):
         """Power off designated servo
 
         Args:
-            servo_id: int
-                for myArm300: joint id 1 - 7
+            servo_id: int 1 - 7
             mode: Default damping, set to 1, cancel damping
         """
         if mode is None:
@@ -551,8 +534,7 @@ class MyArm(CommandGenerator):
         """Power on designated servo
 
         Args:
-            servo_id: int
-                for myArm300: joint id 1 - 7
+            servo_id: int 1 - 7
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)

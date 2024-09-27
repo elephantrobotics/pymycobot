@@ -231,8 +231,7 @@ class MyPalletizer260(CommandGenerator):
         """Send one angle of joint to robot arm.
 
         Args:
-            id : Joint id(genre.Angle)
-                    for mypalletizer: int 1-4.
+            id : Joint id(genre.Angle) int 1-4.
             angle : angle value(float).
             speed : (int) 1 ~ 100
         """
@@ -243,8 +242,7 @@ class MyPalletizer260(CommandGenerator):
         """Send the angles of all joints to robot arm.
 
         Args:
-            angles: a list of angle values(List[float]).
-                        for mypalletizer: len 4.
+            angles: a list of angle values(List[float]). len 4.
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
@@ -255,8 +253,7 @@ class MyPalletizer260(CommandGenerator):
         """Get the coords from robot arm, coordinate system based on base.
 
         Return:
-            list : A float list of coord .
-                for mypalletizer: [x, y, z, θ].
+            list : A float list of coord . [x, y, z, θ].
         """
         return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
 
@@ -264,8 +261,7 @@ class MyPalletizer260(CommandGenerator):
         """Send one coord to robot arm.
 
         Args:
-            id(int) : coord id(genre.Coord)\n
-                        for mypalletizer: int 1-4.
+            id(int) : coord id(genre.Coord) int 1-4.
             coord(float) : coord value, mm
             speed(int) : 1 ~ 100
         """
@@ -277,8 +273,7 @@ class MyPalletizer260(CommandGenerator):
         """Send all coords to robot arm.
 
         Args:
-            coords: a list of coords value(List[float]).
-                        for mypalletizer: [x, y, z, θ]
+            coords: a list of coords value(List[float]). [x, y, z, θ]
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, coords=coords, speed=speed)
@@ -293,8 +288,7 @@ class MyPalletizer260(CommandGenerator):
         """Judge whether in the position.
 
         Args:
-            data: A data list, angles or coords.
-                    for mypalletizer: len 4
+            data: A data list, angles or coords. len 4
             id: 1 - coords, 0 - angles
 
         Return:
@@ -340,8 +334,7 @@ class MyPalletizer260(CommandGenerator):
     def jog_angle(self, joint_id, direction, speed):
         """Jog control angle.
         Args:
-            joint_id: int
-                    for mypalletizer: int 1-4.
+            joint_id: int 1-4.
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
@@ -352,8 +345,7 @@ class MyPalletizer260(CommandGenerator):
         """Jog control coord.
 
         Args:
-            coord_id: int
-                    for mypalletizer: int 1-4.
+            coord_id: int 1-4.
             direction: 0 - decrease, 1 - increase
             speed: int (1 - 100)
         """
@@ -364,8 +356,7 @@ class MyPalletizer260(CommandGenerator):
         """Jog absolute angle
 
         Args:
-            joint_id: int
-                    for mypalletizer: int 1-4.
+            joint_id:  int 1-4.
             angle: -180 ~ 180
             speed: int (1 - 100)
         """
@@ -376,8 +367,7 @@ class MyPalletizer260(CommandGenerator):
         """step mode
 
         Args:
-            joint_id:
-                for mypalletizer: int 1-4.
+            joint_id: int 1-4.
             increment:
             speed: int (0 - 100)
         """
@@ -392,8 +382,7 @@ class MyPalletizer260(CommandGenerator):
         """Set a single joint rotation to the specified potential value.
 
         Args:
-            joint_id: int
-                for mypalletizer: Joint id 1 - 4
+            joint_id: int 1 - 4
             encoder: The value of the set encoder.
             speed : 1 - 100
         """
@@ -405,8 +394,7 @@ class MyPalletizer260(CommandGenerator):
         """Obtain the specified joint potential value.
 
         Args:
-            joint_id: (int)
-                for mypalletizer: Joint id 1 - 4
+            joint_id: (int) 1 - 4
         """
         self.calibration_parameters(class_name=self.__class__.__name__, encode_id=joint_id)
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
@@ -415,8 +403,7 @@ class MyPalletizer260(CommandGenerator):
         """Set the six joints of the manipulator to execute synchronously to the specified position.
 
         Args:
-            encoders: A encoder list.
-                for mypalletizer: len 4
+            encoders: A encoder list. len 4
             sp: speed 1 ~ 100
         """
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
@@ -459,8 +446,7 @@ class MyPalletizer260(CommandGenerator):
         """Gets the minimum movement angle of the specified joint
 
         Args:
-            joint_id:
-                for mypalletizer: Joint id 0 - 3
+            joint_id: 0 - 3
         Return:
             angle value(float)
         """
@@ -471,8 +457,7 @@ class MyPalletizer260(CommandGenerator):
         """Gets the maximum movement angle of the specified joint
 
         Args:
-            joint_id:
-                for mypalletizer: Joint id 1 - 4
+            joint_id: int 0 - 3
         Return:
             angle value(float)
         """
@@ -483,8 +468,7 @@ class MyPalletizer260(CommandGenerator):
         """Set the joint minimum angle
 
         Args:
-            id: int.
-                Joint id 0 - 3
+            id: int. 0 - 3
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
@@ -494,8 +478,7 @@ class MyPalletizer260(CommandGenerator):
         """Set the joint maximum angle
 
         Args:
-            id: int.
-                Joint id 0 - 3
+            id: int. 0 - 3
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
@@ -506,8 +489,7 @@ class MyPalletizer260(CommandGenerator):
         """To detect the connection state of a single joint
 
         Args:
-            servo_id:
-                for mypalletizer: Joint id 1 - 4
+            servo_id: Joint id 1 - 4
         Return:
             0 - disable
             1 - enable
@@ -520,8 +502,7 @@ class MyPalletizer260(CommandGenerator):
         """Set the data parameters of the specified address of the steering gear
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for mypalletizer: Joint id 1 - 4
+            servo_id: Serial number of articulated steering gear. Joint id 1 - 4
             data_id: Data address.
             value: 0 - 4096
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
@@ -538,8 +519,7 @@ class MyPalletizer260(CommandGenerator):
         """Read the data parameter of the specified address of the steering gear.
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for mypalletizer: Joint id 1 - 4
+            servo_id: Serial number of articulated steering gear. Joint id 1 - 4
             data_id: Data address.
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
 
@@ -561,8 +541,7 @@ class MyPalletizer260(CommandGenerator):
             and the corresponding potential value is 2048.
 
         Args:
-            servo_id: Serial number of articulated steering gear.
-                for mypalletizer: Joint id 1 - 4
+            servo_id: Serial number of articulated steering gear. Joint id 1 - 4
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
@@ -571,8 +550,7 @@ class MyPalletizer260(CommandGenerator):
         """Power off designated servo
 
         Args:
-            servo_id: int
-                for mypalletizer: Joint id 1 - 4
+            servo_id: int Joint id 1 - 4
             mode: Default damping, set to 1, cancel damping
         """
         if mode is None:
@@ -587,8 +565,7 @@ class MyPalletizer260(CommandGenerator):
         """Power on designated servo
 
         Args:
-            servo_id: int
-                for mypalletizer: Joint id 1 - 4
+            servo_id: int Joint id 1 - 4
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
