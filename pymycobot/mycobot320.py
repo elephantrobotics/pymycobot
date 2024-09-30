@@ -92,6 +92,9 @@ class MyCobot320(CommandGenerator):
             set_pro_gripper_resume()
             set_pro_gripper_stop()
 
+        # Atom
+            get_atom_version()
+
         # Other
             wait() *
             close()
@@ -158,7 +161,8 @@ class MyCobot320(CommandGenerator):
         if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
                                                                                          ProtocolCode.GET_JOINT_MIN_ANGLE,
                                                                                          ProtocolCode.GET_JOINT_MAX_ANGLE,
-                                                                                         ProtocolCode.SOFTWARE_VERSION]:
+                                                                                         ProtocolCode.SOFTWARE_VERSION,
+                                                                                         ProtocolCode.GET_ATOM_VERSION]:
             return res[0]
         if genre in [
             ProtocolCode.IS_POWER_ON,
@@ -718,6 +722,14 @@ class MyCobot320(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_STOP, 0)
+
+    def get_atom_version(self):
+        """Get atom firmware version.
+
+        Returns:
+            float: version number.
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
 
     # Other
     def wait(self, t):

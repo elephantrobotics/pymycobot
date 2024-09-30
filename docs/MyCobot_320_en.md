@@ -24,8 +24,13 @@ mc.send_angle(1, 40, 20)
 
 #### `get_system_version()`
 
-- **function：** get system version
-- **Return value：** system version
+- **function：** Get the machine master control version (pico firmware version)
+- **Return value：** Firmware version number
+
+#### `get_atom_version()`
+
+- **function：** Get the atom version on the machine end
+- **Return value：** Firmware version number
 
 #### `get_basic_version()`
 

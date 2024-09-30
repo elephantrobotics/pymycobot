@@ -24,7 +24,12 @@ mc.send_angle(1, 40, 20)
 
 #### `get_system_version()`
 
-- **功能:** 获取机器主控版本（atom固件版本）
+- **功能:** 获取机器主控版本（pico固件版本）
+- **返回值：** 固件版本号
+
+#### `get_atom_version()`
+
+- **功能:** 获取机器末端atom版本
 - **返回值：** 固件版本号
 
 #### `get_basic_version()`
