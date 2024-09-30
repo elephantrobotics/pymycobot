@@ -5,6 +5,8 @@ import time
 import struct
 import sys
 import platform
+import locale
+from pymycobot.robot_info import Robot320Info
 
 
 class ProGripper(object):
@@ -56,6 +58,7 @@ class ProtocolCode(object):
     READ_NEXT_ERROR = 0x15
     SET_FRESH_MODE = 0x16
     GET_FRESH_MODE = 0x17
+    GET_ROBOT_STATUS = 0x19
     SET_FREE_MODE = 0x1A
     IS_FREE_MODE = 0x1B
     COBOTX_GET_ANGLE = 0x1C
@@ -535,7 +538,7 @@ class DataProcessor(object):
         valid_data = data[data_pos: data_pos + data_len]
         # process valid data
         res = []
-        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_TEMPS,
+        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS,
                      ProtocolCode.GO_ZERO]:
             for i in valid_data:
                 res.append(i)
@@ -565,6 +568,37 @@ class DataProcessor(object):
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
+
+            if genre in [ProtocolCode.GET_SERVO_STATUS]:
+                res.clear()
+                for i in valid_data:
+                    res.append(i)
+            error_key = None
+            if genre == ProtocolCode.GET_ROBOT_STATUS:
+                error_key = "robot_error"
+            if genre == ProtocolCode.GET_SERVO_STATUS:
+                error_key = "servo_error"
+            if error_key is not None:
+                robot_320_info = Robot320Info.error_info
+                locale_lang = locale.getdefaultlocale()[0]
+                if locale_lang not in ["zh_CN", "en_US"]:
+                    locale_lang = "en_US"
+                for i in range(len(res)):
+                    if res[i] != 0:
+                        data_bin = bin(res[i])[2:]
+                        error_list = []
+                        data_bin_len = len(data_bin)
+                        for j in range(data_bin_len):
+                            if data_bin[data_bin_len - 1 - j] != 0:
+                                error_list.append(j)
+                                if locale_lang == "zh_CN":
+                                    print("错误: 关节{} - {}".format(i + 1,
+                                                                 robot_320_info[locale_lang][error_key].get(j, 255)))
+                                else:
+                                    print("Error: Joint{} - {}".format(i + 1,
+                                                                       robot_320_info[locale_lang][error_key].get(j,
+                                                                                                                  255)))
+                        res[i] = error_list
         elif data_len == 2:
             if genre in [
                 ProtocolCode.GET_PLAN_SPEED,
