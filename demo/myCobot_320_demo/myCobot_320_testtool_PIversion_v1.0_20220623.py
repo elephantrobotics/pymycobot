@@ -12,7 +12,7 @@ import textwrap
 import serial
 import serial.tools.list_ports
 
-from pymycobot.mycobot import MyCobot
+from pymycobot.mycobot320 import MyCobot320
 from pymycobot import PI_PORT, PI_BAUD
 
 
@@ -159,7 +159,7 @@ class MycobotTest(object):
 
         try:
             # self.mycobot = MyCobot(PI_PORT, PI_BAUD)
-            self.mycobot = MyCobot(port, baud)
+            self.mycobot = MyCobot320(port, baud)
             time.sleep(0.5)
             self.mycobot._write([255,255,3,22,1,250])
             time.sleep(0.5)
