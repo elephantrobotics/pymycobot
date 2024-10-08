@@ -75,6 +75,9 @@ You can find out which interfaces pymycobot provides in `pymycobot/README.md`.
 
 Please go to [here](./docs/README.md).
 
+
+> Note: Version v3.6.0 differentiates interfaces by model. Starting from this version, the MyCobot class will no longer be maintained. For new usage, please refer to the document: 
+
 ![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/chinese.svg)   ![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/english.svg)
 
 [MyCobot 280 API说明](./docs/MyCobot_280_zh.md) | [MyCobot 280 API Description](./docs/MyCobot_280_en.md)

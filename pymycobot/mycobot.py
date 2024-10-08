@@ -67,6 +67,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
+        print("Note: Starting from version v3.6.0, the MyCobot class will no longer be maintained. For new usage, please refer to the documentation: https://github.com/elephantrobotics/pymycobot/tree/main/docs")
         time.sleep(1.5)
 
 
