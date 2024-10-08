@@ -78,6 +78,10 @@ __all__ = [
 
 ]
 
+if sys.platform == "linux":
+    from pymycobot.mybuddyemoticon import MyBuddyEmoticon
+    __all__.append("MyBuddyEmoticon")
+
 __version__ = "3.5.0a7" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"

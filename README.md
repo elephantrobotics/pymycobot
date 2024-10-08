@@ -42,18 +42,31 @@ cd <your-path>/pymycobot
 # or
 [sudo] python3 setup.py install
 ```
+
 Or the more modern form:
-```
+
+```bash
 # Install
 pip install .
 # Uninstall
 pip uninstall .
+```
 
 ## Usage:
 
 ```python
-from pymycobot import MyCobot, Angle, Coord
-from pymycobot import PI_PORT, PI_BAUD # For raspberry pi version of mycobot.
+# for mycobot 280 machine
+from pymycobot import MyCobot280  
+from pymycobot import MyCobot280Socket
+# for mycobot 320 machine
+from pymycobot import MyCobot320
+from pymycobot import MyCobot320Socket  
+# for mecharm 270 machine
+from pymycobot import MechArm270  
+from pymycobot import MechArmSocket  
+# for mypalletizer 260 machine
+from pymycobot import MyPalletizer260  
+from pymycobot import MyPalletizerSocket
 ```
 
 The [`demo`](./demo) directory stores some test case files.
@@ -61,3 +74,17 @@ The [`demo`](./demo) directory stores some test case files.
 You can find out which interfaces pymycobot provides in `pymycobot/README.md`.
 
 Please go to [here](./docs/README.md).
+
+![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/chinese.svg)   ![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/english.svg)
+
+[MyCobot 280 API说明](./docs/MyCobot_280_zh.md) | [MyCobot 280 API Description](./docs/MyCobot_280_en.md)
+
+[MyCobot 320 API说明](./docs/MyCobot_320_zh.md) | [MyCobot 320 API Description](./docs/MyCobot_320_en.md)
+
+[MechArm 270 API说明](./docs/MechArm_270_zh.md) | [MechArm 270 API Description](./docs/MechArm_270_en.md)
+
+[MyPalletizer 260 API说明](./docs/MyPalletizer_260_zh.md) | [MyPalletizer 260 API Description](./docs/MyPalletizer_260_en.md)
+
+[myAGV API说明](./docs/myAGV_zh.md) | [myAGV API Description](./docs/myAGV_en.md)
+
+[myArm_M&C API说明](./docs/myArm_M&C_zh.md) | [myArm_M&C API Description](./docs/myArm_M&C_en.md)

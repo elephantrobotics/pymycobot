@@ -19,10 +19,10 @@ Edit the handle_control.py file
 ```python
 import pygame
 import time
-from pymycobot import MyCobot
+from pymycobot import MyCobot280
 import threading
 # Change com7 to the port number detected by your computer
-mc = MyCobot("com7")
+mc = MyCobot280("com7")
 ...
 ```
 
@@ -82,10 +82,10 @@ pip3 install -r requirements.txt
 ```python
 import pygame
 import time
-from pymycobot import MyCobot
+from pymycobot import MyCobot280
 import threading
 # 将com7修改为你的电脑检测到的实际端口号
-mc = MyCobot("com7")
+mc = MyCobot280("com7")
 ...
 ```
 

@@ -1,7 +1,7 @@
 import pygame
 import time
 import math
-from pymycobot import MyCobot
+from pymycobot import MyCobot280
 from threading import Thread
 from enum import Enum
 import typing as T
@@ -91,7 +91,7 @@ joystick_continous_map = {
     5: JoyStickContinous.R2,
 }
 
-mc = MyCobot("/dev/ttyAMA0", "1000000")
+mc = MyCobot280("/dev/ttyAMA0", "1000000")
 mc.set_fresh_mode(1)
 
 context = {"running": True}
