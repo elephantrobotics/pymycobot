@@ -25,6 +25,7 @@ from pymycobot.mybuddybluetooth import MyBuddyBlueTooth
 from pymycobot.mypalletizersocket import MyPalletizerSocket
 from pymycobot.myarm import MyArm
 from pymycobot.myarmsocket import MyArmSocket
+from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
@@ -69,6 +70,7 @@ __all__ = [
     "MercurySocket",
     "MyArmM",
     "MyArmC",
+    "Phoenix",
     "Pro630",
     "Pro630Client",
     "Pro400",
