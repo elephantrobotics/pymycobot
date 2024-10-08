@@ -1263,3 +1263,60 @@ def calibration_parameters(**kwargs):
                                                                                          value))
             elif parameter == 'end_direction':
                 check_0_or_1(parameter, value, [1, 2, 3], value_type, MyPalletizer260DataException, int)
+
+    elif class_name in ["MyArmM", "MyArmC"]:
+        class_name = kwargs.pop("class_name", None)
+        limit_info = robot_limit[class_name]
+        for parameter in parameter_list[1:]:
+            value = kwargs[parameter]
+            value_type = type(value)
+            if parameter in ("servo_id", "joint_id") and value not in limit_info[parameter]:
+                raise MyArmDataException(
+                    "The id not right, should be in {0}, but received {1}.".format(limit_info[parameter], value)
+                )
+            elif parameter == 'angle':
+                i = kwargs['joint_id'] - 1
+                min_angle = limit_info["angles_min"][i]
+                max_angle = limit_info["angles_max"][i]
+                if value < min_angle or value > max_angle:
+                    raise MyArmDataException(
+                        f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}"
+                    )
+            elif parameter == 'angles':
+                for i, v in enumerate(value):
+                    min_angle = limit_info["angles_min"][i]
+                    max_angle = limit_info["angles_max"][i]
+                    if v < min_angle or v > max_angle:
+                        raise MyArmDataException(
+                            f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}"
+                        )
+            elif parameter == 'encoder':
+                i = kwargs['servo_id'] - 1
+                max_encoder = limit_info["encoders_max"][i]
+                min_encoder = limit_info["encoders_min"][i]
+                if value < min_encoder or value > max_encoder:
+                    raise MyArmDataException(
+                        f"angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}"
+                    )
+            elif parameter == 'encoders':
+                for i, v in enumerate(value):
+                    max_encoder = limit_info["encoders_max"][i]
+                    min_encoder = limit_info["encoders_min"][i]
+                    if v < min_encoder or v > max_encoder:
+                        raise MyArmDataException(
+                            f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}"
+                        )
+            elif parameter == "speed":
+                check_value_type(parameter, value_type, MyArmDataException, int)
+                if not 1 <= value <= 100:
+                    raise MyArmDataException(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
+            elif parameter == "speeds":
+                assert len(value) == 8, "The length of `speeds` must be 8."
+                for i, s in enumerate(value):
+                    if not 1 <= s <= 100:
+                        raise MyArmDataException(
+                            f"speed value not right, should be 1 ~ 100, the received speed is {value}"
+                        )
+            elif parameter == "servo_addr":
+                if value in (0, 1, 2, 3, 4):
+                    raise MyArmDataException("addr 0-4 cannot be modified")

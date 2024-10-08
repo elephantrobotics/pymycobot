@@ -20,39 +20,39 @@ class Robot320Info(object):
                     255: "未知错误"
                 },
             "servo_error":
-                {
-                    0: "伺服电机欠压/过压，查看电压，如果为0，需要修改舵机参数；如果大于实际，可能散热片损坏",
-                    1: "伺服电机磁编码异常",
-                    2: "伺服电机过温",
-                    3: "伺服电机过流",
-                    5: "伺服电机过载",
-                }
+            {
+                0: "伺服电机欠压/过压，查看电压，如果为0，需要修改舵机参数；如果大于实际，可能散热片损坏",
+                1: "伺服电机磁编码异常",
+                2: "伺服电机过温",
+                3: "伺服电机过流",
+                5: "伺服电机过载",
+            }
         },
         "en_US": {
             "robot_error":
-                {
-                    0: "Communication exception, please check the line, servo motor firmware version, power supply, firmware burning, baud rate, etc.",
-                    1: "Servo motor model error, need to replace the motor",
-                    2: "Servo motor firmware version is too low, need to use FD upgrade",
-                    3: "Servo motor p value exception, default 32, this exception will be automatically restored",
-                    4: "Servo motor D value exception, default 8, this exception will be automatically restored",
-                    5: "Servo motor I value exception, default 0, this exception will be automatically restored",
-                    6: "Servo motor clockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
-                    7: "Servo motor counterclockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
-                    8: "Servo motor phase exception, this exception will be automatically restored",
-                    9: "Servo motor return delay exception, default 0, this exception will be automatically restored",
-                    10: "Servo motor minimum starting force exception, default 0, this exception will be automatically restored",
-                    11: "Servo motor exception, when the servo is abnormal, the robot cannot move, please query the servo feedback interface get_servo_status, view the specific error",
-                    255: "Unknown error"
-                },
+            {
+                0: "Communication exception, please check the line, servo motor firmware version, power supply, firmware burning, baud rate, etc.",
+                1: "Servo motor model error, need to replace the motor",
+                2: "Servo motor firmware version is too low, need to use FD upgrade",
+                3: "Servo motor p value exception, default 32, this exception will be automatically restored",
+                4: "Servo motor D value exception, default 8, this exception will be automatically restored",
+                5: "Servo motor I value exception, default 0, this exception will be automatically restored",
+                6: "Servo motor clockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
+                7: "Servo motor counterclockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
+                8: "Servo motor phase exception, this exception will be automatically restored",
+                9: "Servo motor return delay exception, default 0, this exception will be automatically restored",
+                10: "Servo motor minimum starting force exception, default 0, this exception will be automatically restored",
+                11: "Servo motor exception, when the servo is abnormal, the robot cannot move, please query the servo feedback interface get_servo_status, view the specific error",
+                255: "Unknown error"
+            },
             "servo_error":
-                {
-                    0: "Servo motor under-voltage/over-voltage, check the voltage, if it is 0, you need to modify the servo parameters; if it is greater than the actual, it may be damaged",
-                    1: "Servo motor magnetic encoder exception",
-                    2: "Servo motor over-temperature",
-                    3: "Servo motor over-current",
-                    5: "Servo motor over-load",
-                }
+            {
+                0: "Servo motor under-voltage/over-voltage, check the voltage, if it is 0, you need to modify the servo parameters; if it is greater than the actual, it may be damaged",
+                1: "Servo motor magnetic encoder exception",
+                2: "Servo motor over-temperature",
+                3: "Servo motor over-current",
+                5: "Servo motor over-load",
+            }
         }
 
     }

@@ -35,7 +35,7 @@ class ProtocolCode(object):
     GET_ROBOT_ID = 0x03
     OVER_LIMIT_RETURN_ZERO = 0x04
     SET_ROBOT_ID = 0x04
-
+    
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
@@ -141,6 +141,7 @@ class ProtocolCode(object):
     SET_GRIPPER_CALIBRATION = 0x68
     IS_GRIPPER_MOVING = 0x69
     SET_COLOR = 0x6A
+    IS_TOOL_BTN_CLICKED = 0x6b
     SET_GRIPPER_TORQUE = 0x6F
     IS_BTN_CLICKED = 0x6F
     SET_COLOR_MYARM = 0x70
@@ -210,6 +211,7 @@ class ProtocolCode(object):
     SET_END_TYPE = 0x89
     GET_END_TYPE = 0x8A
     WRITE_MOVE_C = 0x8C
+    SOLVE_INV_KINEMATICS = 0x8D
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
@@ -240,14 +242,14 @@ class ProtocolCode(object):
     SET_VOID_COMPENSATE = 0xE7
     SET_TOQUE_GRIPPER = 0xE8
     GET_TOQUE_GRIPPER = 0xE9
-    # SET_ERROR_DETECT_MODE = 0xE8
-    # GET_ERROR_DETECT_MODE = 0xE9
+    SET_ERROR_DETECT_MODE = 0xE8
+    GET_ERROR_DETECT_MODE = 0xE9
 
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
-
+    
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
     MERCURY_DRAG_TECH_PAUSE = 0x72
@@ -263,6 +265,8 @@ class ProtocolCode(object):
     GET_ROBOT_ERROR_CHECK_STATE = 7
     GET_ROBOT_ERROR_STATUS = 0x15
     GET_ATOM_PRESS_STATUS = 0x6b
+    GET_JOINTS_COORD = 0x23
+    GET_ROBOT_TOOL_MODIFY_VERSION = 0x04
     GET_ATOM_LED_COLOR = 0x6a
     SET_ATOM_PIN_STATUS = 0x61
     GET_ATOM_PIN_STATUS = 0x62
@@ -291,7 +295,11 @@ class ProtocolCode(object):
     CLEAR_ROBOT_ERROR = 0x16
     GET_RECV_QUEUE_SIZE = 0x17
     SET_RECV_QUEUE_SIZE = 0x18
-
+    GET_SERVOS_ENCODER_DRAG = 0xEF
+    RESTORE_SERVO_SYSTEM_PARAM = 0x0a
+    GET_SERVO_D = 0xE8
+    SET_SERVO_P = 0x70
+    GET_SERVO_P = 0xE7
     # IIC
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
@@ -352,7 +360,7 @@ class DataProcessor(object):
                                                               "Pro630Client", "Pro400Client", "Pro400"]:
             command_data = [command_data[1], command_data[3]]
         LEN = len(command_data) + 2
-
+        
         command = [
             ProtocolCode.HEADER,
             ProtocolCode.HEADER,
@@ -406,7 +414,7 @@ class DataProcessor(object):
 
     def _int2coord(self, _int):
         return round(_int / 10.0, 2)
-
+    
     @classmethod
     def crc_check(cls, command):
         crc = 0xffff
@@ -520,7 +528,7 @@ class DataProcessor(object):
             data_len = data[header_i + 3] - 2
         elif arm == 14:
             data_len = data[header_i + 2] - 3
-
+            
         unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
         if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
             data_pos = header_i + 4
@@ -535,7 +543,8 @@ class DataProcessor(object):
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
-        valid_data = data[data_pos: data_pos + data_len]
+        valid_data = data[data_pos : data_pos + data_len]
+
         # process valid data
         res = []
         if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS,
@@ -554,7 +563,7 @@ class DataProcessor(object):
             if data_len == 8 and (
                     (arm == 14 and cmd_id == ProtocolCode.IS_INIT_CALIBRATION) or
                     (arm == 8 and cmd_id in ignor_t)
-            ):
+            ) or data_len == 6 and cmd_id in ignor_t:
                 for v in valid_data:
                     res.append(v)
                 return res
@@ -610,10 +619,12 @@ class DataProcessor(object):
                 ]
             elif genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
-            elif genre in [ProtocolCode.GET_ERROR_INFO]:
+            elif genre in [ProtocolCode.GET_ERROR_INFO, ProtocolCode.GET_MASTER_PIN_STATUS]:
                 return [self._decode_int8(valid_data[1:])]
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
+            if genre == ProtocolCode.GET_ATOM_PRESS_STATUS:
+                return [data for data in valid_data]
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
             if genre == ProtocolCode.COBOTX_GET_ANGLE and arm == 14:
@@ -660,6 +671,11 @@ class DataProcessor(object):
                     res.append(self._decode_int16(one))
                     i += 2
             return res
+        elif data_len == 32:
+            def byte2int(bvs):
+                return list(map(lambda _i: self._decode_int16(bvs[_i:_i + 2]), range(0, 16, 2)))
+            return [byte2int(valid_data[0:16]), byte2int(valid_data[16:32])]
+
         elif data_len == 38:
             i = 0
             res = []
@@ -738,7 +754,7 @@ def write(self, command, method=None):
                 command = bytes(command)
             self.sock.sendall(command)
     else:
-        # self._serial_port.reset_input_buffer()
+        self._serial_port.reset_input_buffer()
         command_log = ""
         for i in command:
             if isinstance(i, str):
@@ -775,6 +791,9 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                        ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD,
                        ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
             wait_time = 300
+    elif _class in ["MyCobot", "MyCobotSocket"]:
+        if genre == ProtocolCode.GET_ROBOT_STATUS:
+            wait_time = 75
     data = b""
 
     if method is not None:
@@ -820,6 +839,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             wait_time = 1
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
+            # self.log.debug("data: {}".format(data))
             k += 1
             if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
                 if data_len == 3:
@@ -831,6 +851,13 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             if data_len == 1 and data == b"\xfa":
                 datas += data
                 if [i for i in datas] == command:
+                    if genre in (
+                        ProtocolCode.GET_ATOM_PRESS_STATUS,
+                        ProtocolCode.GET_SERVO_MOTOR_COUNTER_CLOCKWISE,
+                        ProtocolCode.GET_SERVO_MOTOR_CLOCKWISE,
+                        ProtocolCode.GET_SERVO_P,
+                    ) and _class in ["MyArmM", "MyArmC", "MyArmAPI"]:
+                        break
                     datas = b''
                     data_len = -1
                     k = 0

@@ -5,6 +5,8 @@ from __future__ import division
 import sys
 import logging
 import threading
+import time
+
 from pymycobot.common import ProtocolCode, write, read, DataProcessor
 from pymycobot.error import calibration_parameters
 from pymycobot.log import setup_logging
@@ -52,7 +54,7 @@ class MyArmAPI(DataProcessor):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-
+        time.sleep(0.01)
         real_command, has_reply = super(MyArmAPI, self)._mesg(genre, *args, **kwargs)
         command = self._flatten(real_command)
         with self.lock:
@@ -62,7 +64,7 @@ class MyArmAPI(DataProcessor):
                 return None
 
             timeout = kwargs.get('timeout', None)
-            data = self._read(genre, command=command, timeout=timeout)
+            data = self._read(genre, command=command, timeout=timeout, _class=self.__class__.__name__)
             res = self._process_received(data, genre, arm=8)
 
             if len(res) == 0:
@@ -86,12 +88,23 @@ class MyArmAPI(DataProcessor):
                 ProtocolCode.GET_SERVO_MOTOR_CONFIG,
                 ProtocolCode.POWER_ON,
                 ProtocolCode.GET_MASTER_PIN_STATUS,
-                ProtocolCode.GET_ATOM_PIN_STATUS
+                ProtocolCode.GET_ATOM_PIN_STATUS,
+                ProtocolCode.GET_SERVO_D
             ]
 
             if genre in return_single_genres:
-                return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+                result = self._process_single(res)
+                if genre in (ProtocolCode.COBOTX_GET_ANGLE,):
+                    result = self._int2angle(result)
+                return result
+            if genre in (ProtocolCode.GET_ATOM_PRESS_STATUS, ):
+                if self.__class__.__name__ == 'MyArmM':
+                    return res[0]
+                return res
+            elif genre in [
+                ProtocolCode.GET_ANGLES, ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE,
+                ProtocolCode.GET_JOINTS_COORD
+            ]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
                 return [self._int2coord(angle) for angle in res]
@@ -106,6 +119,8 @@ class MyArmAPI(DataProcessor):
                     rank = [i for i, e in enumerate(reverse_bins) if e != '0']
                     result.append(rank)
                 return result
+            elif genre in (ProtocolCode.GET_ROBOT_FIRMWARE_VERSION, ProtocolCode.GET_ROBOT_TOOL_FIRMWARE_VERSION):
+                return self._int2coord(res[0])
             else:
                 return res
 
@@ -133,10 +148,6 @@ class MyArmAPI(DataProcessor):
         """Get the Robot Tool Firmware Version (End Atom)"""
         return self._mesg(ProtocolCode.GET_ROBOT_TOOL_FIRMWARE_VERSION, has_reply=True)
 
-    # def get_robot_serial_number(self):
-    #     """Get the bot number"""
-    #     return self._mesg(ProtocolCode.GET_ROBOT_SERIAL_NUMBER, has_reply=True)
-
     def set_robot_err_check_state(self, status):
         """Set Error Detection Status You can turn off error detection, but do not turn it off unless necessary
 
@@ -156,32 +167,7 @@ class MyArmAPI(DataProcessor):
             No error: [0,0,0,0,0,0,0,0]
             assuming that error 1 and 3 are reported in section 1, it should return: [[1,3],0,0,0,0,0,0,0]
         """
-        return self._mesg(ProtocolCode.GET_ROBOT_ERROR_STATUS, has_reply=True, timeout=15)
-
-    def get_robot_power_status(self):
-        """Get the robot power status
-        Returns:
-            power_status (int): 0: power off, 1: power on
-        """
-        return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
-
-    def set_robot_power_on(self):
-        """Set the robot to power on
-
-        Returns: (int) 1
-        """
-        return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
-
-    def set_robot_power_off(self):
-        """Set the robot to power off
-
-        Returns: (int) 1
-        """
-        return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
-
-    def clear_robot_err(self):
-        """Clear the robot abnormality Ignore the error joint and continue to move"""
-        self._mesg(ProtocolCode.CLEAR_ROBOT_ERROR)
+        return self._mesg(ProtocolCode.GET_ROBOT_ERROR_STATUS, has_reply=True, timeout=90)
 
     def get_recv_queue_max_len(self):
         """The total length of the read command queue, the default length is 100"""
@@ -189,11 +175,8 @@ class MyArmAPI(DataProcessor):
 
     def set_recv_queue_max_len(self, max_len):
         """Set the total length of the receiving command queue"""
-        self._mesg(ProtocolCode.SET_RECV_QUEUE_SIZE, max_len, has_reply=True)
-
-    def clear_recv_queue(self):
-        """Clear the queue for receiving commands"""
-        self._mesg(ProtocolCode.CLEAR_RECV_QUEUE)
+        assert 0 < max_len <= 100, "queue size must be in range 1 - 100"
+        self._mesg(ProtocolCode.SET_RECV_QUEUE_SIZE, max_len)
 
     def get_recv_queue_len(self):
         """The current length of the read receive queue"""
@@ -201,7 +184,8 @@ class MyArmAPI(DataProcessor):
 
     def get_joint_angle(self, joint_id):
         """
-        Gets the current angle of the specified joint
+        Obtain the current angle of the specified joint, when the obtained angle is 200��,
+        it means that the joint has no communication
         Args:
             joint_id (int): 0 - 254
 
@@ -211,22 +195,13 @@ class MyArmAPI(DataProcessor):
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id, has_reply=True)
 
     def get_joints_angle(self):
-        """Gets the current angle of all joints
+        """Obtain the current angle of all joints, if one of the angles is 200��,
+        it means that the joint has no communication
 
         Returns:
             angles list(int): 0 - 254
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
-
-    def get_joints_max(self):
-        """Read the maximum angle of all joints"""
-        max_angles = self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, has_reply=True)
-        return max_angles
-
-    def get_joints_min(self):
-        """Read the minimum angle of all joints"""
-        min_angles = self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, has_reply=True)
-        return list(map(lambda n: n / 100, min_angles))
 
     def set_servo_calibrate(self, servo_id):
         """Sets the zero position of the specified servo motor
@@ -247,6 +222,14 @@ class MyArmAPI(DataProcessor):
             encoder (int): 0-4095
         """
         return self._mesg(ProtocolCode.GET_ENCODER, servo_id, has_reply=True)
+
+    def get_servos_encoder_drag(self):
+        """ Reads the current encoder value and operating speed of all servo motors
+        Returns:
+            encoders (list[int * 8]): 0-4095
+            speeds (list[int * 8]): 0-4095
+        """
+        return self._mesg(ProtocolCode.GET_SERVOS_ENCODER_DRAG, has_reply=True)
 
     def is_all_servos_enabled(self):
         """
@@ -277,17 +260,6 @@ class MyArmAPI(DataProcessor):
         """Obtain multiple servo motor protection currents"""
         return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, has_reply=True)
 
-    def set_servo_enabled(self, joint_id, state):
-        """Set the servo motor torque switch
-
-        Args:
-            joint_id (int): 0-254 254-all
-            state: 0/1
-                1-focus
-                0-release
-        """
-        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, joint_id, state)
-
     def get_servos_encoder(self):
         """Obtain the current encoder potential values for multiple servo motors"""
         return self._mesg(ProtocolCode.GET_ENCODERS, has_reply=True)
@@ -304,7 +276,9 @@ class MyArmAPI(DataProcessor):
             data (int): 0-254
 
         """
-        self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE, servo_id, data)
+        assert 0 <= data <= 254, "data must be between 0 and 254"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
+        self._mesg(ProtocolCode.SET_SERVO_P, servo_id, data)
 
     def get_servo_p(self, servo_id):
         """Reads the position loop P scale factor of the specified servo motor
@@ -312,7 +286,7 @@ class MyArmAPI(DataProcessor):
         Args:
             servo_id (int): 0-254
         """
-        return self._mesg(ProtocolCode.SERVO_RESTORE, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_P, servo_id, has_reply=True)
 
     def set_servo_d(self, servo_id, data):
         """Sets the proportional factor for the position ring D of the specified servo motor
@@ -321,6 +295,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0-254
             data (int): 0-254
         """
+        assert 0 <= data <= 254, "data must be between 0 and 254"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, servo_id, data)
 
     def get_servo_d(self, servo_id):
@@ -329,7 +305,7 @@ class MyArmAPI(DataProcessor):
         Args:
             servo_id (int): 0-254
         """
-        return self._mesg(ProtocolCode.SET_ERROR_DETECT_MODE, servo_id, has_reply=True)
+        return self._mesg(ProtocolCode.GET_SERVO_D, servo_id, has_reply=True)
 
     def set_servo_i(self, servo_id, data):
         """Set the proportional factor of the position ring I of the specified servo motor
@@ -338,6 +314,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 254
         """
+        assert 0 <= data <= 254, "data must be between 0 and 254"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE, servo_id, data)
 
     def get_servo_i(self, servo_id):
@@ -351,6 +329,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 32
         """
+        assert 0 <= data <= 32, "data must be between 0 and 32"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         self._mesg(ProtocolCode.SET_SERVO_MOTOR_CLOCKWISE, servo_id, data)
 
     def get_servo_cw(self, servo_id):
@@ -368,6 +348,8 @@ class MyArmAPI(DataProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 32
         """
+        assert 0 <= data <= 32, "data must be between 0 and 32"
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_MOTOR_COUNTER_CLOCKWISE, servo_id, data)
 
     def get_servo_cww(self, servo_id):
@@ -387,10 +369,8 @@ class MyArmAPI(DataProcessor):
             data (int): 0 - 4096
             mode (int): 1 - data 1byte. 2 - data 2byte
         """
-        if mode == 1:
-            self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, data, mode)
-        elif mode == 2:
-            self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, [data], mode)
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id, servo_addr=addr)
+        self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, [data], mode)
 
     def get_servo_system_data(self, servo_id, addr, mode):
         """Read the system parameters of the specified servo motor
@@ -456,11 +436,6 @@ class MyArmAPI(DataProcessor):
         """
         self._mesg(ProtocolCode.GET_ATOM_LED_COLOR, r, g, b)
 
-    def is_tool_btn_clicked(self):
-        """read the atom press status
-
-        Returns:
-            int: 0 or 1. 1: press
-
-        """
-        return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, has_reply=True)
+    def restore_servo_system_param(self):
+        """Restore servo motor system parameters"""
+        self._mesg(ProtocolCode.RESTORE_SERVO_SYSTEM_PARAM)

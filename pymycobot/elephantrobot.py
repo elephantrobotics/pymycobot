@@ -18,16 +18,17 @@ class ElephantRobot(object):
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
-        self.BUFFSIZE = 2048
+        self.BUFFSIZE = 8 * 1024 * 1024
         self.ADDR = (host, port)
         self.tcp_client = socket(AF_INET, SOCK_STREAM)
 
     def start_client(self):
         try:
             self.tcp_client.connect(self.ADDR)
-            return ""
+            return True
         except Exception as e:
-            return e
+            print(e)
+            return False
 
     def stop_client(self):
         self.tcp_client.close()
@@ -37,7 +38,8 @@ class ElephantRobot(object):
             self.tcp_client.send(command.encode())
             recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
             res_str = str(recv_data)
-            print("recv = " + res_str)
+            if self.debug:
+                print("recv = " + res_str)
             res_arr = res_str.split(":")
             if len(res_arr) == 2:
                 return res_arr[1]
@@ -50,12 +52,12 @@ class ElephantRobot(object):
         data_arr = data.split(",")
         if len(data_arr) == 6:
             try:
-                coords_1 = float(data_arr[0])
-                coords_2 = float(data_arr[1])
-                coords_3 = float(data_arr[2])
-                coords_4 = float(data_arr[3])
-                coords_5 = float(data_arr[4])
-                coords_6 = float(data_arr[5])
+                coords_1 = round(float(data_arr[0]), 3)
+                coords_2 = round(float(data_arr[1]), 3)
+                coords_3 = round(float(data_arr[2]), 3)
+                coords_4 = round(float(data_arr[3]), 3)
+                coords_5 = round(float(data_arr[4]), 3)
+                coords_6 = round(float(data_arr[5]), 3)
                 coords = [coords_1, coords_2, coords_3, coords_4, coords_5, coords_6]
                 return coords
             except:
@@ -64,7 +66,7 @@ class ElephantRobot(object):
 
     def string_to_double(self, data):
         try:
-            val = float(data)
+            val = round(float(data), 3)
             return val
         except:
             return -9999.99
@@ -77,7 +79,7 @@ class ElephantRobot(object):
             return -9999
 
     def invalid_coords(self):
-        coords = [-1, -2, -3, -4, -1, -1]
+        coords = [-1.0, -2.0, -3.0, -4.0, -1.0, -1.0]
         return coords
 
     def get_angles(self):
@@ -134,12 +136,17 @@ class ElephantRobot(object):
             str: ok if success or error message otherwise
         """
         with open(local_filename, "rb") as f:
-            content = f.read().encode()
+            content = f.read()
         content_base64 = base64.b64encode(content).decode()
         content_sha256 = hashlib.sha256(content).hexdigest()
         command = "upload_file({},{},{})".format(
             content_base64, remote_filename, content_sha256
         )
+        res = self.send_command(command)
+        return res
+
+    def read_text_file(self, remote_filename):
+        command = f"read_text_file({remote_filename})"
         res = self.send_command(command)
         return res
 
@@ -158,10 +165,14 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return res
 
+    def clear_all_errors(self):
+        while self.read_next_error() != "":
+            pass
+
     def write_coords(self, coords, speed):
         command = "set_coords("
         for item in coords:
-            command += str(item) + ","
+            command += str(round(item, 3)) + ","
         command += str(speed) + ")\n"
         self.send_command(command)
 
@@ -174,7 +185,7 @@ class ElephantRobot(object):
     def write_angles(self, angles, speed):
         command = "set_angles("
         for item in angles:
-            command += str(item) + ","
+            command += str(round(item, 3)) + ","
         command += str(speed) + ")\n"
         self.send_command(command)
 
@@ -229,17 +240,20 @@ class ElephantRobot(object):
 
     def get_digital_in(self, pin_number):
         command = "get_digital_in(" + str(pin_number) + ")\n"
-        self.send_command(command)
+        res = self.send_command(command)
+        return self.string_to_int(res)
 
     def get_digital_out(self, pin_number):
         command = "get_digital_out(" + str(pin_number) + ")\n"
         print(command)
-        self.send_command(command)
+        res = self.send_command(command)
+        return self.string_to_int(res)
 
     def get_joint_current(self, joint_number):
         command = "get_joint_current(" + str(joint_number) + ")\n"
         print(command)
-        self.send_command(command)
+        res = self.send_command(command)
+        return self.string_to_double(res)
 
     def set_digital_out(self, pin_number, pin_signal):
         command = "set_digital_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
@@ -298,40 +312,64 @@ class ElephantRobot(object):
         command = "jog_increment({},{},{},{})\n".format(joint_id, angle, speed, mode)
         return self.send_command(command)
 
-    def set_init_gripper(self, gripper_type):
+    def set_gripper_state(self, state, speed):
+        """Sets gripper state.
+
+        Args:
+            state (int): gripper state, 0 - open, 1 - close
+            speed (int): speed, 1-100
+
+        Returns:
+            str: return message
         """
-        gripper_type:CAG-1
-        """
-        command = "set_init_gripper(" + str(gripper_type) + ")\n"
+        command = "set_gripper_state(" + str(state) + "," + str(speed) + ")\n"
         return self.send_command(command)
 
-    def set_cag_gripper_mode(self, mode):
-        """
-        mode:0 / 1
-        """
+    def set_gripper_value(self, value, speed):
+        """Sets gripper open/close state.
 
-        command = "set_cag_gripper_mode(" + str(mode) + ")\n"
+        Args:
+            value (int): gripper open value, 0-100
+            speed (int): speed, 1-100
+
+        Returns:
+            str: return message
+        """
+        command = "set_gripper_value(" + str(value) + "," + str(speed) + ")\n"
         return self.send_command(command)
 
-    def set_cag_gripper_value(self, value, speed):
+    def set_gripper_calibrate(self):
+        """Sets gripper zero position.
+
+        Returns:
+            str: return message
         """
-        value: 0-100
-        speed: 1-100
-        """
-        command = "set_cag_gripper_value( " + str(value) + "," + str(speed) + "  )\n"
+        command = "set_gripper_calibrate()\n"
         return self.send_command(command)
 
-    def get_cag_gripper_value(self):
-        command = "get_cag_gripper_value()\n"
+    def set_gripper_enabled(self, enabled):
+        """Set gripper enabled.
+
+        Args:
+            enabled (int): 1 - enabled, 0 - disabled
+
+        Returns:
+            str: return message
+        """
+        command = "set_gripper_enabled(" + str(enabled) + ")\n"
         return self.send_command(command)
 
-    def set_cag_gripper_enabled(self, mode):
+    def set_gripper_mode(self, mode):
+        """Sets gripper mode. Default mode is IO, after setting mode 485
+           cannot set mode back to IO (need gripper reboot).
+
+        Args:
+            mode (int): 0 - 485, 1 - IO
+
+        Returns:
+            str: return message
         """
-        mode:
-        0: unabled
-        1: enabled
-        """
-        command = "set_cag_gripper_enabled(" + str(mode) + ")\n"
+        command = "set_gripper_mode(" + str(mode) + ")\n"
         return self.send_command(command)
 
 
@@ -377,24 +415,20 @@ if __name__ == "__main__":
     print(ep.assign_variable("ss", '"eee"'))
     print(ep.get_joint_current(1))
 
-    print(ep.set_init_gripper("CAG-1"))
+    print(ep.set_gripper_mode(1))
     print(ep.wait(2))
-    print(ep.set_cag_gripper_mode(1))
-    print(ep.set_cag_gripper_mode(0))
+    print(ep.set_gripper_mode(0))
 
-    print(ep.set_cag_gripper_value(100, 20))
+    print(ep.set_gripper_value(100, 20))
     print(ep.wait(2))
-    print(ep.get_cag_gripper_value())
-    print(ep.set_cag_gripper_value(50, 20))
+    print(ep.set_gripper_value(50, 20))
     print(ep.wait(2))
-    print(ep.get_cag_gripper_value())
-    print(ep.set_cag_gripper_value(0, 20))
+    print(ep.set_gripper_value(0, 20))
     print(ep.wait(2))
-    print(ep.get_cag_gripper_value())
 
-    print(ep.set_cag_gripper_enabled(1))
+    print(ep.set_gripper_enabled(1))
     print(ep.wait(2))
-    print(ep.set_cag_gripper_enabled(0))
+    print(ep.set_gripper_enabled(0))
 
     ep.stop_client()
 
