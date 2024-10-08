@@ -38,7 +38,7 @@ from pymycobot.pro630 import Pro630
 from pymycobot.pro630client import Pro630Client
 from pymycobot.pro400 import Pro400
 from pymycobot.pro400client import Pro400Client
-
+from pymycobot.myarmm_control import MyArmMControl
 
 __all__ = [
     "MyPalletizer260",
@@ -76,7 +76,8 @@ __all__ = [
     "Pro400",
     "Pro400Client",
     "MyCobot280Socket",
-    "MyCobot320Socket"
+    "MyCobot320Socket",
+    "MyArmMControl"
 
 ]
 
