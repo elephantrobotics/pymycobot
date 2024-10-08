@@ -1,26 +1,25 @@
 # coding=utf-8
 
 from __future__ import division
-
-import threading
 import time
 import math
 import socket
-import logging
+import threading
 
-from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MechArmSocket(CommandGenerator):
+class MyCobot280Socket(CommandGenerator):
     """MyCobot Python API Serial communication class.
     Note: Please use this class under the same network
 
     Supported methods:
 
         # Overall status
+            set_free_mode()
+            is_free_mode()
             get_error_information()
             clear_error_information()
             set_fresh_mode()
@@ -48,10 +47,12 @@ class MechArmSocket(CommandGenerator):
         # Running status and Settings
             set_joint_max()
             set_joint_min()
-            Other at parent class: `CommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Servo control
-            Look at parent class: `CommandGenerator`.
+            move_round()
+            set_four_pieces_zero()
+            Other at parent class: `CommandGenerator`.
 
         # Atom IO
             set_pin_mode()
@@ -84,6 +85,7 @@ class MechArmSocket(CommandGenerator):
             get_end_type()
 
         # Other
+            close()
             wait() *
     """
     _write = write
@@ -95,7 +97,7 @@ class MechArmSocket(CommandGenerator):
             ip: Server ip
             netport: Server port
         """
-        super(MechArmSocket, self).__init__(debug)
+        super(MyCobot280Socket, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
@@ -120,10 +122,12 @@ class MechArmSocket(CommandGenerator):
                 has_reply: Whether there is a return value to accept.
         """
         real_command, has_reply = super(
-            MechArmSocket, self)._mesg(genre, *args, **kwargs)
+            MyCobot280Socket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        # data = self._write(self._flatten(real_command), "socket")
         with self.lock:
+            # data = self._write(self._flatten(real_command), "socket")
+            # # if has_reply:
+            # data = self._read(genre, method='socket')
             try_count = 0
             while try_count < 3:
                 self._write(self._flatten(real_command), "socket")
@@ -168,6 +172,8 @@ class MechArmSocket(CommandGenerator):
                 ProtocolCode.GET_GRIPPER_MODE,
                 ProtocolCode.GET_ERROR_INFO,
                 ProtocolCode.GET_GPIO_IN,
+                ProtocolCode.GET_COMMUNICATE_MODE,
+                ProtocolCode.SET_COMMUNICATE_MODE,
                 ProtocolCode.SetHTSGripperTorque,
                 ProtocolCode.GetHTSGripperTorque,
                 ProtocolCode.GetGripperProtectCurrent,
@@ -206,7 +212,6 @@ class MechArmSocket(CommandGenerator):
                 return r
             else:
                 return res
-        return None
 
     # System Status
     def get_error_information(self):
@@ -226,17 +231,22 @@ class MechArmSocket(CommandGenerator):
         return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply=True)
 
     # Overall Status
-    def read_next_error(self):
-        """Robot Error Detection
+    def set_free_mode(self, flag):
+        """set to free mode
+
+        Args:
+            flag: 0/1
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
+        return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
+
+    def is_free_mode(self):
+        """Check if it is free mode
 
         Return:
-            list len 6.
-            0 : No abnormality
-            1 : Communication disconnected
-            2 : Unstable communication
-            3 : Servo abnormality
+            0/1
         """
-        return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)
+        return self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True)
 
     def set_fresh_mode(self, mode):
         """Set command refresh mode
@@ -252,6 +262,18 @@ class MechArmSocket(CommandGenerator):
     def get_fresh_mode(self):
         """Query sports mode"""
         return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
+
+    def read_next_error(self):
+        """Robot Error Detection
+
+        Return:
+            list len 6.
+            0 : No abnormality
+            1 : Communication disconnected
+            2 : Unstable communication
+            3 : Servo abnormality
+        """
+        return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)
 
     # MDI mode and operation
     def get_radians(self):
@@ -313,6 +335,24 @@ class MechArmSocket(CommandGenerator):
         """Get joint angles and coordinates"""
         return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply=True)
 
+    # Basic for raspberry pi.
+    def gpio_init(self):
+        """Init GPIO module, and set BCM mode."""
+        import RPi.GPIO as GPIO  # type: ignore
+
+        GPIO.setmode(GPIO.BCM)
+        self.gpio = GPIO
+
+    def gpio_output(self, pin, v):
+        """Set GPIO output value.
+
+        Args:
+            pin: (int)pin number.
+            v: (int) 0 / 1
+        """
+        self.gpio.setup(pin, self.gpio.OUT)
+        self.gpio.output(pin, v)
+
     # JOG mode and operation
     def jog_rpy(self, end_direction, direction, speed):
         """Rotate the end around a fixed axis in the base coordinate system
@@ -371,29 +411,6 @@ class MechArmSocket(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, current=current)
 
         return self._mesg(ProtocolCode.SetGripperProtectCurrent, [current])
-
-    # Running Status and Settings
-    def set_joint_max(self, id, angle):
-        """Set the joint maximum angle
-
-        Args:
-            id: int. 1 - 6
-            angle: 0 ~ 180
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
-
-    def set_joint_min(self, id, angle):
-        """Set the joint minimum angle
-
-        Args:
-            id: int.
-                Joint id 1 - 6
-                for gripper: Joint id 7
-            angle: 0 ~ 180
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
 
     # Atom IO
     def set_pin_mode(self, pin_no, pin_mode):
@@ -455,11 +472,46 @@ class MechArmSocket(CommandGenerator):
         return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode, has_reply=True)
 
     def get_transponder_mode(self):
-        """
-        Get basic communication mode
-        :return: 0/1
-        """
         return self._mesg(ProtocolCode.GET_COMMUNICATE_MODE, has_reply=True)
+
+    # g9 servo
+    def move_round(self):
+        """Drive the 9g steering gear clockwise for one revolution
+        """
+        return self._mesg(ProtocolCode.move_round)
+
+    def set_four_pieces_zero(self):
+        """Set the zero position of the four-piece motor
+
+        Returns:
+            int: 0 or 1 (1 - success)
+        """
+        return self._mesg(ProtocolCode.SET_FOUR_PIECES_ZERO, has_reply=True)
+
+    # Running Status and Settings
+    def set_joint_max(self, id, angle):
+        """Set the joint maximum angle
+
+        Args:
+            id: int.
+                Joint id 1 - 6
+                for gripper: Joint id 7
+            angle: 0 ~ 180
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
+
+    def set_joint_min(self, id, angle):
+        """Set the joint minimum angle
+
+        Args:
+            id: int.
+                Joint id 1 - 6
+                for gripper: Joint id 7
+            angle: 0 ~ 180
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
 
     # servo state value
     def get_servo_speeds(self):

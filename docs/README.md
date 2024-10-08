@@ -1413,7 +1413,7 @@ Set the terminal atom io status
 - **Parameters**
   - `end_direction (int)`: Roll, Pitch, Yaw (1-3)
   - `direction (int)`: 1 - forward rotation, 0 - reverse rotation
-  - `speed (int)`: 1 ~ 100
+  - `speed (int)`: 1 ~ 100.
 
 ### set_void_compensate
 

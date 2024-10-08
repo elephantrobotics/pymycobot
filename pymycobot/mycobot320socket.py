@@ -1,31 +1,27 @@
 # coding=utf-8
 
 from __future__ import division
-
-import threading
 import time
 import math
 import socket
-import logging
+import threading
 
-from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
-from pymycobot.common import ProtocolCode, write, read
+from pymycobot.common import ProtocolCode, write, read, ProGripper
 from pymycobot.error import calibration_parameters
 
 
-class MechArmSocket(CommandGenerator):
-    """MyCobot Python API Serial communication class.
+class MyCobot320Socket(CommandGenerator):
+    """MyCobot320 Python API Serial communication class.
     Note: Please use this class under the same network
 
     Supported methods:
 
         # Overall status
-            get_error_information()
-            clear_error_information()
             set_fresh_mode()
             get_fresh_mode()
             read_next_error()
+            clear_error_information()
             Other at parent class: `CommandGenerator`.
 
         # MDI mode and operation
@@ -37,43 +33,37 @@ class MechArmSocket(CommandGenerator):
             Other look at parent class: `CommandGenerator`.
 
         # JOG mode and operation
-            jog_rpy()
-            set_HTS_gripper_torque()
-            get_HTS_gripper_torque()
-            get_gripper_protect_current()
-            init_gripper()
-            set_gripper_protect_current()
-            Other at parent class: `CommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Running status and Settings
-            set_joint_max()
-            set_joint_min()
+            jog_rpy()
             Other at parent class: `CommandGenerator`.
 
         # Servo control
             Look at parent class: `CommandGenerator`.
 
         # Atom IO
-            set_pin_mode()
-            get_gripper_value()
-            is_gripper_moving()
-            set_pwm_output()
+            init_eletric_gripper()
+            set_eletric_gripper()
+            set_gripper_mode()
+            get_gripper_mode()
             Other at parent class: `CommandGenerator`.
 
         # Basic
-            set_transponder_mode()
-            get_transponder_mode()
-            Other at parent class: `CommandGenerator`.
+            Look at parent class: `CommandGenerator`.
 
         # Servo state value
+            get_servo_currents()
             get_servo_speeds()
             get_servo_voltages()
             get_servo_status()
             get_servo_temps()
+            get_servo_last_pdi()
+            set_void_compensate()
 
         # Coordinate transformation
             set_tool_reference()
-            get_tool_reference()
+            get_world_reference()
             set_world_reference()
             get_world_reference()
             set_reference_frame()
@@ -82,6 +72,27 @@ class MechArmSocket(CommandGenerator):
             get_movement_type()
             set_end_type()
             get_end_type()
+
+        # Force Control Gripper
+            set_pro_gripper()
+            get_pro_gripper()
+            set_pro_gripper_angle()
+            get_pro_gripper_angle()
+            set_pro_gripper_open()
+            set_pro_gripper_close()
+            set_pro_gripper_calibration()
+            get_pro_gripper_status()
+            set_pro_gripper_torque()
+            get_pro_gripper_torque()
+            set_pro_gripper_speed()
+            get_pro_gripper_default_speed()
+            set_pro_gripper_abs_angle()
+            set_pro_gripper_pause()
+            set_pro_gripper_resume()
+            set_pro_gripper_stop()
+
+        # Atom
+            get_atom_version()
 
         # Other
             wait() *
@@ -95,7 +106,7 @@ class MechArmSocket(CommandGenerator):
             ip: Server ip
             netport: Server port
         """
-        super(MechArmSocket, self).__init__(debug)
+        super(MyCobot320Socket, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
@@ -120,10 +131,12 @@ class MechArmSocket(CommandGenerator):
                 has_reply: Whether there is a return value to accept.
         """
         real_command, has_reply = super(
-            MechArmSocket, self)._mesg(genre, *args, **kwargs)
+            MyCobot320Socket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        # data = self._write(self._flatten(real_command), "socket")
         with self.lock:
+            # data = self._write(self._flatten(real_command), "socket")
+            # # if has_reply:
+            # data = self._read(genre, method='socket')
             try_count = 0
             while try_count < 3:
                 self._write(self._flatten(real_command), "socket")
@@ -142,7 +155,8 @@ class MechArmSocket(CommandGenerator):
                 ProtocolCode.GET_BASIC_VERSION,
                 ProtocolCode.GET_JOINT_MIN_ANGLE,
                 ProtocolCode.GET_JOINT_MAX_ANGLE,
-                ProtocolCode.SOFTWARE_VERSION]:
+                ProtocolCode.SOFTWARE_VERSION,
+                ProtocolCode.GET_ATOM_VERSION]:
                 return res[0]
             if genre in [
                 ProtocolCode.ROBOT_VERSION,
@@ -168,13 +182,18 @@ class MechArmSocket(CommandGenerator):
                 ProtocolCode.GET_GRIPPER_MODE,
                 ProtocolCode.GET_ERROR_INFO,
                 ProtocolCode.GET_GPIO_IN,
+                ProtocolCode.GET_COMMUNICATE_MODE,
+                ProtocolCode.SET_COMMUNICATE_MODE,
                 ProtocolCode.SetHTSGripperTorque,
                 ProtocolCode.GetHTSGripperTorque,
                 ProtocolCode.GetGripperProtectCurrent,
                 ProtocolCode.InitGripper,
-                ProtocolCode.SET_FOUR_PIECES_ZERO
+                ProtocolCode.SET_FOUR_PIECES_ZERO,
+                ProtocolCode.SET_TOQUE_GRIPPER,
             ]:
                 return self._process_single(res)
+            elif genre in [ProtocolCode.GET_TOQUE_GRIPPER]:
+                return self._process_high_low_bytes(res)
             elif genre in [ProtocolCode.GET_ANGLES]:
                 return [self._int2angle(angle) for angle in res]
             elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
@@ -206,38 +225,8 @@ class MechArmSocket(CommandGenerator):
                 return r
             else:
                 return res
-        return None
-
-    # System Status
-    def get_error_information(self):
-        """Obtaining robot error information
-
-        Return:
-            0: No error message.
-            1 ~ 6: The corresponding joint exceeds the limit position.
-            16 ~ 19: Collision protection.
-            32: Kinematics inverse solution has no solution.
-            33 ~ 34: Linear motion has no adjacent solution.
-        """
-        return self._mesg(ProtocolCode.GET_ERROR_INFO, has_reply=True)
-
-    def clear_error_information(self):
-        """Clear robot error message"""
-        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply=True)
 
     # Overall Status
-    def read_next_error(self):
-        """Robot Error Detection
-
-        Return:
-            list len 6.
-            0 : No abnormality
-            1 : Communication disconnected
-            2 : Unstable communication
-            3 : Servo abnormality
-        """
-        return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)
-
     def set_fresh_mode(self, mode):
         """Set command refresh mode
 
@@ -252,6 +241,22 @@ class MechArmSocket(CommandGenerator):
     def get_fresh_mode(self):
         """Query sports mode"""
         return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
+
+    def read_next_error(self):
+        """Robot Error Detection
+
+        Return:
+            list len 6.
+            0 : No abnormality
+            1 : Communication disconnected
+            2 : Unstable communication
+            3 : Servo abnormality
+        """
+        return self._mesg(ProtocolCode.READ_NEXT_ERROR, has_reply=True)
+
+    def clear_error_information(self):
+        """Clear robot error message"""
+        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply=True)
 
     # MDI mode and operation
     def get_radians(self):
@@ -325,59 +330,31 @@ class MechArmSocket(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
 
-    def set_HTS_gripper_torque(self, torque):
-        """Set new adaptive gripper torque
+    # Basic for raspberry pi.
+    def gpio_init(self):
+        """Init GPIO module, and set BCM mode."""
+        import RPi.GPIO as GPIO  # type: ignore
+
+        GPIO.setmode(GPIO.BCM)
+        self.gpio = GPIO
+
+    def gpio_output(self, pin, v):
+        """Set GPIO output value.
 
         Args:
-            torque (int): 150 ~ 980
-
-        Return:
-            0: Set failed
-            1: Set successful
+            pin: (int)pin number.
+            v: (int) 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, torque=torque)
-        return self._mesg(ProtocolCode.SetHTSGripperTorque, [torque], has_reply=True)
+        self.gpio.setup(pin, self.gpio.OUT)
+        self.gpio.output(pin, v)
 
-    def get_HTS_gripper_torque(self):
-        """Get gripper torque
-
-        Returns:
-            int: 150 ~ 980
-        """
-        return self._mesg(ProtocolCode.GetHTSGripperTorque, has_reply=True)
-
-    def get_gripper_protect_current(self):
-        """Get the gripper protection current
-
-        Returns:
-            int: 1 ~ 500
-        """
-        return self._mesg(ProtocolCode.GetGripperProtectCurrent, has_reply=True)
-
-    def init_gripper(self):
-        """Initialize gripper
-
-        Returns:
-            int: 0 or 1 (1 - success)
-        """
-        return self._mesg(ProtocolCode.InitGripper, has_reply=True)
-
-    def set_gripper_protect_current(self, current):
-        """Set the gripper protection current
-
-        Args:
-            current (int): 1 ~ 500
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, current=current)
-
-        return self._mesg(ProtocolCode.SetGripperProtectCurrent, [current])
-
-    # Running Status and Settings
+    # Joint limit
     def set_joint_max(self, id, angle):
         """Set the joint maximum angle
 
         Args:
             id: int. 1 - 6
+
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
@@ -389,79 +366,52 @@ class MechArmSocket(CommandGenerator):
         Args:
             id: int.
                 Joint id 1 - 6
-                for gripper: Joint id 7
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
 
-    # Atom IO
-    def set_pin_mode(self, pin_no, pin_mode):
-        """Set the state mode of the specified pin in atom.
+    # Atom Gripper IO
+    def init_eletric_gripper(self):  # TODO 22-5-19 need test
+        """Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper"""
+        return self._mesg(ProtocolCode.INIT_ELETRIC_GRIPPER)
+
+    def set_eletric_gripper(self, status):  # TODO 22-5-19 need test
+        """Set Electric Gripper Mode
 
         Args:
-            pin_no   (int): pin number.
-            pin_mode (int): 0 - input, 1 - output, 2 - input_pullup
+            status: 0 - open, 1 - close.
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_mode=pin_mode)
-        return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
+        self.calibration_parameters(class_name=self.__class__.__name__, status=status)
+        return self._mesg(ProtocolCode.SET_ELETRIC_GRIPPER, status)
 
-    def get_gripper_value(self, gripper_type=None):
-        """Get the value of gripper.
+    def set_gripper_mode(self, mode):
+        """Set gripper mode
 
         Args:
-            gripper_type (int): default 1
-                1: Adaptive gripper
-                3: Parallel gripper
-                4: Flexible gripper
+            mode: 0 - transparent transmission. 1 - Port Mode.
 
-        Return:
-            gripper value (int)
-        """
-        if gripper_type is None:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
-        else:
-            self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
-
-    def is_gripper_moving(self):
-        """Judge whether the gripper is moving or not
-
-        Returns:
-            0 - not moving
-            1 - is moving
-            -1- error data
-        """
-        return self._mesg(ProtocolCode.IS_GRIPPER_MOVING, has_reply=True)
-
-    def set_pwm_output(self, channel, frequency, pin_val):
-        """ PWM control
-
-        Args:
-            channel (int): IO number.
-            frequency (int): clock frequency
-            pin_val (int): Duty cycle 0 ~ 256; 128 means 50%
-        """
-        return self._mesg(ProtocolCode.SET_PWM_OUTPUT, channel, [frequency], pin_val)
-
-    # communication mode
-    def set_transponder_mode(self, mode):
-        """Set basic communication mode
-
-        Args:
-            mode: 0 - Turn off transparent transmission，1 - Open transparent transmission
         """
         self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_COMMUNICATE_MODE, mode, has_reply=True)
+        return self._mesg(ProtocolCode.SET_GRIPPER_MODE, mode)
 
-    def get_transponder_mode(self):
+    def get_gripper_mode(self):
+        """Get gripper mode
+
+        Return:
+            mode: 0 - transparent transmission. 1 - Port Mode.
         """
-        Get basic communication mode
-        :return: 0/1
-        """
-        return self._mesg(ProtocolCode.GET_COMMUNICATE_MODE, has_reply=True)
+        return self._mesg(ProtocolCode.GET_GRIPPER_MODE, has_reply=True)
 
     # servo state value
+    def get_servo_currents(self):
+        """Get joint current
+
+        Return:
+            0 ~ 3250 mA
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
+
     def get_servo_speeds(self):
         """Get joint speed
 
@@ -493,6 +443,24 @@ class MechArmSocket(CommandGenerator):
             A list unit ℃
         """
         return self._mesg(ProtocolCode.GET_SERVO_TEMPS, has_reply=True)
+
+    def get_servo_last_pdi(self, id):
+        """Obtain the pdi of a single steering gear before modification
+
+        Args:
+            id: 1 - 6
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id_pdi=id)
+        return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, id, has_reply=True)
+
+    def set_void_compensate(self, mode):
+        """Set void compensation mode
+
+        Args:
+            mode (int): 0 - close, 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_VOID_COMPENSATE, mode)
 
     # Coordinate transformation
     def set_tool_reference(self, coords):
@@ -621,6 +589,183 @@ class MechArmSocket(CommandGenerator):
             pin_no: (int) pin id.
         """
         return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no, has_reply=True)
+
+    # Force Control Gripper
+    def set_pro_gripper(self, gripper_id, address, value):
+        """Setting the force-controlled gripper parameters
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            address (int): Corresponding to the command sequence number in the force-controlled gripper protocol
+            value : Parameters in the force-controlled gripper protocol
+        """
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [value])
+
+    def get_pro_gripper(self, gripper_id, address):
+        """Get the force-controlled gripper parameters
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            address (int): Corresponding to the command sequence number in the force-controlled gripper protocol
+        """
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [address])
+
+    def set_pro_gripper_angle(self, gripper_id, gripper_angle):
+        """ Setting the angle of the force-controlled gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            gripper_angle (int): 0 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, gripper_angle)
+
+    def get_pro_gripper_angle(self, gripper_id):
+        """ Setting the angle of the force-controlled gripper
+
+        Return:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE)
+
+    def set_pro_gripper_open(self, gripper_id):
+        """ Open force-controlled gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper_angle(gripper_id, 100)
+
+    def set_pro_gripper_close(self, gripper_id):
+        """ close force-controlled gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper_angle(gripper_id, 0)
+
+    def set_pro_gripper_calibration(self, gripper_id):
+        """ Setting the gripper jaw zero position
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_CALIBRATION, 0)
+
+    def get_pro_gripper_status(self, gripper_id):
+        """ Get the clamping status of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            0 - Moving
+            1 - Stopped moving, no clamping detected
+            2 - Stopped moving, clamping detected
+            3 - After clamping detected, the object fell
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_STATUS)
+
+    def set_pro_gripper_torque(self, gripper_id, torque_value):
+        """ Setting gripper torque
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            torque_value (int): 100 ~ 300
+
+        Return:
+            0: Set failed
+            1: Set successful
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, torque_value=[gripper_id, torque_value])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_TORQUE, torque_value)
+
+    def get_pro_gripper_torque(self, gripper_id):
+        """ Setting gripper torque
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            torque_value (int): 100 ~ 300
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_TORQUE)
+
+    def set_pro_gripper_speed(self, gripper_id, speed):
+        """ Set the gripper speed
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            speed (int): 1 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_speed=[gripper_id, speed])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_SPEED, speed)
+
+    def get_pro_gripper_default_speed(self, gripper_id):
+        """ Get the default gripper speed
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            speed (int): 1 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_DEFAULT_SPEED)
+
+    def set_pro_gripper_abs_angle(self, gripper_id, gripper_angle):
+        """ Set the gripper speed
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            gripper_angle (int): 0 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ABS_ANGLE, gripper_angle)
+
+    def set_pro_gripper_pause(self, gripper_id):
+        """ Pause movement
+
+        Args:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_PAUSE, 0)
+
+    def set_pro_gripper_resume(self, gripper_id):
+        """ Resume movement
+
+        Args:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_RESUME, 0)
+
+    def set_pro_gripper_stop(self, gripper_id):
+        """ Stop movement
+
+        Args:
+            gripper_id (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_STOP, 0)
+
+    def get_atom_version(self):
+        """Get atom firmware version.
+
+        Returns:
+            float: version number.
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
 
     # Other
     def wait(self, t):
