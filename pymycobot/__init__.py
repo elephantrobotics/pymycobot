@@ -30,7 +30,6 @@ from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
-from pymycobot.mercurychassis import MercuryChassis
 from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.mercurysocket import MercurySocket
 from pymycobot.myarmm import MyArmM
@@ -40,6 +39,7 @@ from pymycobot.pro630client import Pro630Client
 from pymycobot.pro400 import Pro400
 from pymycobot.pro400client import Pro400Client
 from pymycobot.myarmm_control import MyArmMControl
+from pymycobot.mercurychassis_api import ChassisControl
 
 __all__ = [
     "MyPalletizer260",
@@ -67,7 +67,6 @@ __all__ = [
     "MyAgv",
     "MechArmSocket",
     "MyArmSocket",
-    "MercuryChassis",
     "MercurySocket",
     "MyArmM",
     "MyArmC",
@@ -78,8 +77,8 @@ __all__ = [
     "Pro400Client",
     "MyCobot280Socket",
     "MyCobot320Socket",
-    "MyArmMControl"
-
+    "MyArmMControl",
+    "ChassisControl"
 ]
 
 if sys.platform == "linux":
