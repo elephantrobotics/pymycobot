@@ -1,11 +1,11 @@
 # coding=utf-8
-from pymycobot import MyCobot
+from pymycobot import MyCobot280
 import time
 
 # 需要将串口号更改为电脑实际的串口号，将夹爪张开到最大，再运行此脚本
 port = 'com8'
 
-mc = MyCobot(port)
+mc = MyCobot280(port)
 
 print("零位矫正前当前所在位置: ",mc.get_gripper_value())
 time.sleep(0.1)

@@ -11,12 +11,12 @@
 # https://docs.elephantrobotics.com/docs/gitbook-en/7-ApplicationBasePython/
 
 # import library
-from pymycobot import MyCobot               #import mycobot library,if don't have, first 'pip install pymycobot'
+from pymycobot import MyCobot280               #import mycobot library,if don't have, first 'pip install pymycobot'
 import time
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 # if use Pi control
-mc = MyCobot('/dev/ttyAMA0',1000000)        #linux use
+mc = MyCobot280('/dev/ttyAMA0',1000000)        #linux use
 
 #init robot
 mc.power_on()
