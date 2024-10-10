@@ -472,7 +472,6 @@ class MyBuddyCommandGenerator(CommandGenerator):
         encoders_data = []
         if id == 0:
             encoders_data = (_encoders[0:7] + speed[0:7] + _encoders[7:14] + speed[7:14] + _encoders[-1:] + speed[-1:])
-            print(encoders_data)
             return self._mesg(ProtocolCode.SET_ENCODERS, _id, encoders_data)
         if id == 1 or id == 2:
             return self._mesg(ProtocolCode.SET_ENCODERS, _id, _encoders, _speed)
