@@ -18,12 +18,13 @@ from pymycobot.ultraArm import ultraArm
 from pymycobot.mybuddybluetooth import MyBuddyBlueTooth
 from pymycobot.mypalletizersocket import MyPalletizerSocket
 from pymycobot.myarm import MyArm
-from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
+from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
 from pymycobot.mercurychassis import MercuryChassis
+from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.mercurysocket import MercurySocket
 from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.myarmm import MyArmM

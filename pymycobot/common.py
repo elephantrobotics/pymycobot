@@ -116,6 +116,9 @@ class ProtocolCode(object):
     GET_SPEED = 0x40
     SET_SPEED = 0x41
     GET_FEED_OVERRIDE = 0x42
+    GET_DRAG_FIFO = 0x44
+    SET_DRAG_FIFO = 0x45
+    GET_DRAG_FIFO_LEN = 0x46
     GET_MAX_ACC = 0x42
     SET_MAX_ACC = 0x43
     GET_ACCELERATION = 0x44
@@ -420,11 +423,7 @@ class DataProcessor(object):
                 for i in list(struct.pack(">h", data))
             ]
         else:
-            res = []
-            for v in data:
-                t = self._encode_int16(v)
-                res.extend(t)
-        return res
+            return sum([list(struct.pack(">h", elem)) for elem in data], [])
 
     def _decode_int8(self, data):
         return struct.unpack("B", data)[0]
@@ -548,8 +547,7 @@ class DataProcessor(object):
             data_len = data[header_i + 3] - 2
         elif arm == 14:
             data_len = data[header_i + 2] - 3
-            
-        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
+        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT, ProtocolCode.SET_BASIC_OUTPUT]
         if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
             data_pos = header_i + 4
         elif cmd_id in unique_data:
@@ -631,9 +629,16 @@ class DataProcessor(object):
                 else:
                     res.append(i)
         elif data_len == 28:
-            for i in range(0, data_len, 4):
-                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                res.append(byte_value) 
+            if genre == ProtocolCode.GET_QUICK_INFO:
+                for header_i in range(0, len(valid_data)-2, 2):
+                    one = valid_data[header_i : header_i + 2]
+                    res.append(self._decode_int16(one))
+                res.append(valid_data[-2])
+                res.append(valid_data[-1])
+            else:
+                for i in range(0, data_len, 4):
+                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                    res.append(byte_value) 
         elif data_len == 40:
             i = 0
             while i < data_len:
@@ -657,6 +662,21 @@ class DataProcessor(object):
                     res.append(self._decode_int16(one))
                     i+=2
             return res
+        elif data_len == 48:
+            if genre == ProtocolCode.GET_QUICK_INFO:
+                i = 0
+                while i < data_len:
+                    if i < 28:
+                        byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                        res.append(byte_value)
+                        i+=4
+                    elif i < 40:
+                        one = valid_data[i : i + 2]
+                        res.append(self._decode_int16(one))
+                        i+=2
+                    else:
+                        res.append(valid_data[i])
+                        i+=1
         elif data_len == 38:
             i = 0
             res = []
@@ -696,7 +716,6 @@ class DataProcessor(object):
             return 3
         else:
             return -1
-
 
 def write(self, command, method=None):
     if len(command) > 3 and command[3] == 176 and len(command) > 5:

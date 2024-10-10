@@ -1,54 +1,17 @@
 # coding=utf-8
 
-from __future__ import division
 import time
-import math
-import logging
 import threading
 
-from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
-from pymycobot.public import PublicCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
-from pymycobot.sms import sms_sts
 
 
-class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
-    """MyCobot Python API Serial communication class.
-
-    Supported methods:
-
-        # Overall status
-            Look at parent class: `CommandGenerator`.
-
-        # MDI mode and operation
-            get_radians()
-            send_radians()
-            sync_send_angles() *
-            sync_send_coords() *
-            Other look at parent class: `CommandGenerator`.
-
-        # JOG mode and operation
-            Look at parent class: `CommandGenerator`.
-
-        # Running status and Settings
-            Look at parent class: `CommandGenerator`.
-
-        # Servo control
-            Look at parent class: `CommandGenerator`.
-
-        # Atom IO
-            Look at parent class: `CommandGenerator`.
-
-        # Basic
-            Look at parent class: `CommandGenerator`.
-
-        # Other
-            wait() *
-    """
-
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=True):
+class DualMercury(CommandGenerator):
+    _write = write
+    _read = read
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
         """
         Args:
             port     : port string
@@ -56,9 +19,10 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
             timeout  : default 0.1
             debug    : whether show debug info
         """
-        super(MyCobot, self).__init__(debug)
+        super(DualMercury, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         import serial
+
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -66,10 +30,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
-        super(sms_sts, self).__init__(self._serial_port, 0)
-
-    _write = write
-    _read = read
+        
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -83,8 +44,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
-            MyCobot, self)._mesg(genre, *args, **kwargs)
+        real_command, has_reply = super(Mercury, self)._mesg(genre, *args, **kwargs)
         with self.lock:
             self._write(self._flatten(real_command))
 
@@ -93,8 +53,6 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
                 res = self._process_received(data, genre)
-                if res == []:
-                    return None
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.GET_ROBOT_ID,
@@ -118,20 +76,17 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
                     ProtocolCode.GET_REFERENCE_FRAME,
                     ProtocolCode.GET_FRESH_MODE,
                     ProtocolCode.GET_GRIPPER_MODE,
-                    ProtocolCode.GET_ERROR_INFO,
-                    ProtocolCode.GET_COMMUNICATE_MODE,
-                    ProtocolCode.SET_COMMUNICATE_MODE,
-                    ProtocolCode.GetHTSGripperTorque,
-                    ProtocolCode.SetHTSGripperTorque,
-                    ProtocolCode.GetGripperProtectCurrent,
-                    ProtocolCode.InitGripper,
-                    ProtocolCode.SET_FOUR_PIECES_ZERO,
-                    ProtocolCode.SET_BASIC_OUTPUT
+                    ProtocolCode.SET_SSID_PWD,
+                    ProtocolCode.COBOTX_IS_GO_ZERO,
                 ]:
                     return self._process_single(res)
-                elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
+                elif genre in [ProtocolCode.GET_ANGLES]:
                     return [self._int2angle(angle) for angle in res]
-                elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+                elif genre in [
+                    ProtocolCode.GET_COORDS,
+                    ProtocolCode.GET_TOOL_REFERENCE,
+                    ProtocolCode.GET_WORLD_REFERENCE,
+                ]:
                     if res:
                         r = []
                         for idx in range(3):
@@ -143,46 +98,141 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
                         return res
                 elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
                     return [self._int2coord(angle) for angle in res]
-                elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
-                    return self._int2coord(res[0])
                 elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
                     return self._int2coord(self._process_single(res))
+                elif genre in [
+                    ProtocolCode.GET_JOINT_MAX_ANGLE,
+                    ProtocolCode.GET_JOINT_MIN_ANGLE,
+                ]:
+                    return self._int2coord(res[0])
                 elif genre == ProtocolCode.GET_ANGLES_COORDS:
                     r = []
                     for index in range(len(res)):
-                        if index < 6:
+                        if index < 7:
                             r.append(self._int2angle(res[index]))
-                        elif index < 9:
+                        elif index < 10:
                             r.append(self._int2coord(res[index]))
                         else:
                             r.append(self._int2angle(res[index]))
                     return r
+                elif genre == ProtocolCode.GO_ZERO:
+                    r = []
+                    if 1 not in res[1:]:
+                        return res[0]
+                    else:
+                        for i in range(1, len(res)):
+                            if res[i] == 1:
+                                r.append(i)
+                    return r
+                elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_SOLUTION_ANGLES]:
+                        return self._int2angle(res[0])
                 else:
                     return res
             return None
 
-    def get_radians(self):
-        """Get the radians of all joints
-
-        Return:
-            list: A list of float radians [radian1, ...]
-        """
-        angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
-        return [round(angle * (math.pi / 180), 3) for angle in angles]
-
-    def send_radians(self, radians, speed):
-        """Send the radians of all joints to robot arm
+    def set_solution_angles(self, angle, speed):
+        """Set zero space deflection angle value
 
         Args:
-            radians: a list of radian values( List[float]), length 6
-            speed: (int )0 ~ 100
+            angle: Angle of joint 1. The angle range is -90 ~ 90
+            speed: 1 - 100.
         """
-        calibration_parameters(len6=radians, speed=speed)
-        degrees = [self._angle2int(radian * (180 / math.pi))
-                   for radian in radians]
-        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, speed=speed, solution_angle=angle
+        )
+        return self._mesg(
+            ProtocolCode.COBOTX_SET_SOLUTION_ANGLES, [self._angle2int(angle)], speed
+        )
 
-    def sync_send_angles(self, degrees, speed, timeout=30):
+    def get_solution_angles(self):
+        """Get zero space deflection angle value"""
+        return self._mesg(ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, has_reply=True)
+
+    def write_move_c(self, transpoint, endpoint, speed):
+        """_summary_
+
+        Args:
+            transpoint (list): Arc passing point coordinates
+            endpoint (list): Arc end point coordinates
+            speed (int): 1 ~ 100
+        """
+        start = []
+        end = []
+        for index in range(6):
+            if index < 3:
+                start.append(self._coord2int(transpoint[index]))
+                end.append(self._coord2int(endpoint[index]))
+            else:
+                start.append(self._angle2int(transpoint[index]))
+                end.append(self._angle2int(endpoint[index]))
+        return self._mesg(ProtocolCode.WRITE_MOVE_C, start, end, speed)
+
+    def focus_all_servos(self):
+        """Lock all joints"""
+        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
+
+    def go_zero(self):
+        """Control the machine to return to the zero position.
+        
+        Return:
+            1 : All motors return to zero position.
+            list : Motor with corresponding ID failed to return to zero.
+        """
+        return self._mesg(ProtocolCode.GO_ZERO, has_reply=True)
+
+    def get_angle(self, joint_id):
+        """Get single joint angle
+
+        Args:
+            joint_id (int): 1 ~ 7 or 11 ~ 13.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
+        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id, has_reply=True)
+
+    def is_gone_zero(self):
+        """Check if it has returned to zero
+
+        Return:
+            1 : Return to zero successfully.
+            0 : Returning to zero.
+        """
+        return self._mesg(ProtocolCode.COBOTX_IS_GO_ZERO, has_reply=True)
+
+    def set_encoder(self, joint_id, encoder):
+        """Set a single joint rotation to the specified potential value.
+
+        Args:
+            joint_id (int): Joint id 1 - 7.
+            encoder: The value of the set encoder.
+        """
+        # TODO Mercury此接口待定
+        # self.calibration_parameters(
+        #     class_name=self.__class__.__name__, id=joint_id, encoder=encoder
+        # )
+        return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder])
+    
+
+    def servo_restore(self, joint_id):
+        """Abnormal recovery of joints
+
+        Args:
+            joint_id (int): Joint ID.
+                arm : 1 ~ 7 
+                waist : 13
+                All joints: 254
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, servo_restore=joint_id
+        )
+        self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+
+    def close(self):
+        self._serial_port.close()
+        
+    def open(self):
+        self._serial_port.open()
+
+    def sync_send_angles(self, degrees, speed, timeout=15):
         """Send the angle in synchronous state and return when the target point is reached
             
         Args:
@@ -195,11 +245,11 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                return 1
+                break
             time.sleep(0.1)
-        return 0
+        return self
 
-    def sync_send_coords(self, coords, speed, mode=0, timeout=15):
+    def sync_send_coords(self, coords, speed, mode=None, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
             
         Args:
@@ -212,52 +262,6 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
             if self.is_in_position(coords, 1) == 1:
-                return 1
+                break
             time.sleep(0.1)
-        return 0
-
-    # Basic for raspberry pi.
-    def gpio_init(self):
-        """Init GPIO module, and set BCM mode."""
-        import RPi.GPIO as GPIO  # type: ignore
-
-        GPIO.setmode(GPIO.BCM)
-        self.gpio = GPIO
-
-    def gpio_output(self, pin, v):
-        """Set GPIO output value.
-
-        Args:
-            pin: (int)pin number.
-            v: (int) 0 / 1
-        """
-        self.gpio.setup(pin, self.gpio.OUT)
-        self.gpio.output(pin, v)
-
-    # Other
-    def wait(self, t):
-        time.sleep(t)
         return self
-    
-    def close(self):
-        self._serial_port.close()
-        
-    def open(self):
-        self._serial_port.open()
-        
-    def get_acceleration(self):
-        """get acceleration"""
-        return self._process_single(
-            self._mesg(ProtocolCode.GET_ACCELERATION, has_reply=True)
-        )
-
-    def set_acceleration(self, acc):
-        """Set speed for all moves
-        
-        Args:
-            acc: int
-        """
-        return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
-    
-    def go_home(self):
-        return self.send_angles([0,0,0,0,0,0], 10)

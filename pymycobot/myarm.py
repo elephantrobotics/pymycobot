@@ -5,14 +5,15 @@ import time
 import math
 import threading
 import logging
+import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
-
-class MyArm(CommandGenerator):
+class MyArm(CommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -64,6 +65,7 @@ class MyArm(CommandGenerator):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
     _read = read
@@ -151,6 +153,18 @@ class MyArm(CommandGenerator):
                         else:
                             r.append(self._int2angle(res[index]))
                     return r
+                elif genre == ProtocolCode.GET_ANGLES_COORDS_END:
+                    r = []
+                    for index in range(len(res)):
+                        if index < 7:
+                            r.append(self._int2angle(res[index]))
+                        elif index < 10:
+                            r.append(self._int2coord(res[index]))
+                        elif index < 13:
+                            r.append(self._int2angle(res[index]))
+                        else:
+                            r.append(res[index])
+                    return r
                 elif genre == ProtocolCode.GET_SOLUTION_ANGLES:
                     return self._int2angle(res[0])
                 else:
@@ -190,9 +204,9 @@ class MyArm(CommandGenerator):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -207,9 +221,9 @@ class MyArm(CommandGenerator):
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
             if self.is_in_position(coords, 1) == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -308,4 +322,12 @@ class MyArm(CommandGenerator):
             raise Exception("id is not right, please input 0 or 1")
         return self._mesg(ProtocolCode.IS_IN_POSITION, id, data_list, has_reply=True)
     
+    def get_quick_move_info(self):
+        """_summary_
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES_COORDS_END, has_reply=True)
+    
+    def go_home(self):
+        self.send_angles([0,0,0,0,0,0,0], 10)
+        
     

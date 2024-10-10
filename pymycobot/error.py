@@ -71,10 +71,10 @@ def check_0_or_1(parameter, value, range_data, value_type, exception_class, _typ
     check_value_type(parameter, value_type, exception_class, _type)
     if value not in range_data:
         error = "The data supported by parameter {} is ".format(parameter)
-        lens = len(range_data)
-        for idx in range(lens):
+        len = len(range_data)
+        for idx in range(len):
             error += str(range_data[idx])
-            if idx != lens - 1:
+            if idx != len - 1:
                 error += " or "
         error += ", but the received value is {}".format(value)
         raise exception_class(error)
@@ -138,7 +138,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                 )
         elif parameter == 'angle':
             joint_id = kwargs.get('id', None)
-            index = robot_limit[class_name]['joint_id'][joint_id-1] - 1
+            index = robot_limit[class_name]['id'][joint_id-1] - 1
             if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
                 raise exception_class(
                     "angle value not right, should be {0} ~ {1}, but received {2}".format(
@@ -212,7 +212,7 @@ def calibration_parameters(**kwargs):
             if parameter == 'joint_id':
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryDataException)
-            elif parameter == 'degree':
+            elif parameter == 'angle':
                 joint_id = kwargs.get('joint_id', None)
                 if joint_id in [11,12,13]:
                     index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
@@ -248,11 +248,12 @@ def calibration_parameters(**kwargs):
             elif parameter == 'coords':
                 check_coords(value, robot_limit, class_name, MercuryDataException)
 
-            elif parameter == 'speed' and not 1 <= value <= 100:
-                raise MercuryDataException(
-                    "speed value not right, should be 1 ~ 100, the error speed is %s"
-                    % value
-                )
+            elif parameter == 'speed':
+                if not 1 <= value <= 100:
+                    raise MercuryDataException(
+                        "speed value not right, should be 1 ~ 100, the error speed is %s"
+                        % value
+                    )
 
             elif parameter == 'rgb':
                 check_rgb_value(value, MercuryDataException, class_name)
