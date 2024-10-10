@@ -121,7 +121,7 @@ class MyCobot280Socket(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyCobot280Socket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         with self.lock:

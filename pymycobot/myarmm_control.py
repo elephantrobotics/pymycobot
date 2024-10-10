@@ -57,7 +57,7 @@ class MyArmMProcessor(DataProcessor):
         return read(self, genre, command, timeout, _class)
 
     def _mesg(self, genre, *args, **kwargs):
-        real_command, has_reply = super(MyArmMProcessor, self)._mesg(genre, *args, **kwargs)
+        real_command, has_reply, _async = super(MyArmMProcessor, self)._mesg(genre, *args, **kwargs)
         with self.lock:
             return self._res(real_command, has_reply, genre)
 

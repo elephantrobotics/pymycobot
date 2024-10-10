@@ -137,7 +137,7 @@ class MyCobot320(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyCobot320, self)._mesg(genre, *args, **kwargs)
         if self.thread_lock:
             with self.lock:

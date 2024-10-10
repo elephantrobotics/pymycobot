@@ -55,7 +55,7 @@ class MyArmAPI(DataProcessor):
                 has_reply: Whether there is a return value to accept.
         """
         time.sleep(0.01)
-        real_command, has_reply = super(MyArmAPI, self)._mesg(genre, *args, **kwargs)
+        real_command, has_reply, _async = super(MyArmAPI, self)._mesg(genre, *args, **kwargs)
         command = self._flatten(real_command)
         with self.lock:
             self._write(command)
