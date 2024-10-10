@@ -741,3 +741,7 @@ class MyCobot320(CommandGenerator):
 
     def open(self):
         self._serial_port.open()
+        
+    def go_home(self):
+        return self.send_angles([0,0,0,0,0,0], 10)
+        

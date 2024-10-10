@@ -774,3 +774,6 @@ class MyCobot320Socket(CommandGenerator):
 
     def close(self):
         self.sock.close()
+
+    def go_home(self):
+        return self.send_angles([0,0,0,0,0,0], 10)
