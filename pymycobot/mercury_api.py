@@ -129,13 +129,17 @@ class MercuryCommandGenerator(DataProcessor):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MercuryCommandGenerator, self)._mesg(genre, *args, **kwargs)
         is_in_position = False
         is_get_return = False
         lost_times = 0
         with self.lock:
             self._send_command(genre, real_command)
+        if _async:
+            with self.lock:
+                self.write_command.remove(genre)
+                return None
         t = time.time()
         wait_time = 0.15
         big_wait_time = False
@@ -1138,7 +1142,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO, has_reply=True)
 
-    def jog_increment_angle(self, joint_id, increment, speed):
+    def jog_increment_angle(self, joint_id, increment, speed, _async=False):
         """Single angle incremental motion control. 
 
         Args:
@@ -1148,9 +1152,10 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, speed=speed)
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, has_reply=True)
+        
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, has_reply=True, _async=_async)
 
-    def jog_increment_coord(self, coord_id, increment, speed):
+    def jog_increment_coord(self, coord_id, increment, speed, _async=False):
         """Single coordinate incremental motion control. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the job_base_increment_coord interface
 
         Args:
@@ -1162,7 +1167,7 @@ class MercuryCommandGenerator(DataProcessor):
             class_name=self.__class__.__name__, coord_id=coord_id, speed=speed)
         value = self._coord2int(
             increment) if coord_id <= 3 else self._angle2int(increment)
-        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
     def drag_teach_clean(self):
         """clear sample

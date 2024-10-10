@@ -406,7 +406,8 @@ class DataProcessor(object):
 
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
-        return real_command, has_reply
+        _async = kwargs.get("_async", False)
+        return real_command, has_reply, _async
 
     # Functional approach
     def _encode_int8(self, data):
