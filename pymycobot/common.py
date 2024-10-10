@@ -835,7 +835,7 @@ def write(self, command, method=None):
                 command_log += data + " "
         self.log.debug("_write: {}".format(command_log))
         self._serial_port.write(command)
-        self._serial_port.flush()
+        # self._serial_port.flush()
 
 
 def read(self, genre, method=None, command=None, _class=None, timeout=None):
