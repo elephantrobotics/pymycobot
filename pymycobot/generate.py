@@ -474,6 +474,9 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
+    
+    def focus_all_servo(self):
+        return self._mesg(ProtocolCode.FOCUS_SERVO, 0)
 
     # Atom IO
     def set_color(self, r=0, g=0, b=0):
