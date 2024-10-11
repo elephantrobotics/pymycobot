@@ -1,12 +1,10 @@
 # coding=utf-8
 
 from __future__ import division
-
-import threading
 import time
 import math
-import socket
 import logging
+import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
@@ -14,9 +12,8 @@ from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-class MechArmSocket(CommandGenerator):
-    """MyCobot Python API Serial communication class.
-    Note: Please use this class under the same network
+class MechArm270(CommandGenerator):
+    """MechArm270 Python API Serial communication class.
 
     Supported methods:
 
@@ -84,28 +81,34 @@ class MechArmSocket(CommandGenerator):
             get_end_type()
 
         # Other
+            close()
+            open()
             wait() *
     """
-    _write = write
-    _read = read
 
-    def __init__(self, ip, netport=9000, debug=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=True):
         """
         Args:
-            ip: Server ip
-            netport: Server port
+            port     : port string
+            baudrate : baud rate string, default '115200'
+            timeout  : default 0.1
+            debug    : whether show debug info
         """
-        super(MechArmSocket, self).__init__(debug)
+        super(MechArm270, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        self.SERVER_IP = ip
-        self.SERVER_PORT = netport
-        self.sock = self.connect_socket()
-        self.lock = threading.Lock()
+        self.thread_lock = thread_lock
+        if thread_lock:
+            self.lock = threading.Lock()
+        import serial
+        self._serial_port = serial.Serial()
+        self._serial_port.port = port
+        self._serial_port.baudrate = baudrate
+        self._serial_port.timeout = timeout
+        self._serial_port.rts = False
+        self._serial_port.open()
 
-    def connect_socket(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.SERVER_IP, self.SERVER_PORT))
-        return sock
+    _write = write
+    _read = read
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -120,93 +123,92 @@ class MechArmSocket(CommandGenerator):
                 has_reply: Whether there is a return value to accept.
         """
         real_command, has_reply = super(
-            MechArmSocket, self)._mesg(genre, *args, **kwargs)
-        # [254,...,255]
-        # data = self._write(self._flatten(real_command), "socket")
-        with self.lock:
-            try_count = 0
-            while try_count < 3:
-                self._write(self._flatten(real_command), "socket")
-                data = self._read(genre, method='socket')
-                if data is not None and data != b'':
-                    break
-                try_count += 1
-            else:
-                return -1
-            if genre == ProtocolCode.SET_SSID_PWD:
-                return None
-            res = self._process_received(data, genre)
-            if res == []:
-                return None
-            elif res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
-                ProtocolCode.GET_BASIC_VERSION,
-                ProtocolCode.GET_JOINT_MIN_ANGLE,
-                ProtocolCode.GET_JOINT_MAX_ANGLE,
-                ProtocolCode.SOFTWARE_VERSION]:
-                return res[0]
-            if genre in [
-                ProtocolCode.ROBOT_VERSION,
-                ProtocolCode.IS_POWER_ON,
-                ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,
-                ProtocolCode.IS_IN_POSITION,
-                ProtocolCode.IS_MOVING,
-                ProtocolCode.IS_SERVO_ENABLE,
-                ProtocolCode.IS_ALL_SERVO_ENABLE,
-                ProtocolCode.GET_SERVO_DATA,
-                ProtocolCode.GET_DIGITAL_INPUT,
-                ProtocolCode.GET_GRIPPER_VALUE,
-                ProtocolCode.IS_GRIPPER_MOVING,
-                ProtocolCode.GET_SPEED,
-                ProtocolCode.GET_ENCODER,
-                ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE,
-                ProtocolCode.GET_END_TYPE,
-                ProtocolCode.GET_MOVEMENT_TYPE,
-                ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_FRESH_MODE,
-                ProtocolCode.GET_GRIPPER_MODE,
-                ProtocolCode.GET_ERROR_INFO,
-                ProtocolCode.GET_GPIO_IN,
-                ProtocolCode.SetHTSGripperTorque,
-                ProtocolCode.GetHTSGripperTorque,
-                ProtocolCode.GetGripperProtectCurrent,
-                ProtocolCode.InitGripper,
-                ProtocolCode.SET_FOUR_PIECES_ZERO
-            ]:
-                return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES]:
-                return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
-                if res:
-                    r = []
-                    for idx in range(3):
-                        r.append(self._int2coord(res[idx]))
-                    for idx in range(3, 6):
-                        r.append(self._int2angle(res[idx]))
-                    return r
-                else:
-                    return res
-            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-                return [self._int2coord(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
-                return self._int2coord(res[0])
-            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION,
-                           ProtocolCode.GET_ATOM_VERSION]:
-                return self._int2coord(self._process_single(res))
-            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+            MechArm270, self)._mesg(genre, *args, **kwargs)
+        if self.thread_lock:
+            with self.lock:
+                return self._res(real_command, has_reply, genre)
+        else:
+            return self._res(real_command, has_reply, genre)
+
+    def _res(self, real_command, has_reply, genre):
+        try_count = 0
+        while try_count < 3:
+            self._write(self._flatten(real_command))
+            data = self._read(genre)
+            if data is not None and data != b'':
+                break
+            try_count += 1
+        else:
+            return -1
+        if genre == ProtocolCode.SET_SSID_PWD:
+            return None
+        res = self._process_received(data, genre)
+        if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
+                                                                                         ProtocolCode.GET_JOINT_MIN_ANGLE,
+                                                                                         ProtocolCode.GET_JOINT_MAX_ANGLE,
+                                                                                         ProtocolCode.SOFTWARE_VERSION]:
+            return res[0]
+        if genre in [
+            ProtocolCode.IS_POWER_ON,
+            ProtocolCode.IS_CONTROLLER_CONNECTED,
+            ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+            ProtocolCode.IS_IN_POSITION,
+            ProtocolCode.IS_MOVING,
+            ProtocolCode.IS_SERVO_ENABLE,
+            ProtocolCode.IS_ALL_SERVO_ENABLE,
+            ProtocolCode.GET_SERVO_DATA,
+            ProtocolCode.GET_DIGITAL_INPUT,
+            ProtocolCode.GET_GRIPPER_VALUE,
+            ProtocolCode.IS_GRIPPER_MOVING,
+            ProtocolCode.GET_SPEED,
+            ProtocolCode.GET_ENCODER,
+            ProtocolCode.GET_BASIC_INPUT,
+            ProtocolCode.GET_TOF_DISTANCE,
+            ProtocolCode.GET_END_TYPE,
+            ProtocolCode.GET_MOVEMENT_TYPE,
+            ProtocolCode.GET_REFERENCE_FRAME,
+            ProtocolCode.GET_FRESH_MODE,
+            ProtocolCode.GET_GRIPPER_MODE,
+            ProtocolCode.GET_ERROR_INFO,
+            ProtocolCode.GET_COMMUNICATE_MODE,
+            ProtocolCode.SET_COMMUNICATE_MODE,
+            ProtocolCode.SetHTSGripperTorque,
+            ProtocolCode.GetHTSGripperTorque,
+            ProtocolCode.GetGripperProtectCurrent,
+            ProtocolCode.InitGripper,
+            ProtocolCode.SET_FOUR_PIECES_ZERO
+        ]:
+            return self._process_single(res)
+        elif genre in [ProtocolCode.GET_ANGLES]:
+            return [self._int2angle(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+            if res:
                 r = []
-                for index in range(len(res)):
-                    if index < 6:
-                        r.append(self._int2angle(res[index]))
-                    elif index < 9:
-                        r.append(self._int2coord(res[index]))
-                    else:
-                        r.append(self._int2angle(res[index]))
+                for idx in range(3):
+                    r.append(self._int2coord(res[idx]))
+                for idx in range(3, 6):
+                    r.append(self._int2angle(res[idx]))
                 return r
             else:
                 return res
-        return None
+        elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+            return [self._int2coord(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+            return self._int2coord(res[0])
+        elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+            return self._int2coord(self._process_single(res))
+        elif genre == ProtocolCode.GET_ANGLES_COORDS:
+            r = []
+            for index in range(len(res)):
+                if index < 6:
+                    r.append(self._int2angle(res[index]))
+                elif index < 9:
+                    r.append(self._int2coord(res[index]))
+                else:
+                    r.append(self._int2angle(res[index]))
+            return r
+        else:
+            return res
 
     # System Status
     def get_error_information(self):
@@ -313,6 +315,24 @@ class MechArmSocket(CommandGenerator):
         """Get joint angles and coordinates"""
         return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply=True)
 
+    # Basic for raspberry pi.
+    def gpio_init(self):
+        """Init GPIO module, and set BCM mode."""
+        import RPi.GPIO as GPIO  # type: ignore
+
+        GPIO.setmode(GPIO.BCM)
+        self.gpio = GPIO
+
+    def gpio_output(self, pin, v):
+        """Set GPIO output value.
+
+        Args:
+            pin: (int)pin number.
+            v: (int) 0 / 1
+        """
+        self.gpio.setup(pin, self.gpio.OUT)
+        self.gpio.output(pin, v)
+
     # JOG mode and operation
     def jog_rpy(self, end_direction, direction, speed):
         """Rotate the end around a fixed axis in the base coordinate system
@@ -377,7 +397,7 @@ class MechArmSocket(CommandGenerator):
         """Set the joint maximum angle
 
         Args:
-            id: int. 1 - 6
+            id: int 1 - 6
             angle: 0 ~ 180
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
@@ -585,47 +605,13 @@ class MechArmSocket(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
 
-    def set_gpio_mode(self, mode):
-        """Set pin coding method
-        Args:
-            mode: (str) BCM or BOARD 
-        """
-        self.calibration_parameters(gpiomode=mode)
-        if mode == "BCM":
-            return self._mesg(ProtocolCode.SET_GPIO_MODE, 0)
-        else:
-            return self._mesg(ProtocolCode.SET_GPIO_MODE, 1)
-
-    def set_gpio_out(self, pin_no, mode):
-        """Set the pin as input or output
-        Args:
-            pin_no: (int) pin id
-            mode: (str) "in" or "out"
-        """
-        if mode == "in":
-            return self._mesg(ProtocolCode.SET_GPIO_UP, pin_no, 0)
-        else:
-            return self._mesg(ProtocolCode.SET_GPIO_UP, pin_no, 1)
-
-    def set_gpio_output(self, pin_no, state):
-        """Set the pin to high or low level
-        Args:
-            pin_no: (int) pin id.
-            state: (int) 0 or 1
-        """
-        return self._mesg(ProtocolCode.SET_GPIO_OUTPUT, pin_no, state)
-
-    def get_gpio_in(self, pin_no):
-        """Get pin level status.
-        Args:
-            pin_no: (int) pin id.
-        """
-        return self._mesg(ProtocolCode.GET_GPIO_IN, pin_no, has_reply=True)
-
     # Other
     def wait(self, t):
         time.sleep(t)
         return self
 
     def close(self):
-        self.sock.close()
+        self._serial_port.close()
+
+    def open(self):
+        self._serial_port.open()

@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.6.1 (2024-10-09)
+
+- release v3.6.1
+- Update 320 limit date
+
+## v3.6.0 (2024-10-8)
+
+- release v3.6.0
+- Refactoring by robot type
+
 ## v3.5.3 (2024-9-24)
 
 - release v3.5.3

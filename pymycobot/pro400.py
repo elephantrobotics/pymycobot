@@ -1,39 +1,46 @@
-
 # coding=utf-8
 
-import sys
-import logging
-import time
-import struct
+import threading
+import serial
 
-from pymycobot.log import setup_logging
-from pymycobot.error import calibration_parameters
 from pymycobot.close_loop import CloseLoop
-from pymycobot.common import ProtocolCode, write, read
+from pymycobot.error import calibration_parameters
+from pymycobot.common import ProtocolCode
 
 
-class MercuryCommandGenerator(CloseLoop):
+class Pro400(CloseLoop):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+        """
+        Args:
+            port     : port string
+            baudrate : baud rate string, default '115200'
+            timeout  : default 0.1
+            debug    : whether show debug info
+        """
+        super(Pro400, self).__init__(debug)
+        self.calibration_parameters = calibration_parameters
+        self._serial_port = serial.Serial()
+        self._serial_port.port = port
+        self._serial_port.baudrate = baudrate
+        self._serial_port.timeout = timeout
+        self._serial_port.rts = False
+        self._serial_port.open()
+        self.lock = threading.Lock()
+        self.has_reply_command = []
+        self.is_stop = False
+        self.read_threading = threading.Thread(target=self.read_thread)
+        self.read_threading.daemon = True
+        self.read_threading.start()
         
     def _mesg(self, genre, *args, **kwargs):
-        """
-
-        Args:
-            genre: command type (Command)
-            *args: other data.
-                   It is converted to octal by default.
-                   If the data needs to be encapsulated into hexadecimal,
-                   the array is used to include them. (Data cannot be nested)
-            **kwargs: support `has_reply`
-                has_reply: Whether there is a return value to accept.
-        """
-        read_data = super(MercuryCommandGenerator, self)._mesg(genre, *args, **kwargs)
+        read_data = super(Pro400, self)._mesg(genre, *args, **kwargs)
         if read_data is None:
             return None
         elif read_data == 1:
             return 1
         valid_data, data_len = read_data
         res = []
-        if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
+        if data_len in [8, 12, 14, 16, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
                 if valid_data[0] == 1:
                     return 1
@@ -73,7 +80,7 @@ class MercuryCommandGenerator(CloseLoop):
                     res.append(3)
                 else:
                     res.append(i)
-        elif data_len == 28:
+        elif data_len == 24:
             res = self.bytes4_to_int(valid_data)
         elif data_len == 40:
             i = 0
@@ -112,6 +119,9 @@ class MercuryCommandGenerator(CloseLoop):
                 
                 byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
                 res.append(byte_value)
+        elif data_len == 6:
+            for i in valid_data:
+                res.append(i)
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -161,7 +171,9 @@ class MercuryCommandGenerator(CloseLoop):
             ProtocolCode.IS_BTN_CLICKED,
             ProtocolCode.GET_CONTROL_MODE,
             ProtocolCode.GET_VR_MODE,
-            ProtocolCode.GET_FILTER_LEN
+            ProtocolCode.GET_FILTER_LEN,
+            ProtocolCode.IS_SERVO_ENABLE,
+            ProtocolCode.GET_POS_SWITCH
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -238,7 +250,92 @@ class MercuryCommandGenerator(CloseLoop):
                 return res
         else:
             return res
-    
+
+    def open(self):
+        self._serial_port.open()
         
+    def close(self):
+        self._serial_port.close()
+        
+    def power_on(self, delay=2):
+        return super(Pro400, self).power_on()
+     
+    def power_off(self):
+        res = super(Pro400, self).power_off()
+        return res
     
+    # def power_on_only(self):
+        # import RPi.GPIO as GPIO
+        # GPIO.output(self.power_control_2, GPIO.HIGH)
+        
+    # def set_basic_output(self, pin_no, pin_signal):
+    #     """Set basic output.IO low-level output high-level, high-level output high resistance state
+
+    #     Args:
+    #         pin_no: pin port number. range 1 ~ 6
+    #         pin_signal: 0 / 1
+    #     """
+    #     import RPi.GPIO as GPIO
+    #     if pin_no == 1:
+    #         pin_no = 17
+    #     elif pin_no == 2:
+    #         pin_no = 27
+    #     elif pin_no == 3:
+    #         pin_no = 22
+    #     elif pin_no == 4:
+    #         pin_no = 5
+    #     elif pin_no == 5:
+    #         pin_no = 6
+    #     elif pin_no == 6:
+    #         pin_no = 19
+    #     GPIO.setup(pin_no, GPIO.OUT)
+    #     GPIO.output(pin_no, pin_signal)
+        
+    # def get_basic_input(self, pin_no):
+    #     """Get basic input.
+
+    #     Args:
+    #         pin_no: pin port number. range 1 ~ 6
+            
+    #     Return:
+    #         1 - high
+    #         0 - low
+    #     """
+    #     import RPi.GPIO as GPIO
+    #     if pin_no == 1: 
+    #         pin_no = 26
+    #     elif pin_no == 2:
+    #         pin_no = 21
+    #     elif pin_no == 3:
+    #         pin_no = 20 #23
+    #     elif pin_no == 4:
+    #         pin_no = 16
+    #     elif pin_no == 5:
+    #         pin_no = 24
+    #     elif pin_no == 6:
+    #         pin_no = 23
+    #     GPIO.setup(pin_no, GPIO.IN)
+    #     return GPIO.input(pin_no)
+        
+    def send_angles_sync(self, angles, speed):
+        self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, no_return=True)
     
+    def set_pos_switch(self, mode):
+        """Set position switch mode.
+
+        Args:
+            mode: 0 - switch off, 1 - switch on
+        """
+        if mode == 0:
+            return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, asyn_mode=True)
+        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode,asyn_mode=False)
+    
+    def get_pos_switch(self):
+        """Get position switch mode.
+
+        Return:
+            1 - switch on, 0 - switch off
+        """
+        return self._mesg(ProtocolCode.GET_POS_SWITCH, has_reply=True)

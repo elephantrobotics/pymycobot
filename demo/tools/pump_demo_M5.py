@@ -11,11 +11,11 @@
 # https://docs.elephantrobotics.com/docs/gitbook-en/7-ApplicationBasePython/
 
 # import library
-from pymycobot import MyCobot               #import mycobot library,if don't have, first 'pip install pymycobot'
+from pymycobot import MyCobot280               #import mycobot library,if don't have, first 'pip install pymycobot'
 import time
 
 # if use PC and M5 control
-mc = MyCobot('COM9', 115200)                 # WINDOWS use ，need check port number when you PC
+mc = MyCobot280('COM9', 115200)                 # WINDOWS use ，need check port number when you PC
 # mc = MyCobot('/dev/ttyUSB0',115200)        #VM linux use
 
 #init robot

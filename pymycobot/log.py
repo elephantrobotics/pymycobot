@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import logging
+import logging.handlers
 
 
 def setup_logging(debug=False):
@@ -14,6 +15,11 @@ def setup_logging(debug=False):
     logger_handle.setFormatter(debug_fomatter)
     if debug:
         logger_handle.setLevel(logging.DEBUG)
+        # 100M日志
+        save = logging.handlers.RotatingFileHandler(
+        "python_debug.log", maxBytes=100*1024*1024, backupCount=1)
+        save.setFormatter(debug_fomatter)
+        root_logger.addHandler(save)
     else:
         logger_handle.setLevel(logging.WARNING)
 
