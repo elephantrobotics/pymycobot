@@ -10,6 +10,7 @@ import subprocess
 import logging
 import os
 import sys
+import crc
 
 from pymycobot.log import setup_logging
 
@@ -86,7 +87,7 @@ MAX_CARTE = 3
 jog_velocity = 1.0  # 100.0/60.0
 angular_jog_velocity = 3600 / 60
 MAX_PINS = 64
-MAX_ANGULAR_SPEED = 6930
+MAX_ANGULAR_SPEED = 6500
 MAX_LINEAR_SPEED = 30000
 DEFAULT_XY_TORQUE_LIMIT = 55
 DEFAULT_Z_TORQUE_LIMIT = 30
@@ -2780,6 +2781,58 @@ class Phoenix:
         """
         self._send_can([0x02, 0x6D, mode])
 
+    def tool_gripper_pro_set_angle(self, angle):
+        if angle < 0 or angle > 100:
+            return False
+        command = [254, 254, 8, 14, 6, 0, 11, 0, angle]
+        crc16_value = crc.Calculator(crc.Crc16.MODBUS.value).checksum(bytes(command))
+        command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
+        self.tool_serial_write_data(command)
+        ret = self.tool_serial_read_data(11)
+        return bool(ret[8])
+
+    def tool_gripper_pro_get_angle(self):
+        command = [254, 254, 8, 14, 3, 0, 12, 0, 0]
+        crc16_value = crc.Calculator(crc.Crc16.MODBUS.value).checksum(bytes(command))
+        command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
+        self.tool_serial_write_data(command)
+        ret = self.tool_serial_read_data(11)
+        return int((ret[7] << 8) | (ret[8]))
+
+    def tool_gripper_pro_open(self):
+        return self.tool_gripper_pro_set_angle(100)
+
+    def tool_gripper_pro_close(self):
+        return self.tool_gripper_pro_set_angle(0)
+
+    def tool_gripper_pro_set_torque(self, torque_value):
+        if torque_value < 100 or torque_value > 300:
+            return False
+        command = [
+            254,
+            254,
+            8,
+            14,
+            6,
+            0,
+            27,
+            (torque_value >> 8),
+            (torque_value & 0xFF),
+        ]
+        crc16_value = crc.Calculator(crc.Crc16.MODBUS.value).checksum(bytes(command))
+        command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
+        self.tool_serial_write_data(command)
+        ret = self.tool_serial_read_data(11)
+        return bool(ret[8])
+
+    def tool_gripper_pro_get_torque(self):
+        command = [254, 254, 8, 14, 3, 0, 28, 0, 0]
+        crc16_value = crc.Calculator(crc.Crc16.MODBUS.value).checksum(bytes(command))
+        command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
+        self.tool_serial_write_data(command)
+        ret = self.tool_serial_read_data(11)
+        return int((ret[7] << 8) | (ret[8]))
+
     def tool_serial_restore(self):
         """Restore ESP32 serial."""
         self._send_can([0x01, 0xB1])
@@ -2819,7 +2872,7 @@ class Phoenix:
         data = []
         msg = self._receive_can()
         data.extend(msg.data[3:])
-        while msg is not None:
+        while msg is not None and len(data) < n:
             msg = self._receive_can()
             data.extend(msg.data[3:])
         return data
