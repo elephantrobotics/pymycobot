@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.6.2 (2024-10-11)
+
+- release v3.6.2
+- 630 adds partial control interface for force control gripper 
+
 ## v3.6.1 (2024-10-09)
 
 - release v3.6.1
