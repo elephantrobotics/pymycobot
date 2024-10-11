@@ -6,17 +6,17 @@ We support Python2, Python3.5 or later.
 
 ![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/chinese.svg)   ![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/english.svg)
 
-[MyCobot 280 API说明](./docs/MyCobot_280_zh.md) | [MyCobot 280 API Description](./docs/MyCobot_280_en.md)
+[MyCobot 280 API说明](./MyCobot_280_zh.md) | [MyCobot 280 API Description](./MyCobot_280_en.md)
 
-[MyCobot 320 API说明](./docs/MyCobot_320_zh.md) | [MyCobot 320 API Description](./docs/MyCobot_320_en.md)
+[MyCobot 320 API说明](./MyCobot_320_zh.md) | [MyCobot 320 API Description](./MyCobot_320_en.md)
 
-[MechArm 270 API说明](./docs/MechArm_270_zh.md) | [MechArm 270 API Description](./docs/MechArm_270_en.md)
+[MechArm 270 API说明](./MechArm_270_zh.md) | [MechArm 270 API Description](./MechArm_270_en.md)
 
-[MyPalletizer 260 API说明](./docs/MyPalletizer_260_zh.md) | [MyPalletizer 260 API Description](./docs/MyPalletizer_260_en.md)
+[MyPalletizer 260 API说明](./MyPalletizer_260_zh.md) | [MyPalletizer 260 API Description](./MyPalletizer_260_en.md)
 
-[myAGV API说明](./docs/myAGV_zh.md) | [myAGV API Description](./docs/myAGV_en.md)
+[myAGV API说明](./myAGV_zh.md) | [myAGV API Description](./myAGV_en.md)
 
-[myArm_M&C API说明](./docs/myArm_M&C_zh.md) | [myArm_M&C API Description](./docs/myArm_M&C_en.md)
+[myArm_M&C API说明](./myArm_M&C_zh.md) | [myArm_M&C API Description](./myArm_M&C_en.md)
 
 <details>
 <summary>Catalogue:</summary>
