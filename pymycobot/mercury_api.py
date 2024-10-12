@@ -55,6 +55,7 @@ class MercuryCommandGenerator(DataProcessor):
                     return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
         except TypeError:
             return "joint limit error"
+        return "over limit error {}".format(angles)
             
     def _Singularity(self, angles):
         try:
