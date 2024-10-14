@@ -723,7 +723,7 @@ class MyCobot320Socket(CommandGenerator):
         return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_DEFAULT_SPEED)
 
     def set_pro_gripper_abs_angle(self, gripper_id, gripper_angle):
-        """ Set the gripper speed
+        """ Set the gripper absolute angle
 
         Args:
             gripper_id (int): 1 ~ 254

@@ -678,6 +678,190 @@ from pymycobot import utils
 
 - **Return value:** Return the detected port number. If no serial port number is detected, it will return: None
 
+### 16. Pro force-controlled gripper
+
+#### `set_pro_gripper(gripper_id, address, value)`
+
+- **Function**: Set the parameters of the Pro force-controlled gripper. You can set a variety of parameter functions. For details, please see the table below.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+  - `address` (`int`): The command number of the gripper.
+  - `value`: The parameter value corresponding to the command number.
+
+    | Function | gripper_id | address | value|
+    | ---- | ---- |---- |----- |
+    | Set gripper ID | 14 | 3 | 1 ~ 254 |
+    | Set gripper enable status | 14 | 10 | 0 or 1, 0 - off enable; 1 - on enable |
+    | Set gripper P value | 14 | 15 | 0 ~ 254 |
+    | Set gripper I value | 14 | 19 | 0 ~ 254 |
+    | Set gripper D value | 14 | 17 | 0 ~ 254 |
+    | Set gripper clockwise runnable error | 14 | 21 | 0 ~ 16 |
+    | Set gripper counterclockwise runnable error | 14 | 23 | 0 ~ 16 |
+    | Set gripper minimum starting force | 14 | 25 | 0 ~ 254 |
+    | IO output settings | 14 | 29 | 0, 1, 16, 17 |
+    | Set IO opening angle | 14 | 30 | 0 ~ 100 |
+    | Set IO closing angle | 14 | 31 | 0 ~ 100 |
+    | Set servo virtual position value | 14 | 41 | 0 ~ 100 |
+    | Set clamping current | 14 | 43 | 1 ~ 254 |
+
+- **Return value**:
+  - Please refer to the following table:
+
+    | Function | return |
+    | ---- | ---- |
+    | Set gripper ID | 0 - Failure; 1 - Success |
+    | Set gripper enable status | 0 - Failure; 1 - Success |
+    | Set gripper P value | 0 - Failure; 1 - Success |
+    | Set gripper I value | 0 - Failure; 1 - Success |
+    | Set gripper D value | 0 - Failure; 1 - Success |
+    | Set gripper clockwise runnable error | 0 - Failure; 1 - Success |
+    | Set gripper counterclockwise runnable error | 0 - Failure; 1 - Success |
+    | Set gripper minimum starting force | 0 - Failure; 1 - Success |
+    | IO output setting | 0 - Failure; 1 - Success |
+    | Set IO opening angle | 0 - Failure; 1 - Success |
+    | Set IO closing angle | 0 - Failed; 1 - Success |
+    | Set servo virtual position value | 0 - Failed; 1 - Success |
+    | Set holding current | 0 - Failed; 1 - Success |
+
+#### `get_pro_gripper(gripper_id, address)`
+
+- **Function**: Get the parameters of the Pro force-controlled gripper, and you can get a variety of parameter functions. For details, please see the table below.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+  - `address` (`int`): The command number of the gripper.
+
+    | Function | gripper_id | address |
+    | ---- | ---- |---- |
+    | Read firmware major version number | 14 | 1 |
+    | Read firmware minor version number | 14 | 2 |
+    | Read gripper ID | 14 | 3 |
+    | Read gripper P value | 14 | 16 |
+    | Read gripper I value | 14 | 20 |
+    | Read gripper D value | 14 | 18 |
+    | Read gripper clockwise runnable error | 14 | 22 |
+    | Read gripper counterclockwise runnable error | 14 | 24 |
+    | Read gripper minimum starting force | 14 | 26 |
+    | Read IO opening angle | 14 | 34 |
+    | Read IO closing angle | 14 | 35 |
+    | Get the amount of data in the current queue | 14 | 40 |
+    | Read servo virtual position value | 14 | 42 |
+    | Read the clamping current | 14 | 44 |
+
+- **Return value**:
+  - See the following table (if the return value is -1, it means that no data can be read):
+
+    | Function | return |
+    | ---- | ---- |
+    | Read the firmware major version number | Major version number |
+    | Read the firmware minor version number | Minor version number |
+    | Read the gripper ID | 1 ~ 254 |
+    | Read the gripper P value | 0 ~ 254 |
+    | Read the gripper I value | 0 ~ 254 |
+    | Read the gripper D value | 0 ~ 254 |
+    | Read the gripper clockwise runnable error | 0 ~ 254 |
+    | Read the gripper counterclockwise runnable error | 0 ~ 254 |
+    | Read the gripper minimum starting force | 0 ~ 254 |
+    | Read the IO opening angle | 0 ~ 100 |
+    | Read the IO closing angle | 0 ~ 100 |
+    | Get the amount of data in the current queue | Return the amount of data in the current absolute control queue |
+    | Read the servo virtual position value | 0 ~ 100 |
+    | Read the clamping current | 1 ~ 254 |
+  
+#### `set_pro_gripper_angle(gripper_id, gripper_angle)`
+
+- **Function**: Set the force-controlled gripper angle.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+  - `gripper_angle` (`int`): Gripper angle, value range 0 ~ 100.
+
+#### `get_pro_gripper_angle(gripper_id)`
+
+- **Function**: Read the angle of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+#### `set_pro_gripper_open(gripper_id)`
+
+- **Function**: Open the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+#### `set_pro_gripper_close(gripper_id)`
+
+- **Function**: Close the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+#### `set_pro_gripper_calibration(gripper_id)`
+
+- **Function**: Set the zero position of the force-controlled gripper. (The zero position needs to be set first when using it for the first time)
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+#### `get_pro_gripper_status(gripper_id)`
+
+- **Function**: Read the gripping status of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value:**
+  - `0` - Moving.
+  - `1` - Stopped moving, no object was detected.
+  - `2` - Stopped moving, object was detected.
+  - `3` - After the object was detected, it fell.
+
+#### `set_pro_gripper_torque(gripper_id, torque_value)`
+
+- **Function**: Set the torque of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+  - `torque_value` (`int`): Torque value, value range 100 ~ 300.
+
+#### `get_pro_gripper_torque(gripper_id)`
+
+- **Function**: Read the torque of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value:** (`int`) 100 ~ 300
+
+#### `set_pro_gripper_speed(gripper_id, speed)`
+
+- **Function**: Set the force-controlled gripper speed.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+  - `speed` (int): Gripper movement speed, value range 1 ~ 100.
+
+#### `get_pro_gripper_default_speed(gripper_id, speed)`
+
+- **Function**: Read the default speed of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**: Gripper default movement speed, range 1 ~ 100.
+
+#### `set_pro_gripper_abs_angle(gripper_id, gripper_angle)`
+
+- **Function**: Set the absolute angle of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+  - `gripper_angle` (`int`): Gripper angle, value range 0 ~ 100.
+
+#### `set_pro_gripper_pause(gripper_id)`
+
+- **Function**: Pause motion.
+- **Parameter**:
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+
+#### `set_pro_gripper_resume(gripper_id)`
+
+- **Function**: Motion recovery.
+- **Parameter**:
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+
+#### `set_pro_gripper_stop(gripper_id)`
+
+- **Function**: Stop motion.
+- **Parameter**:
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+
 ## MyCobot 320 Socket
 
 > Note:

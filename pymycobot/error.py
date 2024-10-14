@@ -858,7 +858,7 @@ def calibration_parameters(**kwargs):
                         raise MyCobot320DataException(
                             "The range of 'gripper_id' in {} is 1 ~ 254, but the received value is {}".format(parameter,
                                                                                                               gripper_id))
-                    invalid_addresses = [3, 5, 6, 10, 15, 17, 19, 21, 23, 25, 29, 30, 31, 34, 35, 41, 43]
+                    invalid_addresses = [5, 6, 10, 15, 17, 19, 21, 23, 25, 29, 30, 31, 34, 35, 41, 43]
                     if address < 1 or address > 44:
                         raise MyCobot320DataException(
                             "The range of 'address' in {} is 1 ~ 44, but the received value is {}".format(parameter,
