@@ -364,6 +364,18 @@ class MercuryCommandGenerator(DataProcessor):
                     one = valid_data[i: i + 2]
                     res.append(self._decode_int16(one))
                     i += 2
+        elif data_len == 41 and genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+            # 图灵右臂上位机错误
+            i = 0
+            res = []
+            while i < data_len:
+                if i < 9:
+                    res.append(valid_data[i])
+                    i += 1
+                else:
+                    one = valid_data[i: i + 2]
+                    res.append(self._decode_int16(one))
+                    i += 2
         elif data_len == 37:
             i = 0
             res = []
@@ -579,7 +591,7 @@ class MercuryCommandGenerator(DataProcessor):
             return []
 
     def read_thread(self, method=None):
-        # all_data = b''
+        all_data = b''
         while True:
             try:
                 datas = b""
@@ -621,7 +633,7 @@ class MercuryCommandGenerator(DataProcessor):
                     while True and time.time() - t < wait_time:
                         if self._serial_port.isOpen() and self._serial_port.inWaiting() > 0:
                             data = self._serial_port.read()
-                            # all_data+=data
+                            all_data+=data
                             # self.log.info(all_read_data)
                             k += 1
                             # print(datas, flush=True)
@@ -661,11 +673,11 @@ class MercuryCommandGenerator(DataProcessor):
                             time.sleep(0.001)
                     else:
                         datas = b''
-                    # if all_data != b'':
-                    #     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    #     with open("all_log.txt", "a") as f:
-                    #         f.write(str(current_time)+str(all_data)[2:-1]+"\n")
-                    #     all_data = b''
+                    if all_data != b'':
+                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        with open("all_log.txt", "a") as f:
+                            f.write(str(current_time)+str(all_data)[2:-1]+"\n")
+                        all_data = b''
                     if datas != b'':
                         
                         # print("read:", datas)
