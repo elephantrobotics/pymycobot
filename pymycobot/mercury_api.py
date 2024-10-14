@@ -1930,7 +1930,7 @@ class MercuryCommandGenerator(DataProcessor):
         Args:
             coords: a list of coords value(List[float]). [x(mm), y, z, rx(angle), ry, rz]
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
+        # self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -1944,7 +1944,7 @@ class MercuryCommandGenerator(DataProcessor):
         Args:
             coords: a list of coords value(List[float])
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
+        # self.calibration_parameters(class_name = self.__class__.__name__, coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
