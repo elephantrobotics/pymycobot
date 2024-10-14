@@ -633,7 +633,8 @@ class MercuryCommandGenerator(DataProcessor):
                     while True and time.time() - t < wait_time:
                         if self._serial_port.isOpen() and self._serial_port.inWaiting() > 0:
                             data = self._serial_port.read()
-                            all_data+=data
+                            if self.save_serial_log:
+                                all_data+=data
                             # self.log.info(all_read_data)
                             k += 1
                             # print(datas, flush=True)
@@ -673,11 +674,12 @@ class MercuryCommandGenerator(DataProcessor):
                             time.sleep(0.001)
                     else:
                         datas = b''
-                    if all_data != b'':
-                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        with open("all_log.txt", "a") as f:
-                            f.write(str(current_time)+str(all_data)[2:-1]+"\n")
-                        all_data = b''
+                    if self.save_serial_log:
+                        if all_data != b'':
+                            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            with open("all_log.txt", "a") as f:
+                                f.write(str(current_time)+str(all_data)[2:-1]+"\n")
+                            all_data = b''
                     if datas != b'':
                         
                         # print("read:", datas)
@@ -700,7 +702,9 @@ class MercuryCommandGenerator(DataProcessor):
                             for i in range(4, 32, 4):
                                 byte_value = int.from_bytes(datas[i:i+4], byteorder='big', signed=True)
                                 debug_data.append(byte_value)
-                            self.log.info("SERVO_COMMAND : {}".format(debug_data))
+                            # self.log.info("SERVO_COMMAND : {}".format(debug_data))
+                            with open("plotPos.txt", "a") as f:
+                                f.write(str(debug_data)+"\n")
                             continue
                         elif datas[3] == 0x8E and datas[2] == 0x3B:
                             debug_data = []
@@ -2176,7 +2180,7 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [value])
     
     def get_pro_gripper(self, gripper_id, address):
-        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, address)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [address])
     
     def set_pro_gripper_angle(self, gripper_id, angle):
         return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, angle)

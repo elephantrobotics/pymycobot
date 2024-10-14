@@ -11,7 +11,7 @@ from pymycobot.error import calibration_parameters
 
 
 class Mercury(MercuryCommandGenerator):
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
         """
         Args:
             port     : port string
@@ -21,7 +21,7 @@ class Mercury(MercuryCommandGenerator):
         """
         super(Mercury, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-
+        self.save_serial_log = save_serial_log
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
