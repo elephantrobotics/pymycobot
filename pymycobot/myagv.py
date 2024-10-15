@@ -1,4 +1,6 @@
 import enum
+from threading import Lock
+
 import serial
 import time
 import struct
@@ -12,6 +14,7 @@ class ProtocolCode(enum.Enum):
     HEADER = 0xFE
     RESTORE = [0x01, 0x00]
     SET_LED = [0x01, 0x02]
+    SET_LED_MODE = [0x01, 0x0A]
     GET_FIRMWARE_VERSION = [0x01, 0x03]
     GET_MOTORS_CURRENT = [0x01, 0x04]
     GET_BATTERY_INFO = [0x01, 0x05]
@@ -122,6 +125,8 @@ class MyAgv(DataProcessor):
             command.append(5)
         elif genre == ProtocolCode.GET_BATTERY_INFO.value:
             command.append(6)
+        elif genre == ProtocolCode.SET_LED_MODE.value:
+            command.append(11)
         else:
             # del command[2]
             command.append(sum(command[2:]) & 0xff)
@@ -162,6 +167,16 @@ class MyAgv(DataProcessor):
         calibration_parameters(class_name=self.__class__.__name__, rgb=[R, G, B], led_mode=mode)
         return self._mesg(ProtocolCode.SET_LED.value, mode, R, G, B)
 
+    def set_led_mode(self, mode: int):
+        """Set the LED light mode
+
+        Args:
+            mode (int): 0 - charging mode, 1 - DIY mode
+        """
+        if mode not in [0, 1]:
+            raise ValueError("mode must be 1 or 2")
+        return self._mesg(ProtocolCode.SET_LED_MODE.value, mode)
+
     def get_firmware_version(self):
         """Get firmware version number
         """
@@ -195,7 +210,9 @@ class MyAgv(DataProcessor):
     def __basic_move_control(self, *genre, timeout: int = 5):
         t = time.time()
         self.__movement = True
-        while time.time() - t < timeout and self.__movement is True:
+        while time.time() - t < timeout:
+            if self.__movement is False:
+                break
             self._mesg(*genre)
             time.sleep(0.05)
         self.stop()
@@ -238,7 +255,7 @@ class MyAgv(DataProcessor):
         """
         if not (0 < speed < 128):
             raise ValueError("pan_left_speed must be between 1 and 127")
-        self.__basic_move_control(128, 128, 128 + speed, timeout=timeout)
+        self.__basic_move_control(128, 128 + speed, 128, timeout=timeout)
 
     def pan_right(self, speed: int, timeout=5):
         """
@@ -280,9 +297,8 @@ class MyAgv(DataProcessor):
 
     def stop(self):
         """stop-motion"""
-        if self.__movement is True:
-            self._mesg(128, 128, 128)
-            self.__movement = False
+        self.__movement = False
+        self._mesg(128, 128, 128)
 
     def get_mcu_info(self, version: float = None) -> list:
         """
@@ -386,12 +402,3 @@ class MyAgv(DataProcessor):
 
     def get_modified_version(self):
         return self._mesg(ProtocolCode.GET_MODIFIED_VERSION.value, has_reply=True)
-
-    # def get_battery_voltage(self, num=1):
-    #     """Get battery voltage
-
-    #     Args:
-    #         num (int, optional): Battery ID number. Defaults to 1.
-    #     """
-    #     mcu_data = self.get_mcu_info()
-    #     return self._mesg(ProtocolCode.GET_BATTERY_INFO.value, has_reply = True)
