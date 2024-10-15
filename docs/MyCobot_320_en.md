@@ -692,9 +692,6 @@ from pymycobot import utils
     | ---- | ---- |---- |----- |
     | Set gripper ID | 14 | 3 | 1 ~ 254 |
     | Set gripper enable status | 14 | 10 | 0 or 1, 0 - off enable; 1 - on enable |
-    | Set gripper P value | 14 | 15 | 0 ~ 254 |
-    | Set gripper I value | 14 | 19 | 0 ~ 254 |
-    | Set gripper D value | 14 | 17 | 0 ~ 254 |
     | Set gripper clockwise runnable error | 14 | 21 | 0 ~ 16 |
     | Set gripper counterclockwise runnable error | 14 | 23 | 0 ~ 16 |
     | Set gripper minimum starting force | 14 | 25 | 0 ~ 254 |
@@ -711,9 +708,6 @@ from pymycobot import utils
     | ---- | ---- |
     | Set gripper ID | 0 - Failure; 1 - Success |
     | Set gripper enable status | 0 - Failure; 1 - Success |
-    | Set gripper P value | 0 - Failure; 1 - Success |
-    | Set gripper I value | 0 - Failure; 1 - Success |
-    | Set gripper D value | 0 - Failure; 1 - Success |
     | Set gripper clockwise runnable error | 0 - Failure; 1 - Success |
     | Set gripper counterclockwise runnable error | 0 - Failure; 1 - Success |
     | Set gripper minimum starting force | 0 - Failure; 1 - Success |
@@ -735,9 +729,6 @@ from pymycobot import utils
     | Read firmware major version number | 14 | 1 |
     | Read firmware minor version number | 14 | 2 |
     | Read gripper ID | 14 | 3 |
-    | Read gripper P value | 14 | 16 |
-    | Read gripper I value | 14 | 20 |
-    | Read gripper D value | 14 | 18 |
     | Read gripper clockwise runnable error | 14 | 22 |
     | Read gripper counterclockwise runnable error | 14 | 24 |
     | Read gripper minimum starting force | 14 | 26 |
@@ -755,9 +746,6 @@ from pymycobot import utils
     | Read the firmware major version number | Major version number |
     | Read the firmware minor version number | Minor version number |
     | Read the gripper ID | 1 ~ 254 |
-    | Read the gripper P value | 0 ~ 254 |
-    | Read the gripper I value | 0 ~ 254 |
-    | Read the gripper D value | 0 ~ 254 |
     | Read the gripper clockwise runnable error | 0 ~ 254 |
     | Read the gripper counterclockwise runnable error | 0 ~ 254 |
     | Read the gripper minimum starting force | 0 ~ 254 |
