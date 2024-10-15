@@ -60,6 +60,7 @@ class MyCobot320Socket(CommandGenerator):
             get_servo_temps()
             get_servo_last_pdi()
             set_void_compensate()
+            get_robot_status()
 
         # Coordinate transformation
             set_tool_reference()
@@ -766,6 +767,11 @@ class MyCobot320Socket(CommandGenerator):
             float: version number.
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
+
+    def get_robot_status(self):
+        """Get robot status
+        """
+        return self._mesg(ProtocolCode.GET_ROBOT_STATUS, has_reply=True)
 
     # Other
     def wait(self, t):

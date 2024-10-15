@@ -791,7 +791,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                        ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD,
                        ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
             wait_time = 300
-    elif _class in ["MyCobot", "MyCobotSocket"]:
+    elif _class in ["MyCobot", "MyCobotSocket", "MyCobot320", "MyCobot320Socket"]:
         if genre == ProtocolCode.GET_ROBOT_STATUS:
             wait_time = 75
     data = b""
