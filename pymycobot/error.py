@@ -386,6 +386,12 @@ def calibration_parameters(**kwargs):
             elif parameter == "trajectory":
                 if value not in [0,1,2,3,4]:
                     raise MercuryDataException("The parameter {} only supports [0,1,2,3,4], but received {}".format(parameter, value))
+            elif parameter == "gripper_id":
+                if value < 1 or value > 254:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
+            elif parameter == "address":
+                if value < 1 or value > 44 or value in [15,17,19]:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 44 (except 15, 17, and 19), but received {}".format(parameter, value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":

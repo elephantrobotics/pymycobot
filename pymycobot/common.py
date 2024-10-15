@@ -260,6 +260,8 @@ class ProtocolCode(object):
     GET_ANGLES_COORDS = 0xD5
     GET_QUICK_INFO = 0xD6
     SET_FOUR_PIECES_ZERO = 0xD7
+    MERCURY_SET_TOQUE_GRIPPER = 0xD8
+    MERCURY_GET_TOQUE_GRIPPER = 0xD9
 
     # Motor status read
     GET_SERVO_SPEED = 0xE1

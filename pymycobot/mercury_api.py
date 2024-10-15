@@ -433,6 +433,11 @@ class MercuryCommandGenerator(DataProcessor):
                     i+=1
             res[0] = angles
             res[1] = coords
+        elif genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
+            res = self._decode_int16(valid_data[-2:])
+            address = self._decode_int16(valid_data[1:3])
+            if address == 1:
+                res /= 10
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -628,7 +633,7 @@ class MercuryCommandGenerator(DataProcessor):
                         res = self._process_received(data)
                         if res != []:
                             with self.lock:
-                                self.read_command.append(res)
+                                self.read_command.append([res, time.time()])
                 else:
                     while True and time.time() - t < wait_time:
                         if self._serial_port.isOpen() and self._serial_port.inWaiting() > 0:
@@ -690,12 +695,18 @@ class MercuryCommandGenerator(DataProcessor):
                         if self.check_python_version() == 2:
                             command_log = ""
                             for d in datas:
-                                command_log += hex(ord(d))[2:] + " "
+                                data = hex(d)[2:]
+                                if len(data) != 2:
+                                    data = "0" + data
+                                command_log += data + " "
                             self.log.debug("_read : {}".format(command_log))
                         else:
                             command_log = ""
                             for d in datas:
-                                command_log += hex(d)[2:] + " "
+                                data = hex(d)[2:]
+                                if len(data) != 2:
+                                    data = "0" + data
+                                command_log += data + " "
                             self.log.debug("_read : {}".format(command_log))
                         if datas[3] == 0x5D:
                             debug_data = []
@@ -2176,11 +2187,13 @@ class MercuryCommandGenerator(DataProcessor):
     def clear_encoder_error(self, joint_id):
         return self._mesg(ProtocolCode.CLEAR_ENCODER_ERROR, joint_id)
     
-    def set_pro_gripper(self, gripper_id, address, value=0):
-        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [value])
+    def set_pro_gripper(self, gripper_id, address, value):
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id, address=address, value=value)
+        return self._mesg(ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, gripper_id, [address], [value])
     
     def get_pro_gripper(self, gripper_id, address):
-        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [address])
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id, address=address)
+        return self._mesg(ProtocolCode.MERCURY_GET_TOQUE_GRIPPER, gripper_id, [address])
     
     def set_pro_gripper_angle(self, gripper_id, angle):
         return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, angle)
