@@ -761,30 +761,43 @@ from pymycobot import utils
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
   - `gripper_angle` (`int`): Gripper angle, value range 0 ~ 100.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `get_pro_gripper_angle(gripper_id)`
 
 - **Function**: Read the angle of the force-controlled gripper.
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**: `int` 0 ~ 100
 
 #### `set_pro_gripper_open(gripper_id)`
 
 - **Function**: Open the force-controlled gripper.
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `set_pro_gripper_close(gripper_id)`
 
 - **Function**: Close the force-controlled gripper.
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `set_pro_gripper_calibration(gripper_id)`
 
 - **Function**: Set the zero position of the force-controlled gripper. (The zero position needs to be set first when using it for the first time)
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `get_pro_gripper_status(gripper_id)`
 
@@ -803,6 +816,9 @@ from pymycobot import utils
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
   - `torque_value` (`int`): Torque value, value range 100 ~ 300.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `get_pro_gripper_torque(gripper_id)`
 
@@ -817,6 +833,9 @@ from pymycobot import utils
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
   - `speed` (int): Gripper movement speed, value range 1 ~ 100.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `get_pro_gripper_default_speed(gripper_id, speed)`
 
@@ -831,24 +850,36 @@ from pymycobot import utils
 - **Parameter**:
   - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
   - `gripper_angle` (`int`): Gripper angle, value range 0 ~ 100.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `set_pro_gripper_pause(gripper_id)`
 
 - **Function**: Pause motion.
 - **Parameter**:
   - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `set_pro_gripper_resume(gripper_id)`
 
 - **Function**: Motion recovery.
 - **Parameter**:
   - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 #### `set_pro_gripper_stop(gripper_id)`
 
 - **Function**: Stop motion.
 - **Parameter**:
   - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
 
 ## MyCobot 320 Socket
 

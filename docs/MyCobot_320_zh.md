@@ -751,30 +751,43 @@ from pymycobot import utils
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围1 ~ 254。
   - `gripper_angle` (`int`): 夹爪角度，取值范围 0 ~ 100。
-
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
+  
 #### `get_pro_gripper_angle(gripper_id)`
 
 - **功能**：读取力控夹爪角度。
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：`int` 0 ~ 100
 
 #### `set_pro_gripper_open(gripper_id)`
 
 - **功能**：打开力控夹爪。
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `set_pro_gripper_close(gripper_id)`
 
 - **功能**：关闭力控夹爪。
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `set_pro_gripper_calibration(gripper_id)`
 
 - **功能**：设置力控夹爪零位。（首次使用需要先设置零位）
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `get_pro_gripper_status(gripper_id)`
 
@@ -793,6 +806,9 @@ from pymycobot import utils
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
   - `torque_value` (`int`) ：扭矩值，取值范围 100 ~ 300。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `get_pro_gripper_torque(gripper_id)`
 
@@ -807,6 +823,9 @@ from pymycobot import utils
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
   - `speed` (int): 夹爪运动速度，取值范围 1 ~ 100。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `get_pro_gripper_default_speed(gripper_id, speed)`
 
@@ -821,24 +840,36 @@ from pymycobot import utils
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
   - `gripper_angle` (`int`): 夹爪角度，取值范围 0 ~ 100。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `set_pro_gripper_pause(gripper_id)`
 
 - **功能**：暂停运动。
 - **参数**：
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `set_pro_gripper_resume(gripper_id)`
 
 - **功能**：运动恢复。
 - **参数**：
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 #### `set_pro_gripper_stop(gripper_id)`
 
 - **功能**：停止运动。
 - **参数**：
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
 
 ## MyCobot 320 Socket
 
