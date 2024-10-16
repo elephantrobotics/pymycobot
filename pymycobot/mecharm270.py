@@ -179,7 +179,7 @@ class MechArm270(CommandGenerator):
             ProtocolCode.SET_FOUR_PIECES_ZERO
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
             return [self._int2angle(angle) for angle in res]
         elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
             if res:
@@ -604,6 +604,36 @@ class MechArm270(CommandGenerator):
             0 - flange, 1 - tool
         """
         return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
+
+    def angles_to_coords(self, angles):
+        """ Convert angles to coordinates
+
+        Args:
+            angles : A float list of all angle.
+
+        Return:
+            list: A float list of all coordinates.
+        """
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
+
+    def solve_inv_kinematics(self, target_coords, current_angles):
+        """ Convert target coordinates to angles
+
+        Args:
+            target_coords: A float list of all coordinates.
+            current_angles : A float list of all angle.
+
+        Return:
+            list: A float list of all angle.
+        """
+        angles = [self._angle2int(angle) for angle in current_angles]
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(target_coords[idx]))
+        for angle in target_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
 
     # Other
     def wait(self, t):

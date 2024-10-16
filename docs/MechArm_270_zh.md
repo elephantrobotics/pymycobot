@@ -71,7 +71,7 @@ mc.send_angle(1, 40, 20)
 - **功能：** 放松所有机械臂关节
 - **参数**：`data`（可选）：关节放松方式，默认为阻尼模式，若提供 `data`参数可指定为非阻尼模式（1-Undamping）。
 
-#### `focus_servos(servo_id)`
+#### `focus_servo(servo_id)`
 
 - **功能:** 单个舵机上电
 
@@ -112,6 +112,13 @@ mc.send_angle(1, 40, 20)
 - **参数:**
   - `1`: 总是首先执行最新的命令。
   - `0`: 以队列的形式按顺序执行指令。
+
+#### `focus_all_servos()`
+
+- **功能:** 所有舵机上电
+
+- **返回值:**
+- `1`: complete
 
 ### 3. MDI运行与操作
 
@@ -242,6 +249,21 @@ mc.send_angle(1, 40, 20)
   - `1` 运动中
   - `0` 未运动
   - `-1` 错误
+
+#### `angles_to_coords(angles)`
+
+- **功能** : 将角度转为坐标。
+- **参数：**
+  - `angles`：`list` 所有角度的浮点列表。
+- **返回值**: `list` 所有坐标的浮点列表。
+
+#### `solve_inv_kinematics(target_coords, current_angles)`
+
+- **功能** : 将坐标转为角度。
+- **参数：**
+  - `target_coords`: `list` 所有坐标的浮点列表。
+  - `current_angles`: `list` 所有角度的浮点列表，机械臂当前角度
+- **返回值**: `list` 所有角度的浮点列表。
 
 ### 4. JOG运行与操作
 

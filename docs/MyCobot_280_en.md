@@ -80,7 +80,7 @@ mc.send_angle(1, 40, 20)
 - **Return value:**
   - `1` - release completed.
 
-#### `focus_servos(servo_id)`
+#### `focus_servo(servo_id)`
 
 - **function:** Power on designated servo
 
@@ -146,6 +146,13 @@ mc.send_angle(1, 40, 20)
 - **Return value:** 
   - `1`: free mode
   - `0`: on-free mode
+
+#### `focus_all_servos()`
+
+- **Function:** All servos are powered on
+
+- **Return value:**
+- `1`: complete
 
 ### 3.MDI Mode and Operation
 
@@ -290,6 +297,21 @@ mc.send_angle(1, 40, 20)
   - `1` moving
   - `0` not moving
   - `-1` error
+
+#### `angles_to_coords(angles)`
+
+- **Function** : Convert angles to coordinates.
+- **Parameters:**
+  - `angles`: `list` List of floating points for all angles.
+- **Return value**: `list` List of floating points for all coordinates.
+
+#### `solve_inv_kinematics(target_coords, current_angles)`
+
+- **Function** : Convert coordinates to angles.
+- **Parameters:**
+  - `target_coords`: `list` List of floating points for all coordinates.
+  - `current_angles`: `list` List of floating points for all angles, current angles of the robot
+- **Return value**: `list` List of floating points for all angles.
 
 ### 4. JOG Mode and Operation
 

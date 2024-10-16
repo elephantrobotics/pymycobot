@@ -68,7 +68,7 @@ mc.send_angle(1, 40, 20)
 - **Return value:**
   - `1`: completed
 
-#### `focus_servos(servo_id)`
+#### `focus_servo(servo_id)`
 
 - **function:** Power on designated servo
 
@@ -132,6 +132,13 @@ mc.send_angle(1, 40, 20)
   - 10: The servo motor minimum starting force is abnormal, the default is 0, this abnormality will be automatically restored
   - 11: The servo motor is abnormal. When the servo is abnormal, the machine cannot be controlled. Please query the servo feedback interface get_servo_status to check the specific error.
   - 255: Unknown error
+
+#### `focus_all_servos()`
+
+- **Function:** All servos are powered on
+
+- **Return value:**
+- `1`: complete
 
 ### 3.MDI Mode and Operation
 
