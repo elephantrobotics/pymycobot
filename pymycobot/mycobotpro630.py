@@ -2781,7 +2781,27 @@ class Phoenix:
         """
         self._send_can([0x02, 0x6D, mode])
 
+    def tool_set_gripper_electric_init(self):
+        """Inits Electric Gripper. Need to call it before other electric gripper operation."""
+        self._send_can([0x01, 0x6C])
+
+    def tool_set_gripper_electric_open(self):
+        """Opens Electric Gripper."""
+        self._send_can([0x02, 0x6A, 0x00])
+
+    def tool_set_gripper_electric_close(self):
+        """Closes Electric Gripper."""
+        self._send_can([0x02, 0x6A, 0x01])
+
     def tool_gripper_pro_set_angle(self, angle):
+        """Sets current angle of Pro Gripper.
+
+        Args:
+            angle (int): angle to set
+
+        Returns:
+            bool: True if success, False otherwise
+        """
         if angle < 0 or angle > 100:
             return False
         command = [254, 254, 8, 14, 6, 0, 11, 0, angle]
@@ -2792,6 +2812,11 @@ class Phoenix:
         return bool(ret[8])
 
     def tool_gripper_pro_get_angle(self):
+        """Returns current angle of Pro Gripper.
+
+        Returns:
+            int: current angle
+        """
         command = [254, 254, 8, 14, 3, 0, 12, 0, 0]
         crc16_value = crc.Calculator(crc.Crc16.MODBUS.value).checksum(bytes(command))
         command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
@@ -2800,12 +2825,30 @@ class Phoenix:
         return int((ret[7] << 8) | (ret[8]))
 
     def tool_gripper_pro_open(self):
+        """Fully opens Pro Gripper.
+
+        Returns:
+            bool: True if success, False otherwise.
+        """
         return self.tool_gripper_pro_set_angle(100)
 
     def tool_gripper_pro_close(self):
+        """Fully closes Pro Gripper.
+
+        Returns:
+            bool: True if success, False otherwise.
+        """
         return self.tool_gripper_pro_set_angle(0)
 
     def tool_gripper_pro_set_torque(self, torque_value):
+        """Sets torque of Pro Gripper.
+
+        Args:
+            torque_value (int): torque value between 100 and 300
+
+        Returns:
+            bool: True if success, False otherwise
+        """
         if torque_value < 100 or torque_value > 300:
             return False
         command = [
@@ -2826,6 +2869,11 @@ class Phoenix:
         return bool(ret[8])
 
     def tool_gripper_pro_get_torque(self):
+        """Returns current torque value of Pro Gripper.
+
+        Returns:
+            int: current torque value
+        """
         command = [254, 254, 8, 14, 3, 0, 28, 0, 0]
         crc16_value = crc.Calculator(crc.Crc16.MODBUS.value).checksum(bytes(command))
         command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
