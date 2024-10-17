@@ -139,6 +139,17 @@ mc.send_angle(1, 40, 20)
 - **返回值:**
 - `1`: complete
 
+#### `set_vision_mode()`
+
+- **功能:** 设置视觉跟踪模式，限制刷新模式下send_coords的姿态翻转。（仅适用于视觉跟踪功能）
+  
+- **参数:**
+  - `1`: 打开
+  - `0`: 关闭
+
+- **返回值:**
+  - `1`: 完成
+
 ### 3. MDI运行与操作
 
 #### `get_angles()`
@@ -317,15 +328,25 @@ mc.send_angle(1, 40, 20)
 - **返回值:**
   - `1`: 完成
 
-#### `jog_increment(joint_id, increment, speed)`
+#### `jog_increment_angle(joint_id, increment, speed)`
 
-- **功能**：单关节角度增量控制
+- **功能**：角度步进，单关节角度增量控制
 - **参数**：
   - `joint_id`：1-6
   - `increment`：基于当前位置角度的增量移动
   - `speed`：1~100
 - **返回值:**
   - `1`: 完成
+
+#### `jog_increment_coord(id, increment, speed)`
+
+- **功能**：坐标步进，单坐标增量控制
+- **参数**：
+  - `id`：坐标 id 1-6
+  - `increment`：基于当前位置坐标的增量移动
+  - `speed`：1~100
+- **返回值**：
+- `1`：完成
 
 #### `set_encoder(joint_id,coder,speed)`
 

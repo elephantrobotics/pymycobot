@@ -63,6 +63,7 @@ class ProtocolCode(object):
     IS_FREE_MODE = 0x1B
     COBOTX_GET_ANGLE = 0x1C
     POWER_ON_ONLY = 0x1D
+    SET_VISION_MODE = 0x1D
     SET_CONTROL_MODE = 0x1E
     GET_CONTROL_MODE = 0x1F
     FOCUS_ALL_SERVOS = 0x18

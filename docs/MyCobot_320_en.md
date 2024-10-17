@@ -138,7 +138,18 @@ mc.send_angle(1, 40, 20)
 - **Function:** All servos are powered on
 
 - **Return value:**
-- `1`: complete
+  - `1`: complete
+
+#### `set_vision_mode()`
+
+- **Function:** Set the vision tracking mode, limit the posture flipping of send_coords in refresh mode. (Applicable only to vision tracking function)
+
+- **Parameter:**
+  - `1`: open
+  - `0`: close
+
+- **Return value:**
+  - `1`: complete
 
 ### 3.MDI Mode and Operation
 
@@ -318,12 +329,22 @@ mc.send_angle(1, 40, 20)
 - **Return value:**
   - `1`: completed
 
-#### `jog_increment(joint_id, increment, speed)`
+#### `jog_increment_angle(joint_id, increment, speed)`
 
-- **function:** Single joint angle increment control
+- **function:** Angle step, single joint angle increment control
 - **Parameters**:
   - `joint_id`: 1-6
   - `increment`: Incremental movement based on the current position angle
+  - `speed`: 1 ~ 100
+- **Return value:**
+  - `1`: completed
+
+#### `jog_increment_coord(id, increment, speed)`
+
+- **function:** Coord step, single coord increment control
+- **Parameters**:
+  - `id`: axis 1-6
+  - `increment`: Incremental movement based on the current position coord
   - `speed`: 1 ~ 100
 - **Return value:**
   - `1`: completed
