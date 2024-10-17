@@ -209,7 +209,7 @@ class MyAgv(DataProcessor):
             if self.__movement is False:
                 break
             self._mesg(*genre)
-            time.sleep(0.05)
+            time.sleep(0.1)
         self.stop()
 
     def go_ahead(self, speed: int, timeout: int = 5):
