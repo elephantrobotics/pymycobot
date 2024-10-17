@@ -71,7 +71,7 @@ mc.send_angle(1, 40, 20)
 - **功能：** 放松所有机械臂关节
 - **参数**：`data`（可选）：关节放松方式，默认为阻尼模式，若提供 `data`参数可指定为非阻尼模式（1-Undamping）。
 
-#### `focus_servos(servo_id)`
+#### `focus_servo(servo_id)`
 
 - **功能:** 单个舵机上电
 
@@ -112,6 +112,24 @@ mc.send_angle(1, 40, 20)
 - **参数:**
   - `1`: 总是首先执行最新的命令。
   - `0`: 以队列的形式按顺序执行指令。
+
+#### `focus_all_servos()`
+
+- **功能:** 所有舵机上电
+
+- **返回值:**
+- `1`: complete
+
+#### `set_vision_mode()`
+
+- **功能:** 设置视觉跟踪模式，限制刷新模式下send_coords的姿态翻转。（仅适用于视觉跟踪功能）
+  
+- **参数:**
+  - `1`: 打开
+  - `0`: 关闭
+
+- **返回值:**
+  - `1`: 完成
 
 ### 3. MDI运行与操作
 
@@ -181,20 +199,22 @@ mc.send_angle(1, 40, 20)
   - `0` - 没有停止
   - `-1` - 错误
 
-#### `sync_send_angles(angles, speed)`
+#### `sync_send_angles(angles, speed, timeout=15)`
 
 - **功能：** 同步状态下发送角度，到达目标点后返回
 - **参数：**
   - `angles`：角度值列表（`List[float]`），长度 6
   - `speed`：（`int`）1 ~ 100
+  - `timeout`: 默认15秒
 
-#### `sync_send_coords(coords, mode, speed)`
+#### `sync_send_coords(coords, speed，mode=0, timeout=15)`
 
 - **功能：** 同步状态下发送坐标，到达目标点后返回
 - **参数：**
   - `coords`：坐标值列表（`List[float]`），长度6
   - `speed`：（`int`）1~100
   - `mode`：（`int`）0-非线性（默认），1-直线运动
+  - `timeout`: 默认15秒
 
 #### `get_angles_coords()`
 
@@ -243,6 +263,21 @@ mc.send_angle(1, 40, 20)
   - `0` 未运动
   - `-1` 错误
 
+#### `angles_to_coords(angles)`
+
+- **功能** : 将角度转为坐标。
+- **参数：**
+  - `angles`：`list` 所有角度的浮点列表。
+- **返回值**: `list` 所有坐标的浮点列表。
+
+#### `solve_inv_kinematics(target_coords, current_angles)`
+
+- **功能** : 将坐标转为角度。
+- **参数：**
+  - `target_coords`: `list` 所有坐标的浮点列表。
+  - `current_angles`: `list` 所有角度的浮点列表，机械臂当前角度
+- **返回值**: `list` 所有角度的浮点列表。
+
 ### 4. JOG运行与操作
 
 #### `jog_angle(joint_id, direction, speed)`
@@ -269,22 +304,32 @@ mc.send_angle(1, 40, 20)
   - `direction`: (`int`) 控制机臂运动方向，`1` - 正转，`0` - 反转
   - `speed`: (`int`) 1 ~ 100
 
-#### `jog_increment(joint_id, increment, speed)`
+#### `jog_increment_angle(joint_id, increment, speed)`
 
-- **功能**：单关节角度增量控制
+- **功能**：角度步进，单关节角度增量控制
 - **参数**：
 - `joint_id`：1-6
 - `increment`：基于当前位置角度的增量移动
 - `speed`：1~100
+
+#### `jog_increment_coord(id, increment, speed)`
+
+- **功能**：坐标步进，单坐标增量控制
+- **参数**：
+  - `id`：坐标 id 1-6
+  - `increment`：基于当前位置坐标的增量移动
+  - `speed`：1~100
+- **返回值**：
+- `1`：完成
 
 #### `set_encoder(joint_id,coder,speed)`
 
 - **功能**：设置单关节旋转为指定的潜在值
 
 - **参数**
-    - `joint_id`：(`int`) 1-6
-    - `encoder`：0~4096
-    - `speed`：1~100
+  - `joint_id`：(`int`) 1-6
+  - `encoder`：0~4096
+  - `speed`：1~100
 
 #### `get_encoder(joint_id)`
 

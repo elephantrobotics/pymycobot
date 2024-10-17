@@ -72,7 +72,7 @@ mc.send_angle(1, 40, 20)
   - Attentions：After the joint is disabled, it needs to be enabled to control within 1 second
 - **Parameters**：`data`（optional）：The way to relax the joints. The default is damping mode, and if the 'data' parameter is provided, it can be specified as non damping mode (1- Undamping).
 
-#### `focus_servos(servo_id)`
+#### `focus_servo(servo_id)`
 
 - **function:** Power on designated servo
 
@@ -113,6 +113,21 @@ mc.send_angle(1, 40, 20)
 - **Parameters:**
   - `1`: Always execute the latest command first.
   - `0`: Execute instructions sequentially in the form of a queue.
+
+#### `focus_all_servos()`
+
+- **Function:** All servos are powered on
+
+- **Return value:**
+- `1`: complete
+
+#### `set_vision_mode()`
+
+- **Function:** Set the vision tracking mode, limit the posture flipping of send_coords in refresh mode. (Applicable only to vision tracking function)
+
+- **Parameter:**
+  - `1`: open
+  - `0`: close
 
 ### 3.MDI Mode and Operation
 
@@ -182,20 +197,22 @@ mc.send_angle(1, 40, 20)
   - `0` - not stop
   - `-1` - error
 
-#### `sync_send_angles(angles, speed)`
+#### `sync_send_angles(angles, speed, timeout=15)`
 
 - **function：** Send the angle in synchronous state and return when the target point is reached
 - **Parameters:**
   - `angles`: a list of degree value(`List[float]`), length 6
   - `speed`: (`int`) 1 ~ 100
+  - `timeout`: default 15 s
 
-#### `sync_send_coords(coords, mode, speed)`
+#### `sync_send_coords(coords, speed, mode=0, timeout=15)`
 
 - **function：** Send the coord in synchronous state and return when the target point is reached
 - **Parameters:**
   - `coords`: a list of coord value(`List[float]`), length 6
   - `speed`: (`int`) 1 ~ 100
   - `mode`: (`int`) 0 - angular（default）, 1 - linear
+  - `timeout`: default 15 s
 
 #### `get_angles_coords()`
 
@@ -244,6 +261,21 @@ mc.send_angle(1, 40, 20)
   - `0` not moving
   - `-1` error
 
+#### `angles_to_coords(angles)`
+
+- **Function** : Convert angles to coordinates.
+- **Parameters:**
+  - `angles`: `list` List of floating points for all angles.
+- **Return value**: `list` List of floating points for all coordinates.
+
+#### `solve_inv_kinematics(target_coords, current_angles)`
+
+- **Function** : Convert coordinates to angles.
+- **Parameters:**
+  - `target_coords`: `list` List of floating points for all coordinates.
+  - `current_angles`: `list` List of floating points for all angles, current angles of the robot
+- **Return value**: `list` List of floating points for all angles.
+
 ### 4. JOG Mode and Operation
 
 #### `jog_angle(joint_id, direction, speed)`
@@ -270,13 +302,23 @@ mc.send_angle(1, 40, 20)
   - `direction`: (`int`) To control the direction of machine arm movement, `1` - forward rotation, `0` - reverse rotation
   - `speed`: (`int`) 1 ~ 100
 
-#### `jog_increment(joint_id, increment, speed)`
+#### `jog_increment_angle(joint_id, increment, speed)`
 
-- **function:** Single joint angle increment control
+- **function:** Angle step, single joint angle increment control
 - **Parameters**:
   - `joint_id`: 1-6
   - `increment`: Incremental movement based on the current position angle
   - `speed`: 1 ~ 100
+
+#### `jog_increment_coord(id, increment, speed)`
+
+- **function:** Coord step, single coord increment control
+- **Parameters**:
+  - `id`: axis 1-6
+  - `increment`: Incremental movement based on the current position coord
+  - `speed`: 1 ~ 100
+- **Return value:**
+  - `1`: completed
 
 #### `set_encoder(joint_id, encoder, speed)`
 
