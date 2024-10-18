@@ -372,6 +372,33 @@ class ElephantRobot(object):
         command = "set_gripper_mode(" + str(mode) + ")\n"
         return self.send_command(command)
 
+    def init_ele_gripper(self):
+        """Initializes Electric Gripper.
+
+        Returns:
+            str: return message
+        """
+        command = "init_ele_gripper()\n"
+        return self.send_command(command)
+
+    def set_ele_gripper_open(self):
+        """Fully opens Electric Gripper.
+
+        Returns:
+            str: return message
+        """
+        command = "set_ele_gripper_open()\n"
+        return self.send_command(command)
+
+    def set_ele_gripper_close(self):
+        """Fully closes Electric Gripper.
+
+        Returns:
+            str: return message
+        """
+        command = "set_ele_gripper_close()\n"
+        return self.send_command(command)
+
 
 if __name__ == "__main__":
     ep = ElephantRobot("192.168.124.28", 5001)
