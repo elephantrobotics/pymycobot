@@ -478,6 +478,12 @@ class CommandGenerator(DataProcessor):
     def focus_all_servos(self):
         return self._mesg(ProtocolCode.FOCUS_SERVO, 0)
 
+    def focus_all_servos(self):
+        """Power on all servo
+
+        """
+        return self._mesg(ProtocolCode.FOCUS_SERVO, 0)
+
     # Atom IO
     def set_color(self, r=0, g=0, b=0):
         """Set the light color on the top of the robot arm.

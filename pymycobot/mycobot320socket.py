@@ -60,6 +60,7 @@ class MyCobot320Socket(CommandGenerator):
             get_servo_temps()
             get_servo_last_pdi()
             set_void_compensate()
+            get_robot_status()
 
         # Coordinate transformation
             set_tool_reference()
@@ -286,7 +287,7 @@ class MyCobot320Socket(CommandGenerator):
         Args:
             degrees: a list of degree values(List[float]), length 6.
             speed: (int) 0 ~ 100
-            timeout: default 7s.
+            timeout: default 15s.
         """
         t = time.time()
         self.send_angles(degrees, speed)
@@ -304,7 +305,7 @@ class MyCobot320Socket(CommandGenerator):
             coords: a list of coord values(List[float])
             speed: (int) 0 ~ 100
             mode: (int): 0 - angular（default）, 1 - linear
-            timeout: default 7s.
+            timeout: default 15s.
         """
         t = time.time()
         self.send_coords(coords, speed, mode)
@@ -329,6 +330,29 @@ class MyCobot320Socket(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
+
+    def jog_increment_angle(self, joint_id, increment, speed):
+        """ angle step mode
+
+        Args:
+            joint_id: int 1-6.
+            increment: Angle increment value
+            speed: int (0 - 100)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
+
+    def jog_increment_coord(self, id, increment, speed):
+        """coord step mode
+
+        Args:
+            id: axis id 1 - 6.
+            increment: Coord increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, speed=speed)
+        value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, id, [value], speed)
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -723,7 +747,7 @@ class MyCobot320Socket(CommandGenerator):
         return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_DEFAULT_SPEED)
 
     def set_pro_gripper_abs_angle(self, gripper_id, gripper_angle):
-        """ Set the gripper speed
+        """ Set the gripper absolute angle
 
         Args:
             gripper_id (int): 1 ~ 254
@@ -766,6 +790,21 @@ class MyCobot320Socket(CommandGenerator):
             float: version number.
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
+
+    def get_robot_status(self):
+        """Get robot status
+        """
+        return self._mesg(ProtocolCode.GET_ROBOT_STATUS, has_reply=True)
+
+    def set_vision_mode(self, flag):
+        """Set the visual tracking mode to limit the posture flipping of send_coords in refresh mode.
+        (Only for visual tracking function)
+
+        Args:
+            flag: 0/1; 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
+        return self._mesg(ProtocolCode.SET_VISION_MODE, flag)
 
     # Other
     def wait(self, t):
