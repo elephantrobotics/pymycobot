@@ -63,6 +63,7 @@ class ProtocolCode(object):
     IS_FREE_MODE = 0x1B
     COBOTX_GET_ANGLE = 0x1C
     POWER_ON_ONLY = 0x1D
+    SET_VISION_MODE = 0x1D
     SET_CONTROL_MODE = 0x1E
     GET_CONTROL_MODE = 0x1F
     FOCUS_ALL_SERVOS = 0x18
@@ -791,7 +792,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
                        ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD,
                        ProtocolCode.COBOTX_SET_SOLUTION_ANGLES]:
             wait_time = 300
-    elif _class in ["MyCobot", "MyCobotSocket"]:
+    elif _class in ["MyCobot", "MyCobotSocket", "MyCobot320", "MyCobot320Socket"]:
         if genre == ProtocolCode.GET_ROBOT_STATUS:
             wait_time = 75
     data = b""

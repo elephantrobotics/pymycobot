@@ -179,7 +179,7 @@ class MechArm270(CommandGenerator):
             ProtocolCode.SET_FOUR_PIECES_ZERO
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
             return [self._int2angle(angle) for angle in res]
         elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
             if res:
@@ -283,7 +283,7 @@ class MechArm270(CommandGenerator):
         Args:
             degrees: a list of degree values(List[float]), length 6.
             speed: (int) 0 ~ 100
-            timeout: default 7s.
+            timeout: default 15s.
         """
         t = time.time()
         self.send_angles(degrees, speed)
@@ -301,7 +301,7 @@ class MechArm270(CommandGenerator):
             coords: a list of coord values(List[float])
             speed: (int) 0 ~ 100
             mode: (int): 0 - angular（default）, 1 - linear
-            timeout: default 7s.
+            timeout: default 15s.
         """
         t = time.time()
         self.send_coords(coords, speed, mode)
@@ -344,6 +344,29 @@ class MechArm270(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
+
+    def jog_increment_angle(self, joint_id, increment, speed):
+        """ angle step mode
+
+        Args:
+            joint_id: int 1-6.
+            increment: Angle increment value
+            speed: int (0 - 100)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
+
+    def jog_increment_coord(self, id, increment, speed):
+        """coord step mode
+
+        Args:
+            id: axis id 1 - 6.
+            increment: Coord increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, speed=speed)
+        value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, id, [value], speed)
 
     def set_HTS_gripper_torque(self, torque):
         """Set new adaptive gripper torque
@@ -604,6 +627,46 @@ class MechArm270(CommandGenerator):
             0 - flange, 1 - tool
         """
         return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
+
+    def angles_to_coords(self, angles):
+        """ Convert angles to coordinates
+
+        Args:
+            angles : A float list of all angle.
+
+        Return:
+            list: A float list of all coordinates.
+        """
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
+
+    def solve_inv_kinematics(self, target_coords, current_angles):
+        """ Convert target coordinates to angles
+
+        Args:
+            target_coords: A float list of all coordinates.
+            current_angles : A float list of all angle.
+
+        Return:
+            list: A float list of all angle.
+        """
+        angles = [self._angle2int(angle) for angle in current_angles]
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(target_coords[idx]))
+        for angle in target_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
+
+    def set_vision_mode(self, flag):
+        """Set the visual tracking mode to limit the posture flipping of send_coords in refresh mode.
+        (Only for visual tracking function)
+
+        Args:
+            flag: 0/1; 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
+        return self._mesg(ProtocolCode.SET_VISION_MODE, flag)
 
     # Other
     def wait(self, t):

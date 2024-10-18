@@ -811,7 +811,7 @@ def calibration_parameters(**kwargs):
                         raise MyCobot320DataException(
                             "The range of 'gripper_id' in {} is 1 ~ 254, but the received value is {}".format(parameter,
                                                                                                               gripper_id))
-                    invalid_addresses = [1, 2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 18, 20, 22, 24, 26, 27, 28, 32, 33,
+                    invalid_addresses = [1, 2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 27, 28, 32, 33,
                                          36,
                                          37, 38, 39, 40, 42, 44]
                     if address < 1 or address > 44:
@@ -833,7 +833,7 @@ def calibration_parameters(**kwargs):
                             raise MyCobot320DataException(
                                 "Error in parameter '{}': Value for address={} must be 0 or 1, but the received value is {}".format(
                                     parameter, address, data))
-                    elif address in [15, 17, 19, 25]:
+                    elif address in [25]:
                         if data < 0 or data > 254:
                             raise MyCobot320DataException(
                                 "Error in parameter '{}': The range of 'value' for address={} is 0 ~ 254, but the received value is {}".format(
@@ -858,7 +858,7 @@ def calibration_parameters(**kwargs):
                         raise MyCobot320DataException(
                             "The range of 'gripper_id' in {} is 1 ~ 254, but the received value is {}".format(parameter,
                                                                                                               gripper_id))
-                    invalid_addresses = [3, 5, 6, 10, 15, 17, 19, 21, 23, 25, 29, 30, 31, 34, 35, 41, 43]
+                    invalid_addresses = [5, 6, 10, 15, 16, 17, 18, 19, 20, 21, 23, 25, 29, 30, 31, 34, 35, 41, 43]
                     if address < 1 or address > 44:
                         raise MyCobot320DataException(
                             "The range of 'address' in {} is 1 ~ 44, but the received value is {}".format(parameter,
