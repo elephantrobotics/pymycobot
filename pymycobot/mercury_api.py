@@ -2187,7 +2187,7 @@ class MercuryCommandGenerator(DataProcessor):
     def clear_encoder_error(self, joint_id):
         return self._mesg(ProtocolCode.CLEAR_ENCODER_ERROR, joint_id)
     
-    def set_pro_gripper(self, gripper_id, gripper_address, value):
+    def set_pro_gripper(self, gripper_id, gripper_address, value=0):
         self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id, gripper_address=gripper_address)
         return self._mesg(ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, gripper_id, [gripper_address], [value])
     

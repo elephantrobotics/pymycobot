@@ -376,6 +376,7 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
+    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest"]
     def __init__(self, debug=False):
         """
         Args:
@@ -405,8 +406,7 @@ class DataProcessor(object):
 
         elif genre in [76, 77]:
             command_data = [command_data[0]] + self._encode_int16(command_data[1] * 10)
-        elif genre == 115 and self.__class__.__name__ not in ["MyArmC", "MyArmM", "Mercury", "MercurySocket", "Pro630",
-                                                              "Pro630Client", "Pro400Client", "Pro400"]:
+        elif genre == 115 and self.__class__.__name__ not in self.crc_robot_class and self.__class__.__name__ not in ['MyArmC', 'MyArmM']:
             command_data = [command_data[1], command_data[3]]
         LEN = len(command_data) + 2
         
@@ -418,7 +418,7 @@ class DataProcessor(object):
         ]
         if command_data:
             command.extend(command_data)
-        if self.__class__.__name__ in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
+        if self.__class__.__name__ in self.crc_robot_class:
             command[2] += 1
             command.extend(self.crc_check(command))
         else:
@@ -515,12 +515,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SET_DYNAMIC_PARAMETERS] and index in [0, 1] and _class in ["Mercury",
-                                                                                                "MercurySocket",
-                                                                                                "Pro630",
-                                                                                                "Pro630Client",
-                                                                                                "Pro400Client",
-                                                                                                "Pro400"]:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SET_DYNAMIC_PARAMETERS] and index in [0, 1] and _class in self.crc_robot_class:
                     for data in args[index]:
                         byte_value = int(data).to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -533,9 +528,7 @@ class DataProcessor(object):
                 if isinstance(args[index], str):
                     processed_args.append(args[index])
                 else:
-                    if genre == ProtocolCode.SET_SERVO_DATA and _class in ["Mercury", "MercurySocket", "Pro630",
-                                                                           "Pro630Client", "Pro400Client",
-                                                                           "Pro400"] and index == 2:
+                    if genre == ProtocolCode.SET_SERVO_DATA and _class in self.crc_robot_class and index == 2:
                         byte_value = args[index].to_bytes(2, byteorder='big', signed=True)
                         res = []
                         for i in range(len(byte_value)):
@@ -855,7 +848,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         wait_time = 0.3
     if timeout is not None:
         wait_time = timeout
-    if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
+    if _class in DataProcessor.crc_robot_class:
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
         elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
@@ -916,7 +909,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             data = self._serial_port.read()
             # self.log.debug("data: {}".format(data))
             k += 1
-            if _class in ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400"]:
+            if _class in DataProcessor.crc_robot_class:
                 if data_len == 3:
                     datas += data
                     crc = self._serial_port.read(2)

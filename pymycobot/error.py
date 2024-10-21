@@ -1237,8 +1237,8 @@ def restrict_serial_port(func):
     装饰器，用于限制特定串口号的函数调用。
     """
     @functools.wraps(func)
-    def wrapper(instance, *args, **kwargs):
-        if instance._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
+    def wrapper(self, *args, **kwargs):
+        if self._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
             raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
-        return func(*args, **kwargs)
+        return func(self, *args, **kwargs)
     return wrapper
