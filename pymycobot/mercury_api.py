@@ -376,11 +376,16 @@ class MercuryCommandGenerator(DataProcessor):
                     one = valid_data[i: i + 2]
                     res.append(self._decode_int16(one))
                     i += 2
-        elif data_len == 37:
+        elif data_len in [37, 46]:
+            # X1 left status
+            if data_len == 37:
+                add_index = 9
+            else:
+                add_index = 10
             i = 0
             res = []
             while i < data_len:
-                if i < 9:
+                if i < add_index:
                     res.append(valid_data[i])
                     i += 1
                 else:
@@ -2187,9 +2192,9 @@ class MercuryCommandGenerator(DataProcessor):
     def clear_encoder_error(self, joint_id):
         return self._mesg(ProtocolCode.CLEAR_ENCODER_ERROR, joint_id)
     
-    def set_pro_gripper(self, gripper_id, gripper_address, value=0):
+    def set_pro_gripper(self, gripper_id, gripper_address, value=0, has_return=False):
         self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id, gripper_address=gripper_address)
-        return self._mesg(ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, gripper_id, [gripper_address], [value])
+        return self._mesg(ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, gripper_id, [gripper_address], [value], has_return=has_return)
     
     def get_pro_gripper(self, gripper_id, gripper_address):
         self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id, gripper_address=gripper_address)
