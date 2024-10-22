@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.6.4 (2024-10-22)
+
+- release v3.6.4
+- Fix set_encoder function BUG
+
 ## v3.6.3 (2024-10-17)
 
 - release v3.6.3
