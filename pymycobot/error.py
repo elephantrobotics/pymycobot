@@ -239,8 +239,8 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
         elif parameter in ['servo_id_pdi', 'encode_id']:
             check_value_type(parameter, value_type, exception_class, int)
             if "MyCobot" in class_name or "MechArm" in class_name:
-                if value < 1 or value > 6:
-                    raise exception_class("The range of id is 1 ~ 6, but the received is {}".format(value))
+                if value < 1 or value > 7:
+                    raise exception_class("The range of id is 1 ~ 6 or 7, but the received is {}".format(value))
             if class_name in ["MyPalletizer", "MyPalletizer260"]:
                 if value < 1 or value > 4:
                     raise exception_class("The range of id is 1 ~ 4, but the received is {}".format(value))
@@ -528,8 +528,8 @@ def calibration_parameters(**kwargs):
                             "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyCobot280DataException, int)
-                if value < 1 or value > 6:
-                    raise MyCobot280DataException("The range of id is 1 ~ 6, but the received is {}".format(value))
+                if value < 1 or value > 7:
+                    raise MyCobot280DataException("The range of id is 1 ~ 6 or 7, but the received is {}".format(value))
             elif parameter == "torque":
                 torque_min = 150
                 torque_max = 980
@@ -646,8 +646,8 @@ def calibration_parameters(**kwargs):
                             "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyCobot320DataException, int)
-                if value < 1 or value > 6:
-                    raise MyCobot320DataException("The range of id is 1 ~ 6, but the received is {}".format(value))
+                if value < 1 or value > 7:
+                    raise MyCobot320DataException("The range of id is 1 ~ 6 or 7, but the received is {}".format(value))
             elif parameter == "torque":
                 torque_min = 150
                 torque_max = 980
@@ -880,8 +880,8 @@ def calibration_parameters(**kwargs):
                             "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MechArmDataException, int)
-                if value < 1 or value > 6:
-                    raise MechArmDataException("The range of id is 1 ~ 6, but the received is {}".format(value))
+                if value < 1 or value > 7:
+                    raise MechArmDataException("The range of id is 1 ~ 6 or 7, but the received is {}".format(value))
             elif parameter == "torque":
                 torque_min = 150
                 torque_max = 980
@@ -1155,8 +1155,8 @@ def calibration_parameters(**kwargs):
                             "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyPalletizer260DataException, int)
-                if value < 1 or value > 4:
-                    raise MyPalletizer260DataException("The range of id is 1 ~ 4, but the received is {}".format(value))
+                if value < 1 or (value > 4 and value != 7):
+                    raise MyPalletizer260DataException("The range of id is 1 ~ 4 or 7, but the received is {}".format(value))
             elif parameter == "torque":
                 torque_min = 150
                 torque_max = 980
