@@ -591,11 +591,16 @@ class Phoenix:
         except can.CanError:
             print("Error: Cannot send can message")
 
-    def _receive_can(self, msg_data=None, timeout=0.5, num_tries=1000):
+    def _receive_can(
+        self, msg_data=None, timeout=0.5, num_tries=1000, destroy_can=True
+    ):
         """Receives next message from CAN bus.
 
         Args:
+            msg_data (None | List[int], optional): message to look for. Defaults to None (look for any message).
             timeout (float, optional): How long time to receive message. Defaults to 0.5.
+            num_tries (int, optional): how many times to try to receive specified message. Defaults to 1000.
+            destroy_can (bool, optional): if need to destroy CAN BUS instance after receiving message. Defaults to True.
 
         Returns:
             Message | None: CAN message or None (if no message could be received).
@@ -615,7 +620,8 @@ class Phoenix:
                 msg_found = False
             if msg_found:
                 break
-        self._destroy_can()
+        if destroy_can:
+            self._destroy_can()
         if not msg_found:
             msg = None
         return msg
@@ -2918,10 +2924,10 @@ class Phoenix:
         """
         self._send_can([0x02, 0xB4, n])
         data = []
-        msg = self._receive_can()
+        msg = self._receive_can(destroy_can=False)
         data.extend(msg.data[3:])
         while msg is not None and len(data) < n:
-            msg = self._receive_can()
+            msg = self._receive_can(destroy_can=False)
             data.extend(msg.data[3:])
         return data
 
