@@ -122,10 +122,10 @@ def check_0_or_1(parameter, value, range_data, value_type, exception_class, _typ
     check_value_type(parameter, value_type, exception_class, _type)
     if value not in range_data:
         error = "The data supported by parameter {} is ".format(parameter)
-        len = len(range_data)
-        for idx in range(len):
+        len_data = len(range_data)
+        for idx in range(len_data):
             error += str(range_data[idx])
-            if idx != len - 1:
+            if idx != len_data - 1:
                 error += " or "
         error += ", but the received value is {}".format(value)
         raise exception_class(error)
