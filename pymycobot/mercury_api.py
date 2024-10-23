@@ -335,7 +335,7 @@ class MercuryCommandGenerator(DataProcessor):
             #             res.append(3)
             #         else:
             #             res.append(i)
-        elif data_len == 28:
+        elif data_len in [28, 32]: # 28 left get_zero_pos, 32 right get_zero_pos
             for i in range(0, data_len, 4):
                 byte_value = int.from_bytes(
                     valid_data[i:i+4], byteorder='big', signed=True)
