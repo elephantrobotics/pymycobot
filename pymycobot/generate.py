@@ -343,6 +343,16 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ENCODERS, has_reply=True)
 
+    def set_encoders_drag(self, encoders, speeds):  # TODO 22-5-19 need test
+        """Send all encoders and speeds
+
+        Args:
+            encoders: encoders list.
+            speeds: Obtained by the get_servo_speeds() method
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, encoders=encoders, speeds=speeds)
+        return self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
+
     # Running status and Settings
 
     def get_joint_min_angle(self, joint_id):
