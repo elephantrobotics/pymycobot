@@ -22,6 +22,7 @@ class ProGripper(object):
     SET_GRIPPER_PAUSE = 37
     SET_GRIPPER_RESUME = 38
     SET_GRIPPER_STOP = 39
+    SET_GRIPPER_ANGLES = 45
 
 
 class ProtocolCode(object):
