@@ -393,6 +393,7 @@ class MercuryServer(object):
                         print("close disconnect!")
                         self.connected_event.clear()
                         time.sleep(0.1)
+                        break
                     except Exception as e:
                         self.logger.error(traceback.format_exc())
                         break
