@@ -820,7 +820,7 @@ def write(self, command, method=None):
                 command = bytes(command)
             self.sock.sendall(command)
     else:
-        self._serial_port.reset_input_buffer()
+        # self._serial_port.reset_input_buffer()
         command_log = ""
         for i in command:
             if isinstance(i, str):
