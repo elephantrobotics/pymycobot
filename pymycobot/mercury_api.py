@@ -147,7 +147,7 @@ class MercuryCommandGenerator(DataProcessor):
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
             big_wait_time = True
-        elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
+        elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.POWER_ON_ONLY,  ProtocolCode.RELEASE_ALL_SERVOS, ProtocolCode.FOCUS_ALL_SERVOS,
                     ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP, ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
             wait_time = 3
             big_wait_time = True
@@ -278,6 +278,7 @@ class MercuryCommandGenerator(DataProcessor):
                     print(res)
                 return data[4]
         valid_data = data[data_pos: data_pos + data_len]
+        # print(data_len, valid_data)
         if data_len in [6, 8, 12, 14, 16, 20, 24, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
                 if valid_data[0] == 1:
@@ -306,8 +307,9 @@ class MercuryCommandGenerator(DataProcessor):
                 for i in valid_data:
                     res.append(i)
             elif genre in [ProtocolCode.GET_ERROR_INFO]:
-                return [self._decode_int8(valid_data[1:])]
-            res.append(self._decode_int16(valid_data))
+                res.append(self._decode_int8(valid_data[1:]))
+            else:
+                res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
@@ -496,7 +498,8 @@ class MercuryCommandGenerator(DataProcessor):
             ProtocolCode.GET_MAX_ACC,
             ProtocolCode.GET_MONITOR_MODE,
             ProtocolCode.GET_COLLISION_MODE,
-            ProtocolCode.GET_DYNAMIC_PARAMETERS
+            ProtocolCode.GET_DYNAMIC_PARAMETERS,
+            ProtocolCode.GET_ERROR_INFO
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_DRAG_FIFO]:

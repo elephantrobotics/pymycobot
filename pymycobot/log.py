@@ -5,7 +5,7 @@ import logging.handlers
 
 
 def setup_logging(debug=False):
-    logging.basicConfig()
+    # logging.basicConfig()
     root_logger = logging.getLogger()
 
     debug_fomatter = logging.Formatter(
