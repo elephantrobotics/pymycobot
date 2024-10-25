@@ -1260,7 +1260,7 @@ class MercuryCommandGenerator(DataProcessor):
     def get_pos_over_shoot(self):
         return self._mesg(ProtocolCode.MERCURY_GET_POS_OVER_SHOOT)
 
-    def stop(self, deceleration=0):
+    def stop(self, deceleration=0, _async=False):
         """Robot stops moving
 
         Args:
@@ -1272,9 +1272,9 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, deceleration=deceleration)
         # self.is_stop = time.time()
         if deceleration == 1:
-            return self._mesg(ProtocolCode.STOP, 1)
+            return self._mesg(ProtocolCode.STOP, 1, _async=_async)
         else:
-            return self._mesg(ProtocolCode.STOP)
+            return self._mesg(ProtocolCode.STOP, _async=_async)
 
     def pause(self, deceleration=0):
         """Robot pauses movement
