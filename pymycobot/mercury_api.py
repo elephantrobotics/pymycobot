@@ -836,7 +836,7 @@ class MercuryCommandGenerator(DataProcessor):
         """Lock all joints"""
         return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
 
-    def go_home(self, robot=1, speed=20):
+    def go_home(self, robot=1, speed=20, _async=False):
         """Control the machine to return to the zero position.
 
         Args:
@@ -849,12 +849,12 @@ class MercuryCommandGenerator(DataProcessor):
             0 : failed.
         """
         if robot == 1:
-            return self.send_angles([0, 0, 0, 0, 0, 90, 0], speed)
+            return self.send_angles([0, 0, 0, 0, 0, 90, 0], speed, _async=_async)
         else:
             self.send_angle(11, 0, speed)
             self.send_angle(12, 0, speed)
             self.send_angle(13, 0, speed)
-            return self.send_angles([0, 0, 0, 0, 0, 90, 0], speed)
+            return self.send_angles([0, 0, 0, 0, 0, 90, 0], speed, _async=_async)
 
     def get_angle(self, joint_id):
         """Get single joint angle
