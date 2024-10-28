@@ -459,6 +459,7 @@ class MercuryServer(object):
                                     datas += crc
                                     if self.conn is not None:
                                         self.logger.info("return datas: {}".format([hex(v) for v in datas]))
+                                        datas = b'###'+datas+b'###'
                                         self.conn.sendall(datas)
                                     break
                             if data_len == 1 and data == b"\xfa":

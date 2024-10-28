@@ -6,8 +6,7 @@ import struct
 import locale
 import numpy as np
 from datetime import datetime
-import traceback
-import json
+import re
 
 from pymycobot.error import calibration_parameters, restrict_serial_port
 from pymycobot.common import DataProcessor, ProtocolCode, write, read, ProGripper
@@ -23,7 +22,6 @@ class MercuryCommandGenerator(DataProcessor):
         # self.is_stop = False
         self.write_command = []
         self.read_command = []
-        self.send_jog_command = False
         # 同步模式
         self.sync_mode = True
         self.language, _ = locale.getdefaultlocale()
@@ -621,27 +619,28 @@ class MercuryCommandGenerator(DataProcessor):
                             datas = bytearray()
                             for i in data:
                                 datas += hex(ord(i))
+                            data = datas
                     except:
                         data = b""
                     if data != b"":
-                        if self.send_jog_command and datas[3] == 0x5b:
-                            self.send_jog_command = False
-                            continue
-                        if self.check_python_version() == 2:
-                            command_log = ""
-                            for d in data:
-                                command_log += hex(ord(d))[2:] + " "
-                            self.log.debug("_read : {}".format(command_log))
-                            # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-                        else:
-                            command_log = ""
-                            for d in data:
-                                command_log += hex(d)[2:] + " "
-                            self.log.debug("_read : {}".format(command_log))
-                        res = self._process_received(data)
-                        if res != []:
-                            with self.lock:
-                                self.read_command.append([res, time.time()])
+                        pattern = re.compile(rb'###(.*?)###', re.DOTALL)
+                        matches = pattern.findall(data)
+                        for match in matches:
+                            if self.check_python_version() == 2:
+                                command_log = ""
+                                for d in match:
+                                    command_log += hex(ord(d))[2:] + " "
+                                self.log.debug("_read : {}".format(command_log))
+                                # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                            else:
+                                command_log = ""
+                                for d in match:
+                                    command_log += hex(d)[2:] + " "
+                                self.log.debug("_read : {}".format(command_log))
+                            res = self._process_received(match)
+                            if res != []:
+                                with self.lock:
+                                    self.read_command.append([res, time.time()])
                 else:
                     while True and time.time() - t < wait_time:
                         if self._serial_port.isOpen() and self._serial_port.inWaiting() > 0:
@@ -694,11 +693,6 @@ class MercuryCommandGenerator(DataProcessor):
                                 f.write(str(current_time)+str(all_data)[2:-1]+"\n")
                             all_data = b''
                     if datas != b'':
-                        
-                        # print("read:", datas)
-                        if self.send_jog_command and datas[3] == 0x5b:
-                            self.send_jog_command = False
-                            continue
                         res = self._process_received(datas)
                         if self.check_python_version() == 2:
                             command_log = ""
@@ -969,7 +963,7 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed)
 
     @restrict_serial_port
-    def jog_base_coord(self, axis, direction, speed, sync=True):
+    def jog_base_coord(self, axis, direction, speed, _async=True):
         """Single-coordinate unidirectional motion control
 
         Args:
@@ -988,10 +982,7 @@ class MercuryCommandGenerator(DataProcessor):
             51: Motor encoder error
             52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
-        if sync:
-            return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed, has_reply=True)
-        self.send_jog_command = True
-        return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed)
+        return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed, _async=_async, has_reply=True)
 
     def drag_teach_save(self):
         """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 90 seconds."""
@@ -1594,14 +1585,14 @@ class MercuryCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.IS_MOVING)
 
-    def jog_angle(self, joint_id, direction, speed, sync=False):
+    def jog_angle(self, joint_id, direction, speed, _async=True):
         """Jog control angle.
 
         Args:
             joint_id (int): Joint id 1 - 7.
             direction (int): 0 - decrease, 1 - increase
             speed (int): int range 1 - 100
-            sync (bool, optional): Waiting for the exercise to end. Defaults to False.
+            _async (bool, optional): Whether to execute asynchronous control. Defaults to True.
 
         Return:
             0: End of exercise.
@@ -1615,19 +1606,16 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
-        if sync:
-            return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, has_reply=True)
-        self.send_jog_command = True
-        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed)
+        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, _async=_async, has_reply=True)
 
-    def jog_coord(self, coord_id, direction, speed, sync=False):
+    def jog_coord(self, coord_id, direction, speed, _async=True):
         """Jog control coord. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the jog_base_coord interface
 
         Args:
             coord_id (int): int 1-6
             direction (int): 0 - decrease, 1 - increase
             speed (int): 1 - 100
-            sync (bool, optional): Waiting for the exercise to end. Defaults to False.
+            _async (bool, optional): Whether to execute asynchronous control. Defaults to True.
 
         Returns:
             1: End of the Movement
@@ -1635,13 +1623,10 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, coord_id=coord_id, direction=direction, speed=speed)
-        if sync:
-            return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, has_reply=True)
-        self.send_jog_command = True
-        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
+        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
-    def jog_base_increment_coord(self, axis_id, increment, speed):
+    def jog_base_increment_coord(self, axis_id, increment, speed, _async=True):
         """Single coordinate incremental motion control
 
         Args:
@@ -1666,7 +1651,7 @@ class MercuryCommandGenerator(DataProcessor):
             coord_list.append(self._coord2int(increment))
         else:
             coord_list.append(self._angle2int(increment))
-        return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, coord_list, speed, has_reply=True)
+        return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, coord_list, speed, has_reply=True, _async=_async)
 
     def get_max_speed(self, mode):
         """Get maximum speed
