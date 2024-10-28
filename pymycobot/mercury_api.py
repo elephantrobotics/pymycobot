@@ -1462,7 +1462,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ERROR_INFO)
 
-    def send_angles(self, angles, speed):
+    def send_angles(self, angles, speed,_async=False):
         """Send the angles of all joints to robot arm.
 
         Args:
@@ -1472,7 +1472,7 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(
             class_name=self.__class__.__name__, angles=angles, speed=speed)
         angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True,_async=_async)
 
     def send_angle(self, joint_id, angle, speed):
         """Send one angle of joint to robot arm.
