@@ -140,7 +140,7 @@ class MyCobot280Socket(CommandGenerator):
             if genre == ProtocolCode.SET_SSID_PWD:
                 return None
             res = self._process_received(data, genre)
-            if res == []:
+            if res is None:
                 return None
             elif res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
                 ProtocolCode.GET_BASIC_VERSION,

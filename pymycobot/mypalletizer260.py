@@ -126,7 +126,7 @@ class MyPalletizer260(CommandGenerator):
             if has_reply:
                 data = self._read(genre)
                 res = self._process_received(data, genre)
-                if res == []:
+                if res is None:
                     return None
                 if genre in [
                     ProtocolCode.IS_POWER_ON,
