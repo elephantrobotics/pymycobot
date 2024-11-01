@@ -796,6 +796,10 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
     elif _class in ["MyCobot", "MyCobotSocket", "MyCobot320", "MyCobot320Socket"]:
         if genre == ProtocolCode.GET_ROBOT_STATUS:
             wait_time = 75
+    elif genre == ProtocolCode.GET_ROBOT_STATUS:
+        wait_time = 90
+    elif genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
+        wait_time = 0.05
     data = b""
 
     if method is not None:
