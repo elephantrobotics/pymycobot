@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.6.5 (2024-10-25)
+
+- release v3.6.5
+- Added 280 set_encoders_drag interface
+
 ## v3.6.4 (2024-10-22)
 
 - release v3.6.4

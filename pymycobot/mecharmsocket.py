@@ -124,19 +124,23 @@ class MechArmSocket(CommandGenerator):
         # [254,...,255]
         # data = self._write(self._flatten(real_command), "socket")
         with self.lock:
-            try_count = 0
-            while try_count < 3:
+            if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
                 self._write(self._flatten(real_command), "socket")
                 data = self._read(genre, method='socket')
-                if data is not None and data != b'':
-                    break
-                try_count += 1
             else:
-                return -1
+                try_count = 0
+                while try_count < 3:
+                    self._write(self._flatten(real_command), "socket")
+                    data = self._read(genre, method='socket')
+                    if data is not None and data != b'':
+                        break
+                    try_count += 1
+                else:
+                    return -1
             if genre == ProtocolCode.SET_SSID_PWD:
-                return None
+                return 1
             res = self._process_received(data, genre)
-            if res == []:
+            if res is None:
                 return None
             elif res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
                 ProtocolCode.GET_BASIC_VERSION,

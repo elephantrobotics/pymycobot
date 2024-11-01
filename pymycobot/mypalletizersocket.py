@@ -91,7 +91,7 @@ class MyPalletizerSocket(CommandGenerator):
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
                 res = self._process_received(data, genre)
-                if res == []:
+                if res is None:
                     return None
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,

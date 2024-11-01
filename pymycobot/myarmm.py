@@ -6,7 +6,7 @@ from pymycobot.myarm_api import MyArmAPI
 
 class MyArmM(MyArmAPI):
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="1000000", timeout=0.1, debug=False):
         super(MyArmM, self).__init__(port, baudrate, timeout,debug)
 
     def set_joint_angle(self, joint_id, angle, speed):
