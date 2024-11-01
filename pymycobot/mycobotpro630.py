@@ -592,22 +592,37 @@ class Phoenix:
             print("Error: Cannot send can message")
 
     def _receive_can(
-        self, msg_data=None, timeout=0.5, num_tries=1000, destroy_can=True
+        self,
+        msg_data=None,
+        timeout=0.5,
+        num_tries=1000,
+        destroy_can=True,
+        messages_num=1,
     ):
         """Receives next message from CAN bus.
 
         Args:
-            msg_data (None | List[int], optional): message to look for. Defaults to None (look for any message).
-            timeout (float, optional): How long time to receive message. Defaults to 0.5.
-            num_tries (int, optional): how many times to try to receive specified message. Defaults to 1000.
-            destroy_can (bool, optional): if need to destroy CAN BUS instance after receiving message. Defaults to True.
+            msg_data (None | List[int], optional): message to look for.
+                Defaults to None (look for any message). If multiple messages
+                are received, only the first one is compared to.
+            timeout (float, optional): How long time to receive message.
+                Defaults to 0.5.
+            num_tries (int, optional): how many times to try to receive
+                specified message. Defaults to 1000.
+            destroy_can (bool, optional): if need to destroy CAN BUS instance
+                after receiving message. Defaults to True.
+            messages_num (int, optional): how many messages to read and return.
+                If number of messages is more than 1, list of messages is
+                returned. Defaults to 1.
 
         Returns:
-            Message | None: CAN message or None (if no message could be received).
+            Message | List[Message] | None: CAN message or None (if no message could be received).
         """
         msg_data = msg_data or []
         msg = None
+        msg_list = []
         self._init_can()
+
         for _ in range(num_tries):
             msg = self.bus.recv(timeout)
             msg_found = True
@@ -620,11 +635,23 @@ class Phoenix:
                 msg_found = False
             if msg_found:
                 break
+
+        if messages_num > 1 and msg_found:
+            msg_list.append(msg)
+            for i in range(messages_num - 1):
+                msg = self.bus.recv(timeout)
+                msg_list.append(msg)
+
         if destroy_can:
             self._destroy_can()
+
         if not msg_found:
             msg = None
-        return msg
+
+        if messages_num == 1:
+            return msg
+        else:
+            return msg_list
 
     def _init_robot(self):
         """Initializes robot parameters."""
@@ -2815,7 +2842,10 @@ class Phoenix:
         command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
         self.tool_serial_write_data(command)
         ret = self.tool_serial_read_data(11)
-        return bool(ret[8])
+        if len(ret) == 11:
+            return bool(ret[8])
+
+        return False
 
     def tool_gripper_pro_get_angle(self):
         """Returns current angle of Pro Gripper.
@@ -2828,7 +2858,10 @@ class Phoenix:
         command.extend([(crc16_value >> 8), (crc16_value & 0xFF)])
         self.tool_serial_write_data(command)
         ret = self.tool_serial_read_data(11)
-        return int((ret[7] << 8) | (ret[8]))
+        if len(ret) == 11:
+            return int((ret[7] << 8) | (ret[8]))
+
+        return -1
 
     def tool_gripper_pro_open(self):
         """Fully opens Pro Gripper.
@@ -2924,11 +2957,18 @@ class Phoenix:
         """
         self._send_can([0x02, 0xB4, n])
         data = []
-        msg = self._receive_can(destroy_can=False)
-        data.extend(msg.data[3:])
-        while msg is not None and len(data) < n:
-            msg = self._receive_can(destroy_can=False)
+        messages_num = math.ceil(n / 5)
+        data_to_look_for = [2 + n, 0xB4]
+        if data_to_look_for[0] > 7:
+            data_to_look_for[0] = 7
+        msg = self._receive_can(
+            msg_data=data_to_look_for, destroy_can=False, messages_num=messages_num
+        )
+        if messages_num == 1:
             data.extend(msg.data[3:])
+        else:
+            for i in range(len(msg)):
+                data.extend(msg[i].data[3:])
         return data
 
     def tool_serial_write_data(self, bytes):
@@ -2950,7 +2990,7 @@ class Phoenix:
             msg_bytes.extend(list(chunk))
             # print("msg_bytes = " + str(list(msg_bytes)))
             self._send_can(msg_bytes)
-        msg = self._receive_can()
+        msg = self._receive_can(destroy_can=False)
         return msg.data[2]
 
     def tool_serial_flush(self):
