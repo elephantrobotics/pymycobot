@@ -147,17 +147,21 @@ class MyCobot320(CommandGenerator):
             return self._res(real_command, has_reply, genre)
 
     def _res(self, real_command, has_reply, genre):
-        try_count = 0
-        while try_count < 3:
+        if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
             self._write(self._flatten(real_command))
             data = self._read(genre)
-            if data is not None and data != b'':
-                break
-            try_count += 1
         else:
-            return -1
+            try_count = 0
+            while try_count < 3:
+                self._write(self._flatten(real_command))
+                data = self._read(genre)
+                if data is not None and data != b'':
+                    break
+                try_count += 1
+            else:
+                return -1
         if genre == ProtocolCode.SET_SSID_PWD:
-            return None
+            return 1
         res = self._process_received(data, genre)
         if res is None:
             return None
@@ -578,8 +582,8 @@ class MyCobot320(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_END_TYPE, has_reply=True)
 
-    # Force Control Gripper
-    def set_pro_gripper(self, gripper_id, address, value):
+    # Force Control Gripper and myHand  Gripper Control
+    def set_pro_gripper(self, gripper_id, address, joint_id=0, value=None, speed=None):
         """Setting the force-controlled gripper parameters
 
         Args:
@@ -587,20 +591,30 @@ class MyCobot320(CommandGenerator):
             address (int): Corresponding to the command sequence number in the force-controlled gripper protocol
             value : Parameters in the force-controlled gripper protocol
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, set_gripper_args=[gripper_id, address, value])
-        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [value])
+        if value is None:
+            # self.calibration_parameters(class_name=self.__class__.__name__,
+            #                             set_gripper_args=[gripper_id, address], joint_id=joint_id)
+            return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [joint_id])
+        elif speed:
+            self.calibration_parameters(class_name=self.__class__.__name__,
+                                        set_gripper_args=[gripper_id, address, value], joint_id=joint_id, speed=speed)
+            return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [joint_id], [value], [speed])
+        else:
+            self.calibration_parameters(class_name=self.__class__.__name__,
+                                        set_gripper_args=[gripper_id, address, value], joint_id=joint_id)
+            return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [address], [joint_id], [value])
 
-    def get_pro_gripper(self, gripper_id, address):
+    def get_pro_gripper(self, gripper_id, address, joint_id=0):
         """Get the force-controlled gripper parameters
 
         Args:
             gripper_id (int): 1 ~ 254
             address (int): Corresponding to the command sequence number in the force-controlled gripper protocol
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, get_gripper_args=[gripper_id, address])
-        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [address])
+        self.calibration_parameters(class_name=self.__class__.__name__, get_gripper_args=[gripper_id, address], joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [address], [joint_id])
 
-    def set_pro_gripper_angle(self, gripper_id, gripper_angle):
+    def set_pro_gripper_angle(self, gripper_id, joint_id=0, gripper_angle=None):
         """ Setting the angle of the force-controlled gripper
 
         Args:
@@ -608,16 +622,27 @@ class MyCobot320(CommandGenerator):
             gripper_angle (int): 0 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle])
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, gripper_angle)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, joint_id=joint_id, value=gripper_angle)
 
-    def get_pro_gripper_angle(self, gripper_id):
+    def set_pro_gripper_angles(self, gripper_id, gripper_angles, speed):
+        """ Setting the angle of the force-controlled gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            gripper_angles (list): 0 ~ 100
+            speed (int): 0 ~ 100
+        """
+        # self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angles])
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLES, value=gripper_angles, speed=speed)
+
+    def get_pro_gripper_angle(self, gripper_id, joint_id=0):
         """ Setting the angle of the force-controlled gripper
 
         Return:
             gripper_id (int): 1 ~ 254
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE, joint_id=joint_id)
 
     def set_pro_gripper_open(self, gripper_id):
         """ Open force-controlled gripper
@@ -639,7 +664,7 @@ class MyCobot320(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self.set_pro_gripper_angle(gripper_id, 0)
 
-    def set_pro_gripper_calibration(self, gripper_id):
+    def set_pro_gripper_calibration(self, gripper_id, joint_id=0):
         """ Setting the gripper jaw zero position
 
         Args:
@@ -647,7 +672,7 @@ class MyCobot320(CommandGenerator):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_CALIBRATION, 0)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_CALIBRATION, joint_id=joint_id)
 
     def get_pro_gripper_status(self, gripper_id):
         """ Get the clamping status of the gripper

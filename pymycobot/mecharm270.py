@@ -131,17 +131,21 @@ class MechArm270(CommandGenerator):
             return self._res(real_command, has_reply, genre)
 
     def _res(self, real_command, has_reply, genre):
-        try_count = 0
-        while try_count < 3:
+        if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
             self._write(self._flatten(real_command))
             data = self._read(genre)
-            if data is not None and data != b'':
-                break
-            try_count += 1
         else:
-            return -1
+            try_count = 0
+            while try_count < 3:
+                self._write(self._flatten(real_command))
+                data = self._read(genre)
+                if data is not None and data != b'':
+                    break
+                try_count += 1
+            else:
+                return -1
         if genre == ProtocolCode.SET_SSID_PWD:
-            return None
+            return 1
         res = self._process_received(data, genre)
         if res is None:
             return None
