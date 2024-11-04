@@ -761,7 +761,6 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [1, 2, 3], value_type, MyCobot320DataException, int)
             elif parameter == "gripper_angle":
                 gripper_id, gripper_angle = value
-                print(type(gripper_id), type(gripper_angle))
                 if not isinstance(gripper_id, int) or not isinstance(gripper_angle, int):
                     raise MyCobot320DataException(
                         "Both 'gripper_id' and 'gripper_angle' in {} must be integers".format(parameter))
@@ -806,76 +805,54 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException(
                         "The range of 'speed' in {} is 1 ~ 100, but the received value is {}".format(parameter,
                                                                                                      speed))
-            elif parameter == "joint_id":
-                check_value_type(parameter, value_type, MyCobot320DataException, int)
-                if not 0 <= value <= 6:
-                    raise MyCobot320DataException(
-                        "speed value not right, should be 1 ~ 100, the received speed is %s"
-                        % value
-                    )
+
             elif parameter == "set_gripper_args":
+                if len(value) != 3:
+                    raise ValueError(f"Expected 3 arguments, but got {len(value)}")
                 gripper_id, address, data = value
-                if not isinstance(gripper_id, int) or not isinstance(address, int):
+                if not isinstance(gripper_id, int) or not isinstance(address, int) or not isinstance(data, int):
                     raise MyCobot320DataException(
                         "All arguments in {} must be integers".format(parameter))
                 if gripper_id < 1 or gripper_id > 254:
                     raise MyCobot320DataException(
                         "The range of 'gripper_id' in {} is 1 ~ 254, but the received value is {}".format(parameter,
                                                                                                           gripper_id))
-                invalid_addresses = [1, 2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 27, 28, 32, 33,
-                                     36,
-                                     37, 38, 39, 40, 42, 44]
-                if address < 1 or address > 48:
+                invalid_addresses = [1, 2, 4, 5, 6, 7, 8, 9, 12, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 33, 34, 35,
+                                     40, 42, 44]
+                if address < 1 or address > 44:
                     raise MyCobot320DataException(
-                        "The range of 'address' in {} is 1 ~ 48, but the received value is {}".format(parameter,
+                        "The range of 'address' in {} is 1 ~ 44, but the received value is {}".format(parameter,
                                                                                                       address))
                 if address in invalid_addresses:
                     raise MyCobot320DataException(
                         "'address' in {} cannot be one of the following values: {}, but the received value is {}".format(
                             parameter, invalid_addresses, address))
-                print('data:', data)
-                if isinstance(data, list):
-                    # 处理 data 为列表的情况
-                    if len(data) != 6:
+                # 根据 address 来处理 value
+                if address in [3, 43]:
+                    if data < 1 or data > 254:
                         raise MyCobot320DataException(
-                            "data must be a list of length 6。"
-                        )
-                    for index, value in enumerate(data):
-                        if not (0 <= value <= 100):
-                            raise MyCobot320DataException(
-                                "Each value in the data list must be between 0 and 100. Error index {}: The received value is {}".format(index, value)
-                            )
-                else:
-                    if not isinstance(data, int):
+                            "Error in parameter '{}': The range of 'value' for address={} is 1 ~ 254, but the received value is {}".format(
+                                parameter, address, data))
+                elif address == 10:
+                    if data not in [0, 1]:
                         raise MyCobot320DataException(
-                            "The parameter {} must be an integer".format(data)
-                        )
-                    # 根据 address 来处理 value
-                    if address in [3, 43]:
-                        if data < 1 or data > 254:
-                            raise MyCobot320DataException(
-                                "Error in parameter '{}': The range of 'value' for address={} is 1 ~ 254, but the received value is {}".format(
-                                    parameter, address, data))
-                    elif address == 10:
-                        if data not in [0, 1]:
-                            raise MyCobot320DataException(
-                                "Error in parameter '{}': Value for address={} must be 0 or 1, but the received value is {}".format(
-                                    parameter, address, data))
-                    elif address in [25]:
-                        if data < 0 or data > 254:
-                            raise MyCobot320DataException(
-                                "Error in parameter '{}': The range of 'value' for address={} is 0 ~ 254, but the received value is {}".format(
-                                    parameter, address, data))
-                    elif address in [21, 23]:
-                        if data < 0 or data > 16:
-                            raise MyCobot320DataException(
-                                "Error in parameter '{}': The range of 'value' for address={} is 0 ~ 16, but the received value is {}".format(
-                                    parameter, address, data))
-                    elif address == 41:
-                        if data < 0 or data > 100:
-                            raise MyCobot320DataException(
-                                "Error in parameter '{}': The range of 'value' for address={} is 0 ~ 100, but the received value is {}".format(
-                                    parameter, address, data))
+                            "Error in parameter '{}': Value for address={} must be 0 or 1, but the received value is {}".format(
+                                parameter, address, data))
+                elif address in [25]:
+                    if data < 0 or data > 254:
+                        raise MyCobot320DataException(
+                            "Error in parameter '{}': The range of 'value' for address={} is 0 ~ 254, but the received value is {}".format(
+                                parameter, address, data))
+                elif address in [21, 23]:
+                    if data < 0 or data > 16:
+                        raise MyCobot320DataException(
+                            "Error in parameter '{}': The range of 'value' for address={} is 0 ~ 16, but the received value is {}".format(
+                                parameter, address, data))
+                elif address == 41:
+                    if data < 0 or data > 100:
+                        raise MyCobot320DataException(
+                            "Error in parameter '{}': The range of 'value' for address={} is 0 ~ 100, but the received value is {}".format(
+                                parameter, address, data))
 
             elif parameter == "get_gripper_args":
                 gripper_id, address = value
@@ -886,7 +863,8 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException(
                         "The range of 'gripper_id' in {} is 1 ~ 254, but the received value is {}".format(parameter,
                                                                                                           gripper_id))
-                invalid_addresses = [5, 6, 10, 15, 16, 17, 18, 19, 20, 21, 23, 25, 29, 30, 31, 34, 35, 41, 43]
+                invalid_addresses = [3, 5, 6, 10, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 30, 31, 32, 36, 37,
+                                     38, 39, 41, 43]
                 if address < 1 or address > 44:
                     raise MyCobot320DataException(
                         "The range of 'address' in {} is 1 ~ 44, but the received value is {}".format(parameter,
@@ -1281,7 +1259,8 @@ def calibration_parameters(**kwargs):
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyPalletizer260DataException, int)
                 if value < 1 or (value > 4 and value != 7):
-                    raise MyPalletizer260DataException("The range of id is 1 ~ 4 or 7, but the received is {}".format(value))
+                    raise MyPalletizer260DataException(
+                        "The range of id is 1 ~ 4 or 7, but the received is {}".format(value))
             elif parameter == "torque":
                 torque_min = 150
                 torque_max = 980
