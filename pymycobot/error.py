@@ -550,9 +550,11 @@ def calibration_parameters(**kwargs):
             elif parameter == 'flag':
                 check_0_or_1(parameter, value, [0, 1, 254], value_type, MyCobot280DataException, int)
             elif parameter == 'gripper_type':
-                check_0_or_1(parameter, value, [1, 3, 4], value_type, MyCobot280DataException, int)
+                if value is not None:
+                    check_0_or_1(parameter, value, [1, 3, 4, 5], value_type, MyCobot280DataException, int)
             elif parameter == '_type_1':
-                check_0_or_1(parameter, value, [1, 2, 3, 4], value_type, MyCobot280DataException, int)
+                if value is not None:
+                    check_0_or_1(parameter, value, [1, 2, 3, 4, 5], value_type, MyCobot280DataException, int)
             elif parameter == 'gripper_value':
                 check_value_type(parameter, value_type, MyCobot280DataException, int)
                 if value < 0 or value > 100:
@@ -636,6 +638,9 @@ def calibration_parameters(**kwargs):
                                                                                          value))
             elif parameter == 'end_direction':
                 check_0_or_1(parameter, value, [1, 2, 3], value_type, MyCobot280DataException, int)
+            elif parameter == 'is_torque':
+                if value is not None:
+                    check_0_or_1(parameter, value, [0, 1], value_type, MyCobot280DataException, int)
     elif class_name in ["MyCobot320", "MyCobot320Socket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
@@ -756,6 +761,7 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [1, 2, 3], value_type, MyCobot320DataException, int)
             elif parameter == "gripper_angle":
                 gripper_id, gripper_angle = value
+                print(type(gripper_id), type(gripper_angle))
                 if not isinstance(gripper_id, int) or not isinstance(gripper_angle, int):
                     raise MyCobot320DataException(
                         "Both 'gripper_id' and 'gripper_angle' in {} must be integers".format(parameter))
@@ -921,11 +927,14 @@ def calibration_parameters(**kwargs):
                         % value
                     )
             elif parameter == 'flag':
-                check_0_or_1(parameter, value, [0, 1, 254], value_type, MechArmDataException, int)
+                if value is not None:
+                    check_0_or_1(parameter, value, [0, 1, 254], value_type, MechArmDataException, int)
             elif parameter == 'gripper_type':
-                check_0_or_1(parameter, value, [1, 3, 4], value_type, MechArmDataException, int)
+                if value is not None:
+                    check_0_or_1(parameter, value, [1, 3, 4, 5], value_type, MechArmDataException, int)
             elif parameter == '_type_1':
-                check_0_or_1(parameter, value, [1, 2, 3, 4], value_type, MechArmDataException, int)
+                if value is not None:
+                    check_0_or_1(parameter, value, [1, 2, 3, 4, 5], value_type, MechArmDataException, int)
                 # if value not in [0, 1, 10]:
                 #     raise exception_class("The data supported by parameter {} is 0 or 1 or 10, but the received value is {}".format(parameter, value))
             elif parameter == 'gripper_value':
@@ -1010,6 +1019,9 @@ def calibration_parameters(**kwargs):
                                                                                          value))
             elif parameter == 'end_direction':
                 check_0_or_1(parameter, value, [1, 2, 3], value_type, MechArmDataException, int)
+            elif parameter == 'is_torque':
+                if value is not None:
+                    check_0_or_1(parameter, value, [0, 1], value_type, MyCobot280DataException, int)
     elif class_name in ["MyArm", "MyArmSocket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MyArmDataException)
         for parameter in parameter_list[1:]:
