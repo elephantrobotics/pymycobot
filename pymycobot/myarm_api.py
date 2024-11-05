@@ -67,7 +67,7 @@ class MyArmAPI(DataProcessor):
             data = self._read(genre, command=command, timeout=timeout, _class=self.__class__.__name__)
             res = self._process_received(data, genre, arm=8)
 
-            if len(res) == 0:
+            if not res:
                 return None
 
             return_single_genres = [
