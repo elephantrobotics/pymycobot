@@ -8,6 +8,7 @@ class MyArmM(MyArmAPI):
 
     def __init__(self, port, baudrate="1000000", timeout=0.1, debug=False):
         super(MyArmM, self).__init__(port, baudrate, timeout,debug)
+        self._calibration_class_name = "MyArm"
 
     def set_joint_angle(self, joint_id, angle, speed):
         """Sets the individual joints to move to the target angle
@@ -17,7 +18,7 @@ class MyArmM(MyArmAPI):
             angle (int) : 0 - 254
             speed (int) : 1 - 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
+        self.calibration_parameters(class_name=self._calibration_class_name, joint_id=joint_id, id=joint_id, angle=angle, speed=speed)
         self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed)
 
     def set_joints_angle(self, angles, speed):
@@ -27,7 +28,7 @@ class MyArmM(MyArmAPI):
             angles (list[int]):  0 - 254
             speed (int): 0 - 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
+        self.calibration_parameters(class_name=self._calibration_class_name, angles=angles, speed=speed)
         angles = list(map(self._angle2int, angles))
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed)
 
@@ -60,7 +61,7 @@ class MyArmM(MyArmAPI):
             speed: (int) 1 - 100
 
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id, encoder=encoder, speed=speed)
+        self.calibration_parameters(class_name=self._calibration_class_name, servo_id=servo_id, encoder=encoder, speed=speed)
         self._mesg(ProtocolCode.SET_ENCODER, servo_id, [encoder], speed)
 
     def set_servos_encoder(self, positions, speed):
@@ -70,12 +71,12 @@ class MyArmM(MyArmAPI):
             positions (list[int * 8]): 0 - 4095:
             speed (int): 1 - 100:
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, encoders=positions, speed=speed)
+        self.calibration_parameters(class_name=self._calibration_class_name, encoders=positions, speed=speed)
         self._mesg(ProtocolCode.SET_ENCODERS, positions, speed)
 
     def set_servos_encoder_drag(self, encoders, speeds):
         """Set multiple servo motors with a specified speed to the target encoder potential value"""
-        self.calibration_parameters(class_name=self.__class__.__name__, encoders=encoders, speeds=speeds)
+        self.calibration_parameters(class_name=self._calibration_class_name, encoders=encoders, speeds=speeds)
         self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
 
     def set_assist_out_io_state(self, io_number, status=1):
