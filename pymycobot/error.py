@@ -106,8 +106,6 @@ def check_angles(angle_value, robot_limit, class_name, exception_class):
     if not isinstance(angle_value, list):
         raise exception_class("`angles` must be a list.")
     # Check angles
-    if len(angle_value) != 6:
-        raise exception_class("The length of `angles` must be 6.")
     for idx, angle in enumerate(angle_value):
         if not robot_limit[class_name]["angles_min"][idx] <= angle <= robot_limit[class_name]["angles_max"][idx]:
             raise exception_class(
@@ -344,8 +342,8 @@ def calibration_parameters(**kwargs):
         },
         "MyArm": {
             "id": [1, 2, 3, 4, 5, 6, 7, 8],
-            "angles_min": [-160, -70, -170, -113, -170, -115, -180],
-            "angles_max": [160, 115, 170, 75, 170, 115, 180],
+            "angles_min": [-168, -77, -86, -159, -95, -161, -118],
+            "angles_max": [172, 90, 91, 148, 84, 146, 0],
             "coords_min": [-310, -310, -140, -180, -180, -180],
             "coords_max": [310, 310, 480, 180, 180, 180]
         },
