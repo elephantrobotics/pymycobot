@@ -145,7 +145,7 @@ class MyCobot320Socket(CommandGenerator):
                 try_count = 0
                 while try_count < 3:
                     self._write(self._flatten(real_command), "socket")
-                    data = self._read(genre, method='socket')
+                    data = self._read(genre, method='socket', real_command=real_command)
                     if data is not None and data != b'':
                         break
                     try_count += 1
@@ -156,7 +156,12 @@ class MyCobot320Socket(CommandGenerator):
             res = self._process_received(data, genre)
             if res is None:
                 return None
-            elif res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
+            if genre == ProtocolCode.SET_TOQUE_GRIPPER:
+                if res == [0]:
+                    self._write(self._flatten(real_command))
+                    data = self._read(genre, real_command=real_command)
+                    res = self._process_received(data, genre)
+            if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
                 ProtocolCode.GET_BASIC_VERSION,
                 ProtocolCode.GET_JOINT_MIN_ANGLE,
                 ProtocolCode.GET_JOINT_MAX_ANGLE,

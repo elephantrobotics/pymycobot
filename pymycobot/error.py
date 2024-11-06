@@ -349,6 +349,14 @@ def calibration_parameters(**kwargs):
             "coords_min": [-310, -310, -140, -180, -180, -180],
             "coords_max": [310, 310, 480, 180, 180, 180]
         },
+        "MyArmM": {
+            "joint_id": [1, 2, 3, 4, 5, 6, 7],
+            "servo_id": [1, 2, 3, 4, 5, 6, 7, 8],
+            "angles_min": [-170, -83, -90, -155, -91, -153, -118],
+            "angles_max": [170, 83, 84, 153, 88, 153, 2],
+            "encoders_min": [137, 1163, 1035, 1013, 248, 979, 220, 706],
+            "encoders_max": [4004, 2945, 3079, 3026, 3724, 2994, 3704, 2048]
+        },
         "MyArmSocket": {
             "id": [1, 2, 3, 4, 5, 6, 7, 8],
             "angles_min": [-160, -70, -170, -113, -170, -115, -180],
@@ -787,7 +795,7 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException(
                         "The range of 'gripper_id' in {} is 1 ~ 254, but the received value is {}".format(parameter,
                                                                                                           gripper_id))
-                if torque_value < 100 or torque_value > 300:
+                if torque_value < 0 or torque_value > 100:
                     raise MyCobot320DataException(
                         "The range of 'torque_value' in {} is 100 ~ 300, but the received value is {}".format(parameter,
                                                                                                               torque_value))
@@ -1284,52 +1292,40 @@ def calibration_parameters(**kwargs):
             value = kwargs[parameter]
             value_type = type(value)
             if parameter in ("servo_id", "joint_id") and value not in limit_info[parameter]:
-                raise MyArmDataException(
-                    "The id not right, should be in {0}, but received {1}.".format(limit_info[parameter], value)
-                )
+                raise ValueError(f"The {parameter} not right, should be in {limit_info[parameter]}, but received {value}.")
             elif parameter == 'angle':
                 i = kwargs['joint_id'] - 1
                 min_angle = limit_info["angles_min"][i]
                 max_angle = limit_info["angles_max"][i]
                 if value < min_angle or value > max_angle:
-                    raise MyArmDataException(
-                        f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}"
-                    )
+                    raise ValueError(f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}")
             elif parameter == 'angles':
                 for i, v in enumerate(value):
                     min_angle = limit_info["angles_min"][i]
                     max_angle = limit_info["angles_max"][i]
                     if v < min_angle or v > max_angle:
-                        raise MyArmDataException(
-                            f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}"
-                        )
+                        raise ValueError(f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}")
             elif parameter == 'encoder':
                 i = kwargs['servo_id'] - 1
                 max_encoder = limit_info["encoders_max"][i]
                 min_encoder = limit_info["encoders_min"][i]
                 if value < min_encoder or value > max_encoder:
-                    raise MyArmDataException(
-                        f"angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}"
-                    )
+                    raise ValueError(f"angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}")
             elif parameter == 'encoders':
                 for i, v in enumerate(value):
                     max_encoder = limit_info["encoders_max"][i]
                     min_encoder = limit_info["encoders_min"][i]
                     if v < min_encoder or v > max_encoder:
-                        raise MyArmDataException(
-                            f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}"
-                        )
+                        raise ValueError(f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}")
             elif parameter == "speed":
-                check_value_type(parameter, value_type, MyArmDataException, int)
+                check_value_type(parameter, value_type, TypeError, int)
                 if not 1 <= value <= 100:
-                    raise MyArmDataException(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
+                    raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
             elif parameter == "speeds":
                 assert len(value) == 8, "The length of `speeds` must be 8."
                 for i, s in enumerate(value):
                     if not 1 <= s <= 100:
-                        raise MyArmDataException(
-                            f"speed value not right, should be 1 ~ 100, the received speed is {value}"
-                        )
+                        raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
             elif parameter == "servo_addr":
                 if value in (0, 1, 2, 3, 4):
-                    raise MyArmDataException("addr 0-4 cannot be modified")
+                    raise ValueError("addr 0-4 cannot be modified")
