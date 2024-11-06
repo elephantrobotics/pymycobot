@@ -780,7 +780,7 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException(
                         "The range of 'gripper_angle' in {} is 0 ~ 100, but the received value is {}".format(parameter,
                                                                                                              gripper_angle))
-            elif parameter == "gripper_id":
+            elif parameter == "gripper_id" or parameter == "set_id":
                 check_value_type(parameter, value_type, MyCobot320DataException, int)
                 if value < 1 or value > 254:
                     raise MyCobot320DataException(
@@ -881,6 +881,56 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException(
                         "'address' in {} cannot be one of the following values: {}, but the received value is {}".format(
                             parameter, invalid_addresses, address))
+
+            elif parameter == "gripper_joint_id":
+                check_value_type(parameter, value_type, MyCobot320DataException, int)
+                if value < 1 or value > 6:
+                    raise MyCobot320DataException(
+                        "The range of 'gripper_id' in {} is 1 ~ 6, but the received value is {}".format(parameter,
+                                                                                                        value))
+            elif parameter == "gripper_angles":
+                if len(value) != 6:
+                    raise MyCobot320DataException(
+                        "{}: 'gripper_angles' must contain exactly 6 values, but received {}.".format(class_name,
+                                                                                                      len(value)))
+
+                for i, angle in enumerate(value):
+                    if not isinstance(angle, int):
+                        raise MyCobot320DataException(
+                            "{}: Value at position {} in 'gripper_angles' must be an integer, but received {}.".format(
+                                class_name, i + 1, angle)
+                        )
+                    if angle < 0 or angle > 100:
+                        raise MyCobot320DataException(
+                            "{}: Value {} at position {} in 'gripper_angles' is out of range (0 ~ 100).".format(
+                                class_name, angle, i + 1)
+                        )
+            elif parameter == 'pinch_mode':
+                check_0_or_1(parameter, value, [0, 1, 2, 3], value_type, MyCobot320DataException, int)
+            elif parameter == "gripper_finger_id":
+                check_value_type(parameter, value_type, MyCobot320DataException, int)
+                if value < 1 or value > 5:
+                    raise MyCobot320DataException(
+                        "The range of 'gripper_id' in {} is 1 ~ 6, but the received value is {}".format(parameter,
+                                                                                                        value))
+            elif parameter == "clockwise":
+                check_value_type(parameter, value_type, MyCobot320DataException, int)
+                if value < 0 or value > 16:
+                    raise MyCobot320DataException(
+                        "The range of 'value' in {} is 0 ~ 16, but the received value is {}".format(parameter,
+                                                                                                    value))
+            elif parameter in ["min_pressure", "gripper_i"]:
+                check_value_type(parameter, value_type, MyCobot320DataException, int)
+                if value < 0 or value > 254:
+                    raise MyCobot320DataException(
+                        "The range of 'value' in {} is 0 ~ 254, but the received value is {}".format(parameter,
+                                                                                                     value))
+            elif parameter in ["gripper_p", "gripper_d"]:
+                check_value_type(parameter, value_type, MyCobot320DataException, int)
+                if value < 0 or value > 150:
+                    raise MyCobot320DataException(
+                        "The range of 'value' in {} is 0 ~ 150, but the received value is {}".format(parameter,
+                                                                                                     value))
     elif class_name in ["MechArm", "MechArmSocket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MechArmDataException)
     elif class_name in ["MechArm270", "MechArmSocket"]:
@@ -1292,31 +1342,36 @@ def calibration_parameters(**kwargs):
             value = kwargs[parameter]
             value_type = type(value)
             if parameter in ("servo_id", "joint_id") and value not in limit_info[parameter]:
-                raise ValueError(f"The {parameter} not right, should be in {limit_info[parameter]}, but received {value}.")
+                raise ValueError(
+                    f"The {parameter} not right, should be in {limit_info[parameter]}, but received {value}.")
             elif parameter == 'angle':
                 i = kwargs['joint_id'] - 1
                 min_angle = limit_info["angles_min"][i]
                 max_angle = limit_info["angles_max"][i]
                 if value < min_angle or value > max_angle:
-                    raise ValueError(f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}")
+                    raise ValueError(
+                        f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}")
             elif parameter == 'angles':
                 for i, v in enumerate(value):
                     min_angle = limit_info["angles_min"][i]
                     max_angle = limit_info["angles_max"][i]
                     if v < min_angle or v > max_angle:
-                        raise ValueError(f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}")
+                        raise ValueError(
+                            f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}")
             elif parameter == 'encoder':
                 i = kwargs['servo_id'] - 1
                 max_encoder = limit_info["encoders_max"][i]
                 min_encoder = limit_info["encoders_min"][i]
                 if value < min_encoder or value > max_encoder:
-                    raise ValueError(f"angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}")
+                    raise ValueError(
+                        f"angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}")
             elif parameter == 'encoders':
                 for i, v in enumerate(value):
                     max_encoder = limit_info["encoders_max"][i]
                     min_encoder = limit_info["encoders_min"][i]
                     if v < min_encoder or v > max_encoder:
-                        raise ValueError(f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}")
+                        raise ValueError(
+                            f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}")
             elif parameter == "speed":
                 check_value_type(parameter, value_type, TypeError, int)
                 if not 1 <= value <= 100:
