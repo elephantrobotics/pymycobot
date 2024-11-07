@@ -581,6 +581,8 @@ class MercuryCommandGenerator(DataProcessor):
                         res[i] = 0
             return res
         else:
+            if isinstance(res, list) and len(res) == 1:
+                return res[0]
             return res
 
     def _process_received(self, data):
