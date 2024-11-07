@@ -137,7 +137,8 @@ class MercuryCommandGenerator(DataProcessor):
             self._send_command(genre, real_command)
         if _async:
             with self.lock:
-                self.write_command.remove(genre)
+                if genre in self.write_command:
+                    self.write_command.remove(genre)
                 return None
         t = time.time()
         wait_time = 0.15
@@ -186,15 +187,18 @@ class MercuryCommandGenerator(DataProcessor):
                     if is_get_return and is_in_position and read_data[2] == 0x04 and read_data[3] == 0x5b:
                         if v[1] < t:
                             with self.lock:
-                                self.read_command.remove(v)
+                                if v in self.read_command:
+                                    self.read_command.remove(v)
                             continue
                         # print("到位反馈", flush=True)
                         is_get_return = True
                         need_break = True
                         data = read_data
                         with self.lock:
-                            self.read_command.remove(v)
-                            self.write_command.remove(genre)
+                            if v in self.read_command:
+                                self.read_command.remove(v)
+                            if genre in self.write_command:
+                                self.write_command.remove(genre)
 
                     elif genre == read_data[3] and read_data[2] == 5 and read_data[4] == 0xFF:
                         # 通信闭环
@@ -202,7 +206,8 @@ class MercuryCommandGenerator(DataProcessor):
                         # print("闭环", flush=True)
                         is_get_return = True
                         with self.lock:
-                            self.read_command.remove(v)
+                            if v in self.read_command:
+                                self.read_command.remove(v)
                         if has_reply == False or self.sync_mode == False:
                             # print(-3)
                             # print("仅闭环退出", flush=True)
@@ -214,8 +219,10 @@ class MercuryCommandGenerator(DataProcessor):
                         need_break = True
                         data = read_data
                         with self.lock:
-                            self.read_command.remove(v)
-                            self.write_command.remove(genre)
+                            if v in self.read_command:
+                                self.read_command.remove(v)
+                            if genre in self.write_command:
+                                self.write_command.remove(genre)
                         break
             if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
                 t = time.time()
@@ -245,7 +252,8 @@ class MercuryCommandGenerator(DataProcessor):
                 if self.is_moving() == 0:
                     # print("停止运动，退出")
                     with self.lock:
-                        self.write_command.remove(genre)
+                        if genre in self.write_command:
+                            self.write_command.remove(genre)
                     return -2
             time.sleep(0.001)
         else:
