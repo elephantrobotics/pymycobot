@@ -108,15 +108,11 @@ class MyArmM(MyArmAPI):
         return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
 
     def set_robot_power_on(self):
-        """Set the robot to power on
-        Returns: (int) 1
-        """
+        """Set the robot to power on"""
         return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
 
     def set_robot_power_off(self):
-        """Set the robot to power off
-        Returns: (int) 1
-        """
+        """Set the robot to power off"""
         return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
 
     def clear_robot_err(self):

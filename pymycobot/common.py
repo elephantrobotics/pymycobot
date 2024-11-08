@@ -768,7 +768,7 @@ def write(self, command, method=None):
         self._serial_port.flush()
 
 
-def read(self, genre, method=None, command=None, _class=None, timeout=None):
+def read(self, genre, method=None, command=None, _class=None, timeout=None, real_command=None):
     datas = b""
     data_len = -1
     k = 0
@@ -800,9 +800,16 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
         wait_time = 90
     elif genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
         wait_time = 0.05
+    if real_command:
+        if genre == ProtocolCode.SET_TOQUE_GRIPPER:
+            if real_command[6] == 13:
+                wait_time = 3
     data = b""
-
     if method is not None:
+        if real_command:
+            if genre == ProtocolCode.SET_TOQUE_GRIPPER:
+                if real_command[6] == 13:
+                    wait_time = 3
         if genre == 177:
             while True:
                 data = self.sock.recv(1024)

@@ -741,6 +741,61 @@ class MyCobot280Socket(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
         return self._mesg(ProtocolCode.SET_VISION_MODE, flag)
 
+    def is_torque_gripper(self):
+        """Whether it is a force-controlled gripper
+
+        Return:
+            1 - Force control
+            0 - Non-force control
+        """
+        return self.get_servo_data(7, 1)
+
+    def set_gripper_state(self, flag, speed, _type_1=None, is_torque=None):
+        """Set gripper switch state
+
+        Args:
+            flag  (int): 0 - open, 1 - close, 254 - release
+            speed (int): 1 ~ 100
+            _type_1 (int): default 1
+                1 : Adaptive gripper. default to adaptive gripper
+                2 : 5 finger dexterous hand
+                3 : Parallel gripper, this parameter can be omitted
+                4 : Flexible gripper
+            is_torque (int): When there is no type parameter, this parameter can be omitted.
+                1: Force control
+                0: Non-force control
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1, is_torque=is_torque)
+        args = [flag, speed]
+        if _type_1 is not None:
+            args.append(_type_1)
+        if is_torque is not None:
+            args.append(is_torque)
+        return self._mesg(ProtocolCode.SET_GRIPPER_STATE, *args)
+
+    def set_gripper_value(self, gripper_value, speed, gripper_type=None, is_torque=None):
+        """Set gripper value
+
+        Args:
+            gripper_value (int): 0 ~ 100
+            speed (int): 1 ~ 100
+            gripper_type (int): default 1
+                1: Adaptive gripper
+                3: Parallel gripper, this parameter can be omitted
+                4: Flexible gripper
+            is_torque (int): When there is no type parameter, this parameter can be omitted.
+                1: Force control
+                0: Non-force control
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
+                                    gripper_type=gripper_type, is_torque=is_torque)
+        args = [gripper_value, speed]
+        if gripper_type is not None:
+            args.append(gripper_type)
+        if is_torque is not None:
+            args.append(is_torque)
+        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, *args, has_reply=True)
+
     # Other
     def wait(self, t):
         time.sleep(t)
