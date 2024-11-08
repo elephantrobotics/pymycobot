@@ -31,8 +31,6 @@ class MercuryCommandGenerator(DataProcessor):
         self.max_joint, self.min_joint = 0,0
         self.all_debug_data = []
         self.all_read_data = b""
-        
-        
             
     def _joint_limit_init(self):
         max_joint = np.zeros(7)
