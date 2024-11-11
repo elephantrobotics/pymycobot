@@ -1124,14 +1124,18 @@ class MercuryCommandGenerator(DataProcessor):
     def get_robot_status(self):
         return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS)
 
-    def power_on(self):
+    def power_on(self, mode=1):
         """Power on the robot
+        
+        Args:
+            mode (int, optional): 1 - Motor enable, 0 - The motor is not enabled, only initialized.
         
         Return:
             1: success
             2: failed
         """
-        res = self._mesg(ProtocolCode.POWER_ON)
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        res = self._mesg(ProtocolCode.POWER_ON, mode)
         if res == 1:
             self.get_limit_switch()
         time.sleep(1)
@@ -2249,3 +2253,6 @@ class MercuryCommandGenerator(DataProcessor):
     
     def set_pro_gripper_resume(self, gripper_id):
         return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_RESUME)
+    
+    def get_motors_run_err(self):
+        return self._mesg(ProtocolCode.GET_MOTORS_RUN_ERR)
