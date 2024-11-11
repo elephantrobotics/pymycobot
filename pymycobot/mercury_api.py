@@ -16,6 +16,7 @@ from pymycobot.robot_info import _interpret_status_code
 class MercuryCommandGenerator(DataProcessor):
     _write = write
     _read = read
+
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
@@ -30,8 +31,6 @@ class MercuryCommandGenerator(DataProcessor):
         self.max_joint, self.min_joint = 0,0
         self.all_debug_data = []
         self.all_read_data = b""
-        
-        
             
     def _joint_limit_init(self):
         max_joint = np.zeros(7)
@@ -317,7 +316,11 @@ class MercuryCommandGenerator(DataProcessor):
             else:
                 res.append(self._decode_int16(valid_data))
         elif data_len == 3:
-            res.append(self._decode_int16(valid_data[1:]))
+            if genre in [ProtocolCode.GET_DIGITAL_INPUTS]:
+                for i in valid_data:
+                    res.append(i)
+            else:
+                res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
             if genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.GET_ENCODER, ProtocolCode.GET_DYNAMIC_PARAMETERS]:
                 byte_value = int.from_bytes(
@@ -443,9 +446,11 @@ class MercuryCommandGenerator(DataProcessor):
                     i += 2
                 else:
                     res.append(valid_data[i])
-                    i+=1
+                    i += 1
             res[0] = angles
             res[1] = coords
+            res[2] = 0
+            res[3] = 0
         elif genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
             res = self._decode_int16(valid_data[-2:])
             address = self._decode_int16(valid_data[1:3])
@@ -1234,7 +1239,6 @@ class MercuryCommandGenerator(DataProcessor):
     def get_quick_move_info(self):
         return self._mesg(ProtocolCode.GET_QUICK_INFO)
 
-    
     def drag_teach_clean(self):
         """clear sample
         """
@@ -1934,6 +1938,10 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(class_name = self.__class__.__name__, pin_no=pin_no)
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no)
 
+    def get_digital_inputs(self):
+        """Read the end-of-arm IO status, IN1/IN2/ATOM Button"""
+        return self._mesg(ProtocolCode.GET_DIGITAL_INPUTS)
+
     def get_world_reference(self):
         """Get the world coordinate system"""
         return self._mesg(ProtocolCode.GET_WORLD_REFERENCE)
@@ -2176,7 +2184,7 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, trajectory=trajectory)
         return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
     
-    def get_dynamic_parameters(self ,add):
+    def get_dynamic_parameters(self, add):
         return self._mesg(ProtocolCode.GET_DYNAMIC_PARAMETERS, add)
     
     def set_dynamic_parameters(self, add, data):

@@ -12,6 +12,7 @@ from pymycobot.robot_info import Robot320Info
 from pymycobot.log import setup_logging
 from pymycobot.error import calibration_parameters
 
+
 class ProGripper(object):
     SET_GRIPPER_ANGLE = 11
     GET_GRIPPER_ANGLE = 12
@@ -156,6 +157,7 @@ class ProtocolCode(object):
     SET_PIN_MODE = 0x60
     SET_DIGITAL_OUTPUT = 0x61
     GET_DIGITAL_INPUT = 0x62
+    GET_DIGITAL_INPUTS = 0X5F
     SET_PWM_MODE = 0x63
     SET_PWM_OUTPUT = 0x64
     GET_GRIPPER_VALUE = 0x65
