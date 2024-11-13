@@ -593,6 +593,28 @@ class MercuryCommandGenerator(DataProcessor):
                     if res[i] == []:
                         res[i] = 0
             return res
+        elif genre == ProtocolCode.GET_MOTORS_RUN_ERR:
+            same_error = []
+            for i in range(index, len(res)):
+                if res[i] != 0:
+                    data = bin(res[i])[2:]
+                    res[i] = []
+                    while len(data) != 16:
+                        data = "0"+data
+                    for j in range(16):
+                        if data[j] != "0":
+                            error_id = 15-j
+                            if error_id in [0,3,5,6]:
+                                if error_id not in same_error:
+                                    same_error.append(error_id)
+                                    if error_id in [3,6]:
+                                        continue
+                                    res[i].append(error_id)
+                            else:
+                                res[i].append(error_id)
+                    if res[i] == []:
+                        res[i] = 0
+            return res
         else:
             if isinstance(res, list) and len(res) == 1:
                 return res[0]
