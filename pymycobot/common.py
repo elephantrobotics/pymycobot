@@ -253,6 +253,8 @@ class ProtocolCode(object):
     CLEAR_ENCODERS_ERROR = 0xEA
     GET_DOWN_ENCODERS = 0x96
     WRITE_MOVE_C_R = 0x99
+    
+    GET_MOTORS_RUN_ERR = 0x9C
 
     # planning speed
     GET_PLAN_SPEED = 0xD0
