@@ -10,7 +10,7 @@ import subprocess
 import logging
 import os
 import sys
-from can import Message
+
 import crc
 
 from pymycobot.log import setup_logging
@@ -62,6 +62,7 @@ if platform.system() == "Linux" and platform.machine() == "aarch64" and is_debia
     import linuxcnc as elerob
     import hal
     import can
+    from can import Message
 
     class JogMode(Enum):
         JOG_JOINT = elerob.ANGULAR - 1

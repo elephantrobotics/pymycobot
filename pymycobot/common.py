@@ -306,6 +306,12 @@ class ProtocolCode(object):
     # SET_IIC_STATE = 0xA4
     # GET_IIS_BYTE = 0xA5
     # SET_IIC_BYTE = 0xA6
+    DRAG_START_RECORD = 0xF1
+    DRAG_END_RECORD = 0xF2
+    DRAG_GET_RECORD_DATA = 0xF3
+    DRAG_GET_RECORD_LEN = 0xF4
+    DRAG_CLEAR_RECORD_DATA = 0xF5
+
 
     # ultraArm
     END = "\r"
@@ -800,6 +806,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
         wait_time = 90
     elif genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
         wait_time = 0.05
+    elif genre in [ProtocolCode.DRAG_START_RECORD, ProtocolCode.DRAG_END_RECORD, ProtocolCode.DRAG_GET_RECORD_DATA, ProtocolCode.DRAG_GET_RECORD_LEN,ProtocolCode.DRAG_CLEAR_RECORD_DATA]:
+        wait_time = 0.2
     if real_command:
         if genre == ProtocolCode.SET_TOQUE_GRIPPER:
             if real_command[6] == 13:

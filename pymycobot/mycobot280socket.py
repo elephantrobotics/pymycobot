@@ -796,6 +796,53 @@ class MyCobot280Socket(CommandGenerator):
             args.append(is_torque)
         return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, *args, has_reply=True)
 
+    def drag_start_record(self):  # TODO need test 2024/11/15
+        """Start track recording
+
+        Return:
+            Recording queue length
+        """
+
+        return self._mesg(ProtocolCode.DRAG_START_RECORD, has_reply=True)
+
+    def drag_end_record(self):  # TODO need test 2024/11/15
+        """End track recording
+
+        Return:
+             Recording queue length
+        """
+
+        return self._mesg(ProtocolCode.DRAG_END_RECORD, has_reply=True)
+
+    def drag_get_record_data(self):  # TODO need test 2024/11/15
+        """Get the recorded track
+
+        Return:
+            List of potential values (encoder values) and operating speeds of each joint
+            eg: [J1_encoder, J1_run_speed,J2_encoder, J2_run_speed,J3_encoder, J3_run_speed,J4_encoder, J4_run_speed,J5_
+            encoder, J5_run_speed,J6_encoder, J6_run_speed]
+        """
+
+        return self._mesg(ProtocolCode.DRAG_GET_RECORD_DATA, has_reply=True)
+
+    def drag_get_record_len(self):  # TODO need test 2024/11/15
+        """Get the total number of recorded points
+
+        Return:
+            Recording queue length
+        """
+
+        return self._mesg(ProtocolCode.DRAG_GET_RECORD_LEN, has_reply=True)
+
+    def drag_clear_record_data(self):  # TODO need test 2024/11/15
+        """Clear recording track
+
+        Return:
+            Recording queue length 0
+        """
+
+        return self._mesg(ProtocolCode.DRAG_CLEAR_RECORD_DATA, has_reply=True)
+
     # Other
     def wait(self, t):
         time.sleep(t)
