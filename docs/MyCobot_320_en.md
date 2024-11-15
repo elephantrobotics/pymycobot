@@ -633,13 +633,13 @@ mc.send_angle(1, 40, 20)
 - **Return value:**
   - `1`: completed
 
-#### `init_eletric_gripper()`
+#### `init_electric_gripper()`
 
 - **function**: Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper)
 - **Return value:**
   - `1`: completed
 
-#### `set_eletric_gripper(status)`
+#### `set_electric_gripper(status)`
 
 - **function**: Set Electric Gripper Mode
 - **Parameters**: 
