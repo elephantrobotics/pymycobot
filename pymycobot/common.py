@@ -25,6 +25,39 @@ class ProGripper(object):
     SET_GRIPPER_ANGLES = 45
 
 
+class MyHandGripper(object):
+    GET_HAND_MAJOR_FIRMWARE_VERSION = 1
+    GET_HAND_MINOR_FIRMWARE_VERSION = 2
+    SET_HAND_GRIPPER_ID = 3
+    GET_HAND_GRIPPER_ID = 4
+    SET_HAND_GRIPPER_ENABLED = 10
+    SET_HAND_GRIPPER_ANGLE = 11
+    GET_HAND_GRIPPER_ANGLE = 12
+    SET_HAND_GRIPPER_CALIBRATION = 13
+    GET_HAND_GRIPPER_STATUS = 14
+    SET_HAND_GRIPPER_P = 15
+    GET_HAND_GRIPPER_P = 16
+    SET_HAND_GRIPPER_D = 17
+    GET_HAND_GRIPPER_D = 18
+    SET_HAND_GRIPPER_I = 19
+    GET_HAND_GRIPPER_I = 20
+    SET_HAND_GRIPPER_CLOCKWISE = 21
+    GET_HAND_GRIPPER_CLOCKWISE = 22
+    SET_HAND_GRIPPER_COUNTERCLOCKWISE = 23
+    GET_HAND_GRIPPER_COUNTERCLOCKWISE = 24
+    SET_HAND_GRIPPER_MIN_PRESSURE = 25
+    GET_HAND_GRIPPER_MIN_PRESSURE = 26
+    SET_HAND_GRIPPER_TORQUE = 27
+    GET_HAND_GRIPPER_TORQUE = 28
+    SET_HAND_GRIPPER_SPEED = 32
+    GET_HAND_GRIPPER_DEFAULT_SPEED = 33
+    SET_HAND_GRIPPER_ANGLES = 45
+    GET_HAND_SINGLE_PRESSURE_SENSOR = 46
+    GET_HAND_ALL_PRESSURE_SENSOR = 47
+    GET_HAND_ALL_ANGLES = 50
+    SET_HAND_GRIPPER_PINCH_ACTION = 51
+
+
 class ProtocolCode(object):
     # BASIC
     HEADER = 0xFE
@@ -802,8 +835,12 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
         wait_time = 0.05
     if real_command:
         if genre == ProtocolCode.SET_TOQUE_GRIPPER:
-            if real_command[6] == 13:
-                wait_time = 3
+            if len(real_command) == 12:
+                if real_command[6] == 13:
+                    wait_time = 10
+            else:
+                if real_command[6] == 13:
+                    wait_time = 3
     data = b""
     if method is not None:
         if real_command:
