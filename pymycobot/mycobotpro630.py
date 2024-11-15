@@ -10,6 +10,7 @@ import subprocess
 import logging
 import os
 import sys
+from can import Message
 import crc
 
 from pymycobot.log import setup_logging
@@ -2919,6 +2920,89 @@ class Phoenix:
         self.tool_serial_write_data(command)
         ret = self.tool_serial_read_data(11)
         return int((ret[7] << 8) | (ret[8]))
+
+    def tool_hand_set_angles(self, angles, speed):
+        return self.tool_set_value(
+            14,
+            45,
+            [
+                0,
+                angles[0],
+                0,
+                angles[1],
+                0,
+                angles[2],
+                0,
+                angles[3],
+                0,
+                angles[4],
+                0,
+                angles[5],
+                0,
+                speed,
+            ],
+        )
+
+    def tool_hand_open(self, speed=10):
+        return self.tool_hand_set_angles([0, 0, 0, 0, 0, 0], speed)
+
+    def tool_hand_close(self, speed=10):
+        return self.tool_hand_set_angles([100, 100, 100, 100, 100, 100], speed)
+
+    def tool_set_value(self, id, command, parameter):
+        """_summary_
+
+        send_angles[0,0,0,0,0,0] sp 10:
+        07 0xD8 04 14 00 45 00 00
+        07 0xD8 03 00 00 00 00 00
+        07 0xD8 02 00 00 00 00 00
+        04 0xD8 01 00 0a
+
+        Args:
+            id (_type_): _description_
+            command (_type_): _description_
+            parameter (_type_): _description_
+        """
+        command_bytes = command.to_bytes(2, "big")
+        if parameter is int:
+            parameter_bytes = parameter.to_bytes(2, "big")
+        else:
+            parameter_bytes = [id, command_bytes[0], command_bytes[1]] + parameter
+        messages_number = math.ceil(len(parameter_bytes) / 5)
+        for i, sequence in enumerate(range(messages_number, 0, -1)):
+            msg_len = 2 + 5
+            if sequence == 1:
+                msg_len = 2 + (len(parameter_bytes) % 5)
+            can_msg = [msg_len, 0xD8, sequence]
+            can_msg.extend(parameter_bytes[i * 5 : (i + 1) * 5])
+            self._send_can(can_msg)
+
+        msg = self._receive_can([0x02, 0xD8])
+        if msg is Message:
+            return bool(msg.data[2])
+
+        return False
+
+    def tool_get_value(self, id, command, parameter):
+        command_bytes = command.to_bytes(2, "big")
+        parameter_bytes = parameter.to_bytes(2, "big")
+        self._send_can(
+            [
+                0x06,
+                0xD9,
+                id,
+                command_bytes[0],
+                command_bytes[1],
+                parameter_bytes[0],
+                parameter_bytes[1],
+            ]
+        )
+        msg = self._receive_can([0x06, 0xD9, id, command_bytes[0], command_bytes[1]])
+        if msg is Message:
+            ret_value = int.from_bytes([msg.data[5], msg.data[6]], "big")
+            return ret_value
+
+        return -1
 
     def tool_serial_restore(self):
         """Restore ESP32 serial."""
