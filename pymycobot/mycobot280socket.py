@@ -143,6 +143,8 @@ class MyCobot280Socket(CommandGenerator):
                     return -1
             if genre == ProtocolCode.SET_SSID_PWD:
                 return 1
+            if genre in [ProtocolCode.SET_BASIC_OUTPUT]:
+                return 1
             res = self._process_received(data, genre)
             if res is None:
                 return None
