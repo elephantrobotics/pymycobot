@@ -2220,6 +2220,14 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id, gripper_angle=gripper_angle)
         return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, gripper_angle)
     
+    def set_pro_gripper_open(self, gripper_id):
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, 1)
+    
+    def set_pro_gripper_close(self, gripper_id):
+        self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id)
+        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, 0)
+    
     def get_pro_gripper_angle(self, gripper_id):
         self.calibration_parameters(class_name = self.__class__.__name__, gripper_id=gripper_id)
         return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE)
