@@ -138,7 +138,7 @@ class MyCobot280(CommandGenerator):
         try_count = 0
         while try_count < 3:
             self._write(self._flatten(real_command))
-            data = self._read(genre)
+            data = self._read(genre, _class = self.__class__.__name__)
             if data is not None and data != b'':
                 break
             try_count += 1

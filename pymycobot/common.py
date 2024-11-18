@@ -573,7 +573,7 @@ class DataProcessor(object):
         else:
             return None
         if arm in [6, 7, 8]:
-            data_len = data[header_i + 2] - 2
+            data_len = data[header_i + 2] - 3
         elif arm == 12:
             data_len = data[header_i + 3] - 2
         elif arm == 14:
@@ -593,7 +593,6 @@ class DataProcessor(object):
             elif arm == 12:
                 data_pos = header_i + 5
         valid_data = data[data_pos : data_pos + data_len]
-
         # process valid data
         res = []
         if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS,
