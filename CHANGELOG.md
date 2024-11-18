@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.6.7 (2024-11-15)
+
+- release v3.6.7
+- Fixed the issue of incorrect naming of 320 electric gripper
+
 ## v3.6.5 (2024-10-25)
 
 - release v3.6.5

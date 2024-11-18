@@ -7,7 +7,7 @@ import socket
 import threading
 
 from pymycobot.generate import CommandGenerator
-from pymycobot.common import ProtocolCode, write, read, ProGripper
+from pymycobot.common import ProtocolCode, write, read, ProGripper, MyHandGripper
 from pymycobot.error import calibration_parameters
 
 
@@ -814,6 +814,425 @@ class MyCobot320Socket(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
         return self._mesg(ProtocolCode.SET_VISION_MODE, flag)
+
+    # myHand  Gripper Control
+    def get_hand_firmware_major_version(self, gripper_id):
+        """Read the firmware major version number
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_MAJOR_FIRMWARE_VERSION])
+
+    def get_hand_firmware_minor_version(self, gripper_id):
+        """Read the firmware minor version number
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_MINOR_FIRMWARE_VERSION])
+
+    def set_hand_gripper_id(self, gripper_id, id_value):
+        """Set the gripper ID
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+            id_value (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id, set_id=id_value)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_ID], [id_value])
+
+    def get_hand_gripper_id(self, gripper_id):
+        """Get the gripper ID
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+
+        Return:
+            gripper ID (int): 1 ~ 254
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_ID])
+
+    def set_hand_gripper_angle(self, gripper_id, joint_id, gripper_angle):
+        """Set the angle of the single joint of the gripper
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+            joint_id (int): 1 ~ 6
+            gripper_angle (int): 0 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle],
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_ANGLE],
+                          [joint_id], [gripper_angle])
+
+    def get_hand_gripper_angle(self, gripper_id, joint_id):
+        """Get the angle of the single joint of the gripper
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            gripper_angle (int): 0 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_ANGLE],
+                          [joint_id])
+
+    def set_hand_gripper_angles(self, gripper_id, gripper_angles, speed):
+        """Set the angle of the single joint of the gripper
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+            gripper_angles (list): A list of integers, length 6, each value range 0 ~ 100
+            speed (int): 0 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_speed=[gripper_id, speed],
+                                    gripper_angles=gripper_angles)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_ANGLES],
+                          [gripper_angles], [speed])
+
+    def get_hand_gripper_angles(self, gripper_id):
+        """Set the angle of the single joint of the gripper
+
+        Args:
+            gripper_id (int) : 1 ~ 254
+
+        Return:
+            gripper_angles (list): A list of integers, length 6
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_ALL_ANGLES])
+
+    def set_hand_gripper_torque(self, gripper_id, joint_id, torque_value):
+        """ Setting gripper torque
+
+        Args:
+            joint_id (int): 1 ~ 6
+            gripper_id (int): 1 ~ 254
+            torque_value (int): 100 ~ 300
+
+        Return:
+            0: Set failed
+            1: Set successful
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, torque_value=[gripper_id, torque_value])
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_TORQUE],
+                          [joint_id], [torque_value])
+
+    def get_hand_gripper_torque(self, gripper_id, joint_id):
+        """ Setting gripper torque
+
+        Args:
+            joint_id (int): 1 ~ 6
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            torque_value (int): 100 ~ 300
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_TORQUE],
+                          [joint_id])
+
+    def set_hand_gripper_calibrate(self, gripper_id, joint_id):
+        """ Setting the gripper jaw zero position
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_CALIBRATION],
+                          [joint_id], [0])
+
+    def get_hand_gripper_status(self, gripper_id):
+        """ Get the clamping status of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+
+        Return:
+            0 - Moving
+            1 - Stopped moving, no clamping detected
+            2 - Stopped moving, clamping detected
+            3 - After clamping detected, the object fell
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_STATUS])
+
+    def set_hand_gripper_enabled(self, gripper_id, flag):
+        """ Set the enable state of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            flag (int): 1 ~ 6
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id, flag=flag)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_ENABLED], [flag])
+
+    def set_hand_gripper_speed(self, gripper_id, joint_id, speed):
+        """ Set the speed of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+            speed (int): 1 ~ 100
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_speed=[gripper_id, speed],
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_SPEED],
+                          [joint_id], [speed])
+
+    def get_hand_gripper_default_speed(self, gripper_id, joint_id):
+        """ Get the default speed of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            default speed (int): 1 ~ 100
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_DEFAULT_SPEED],
+                          [joint_id])
+
+    def set_hand_gripper_pinch_action(self, gripper_id, pinch_mode):
+        """ Set the pinching action of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            pinch_mode (int):
+                0 - Index finger and thumb pinch
+                1 - Middle finger and thumb pinch
+                2 - Three-finger grip
+                3 - Two-finger grip
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id, pinch_mode=pinch_mode)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION],
+                          [pinch_mode])
+
+    def set_hand_gripper_p(self, gripper_id, joint_id, value):
+        """ Set the P value of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+            value (int): 0 ~ 150
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id, gripper_p=value)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_P],
+                          [joint_id], [value])
+
+    def get_hand_gripper_p(self, gripper_id, joint_id):
+        """ Get the P value of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            P value (int): 0 ~ 150
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_P],
+                          [joint_id])
+
+    def set_hand_gripper_d(self, gripper_id, joint_id, value):
+        """ Set the D value of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+            value (int): 0 ~ 150
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id, gripper_d=value)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_D],
+                          [joint_id], [value])
+
+    def get_hand_gripper_d(self, gripper_id, joint_id):
+        """ Get the D value of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            D value (int): 0 ~ 150
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_D],
+                          [joint_id])
+
+    def set_hand_gripper_i(self, gripper_id, joint_id, value):
+        """ Set the I value of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+            value (int): 0 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id, gripper_i=value)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_I],
+                          [joint_id], [value])
+
+    def get_hand_gripper_i(self, gripper_id, joint_id):
+        """ Get the I value of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            I value (int): 0 ~ 150
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_I],
+                          [joint_id])
+
+    def set_hand_gripper_min_pressure(self, gripper_id, joint_id, value):
+        """ Set the minimum starting force of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+            value (int): 0 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id, min_pressure=value)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_MIN_PRESSURE],
+                          [joint_id], [value])
+
+    def get_hand_gripper_min_pressure(self, gripper_id, joint_id):
+        """ Set the minimum starting force of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            min pressure value (int): 0 ~ 254
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_MIN_PRESSURE],
+                          [joint_id])
+
+    def set_hand_gripper_clockwise(self, gripper_id, joint_id, value):
+        """ Set the clockwise runnable error of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+            value (int): 0 ~ 16
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id, clockwise=value)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_CLOCKWISE],
+                          [joint_id], [value])
+
+    def get_hand_gripper_clockwise(self, gripper_id, joint_id):
+        """ Get the clockwise runnable error of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            value (int): 0 ~ 16
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_CLOCKWISE],
+                          [joint_id])
+
+    def set_hand_gripper_counterclockwise(self, gripper_id, joint_id, value):
+        """ Set the counterclockwise runnable error of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+            value (int): 0 ~ 16
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id, clockwise=value)
+        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_COUNTERCLOCKWISE],
+                          [joint_id], [value])
+
+    def get_hand_gripper_counterclockwise(self, gripper_id, joint_id):
+        """ Get the counterclockwise runnable error of the single joint of the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            joint_id (int): 1 ~ 6
+
+        Return:
+            value (int): 0 ~ 16
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_COUNTERCLOCKWISE],
+                          [joint_id])
+
+    def get_hand_single_pressure_sensor(self, gripper_id, finger_id):
+        """ Get the counterclockwise runnable error of the single joint of the gripper
+
+       Args:
+           gripper_id (int): 1 ~ 254
+           finger_id (int): 1 ~ 5
+
+       Return:
+           int: 0 ~ 4096
+
+       """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                    gripper_finger_id=finger_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_SINGLE_PRESSURE_SENSOR],
+                          [finger_id])
+
+    def get_hand_all_pressure_sensor(self, gripper_id):
+        """ Get the counterclockwise runnable error of the single joint of the gripper
+
+        Args:
+           gripper_id (int): 1 ~ 254
+
+        Return:
+            int: 0 ~ 4096
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_SINGLE_PRESSURE_SENSOR])
 
     # Other
     def wait(self, t):

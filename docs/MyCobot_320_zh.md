@@ -616,13 +616,13 @@ mc.send_angle(1, 40, 20)
 - **返回值:**
   - `1`: 完成
 
-#### `init_eletric_gripper()`
+#### `init_electric_gripper()`
 
 - **功能**：电动夹爪初始化（插入和移除夹爪后需初始化一次）
 - **返回值:**
   - `1`: 完成
 
-#### `set_eletric_gripper(status)`
+#### `set_electric_gripper(status)`
 
 - **功能**：设置电动夹爪模式
 - **参数**：
