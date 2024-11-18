@@ -833,6 +833,11 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
         wait_time = 90
     elif genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
         wait_time = 0.05
+    elif genre in [ProtocolCode.INIT_ELECTRIC_GRIPPER]:
+        wait_time = 0.3
+    elif genre in [ProtocolCode.SET_GRIPPER_CALIBRATION]:
+        wait_time = 0.4
+
     if real_command:
         if genre == ProtocolCode.SET_TOQUE_GRIPPER:
             if len(real_command) == 12:
