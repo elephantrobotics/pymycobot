@@ -532,6 +532,9 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MyCobot280DataException)
+            elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
+                raise MyCobot280DataException(
+                    "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MyCobot280DataException, class_name)
             elif parameter == 'value':
@@ -655,6 +658,9 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MyCobot320DataException)
+            elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
+                raise MyCobot320DataException(
+                    "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MyCobot320DataException, class_name)
             elif parameter == 'value':
@@ -939,6 +945,9 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MechArmDataException)
+            elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
+                raise MechArmDataException(
+                    "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MechArmDataException, class_name)
             elif parameter == 'value':
@@ -1196,6 +1205,9 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MyPalletizer260DataException)
+            elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 7]:
+                raise MyPalletizer260DataException(
+                    "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 7], value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MyPalletizer260DataException, class_name)
             elif parameter == 'value':
