@@ -1,5 +1,8 @@
 # coding=utf-8
 import functools
+import socket
+import traceback
+
 from pymycobot.robot_info import RobotLimit
 # In order to adapt to the atom side, ID of 0-5 or 1-6 are allowed.
 # In order to support end control, ID 7 is allowed.
@@ -1230,15 +1233,24 @@ def calibration_parameters(**kwargs):
                 if value in (0, 1, 2, 3, 4):
                     raise MyArmDataException("addr 0-4 cannot be modified")
 
-        
 
 def restrict_serial_port(func):
     """
-    装饰器，用于限制特定串口号的函数调用。
+    装饰器，用于限制特定串口号、socket的函数调用。
     """
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
-            raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
-        return func(self, *args, **kwargs)
+        try:
+            if hasattr(self, '_serial_port'):
+                if self._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
+                    raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
+            elif hasattr(self, 'sock'):
+                if not isinstance(self.sock, socket.socket):
+                    raise MercuryRobotException(
+                        f"The {func.__name__} function cannot be called. The connection must be a valid socket.")
+            return func(self, *args, **kwargs)
+        except MercuryRobotException as e:
+            e = traceback.format_exc()
+            print(f"MercuryRobotException: {e}")
+
     return wrapper
