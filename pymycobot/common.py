@@ -7,6 +7,9 @@ import logging
 import sys
 import platform
 import locale
+
+import serial
+
 from pymycobot.robot_info import Robot320Info
 
 from pymycobot.log import setup_logging
@@ -816,13 +819,28 @@ def write(self, command, method=None):
 
         py_version = DataProcessor.check_python_version()
         if py_version == 2:
-            self.sock.sendall("".join([chr(b) for b in command]))
+            # 检查套接字是否有效
+            if not self.sock or self.sock.fileno() == -1:
+                return
+
+            try:
+                self.sock.sendall("".join([chr(b) for b in command]))
+            except OSError as e:
+                raise e
         else:
             if isinstance(command, str):
                 command = command.encode()
             else:
                 command = bytes(command)
-            self.sock.sendall(command)
+            if not self.sock or self.sock.fileno() == -1:
+                return
+
+            try:
+                self.sock.sendall(command)
+            except OSError as e:
+                self.log.error(f"Socket send error: {e}")
+                raise
+
     else:
         # self._serial_port.reset_input_buffer()
         command_log = ""
@@ -834,7 +852,16 @@ def write(self, command, method=None):
                 if len(data) == 1: data = "0" + data
                 command_log += data + " "
         self.log.debug("_write: {}".format(command_log))
-        self._serial_port.write(command)
+        try:
+            # 检查串口是否打开
+            if not self._serial_port.isOpen():
+                return
+
+            self._serial_port.write(command)
+        except serial.SerialException as e:
+            self.log.error(f"Serial port error: {e}")
+
+        # self._serial_port.write(command)
         # self._serial_port.flush()
 
 
