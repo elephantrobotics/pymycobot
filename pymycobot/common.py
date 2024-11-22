@@ -5,6 +5,7 @@ import time
 import struct
 import logging
 import sys
+import datetime
 import platform
 import locale
 from pymycobot.robot_info import Robot320Info
@@ -837,8 +838,9 @@ def write(self, command, method=None):
         # self._serial_port.flush()
 
 
-def read(self, genre, method=None, command=None, _class=None, timeout=None):
+def read(self, genre, method=None, command=None, _class=None, timeout=None, save_serial_log=None):
     datas = b""
+    all_log = b""
     data_len = -1
     k = 0
     pre = 0
@@ -910,6 +912,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             wait_time = 1
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
+            if save_serial_log is not None:
+                all_log += data
             # self.log.debug("data: {}".format(data))
             k += 1
             if _class in DataProcessor.crc_robot_class:
@@ -963,5 +967,9 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None):
             for d in datas:
                 command_log += hex(d)[2:] + " "
             self.log.debug("_read : {}".format(command_log))
-
+        if all_log != b"":
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open("all_log.txt", "a") as f:
+                f.write(str(current_time)+str(all_log)[2:-1]+"\n")
+            all_log = b''
         return datas

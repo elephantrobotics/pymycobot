@@ -90,7 +90,7 @@ class MyCobot280(CommandGenerator):
             wait() *
     """
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=True):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=True, save_serial_log=False):
         """
         Args:
             port     : port string
@@ -110,6 +110,7 @@ class MyCobot280(CommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
+        self.save_serial_log = save_serial_log
 
     _write = write
     _read = read
@@ -138,7 +139,7 @@ class MyCobot280(CommandGenerator):
         try_count = 0
         while try_count < 3:
             self._write(self._flatten(real_command))
-            data = self._read(genre, _class = self.__class__.__name__)
+            data = self._read(genre, _class = self.__class__.__name__, save_serial_log=self.save_serial_log)
             if data is not None and data != b'':
                 break
             try_count += 1
