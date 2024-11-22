@@ -5,7 +5,7 @@ import time
 import struct
 import logging
 import sys
-import datetime
+from datetime import datetime
 import platform
 import locale
 from pymycobot.robot_info import Robot320Info
