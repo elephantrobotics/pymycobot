@@ -1233,7 +1233,6 @@ def calibration_parameters(**kwargs):
                 if value in (0, 1, 2, 3, 4):
                     raise MyArmDataException("addr 0-4 cannot be modified")
 
-        
 
 def restrict_serial_port(func):
     """
@@ -1244,8 +1243,7 @@ def restrict_serial_port(func):
         try:
             if hasattr(self, '_serial_port'):
                 if self._serial_port.port not in ["/dev/left_arm", "/dev/right_arm"]:
-                    raise MercuryRobotException(
-                        f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
+                    raise MercuryRobotException(f"The {func.__name__} function cannot be called. This function is only applicable to the Mercury dual-arm robot.")
             elif hasattr(self, 'sock'):
                 if not isinstance(self.sock, socket.socket):
                     raise MercuryRobotException(

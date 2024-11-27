@@ -1498,7 +1498,7 @@ class MercuryCommandGenerator(DataProcessor):
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True,_async=_async)
 
-    def send_angle(self, joint_id, angle, speed):
+    def send_angle(self, joint_id, angle, speed, _async=False):
         """Send one angle of joint to robot arm.
 
         Args:
@@ -1508,7 +1508,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True, _async=_async)
 
     def send_coord(self, coord_id, coord, speed):
         """Send one coord to robot arm.
@@ -1812,7 +1812,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         if mode not in [1, 2]:
             raise Exception("mode must be 1 or 2")
-        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id, address=address)
+        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id)
         return self._mesg(
             ProtocolCode.GET_SERVO_DATA, servo_id, address, mode
         )
@@ -1828,7 +1828,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         if mode not in [1, 2]:
             raise Exception("mode must be 1 or 2")
-        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id, address=address)
+        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id)
         if mode == 1:
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, address, value, mode)
         else:
