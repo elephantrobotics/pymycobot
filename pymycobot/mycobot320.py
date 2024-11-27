@@ -708,7 +708,7 @@ class MyCobot320(CommandGenerator):
             speed (int): 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_DEFAULT_SPEED)
+        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_SPEED)
 
     def set_pro_gripper_abs_angle(self, gripper_id, gripper_angle):
         """ Set the gripper absolute angle
