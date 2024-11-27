@@ -1812,7 +1812,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         if mode not in [1, 2]:
             raise Exception("mode must be 1 or 2")
-        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id, address=address)
+        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id)
         return self._mesg(
             ProtocolCode.GET_SERVO_DATA, servo_id, address, mode
         )
@@ -1828,7 +1828,7 @@ class MercuryCommandGenerator(DataProcessor):
         """
         if mode not in [1, 2]:
             raise Exception("mode must be 1 or 2")
-        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id, address=address)
+        self.calibration_parameters(class_name = self.__class__.__name__, servo_id=servo_id)
         if mode == 1:
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, address, value, mode)
         else:
