@@ -166,11 +166,11 @@ mc.send_angle(1, 40, 20)
   - `degree`: degree value(`float`)
     | Joint Id | range |
     | ---- | ---- |
-    | 1 | -170 ~ 170 |
-    | 2 | -137 ~ 137 |
-    | 3 | -151 ~ 142 |
+    | 1 | -168 ~ 168 |
+    | 2 | -135 ~ 135 |
+    | 3 | -145 ~ 145 |
     | 4 | -148 ~ 148 |
-    | 5 | -169 ~ 169 |
+    | 5 | -168 ~ 168 |
     | 6 | -180 ~ 180 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100
@@ -868,7 +868,7 @@ from pymycobot import utils
     | ---- | ---- |---- |
     | Read firmware major version number | 14 | 1 |
     | Read firmware minor version number | 14 | 2 |
-    | Read gripper ID | 14 | 3 |
+    | Read gripper ID | 14 | 4 |
     | Read gripper clockwise runnable error | 14 | 22 |
     | Read gripper counterclockwise runnable error | 14 | 24 |
     | Read gripper minimum starting force | 14 | 26 |

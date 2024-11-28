@@ -803,7 +803,7 @@ def calibration_parameters(**kwargs):
                                                                                                           gripper_id))
                 if torque_value < 0 or torque_value > 100:
                     raise MyCobot320DataException(
-                        "The range of 'torque_value' in {} is 100 ~ 300, but the received value is {}".format(parameter,
+                        "The range of 'torque_value' in {} is 0 ~ 100, but the received value is {}".format(parameter,
                                                                                                               torque_value))
 
             elif parameter == "gripper_speed":
