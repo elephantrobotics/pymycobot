@@ -110,6 +110,7 @@ class MyCobot280(CommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
+        time.sleep(1.5)  # use to 280 AR
 
     _write = write
     _read = read

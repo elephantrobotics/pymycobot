@@ -103,6 +103,7 @@ class MyCobot280Socket(CommandGenerator):
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
+        time.sleep(1.5)  # use to 280 AR
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

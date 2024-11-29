@@ -309,15 +309,15 @@ def calibration_parameters(**kwargs):
         },
         "MyCobot320": {
             "id": [1, 2, 3, 4, 5, 6],
-            "angles_min": [-170, -137, -151, -148, -169, -180],
-            "angles_max": [170, 137, 142, 148, 169, 180],
+            "angles_min": [-168, -135, -145, -148, -168, -180],
+            "angles_max": [168, 135, 145, 148, 168, 180],
             "coords_min": [-350, -350, -41, -180, -180, -180],
             "coords_max": [350, 350, 523.9, 180, 180, 180]
         },
         "MyCobot320Socket": {
             "id": [1, 2, 3, 4, 5, 6],
-            "angles_min": [-170, -137, -151, -148, -169, -180],
-            "angles_max": [170, 137, 142, 148, 169, 180],
+            "angles_min": [-168, -135, -145, -148, -168, -180],
+            "angles_max": [168, 135, 145, 148, 168, 180],
             "coords_min": [-350, -350, -41, -180, -180, -180],
             "coords_max": [350, 350, 523.9, 180, 180, 180]
         },
@@ -803,7 +803,7 @@ def calibration_parameters(**kwargs):
                                                                                                           gripper_id))
                 if torque_value < 0 or torque_value > 100:
                     raise MyCobot320DataException(
-                        "The range of 'torque_value' in {} is 100 ~ 300, but the received value is {}".format(parameter,
+                        "The range of 'torque_value' in {} is 0 ~ 100, but the received value is {}".format(parameter,
                                                                                                               torque_value))
 
             elif parameter == "gripper_speed":
