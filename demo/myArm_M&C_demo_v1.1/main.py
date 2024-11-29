@@ -165,8 +165,8 @@ class MyWindow(QWidget, Ui_Form):
         #     tableWidget = self.tableWidget_4
         #     j = "2"
         # index = j
-            
-        for i in range(8):
+        # print(data[index])
+        for i in range(7):
             angle = tableWidget.item(i, 1)
             angle.setText(str(data[index]["angle"][i]))
             speed = tableWidget.item(i, 2)

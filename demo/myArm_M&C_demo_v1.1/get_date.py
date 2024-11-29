@@ -34,21 +34,20 @@ class CreateSerial(QThread):
                     
                     
                     if (self.index == 1 or self.index == 2) and self.parent_serial is not None and data["angle"] and data["speed"]:
-                        data["angle"] = self.serial.get_servos_encoder()
-                        data["speed"] = self.serial.get_servos_speed()
-                        data["angle"][3] = 4096 - data["angle"][3]
-                        data["angle"][-1] *= 1.1
-                        data["angle"][-1] = int(data["angle"][-1])
-                        if data["angle"][-1] > 2048:
-                            data["angle"][-1] = 2048
-                        # self.parent_serial.set_servos_encoder_drag(data["angle"], data["speed"])
-                        self.parent_serial.serial.set_servos_encoder(data["angle"], 100)
+                        data["angle"] = self.serial.get_joints_angle()
+                        data["angle"][-1] = round((data["angle"][-1] - 0.08) / (-95.27 - 0.08) * (-123.13 + 1.23) - 1.23, 2)
+                        if data["angle"][-1] > 2:
+                            data["angle"][-1] = 2
+                        elif data["angle"][-1] < -118:
+                            data["angle"][-1] = -118
+                        self.parent_serial.serial.set_joints_angle(data["angle"], 100)
                     else:
-                        data["angle"] = self.serial.get_servos_encoder()
-                        data["speed"] = self.serial.get_servos_speed()
+                        # data["angle"] = self.serial.get_servos_encoder()
+                        # data["speed"] = self.serial.get_servos_speed()
                         time.sleep(1)
-                    if data["angle"] and data["speed"]:
-                        self.progress.emit({str(self.index):data})
+                    self.progress.emit({str(self.index):data})
+                    # if data["angle"]:
+                    #     self.progress.emit({str(self.index):data})
             except:
                 pass
             time.sleep(0.0001)
