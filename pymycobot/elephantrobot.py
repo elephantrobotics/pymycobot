@@ -21,10 +21,24 @@ class ElephantRobot(object):
         self.BUFFSIZE = 8 * 1024 * 1024
         self.ADDR = (host, port)
         self.tcp_client = socket(AF_INET, SOCK_STREAM)
+        self.is_client_started = False
+
+    def get_ip(self):
+        return self.ADDR
+
+    def set_ip(self, host, port):
+        if self.is_client_started:
+            print(
+                "Error: Cannot change IP if client is started. Stop client to change IP/Host/Port"
+            )
+            return False
+        self.ADDR = (host, port)
+        return True
 
     def start_client(self):
         try:
             self.tcp_client.connect(self.ADDR)
+            self.is_client_started = True
             return True
         except Exception as e:
             print(e)
@@ -32,6 +46,7 @@ class ElephantRobot(object):
 
     def stop_client(self):
         self.tcp_client.close()
+        self.is_client_started = False
 
     def send_command(self, command):
         with mutex:
