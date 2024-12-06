@@ -266,6 +266,8 @@ class ProtocolCode(object):
     GET_QUICK_INFO = 0xD6
     SET_FOUR_PIECES_ZERO = 0xD7
 
+    GET_REBOOT_COUNT = 0xD8
+
     # Motor status read
     GET_SERVO_SPEED = 0xE1
     GET_SERVO_CURRENTS = 0xE2
