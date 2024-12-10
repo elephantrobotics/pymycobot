@@ -179,6 +179,8 @@ class MercuryCommandGenerator(DataProcessor):
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
         interval_time = time.time()
+        is_moving = 0
+        check_is_moving_t = 1
         while True and time.time() - t < wait_time:
             with self.lock_out:
                 for v in self.read_command:
@@ -246,14 +248,19 @@ class MercuryCommandGenerator(DataProcessor):
             #     # 打断除了stop指令外的其他指令的等待
             #     self.is_stop = 0
             #     break
-            if is_in_position and time.time() - interval_time > 1 and wait_time == 300:
+            if is_in_position and time.time() - interval_time > check_is_moving_t and wait_time == 300:
                 interval_time = time.time()
-                if self.is_moving() == 0:
+                moving = self.is_moving()
+                if isinstance(moving, int) and moving == 0:
                     # print("停止运动，退出")
-                    with self.lock:
-                        if genre in self.write_command:
-                            self.write_command.remove(genre)
-                    return -2
+                    is_moving += 1
+                    check_is_moving_t = 0.25 # 由于is_moving接口比到位反馈更快，所以第一次收到停止运动后，将下一次的检测时间更改为0.25s，防止此处先退出，返回-2
+                    if is_moving > 1:
+                        # 累计两次才退出
+                        with self.lock:
+                            if genre in self.write_command:
+                                self.write_command.remove(genre)
+                        return -2
             time.sleep(0.001)
         else:
             # print("ERROR: ---超时---"
@@ -1510,7 +1517,7 @@ class MercuryCommandGenerator(DataProcessor):
             class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True, _async=_async)
 
-    def send_coord(self, coord_id, coord, speed):
+    def send_coord(self, coord_id, coord, speed, _async=False):
         """Send one coord to robot arm.
 
         Args:
@@ -1528,9 +1535,9 @@ class MercuryCommandGenerator(DataProcessor):
         self.calibration_parameters(
             class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
         value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
-    def send_coords(self, coords, speed):
+    def send_coords(self, coords, speed, _async=False):
         """Send all coords to robot arm.
 
         Args:
@@ -1550,7 +1557,7 @@ class MercuryCommandGenerator(DataProcessor):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
 
     def resume(self):
         """Recovery movement"""
