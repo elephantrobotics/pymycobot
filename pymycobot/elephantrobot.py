@@ -2,11 +2,38 @@
 
 from socket import socket, AF_INET, SOCK_STREAM
 import sys
+from enum import Enum
 import base64
 import hashlib
 from multiprocessing import Lock
 import logging
 from pymycobot.log import setup_logging
+
+
+COORDS_EPSILON = 0.50
+
+
+class Axis(Enum):
+    X = 0
+    Y = 1
+    Z = 2
+    RX = 3
+    RY = 4
+    RZ = 5
+
+
+class Joint(Enum):
+    J1 = 0
+    J2 = 1
+    J3 = 2
+    J4 = 3
+    J5 = 4
+    J6 = 5
+
+
+class JogMode(Enum):
+    JOG_JOINT = 0
+    JOG_TELEOP = 1
 
 
 mutex = Lock()
@@ -86,6 +113,58 @@ class ElephantRobot(object):
         except:
             return -9999.99
 
+    def float_equal(self, a, b, epsilon=COORDS_EPSILON):
+        """Compares 2 floats with given epsilon precision.
+
+        Args:
+            a (float): 1st float to compare
+            b (float): 2nd float to compare
+            epsilon (float): precision (epsilon) to compare
+
+        Returns:
+            bool: True if floats are considered equal with given precision,
+                  False otherwise
+        """
+        return math.fabs(a - b) < epsilon
+
+    def coords_equal(self, coords_1, coords_2):
+        """Checks if specified coords are equal.
+
+        Args:
+            coords_1 (list): first coords to compare
+            coords_2 (list): second coords to compare
+
+        Returns:
+            bool: True if coords are equal, False otherwise.
+        """
+        return (
+            self.float_equal(coords_1[Axis.X.value], coords_2[Axis.X.value])
+            and self.float_equal(coords_1[Axis.Y.value], coords_2[Axis.Y.value])
+            and self.float_equal(coords_1[Axis.Z.value], coords_2[Axis.Z.value])
+            and self.float_equal(coords_1[Axis.RX.value], coords_2[Axis.RX.value])
+            and self.float_equal(coords_1[Axis.RY.value], coords_2[Axis.RY.value])
+            and self.float_equal(coords_1[Axis.RZ.value], coords_2[Axis.RZ.value])
+        )
+
+    def angles_equal(self, angles_1, angles_2):
+        """Checks if specified angles are equal.
+
+        Args:
+            angles_1 (list): first angles to compare
+            angles_2 (list): second angles to compare
+
+        Returns:
+            bool: True if angles are equal, False otherwise.
+        """
+        return (
+            self.float_equal(angles_1[Joint.J1.value], angles_2[Joint.J1.value])
+            and self.float_equal(angles_1[Joint.J2.value], angles_2[Joint.J2.value])
+            and self.float_equal(angles_1[Joint.J3.value], angles_2[Joint.J3.value])
+            and self.float_equal(angles_1[Joint.J4.value], angles_2[Joint.J4.value])
+            and self.float_equal(angles_1[Joint.J5.value], angles_2[Joint.J5.value])
+            and self.float_equal(angles_1[Joint.J6.value], angles_2[Joint.J6.value])
+        )
+
     def string_to_int(self, data):
         try:
             val = int(data)
@@ -96,6 +175,17 @@ class ElephantRobot(object):
     def invalid_coords(self):
         coords = [-1.0, -2.0, -3.0, -4.0, -1.0, -1.0]
         return coords
+
+    def detect_robot(self):
+        return int(self.get_analog_in(55))
+
+    def start_robot(self):
+        command = "start_robot()\n"
+        res = self.send_command(command)
+        return True
+
+    def recover_robot(self):
+        return self.start_robot()
 
     def get_angles(self):
         command = "get_angles()\n"
@@ -112,30 +202,68 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return self.string_to_double(res)
 
-    def power_on(self):
+    def _power_on(self):
         command = "power_on()\n"
         res = self.send_command(command)
         return True
 
-    def power_off(self):
+    def _power_off(self):
         command = "power_off()\n"
         res = self.send_command(command)
         return True
 
-    def start_robot(self):
-        command = "start_robot()\n"
+    def _state_on(self):
+        command = "state_on()\n"
+        self.send_command(command)
+
+    def _state_off(self):
+        command = "state_off()\n"
+        self.send_command(command)
+
+    def state_check(self):
+        command = "state_check()\n"
         res = self.send_command(command)
-        return True
+        return res == "1"
 
     def check_running(self):
         command = "check_running()\n"
         res = self.send_command(command)
         return res == "1"
 
-    def state_check(self):
-        command = "state_check()\n"
-        res = self.send_command(command)
-        return res == "1"
+    def is_in_position(self, coords, jog_mode):
+        """Returns True if current position equals passed coords.
+
+        Args:
+            coords (list[float]): coords or angles
+            jog_mode (JogMode): JogMode enum value
+
+        Returns:
+            bool: True if robot is in passed coords, False otherwise
+        """
+        if type(jog_mode) is not JogMode:
+            raise TypeError("jog_mode should be of type JogMode")
+        if jog_mode == JogMode.JOG_TELEOP:
+            return self.coords_equal(self.get_coords(), coords)
+        else:
+            return self.angles_equal(self.get_angles(), coords)
+
+    def set_free_move_mode(self, on=True):
+        """Enables or disables free move mode.
+
+        Args:
+            on (bool, optional): True to enable free move mode,
+                                 False to disable free move mode.
+                                 Defaults to True.
+        """
+        command = "set_free_move(" + str(int(on)) + ")\n"
+        self.send_command(command)
+
+    def set_payload(self, payload):
+        command = "set_payload(" + str(payload) + ")\n"
+        self.send_command(command)
+
+    def get_payload(self):
+        return self.get_analog_out(53)
 
     def upload_file(self, local_filename, remote_filename):
         """Upload local file to robot via socket. Permissions are checked before
@@ -225,18 +353,6 @@ class ElephantRobot(object):
         command = "set_upside_down(" + up + ")\n"
         self.send_command(command)
 
-    def set_payload(self, payload):
-        command = "set_payload(" + str(payload) + ")\n"
-        self.send_command(command)
-
-    def state_on(self):
-        command = "state_on()\n"
-        self.send_command(command)
-
-    def state_off(self):
-        command = "state_off()\n"
-        self.send_command(command)
-
     def task_stop(self):
         command = "task_stop()\n"
         self.send_command(command)
@@ -264,19 +380,29 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return self.string_to_int(res)
 
+    def set_digital_out(self, pin_number, pin_signal):
+        command = "set_digital_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
+        self.send_command(command)
+
+    def get_analog_in(self, pin_number):
+        command = "get_analog_in(" + str(pin_number) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
+
+    def get_analog_out(self, pin_number):
+        command = "get_analog_out(" + str(pin_number) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
+
+    def set_analog_out(self, pin_number, pin_signal):
+        command = "set_analog_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
+        self.send_command(command)
+
     def get_joint_current(self, joint_number):
         command = "get_joint_current(" + str(joint_number) + ")\n"
         print(command)
         res = self.send_command(command)
         return self.string_to_double(res)
-
-    def set_digital_out(self, pin_number, pin_signal):
-        command = "set_digital_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
-        self.send_command(command)
-
-    def set_analog_out(self, pin_number, pin_signal):
-        command = "set_analog_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
-        self.send_command(command)
 
     def send_feed_override(self, override):
         command = "set_feed_rate(" + str(override) + ")\n"
@@ -414,6 +540,66 @@ class ElephantRobot(object):
         command = "set_ele_gripper_close()\n"
         return self.send_command(command)
 
+    def force_gripper_set_angle(self, angle):
+        """Sets angle of Force-Controlled gripper.
+
+        Args:
+            angle (int): angle, 0-100
+
+        Returns:
+            str: return message
+        """
+        command = "force_gripper_set_angle(" + str(angle) + ")\n"
+        return self.send_command(command)
+
+    def force_gripper_get_angle(self):
+        """Returns current angle of force-controlled gripper.
+
+        Returns:
+            str: return message
+        """
+        command = "force_gripper_get_angle()\n"
+        return self.send_command(command)
+
+    def force_gripper_full_open(self):
+        """Fully opens force-controlled gripper.
+
+        Returns:
+            str: return message
+        """
+        command = "force_gripper_full_open()\n"
+        return self.send_command(command)
+
+    def force_gripper_full_close(self):
+        """Fully closes force-controlled gripper.
+
+        Returns:
+            str: return message
+        """
+        command = "force_gripper_full_close()\n"
+        return self.send_command(command)
+
+    def force_gripper_set_torque(self, torque):
+        """Sets torque of force-controlled gripper.
+
+        Args:
+            torque (int): torque, 0-100 (mapped to 100-300)
+
+        Returns:
+            str: return message
+        """
+        command = "force_gripper_set_torque(" + str(torque) + ")\n"
+        return self.send_command(command)
+
+    def force_gripper_get_torque(self):
+        """Returns current torque of force-controlled gripper.
+
+        Returns:
+            str: return message
+        """
+        command = "force_gripper_get_torque()\n"
+        return self.send_command(command)
+
 
 if __name__ == "__main__":
     ep = ElephantRobot("192.168.124.28", 5001)
@@ -425,8 +611,8 @@ if __name__ == "__main__":
     print(ep.get_angles())
     print(ep.get_coords())
     print(ep.get_speed())
-    # print(ep.power_on())
-    # print(ep.power_off())
+    # print(ep._power_on())
+    # print(ep._power_off())
     print(ep.check_running())
     print(ep.state_check())
     print(ep.program_open("a.tax"))
@@ -440,8 +626,8 @@ if __name__ == "__main__":
     print(ep.set_carte_torque_limit("x", 55))
     print(ep.set_upside_down(False))
     print(ep.set_payload(100))
-    print(ep.state_on())
-    print(ep.state_off())
+    print(ep._state_on())
+    print(ep._state_off())
     print(ep.task_stop())
     print(ep.jog_angle("j2", 1, 300))
     print(ep.jog_coord("rY", 0, 200))
