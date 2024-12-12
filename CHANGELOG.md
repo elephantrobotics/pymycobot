@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v3.6.9 (2024-12-06)
+
+- release v3.6.9
+- The set_basic_output interface adds IO 5 to open the suction pump solenoid valve and automatically close it after 0.5S
+
 ## v3.6.7 (2024-11-15)
 
 - release v3.6.7

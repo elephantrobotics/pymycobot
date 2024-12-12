@@ -47,6 +47,11 @@ mc.send_angle(1, 40, 20)
 
 - **function:** Clear robot error message
 
+#### `get_reboot_count()`
+
+- **function:** Get the number of times the machine has been restarted (calculated from the time the firmware is burned)
+- **Return value:** `int` Number of restarts
+
 ### 2. Overall Status
 
 #### `power_on()`

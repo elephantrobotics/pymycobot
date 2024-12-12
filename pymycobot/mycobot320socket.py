@@ -223,6 +223,8 @@ class MyCobot320Socket(CommandGenerator):
             elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION,
                            ProtocolCode.GET_ATOM_VERSION]:
                 return self._int2coord(self._process_single(res))
+            elif genre in [ProtocolCode.GET_REBOOT_COUNT]:
+                return self._process_high_low_bytes(res)
             elif genre == ProtocolCode.GET_ANGLES_COORDS:
                 r = []
                 for index in range(len(res)):
@@ -1233,6 +1235,14 @@ class MyCobot320Socket(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_SINGLE_PRESSURE_SENSOR])
+
+    def get_reboot_count(self):
+        """Read reboot count
+
+        Return:
+            reboot count
+        """
+        return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
 
     # Other
     def wait(self, t):
