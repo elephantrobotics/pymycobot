@@ -51,9 +51,25 @@ class ElephantRobot(object):
         self.is_client_started = False
 
     def get_ip(self):
+        """Returns tuple of (IP address or hostname, port) of robot with socket server.
+
+        Returns:
+            str: IP address or hostname
+        """
         return self.ADDR
 
     def set_ip(self, host, port):
+        """Sets IP address or hostname and port of robot with socket server.
+        Cannot set or change IP address or hostname or port of already started client.
+        Need to stop client before setting IP address/hostname/port.
+
+        Args:
+            host (str): IP address or hostname
+            port (int): port
+
+        Returns:
+            bool: True if success, False otherwise
+        """
         if self.is_client_started:
             print(
                 "Error: Cannot change IP if client is started. Stop client to change IP/Host/Port"
@@ -180,11 +196,21 @@ class ElephantRobot(object):
         return int(self.get_analog_in(55))
 
     def start_robot(self):
+        """Starts robot.
+
+        Returns:
+            bool: currently always returns True
+        """
         command = "start_robot()\n"
         res = self.send_command(command)
         return True
 
     def recover_robot(self):
+        """Recovers robot after collision.
+
+        Returns:
+            bool: currently always returns True
+        """
         return self.start_robot()
 
     def get_angles(self):
@@ -259,10 +285,20 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def set_payload(self, payload):
+        """Sets payload value on the robot.
+
+        Args:
+            payload (float): payload value (0.0~2.0)
+        """
         command = "set_payload(" + str(payload) + ")\n"
         self.send_command(command)
 
     def get_payload(self):
+        """Returns current payload value.
+
+        Returns:
+            float: payload value
+        """
         return self.get_analog_out(53)
 
     def upload_file(self, local_filename, remote_filename):
@@ -385,17 +421,39 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def get_analog_in(self, pin_number):
+        """Returns specified analog input pin value.
+
+        Args:
+            pin_number (int): pin number (0-63)
+
+        Returns:
+            float: pin value
+        """
         command = "get_analog_in(" + str(pin_number) + ")\n"
         res = self.send_command(command)
         return self.string_to_double(res)
 
     def get_analog_out(self, pin_number):
+        """Returns specified analog output pin value.
+
+        Args:
+            pin_number (int): pin number (0-63)
+
+        Returns:
+            float: pin value
+        """
         command = "get_analog_out(" + str(pin_number) + ")\n"
         res = self.send_command(command)
         return self.string_to_double(res)
 
-    def set_analog_out(self, pin_number, pin_signal):
-        command = "set_analog_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
+    def set_analog_out(self, pin_number, pin_value):
+        """Sets specified analog output pin to given value.
+
+        Args:
+            pin_number (int): pin number (0~63).
+            pin_value (float): pin value
+        """
+        command = "set_analog_out(" + str(pin_number) + "," + str(pin_value) + ")\n"
         self.send_command(command)
 
     def get_joint_current(self, joint_number):
