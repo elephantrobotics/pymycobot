@@ -5,9 +5,11 @@ import sys
 from enum import Enum
 import base64
 import hashlib
+import numpy as np
 from multiprocessing import Lock
 import logging
 from pymycobot.log import setup_logging
+from pymycobot.tool_coords import *
 
 
 COORDS_EPSILON = 0.50
@@ -49,6 +51,8 @@ class ElephantRobot(object):
         self.ADDR = (host, port)
         self.tcp_client = socket(AF_INET, SOCK_STREAM)
         self.is_client_started = False
+        tool_reference = np.array([0, 0, 0, 0, 0, 0])
+        self.tool_matrix = self.set_tool_reference(tool_reference)
 
     def get_ip(self):
         """Returns tuple of (IP address or hostname, port) of robot with socket server.
@@ -657,6 +661,40 @@ class ElephantRobot(object):
         """
         command = "force_gripper_get_torque()\n"
         return self.send_command(command)
+    
+    def set_tool_reference(self, tool_reference):
+        """Set tool coordinate system.
+
+        Args:
+            tool_reference (list): 
+
+        Returns:
+            _type_: _description_
+        """
+        rotation_matrix = np.eye(3)  # No rotation example
+        translation_vector = tool_reference[:3] # Tool offset along z-axis of flange
+        rotation_matrix = CvtEulerAngleToRotationMatrix(tool_reference[3:6]* np.pi/180.0)  
+        return transformation_matrix_from_parameters(rotation_matrix, translation_vector)
+    
+    def get_tool_coords(self):
+        """Set tool coordinate system.
+
+        Returns:
+            _type_: _description_
+        """
+        current_coords = np.array(self.get_coords())
+        tool_coords = flangeToTool(current_coords, self.tool_matrix)
+        return tool_coords
+
+    def write_tool_coords(self, tool_coords, speed):
+        """Tool coordinate motion control
+
+        Args:
+            tool_coords (list): _description_
+            speed (int): _description_
+        """
+        flange_coords = toolToflange(tool_coords, self.tool_matrix)
+        self.write_coords(flange_coords, speed)
 
 
 if __name__ == "__main__":
