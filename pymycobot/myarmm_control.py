@@ -58,97 +58,103 @@ class MyArmMProcessor(DataProcessor):
 
     def _mesg(self, genre, *args, **kwargs):
         real_command, has_reply = super(MyArmMProcessor, self)._mesg(genre, *args, **kwargs)
-        with self.lock:
-            return self._res(real_command, has_reply, genre)
+        real_command = self._flatten(real_command)
+        self._write(real_command)
 
-    def _res(self, real_command, has_reply, genre):
-        self._write(self._flatten(real_command))
         if genre == ProtocolCode.STOP:
             has_reply = True
-        if has_reply:
-            data = self._read(genre, _class=self.__class__.__name__)
-            if genre == ProtocolCode.SET_SSID_PWD:
-                return None
-            res = self._process_received(data, genre)
-            if res == []:
-                return None
-            if genre in [
-                ProtocolCode.ROBOT_VERSION,
-                ProtocolCode.GET_ROBOT_ID,
-                ProtocolCode.IS_POWER_ON,
-                ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
-                ProtocolCode.IS_IN_POSITION,
-                ProtocolCode.IS_MOVING,
-                ProtocolCode.IS_SERVO_ENABLE,
-                ProtocolCode.IS_ALL_SERVO_ENABLE,
-                ProtocolCode.GET_SERVO_DATA,
-                ProtocolCode.GET_DIGITAL_INPUT,
-                ProtocolCode.GET_GRIPPER_VALUE,
-                ProtocolCode.IS_GRIPPER_MOVING,
-                ProtocolCode.GET_SPEED,
-                ProtocolCode.GET_ENCODER,
-                ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE,
-                ProtocolCode.GET_END_TYPE,
-                ProtocolCode.GET_MOVEMENT_TYPE,
-                ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_FRESH_MODE,
-                ProtocolCode.GET_GRIPPER_MODE,
-                ProtocolCode.GET_ERROR_INFO,
-                ProtocolCode.GET_COMMUNICATE_MODE,
-                ProtocolCode.SET_COMMUNICATE_MODE,
-                ProtocolCode.SetHTSGripperTorque,
-                ProtocolCode.GetHTSGripperTorque,
-                ProtocolCode.GetGripperProtectCurrent,
-                ProtocolCode.InitGripper,
-                ProtocolCode.SET_FOUR_PIECES_ZERO,
-                ProtocolCode.STOP,
-                ProtocolCode.IS_TOOL_BTN_CLICKED
-            ]:
-                return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
-                return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
-                if res:
-                    r = []
-                    for idx in range(3):
-                        r.append(self._int2coord(res[idx]))
-                    for idx in range(3, 6):
-                        r.append(self._int2angle(res[idx]))
-                    return r
+
+        if has_reply is False:
+            return None
+
+        with self.lock:
+            return self._read_genre_result(genre)
+
+    def _read_genre_result(self, genre):
+        data = self._read(genre, _class=self.__class__.__name__)
+        if genre == ProtocolCode.SET_SSID_PWD:
+            return None
+
+        res = self._process_received(data, genre)
+        if not res:
+            return None
+
+        if genre in [
+            ProtocolCode.ROBOT_VERSION,
+            ProtocolCode.GET_ROBOT_ID,
+            ProtocolCode.IS_POWER_ON,
+            ProtocolCode.IS_CONTROLLER_CONNECTED,
+            ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+            ProtocolCode.IS_IN_POSITION,
+            ProtocolCode.IS_MOVING,
+            ProtocolCode.IS_SERVO_ENABLE,
+            ProtocolCode.IS_ALL_SERVO_ENABLE,
+            ProtocolCode.GET_SERVO_DATA,
+            ProtocolCode.GET_DIGITAL_INPUT,
+            ProtocolCode.GET_GRIPPER_VALUE,
+            ProtocolCode.IS_GRIPPER_MOVING,
+            ProtocolCode.GET_SPEED,
+            ProtocolCode.GET_ENCODER,
+            ProtocolCode.GET_BASIC_INPUT,
+            ProtocolCode.GET_TOF_DISTANCE,
+            ProtocolCode.GET_END_TYPE,
+            ProtocolCode.GET_MOVEMENT_TYPE,
+            ProtocolCode.GET_REFERENCE_FRAME,
+            ProtocolCode.GET_FRESH_MODE,
+            ProtocolCode.GET_GRIPPER_MODE,
+            ProtocolCode.GET_ERROR_INFO,
+            ProtocolCode.GET_COMMUNICATE_MODE,
+            ProtocolCode.SET_COMMUNICATE_MODE,
+            ProtocolCode.SetHTSGripperTorque,
+            ProtocolCode.GetHTSGripperTorque,
+            ProtocolCode.GetGripperProtectCurrent,
+            ProtocolCode.InitGripper,
+            ProtocolCode.SET_FOUR_PIECES_ZERO,
+            ProtocolCode.STOP,
+            ProtocolCode.IS_TOOL_BTN_CLICKED,
+            ProtocolCode.GET_ROBOT_TOOL_MODIFY_VERSION
+        ]:
+            return self._process_single(res)
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
+            return [self._int2angle(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+            r = []
+            for idx in range(3):
+                r.append(self._int2coord(res[idx]))
+            for idx in range(3, 6):
+                r.append(self._int2angle(res[idx]))
+            return r
+        elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+            return [self._int2coord(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+            return self._int2coord(res[0])
+        elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION,
+                       ProtocolCode.GET_ATOM_VERSION]:
+            return self._int2coord(self._process_single(res))
+        elif genre == ProtocolCode.GET_ANGLES_COORDS:
+            r = []
+            for index in range(len(res)):
+                if index < 6:
+                    r.append(self._int2angle(res[index]))
+                elif index < 9:
+                    r.append(self._int2coord(res[index]))
                 else:
-                    return res
-            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-                return [self._int2coord(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
-                return self._int2coord(res[0])
-            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
-                return self._int2coord(self._process_single(res))
-            elif genre == ProtocolCode.GET_ANGLES_COORDS:
-                r = []
-                for index in range(len(res)):
-                    if index < 6:
-                        r.append(self._int2angle(res[index]))
-                    elif index < 9:
-                        r.append(self._int2coord(res[index]))
-                    else:
-                        r.append(self._int2angle(res[index]))
-                return r
-            elif genre == ProtocolCode.GET_ROBOT_STATUS:
-                for i in range(len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
-            else:
-                return res
-        return None
+                    r.append(self._int2angle(res[index]))
+            return r
+        elif genre == ProtocolCode.GET_ROBOT_STATUS:
+            for i in range(len(res)):
+                if res[i] == 0:
+                    continue
+                data = bin(res[i])[2:]
+                res[i] = []
+                while len(data) != 16:
+                    data = "0" + data
+                for j in range(16):
+                    if data[j] != "0":
+                        res[i].append(15 - j)
+            return res
+        else:
+            return res
 
 
 class MyArmMControl(MyArmMProcessor):
@@ -247,6 +253,7 @@ class MyArmMControl(MyArmMProcessor):
             angles: (list) A float list of all angle.
             speed : (int) 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed)
 
@@ -258,16 +265,16 @@ class MyArmMControl(MyArmMProcessor):
         """
         return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
 
-    def write_coord(self, id, coord, speed):
+    def write_coord(self, coord_id, coord, speed):
         """Send the coordinates of a joint to robot arm.
 
         Args:
-            id: (int) 1 ~ 4
+            coord_id: (int) 1 ~ 6
             coord: (float) -150 ~ 150
             speed : (int) 1 ~ 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, coord=coord, speed=speed)
-        value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
+        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+        value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
     def write_coords(self, coords, speed, mode=None):
@@ -289,13 +296,13 @@ class MyArmMControl(MyArmMProcessor):
         else:
             return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed)
 
-    def is_in_position(self, data, id=0):
+    def is_in_position(self, data, mode=0):
         """Judge whether in the position.
 
         Args:
             data: A data list, angles or coords.
                     for myArm: angles len 7, coords len 6.
-            id: 1 - coords, 0 - angles
+            mode: 1 - coords, 0 - angles
 
         Return:
             1 - True\n
@@ -315,7 +322,7 @@ class MyArmMControl(MyArmMProcessor):
         else:
             raise Exception("id is not right, please input 0 or 1")
 
-        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, id, has_reply=True)
+        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode, has_reply=True)
 
     def is_moving(self):
         """Detect if the robot is moving
@@ -335,7 +342,9 @@ class MyArmMControl(MyArmMProcessor):
             direction (int): 1 - forward rotation, 0 - reverse rotation
             speed (int): 1 ~ 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, direction=direction, speed=speed, end_direction=end_direction
+        )
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
 
     # JOG mode and operation
@@ -348,7 +357,9 @@ class MyArmMControl(MyArmMProcessor):
             direction: 0 - decrease, 1 - increase
             speed: int (0 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, direction=direction)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed
+        )
         return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed)
 
     def jog_coord(self, coord_id, direction, speed):
@@ -359,17 +370,19 @@ class MyArmMControl(MyArmMProcessor):
             direction: 0 - decrease, 1 - increase
             speed: int (1 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, direction=direction)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, direction=direction, speed=speed
+        )
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
 
     def jog_increment(self, joint_id, increment, speed):
         """step mode
 
         Args:
-            joint_id:
+            joint_id(int):
                 for myArm: Joint id 1 - 7.
-            increment:
-            speed: int (0 - 100)
+            increment(int): incremental
+            speed(int): int (0 - 100)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
@@ -442,7 +455,7 @@ class MyArmMControl(MyArmMProcessor):
         Returns:
             angle value(float)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id, has_reply=True)
 
     def get_joint_max(self, joint_id):
@@ -455,29 +468,29 @@ class MyArmMControl(MyArmMProcessor):
         Return:
             angle value(float)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id, has_reply=True)
 
-    def set_joint_max(self, id, angle):
+    def set_joint_max(self, joint_id, angle):
         """Set the joint maximum angle
 
         Args:
-            id: int.
+            joint_id: int.
                 for myArm: Joint id 1 - 7.
             angle: 0 ~ 180
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, angle=angle)
         return self._mesg(ProtocolCode.SET_JOINT_MAX, id, angle)
 
-    def set_joint_min(self, id, angle):
+    def set_joint_min(self, joint_id, angle):
         """Set the joint minimum angle
 
         Args:
-            id: int.
+            joint_id: int.
                 for myArm: Joint id 1 - 7.
             angle: 0 ~ 180
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=angle)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, angle=angle)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
 
     # Servo control
@@ -493,7 +506,7 @@ class MyArmMControl(MyArmMProcessor):
             1 - enable
             -1 - error
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         return self._mesg(ProtocolCode.IS_SERVO_ENABLE, servo_id, has_reply=True)
 
     def is_all_servo_enable(self):
@@ -516,12 +529,16 @@ class MyArmMControl(MyArmMProcessor):
             value: 0 - 4096
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
         """
+
         if mode is None:
-            self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id, address=data_id, value=value)
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, servo_id=servo_id, servo_addr=data_id, value=value
+            )
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
         else:
-            self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id, address=data_id, value=value,
-                                        mode=mode)
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, servo_id=servo_id, servo_addr=data_id, value=value, mode=mode
+            )
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, [value], mode)
 
     def get_servo_data(self, servo_id, data_id, mode=None):
@@ -536,14 +553,13 @@ class MyArmMControl(MyArmMProcessor):
             values 0 - 4096
         """
         if mode is not None:
-            self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id, address=data_id, mode=mode)
-            return self._mesg(
-                ProtocolCode.GET_SERVO_DATA, servo_id, data_id, mode, has_reply=True
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, servo_id=servo_id, address=data_id, mode=mode
             )
-        self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id, address=data_id)
-        return self._mesg(
-            ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True
-        )
+            return self._mesg(ProtocolCode.GET_SERVO_DATA, servo_id, data_id, mode, has_reply=True)
+
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id, address=data_id)
+        return self._mesg(ProtocolCode.GET_SERVO_DATA, servo_id, data_id, has_reply=True)
 
     def set_servo_calibration(self, servo_id):
         """The current position of the calibration joint actuator is the angle zero point,
@@ -552,7 +568,7 @@ class MyArmMControl(MyArmMProcessor):
         Args:
             servo_id: 1 ~ 8
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, servo_id)
 
     def release_servo(self, servo_id, mode=None):
@@ -563,11 +579,11 @@ class MyArmMControl(MyArmMProcessor):
             mode: Default damping, set to 1, cancel damping
         """
         if mode is None:
-            self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
+            self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
             return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id)
 
         else:
-            self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
+            self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id, mode=mode)
             return self._mesg(ProtocolCode.RELEASE_SERVO, servo_id, mode)
 
     def focus_servo(self, servo_id):
@@ -576,7 +592,7 @@ class MyArmMControl(MyArmMProcessor):
         Args:
             servo_id: int 1 ~ 7
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
 
     def set_digital_output(self, pin_no, pin_signal):
@@ -586,73 +602,48 @@ class MyArmMControl(MyArmMProcessor):
             pin_no     (int):
             pin_signal (int): 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_number=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
     def get_digital_input(self, pin_no):
         """Get the terminal atom io status
         Returns: int 0/1
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_number=pin_no)
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
     def set_gripper_enabled(self):
         """Enable gripper"""
         return self._mesg(RobotProtocolCode.SET_GRIPPER_ENABLED)
 
-    def get_gripper_value(self, gripper_type=None):
+    def get_gripper_value(self):
         """Get the value of gripper.
-
-        Args:
-            gripper_type (int): default 1
-                1: Adaptive gripper
-                3: Parallel gripper
-                4: Flexible gripper
 
         Return:
             gripper value (int)
         """
-        if gripper_type is None:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
-        else:
-            self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
+        return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
 
-    def set_gripper_state(self, flag, speed, _type_1=None):
+    def set_gripper_state(self, flag, speed):
         """Set gripper switch state
 
         Args:
             flag  (int): 0 - open, 1 - close, 254 - release
             speed (int): 1 ~ 100
-            _type_1 (int): default 1
-                1 : Adaptive gripper. default to adaptive gripper
-                2 : 5 finger dexterous hand
-                3 : Parallel gripper, this parameter can be omitted
-                4 : Flexible gripper
         """
-        if _type_1 is None:
-            self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, speed=speed)
-            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
-        else:
-            self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1)
-            return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed, _type_1)
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_flag=flag, speed=speed)
+        return self._mesg(ProtocolCode.SET_GRIPPER_STATE, flag, speed)
 
-    def set_gripper_value(self, gripper_value, speed, gripper_type=None):
+    def set_gripper_value(self, gripper_value, speed):
         """Set gripper value
 
         Args:
             gripper_value (int): 0 ~ 100
             speed (int): 1 ~ 100
-            gripper_type (int): default 1
-                1: Adaptive gripper
-                3: Parallel gripper, this parameter can be omitted
-                4: Flexible gripper
         """
-        if gripper_type is not None:
-            self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
-                                        gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed, gripper_type)
-        else:
-            return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
+
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed)
+        return self._mesg(ProtocolCode.SET_GRIPPER_VALUE, gripper_value, speed)
 
     def set_gripper_calibration(self):
         """Set the current position to zero, set current position value is `2048`."""
@@ -678,7 +669,7 @@ class MyArmMControl(MyArmMProcessor):
             b (int): 0 ~ 255
 
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, rgb=[r, g, b])
+        self.calibration_parameters(class_name=self.__class__.__name__, rgb=(r, g, b))
         return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
 
     def is_tool_btn_clicked(self):
@@ -699,7 +690,7 @@ class MyArmMControl(MyArmMProcessor):
             pin_no: pin port number.
             pin_signal: 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal, basic_pin_number=pin_no)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_basic_input(self, pin_no):
@@ -708,19 +699,19 @@ class MyArmMControl(MyArmMProcessor):
         Args:
             pin_no: (int) pin port number.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_number=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no, has_reply=True)
 
-    def set_ssid_pwd(self, account, password):
+    def set_ssid_pwd(self, account: str, password: str):
         """Change connected wi-fi.
 
         Args:
             account: (str) new wi-fi account.
             password: (str) new wi-fi password.
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, account=account, password=password)
-
-        self._mesg(ProtocolCode.SET_SSID_PWD)  # 先发指令，再发设置的账号密码
+        self._mesg(ProtocolCode.SET_SSID_PWD)
         time.sleep(0.02)
+        self.calibration_parameters(class_name=self.__class__.__name__, account=account, password=password)
         return self._mesg(ProtocolCode.SET_SSID_PWD, account, password, has_reply=True)
 
     def get_ssid_pwd(self):
@@ -817,14 +808,14 @@ class MyArmMControl(MyArmMProcessor):
         """
         return self._mesg(ProtocolCode.GET_MOVEMENT_TYPE, has_reply=True)
 
-    def set_end_type(self, end):
+    def set_end_type(self, mode):
         """Set end coordinate system
 
         Args:
-            end: int, 0 - flange, 1 - tool
+            mode: int, 0 - flange, 1 - tool
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, end=end)
-        return self._mesg(ProtocolCode.SET_END_TYPE, end)
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_END_TYPE, mode)
 
     def get_end_type(self):
         """Get end coordinate system
@@ -857,6 +848,7 @@ class MyArmMControl(MyArmMProcessor):
             speed (int): (1 ~ 100).
             is_linear: 0 -> joint 1 -> straight line
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed, is_linear=is_linear)
         return self._mesg(ProtocolCode.SET_PLAN_SPEED, speed, is_linear)
 
     def set_plan_acceleration(self, acceleration, is_linear):
@@ -864,9 +856,9 @@ class MyArmMControl(MyArmMProcessor):
 
         Args:
             acceleration (int): (1 ~ 100).
-            is_linear: 0 -> joint 1 -> straight line
+            is_linear(int): 0 -> joint 1 -> straight line
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, acceleration=acceleration, is_linear=is_linear)
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=acceleration, is_linear=is_linear)
         return self._mesg(ProtocolCode.SET_PLAN_ACCELERATION, acceleration, is_linear)
 
     def get_servo_speeds(self):
@@ -917,8 +909,5 @@ class MyArmMControl(MyArmMProcessor):
         Args:
             mode (int): 0 - close, 1 - open
         """
-        self.calibration_parameters(class_name = self.__class__.__name__, mode=mode)
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_VOID_COMPENSATE, mode)
-
-
-
