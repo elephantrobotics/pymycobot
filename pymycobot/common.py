@@ -541,8 +541,8 @@ class DataProcessor(object):
 
     def _process_received(self, data, genre, arm=6):
         if genre == 177:
-            data = str(data)[2:-1].split(": ")
-            return data[1][0:-9], data[-1]
+            data = data.decode("utf-8").split(" ")
+            return data[1], data[-1]
         elif not data:
             return None
         elif data == b'\xfe\xfe\x04[\x01\r\x87':

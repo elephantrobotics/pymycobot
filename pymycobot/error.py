@@ -1,6 +1,7 @@
 # coding=utf-8
 import json
 import os
+import re
 
 # In order to adapt to the atom side, ID of 0-5 or 1-6 are allowed.
 # In order to support end control, ID 7 is allowed.
@@ -352,6 +353,17 @@ def calibration_parameters(**kwargs):
         "MyArmM": {
             "joint_id": [1, 2, 3, 4, 5, 6, 7],
             "servo_id": [1, 2, 3, 4, 5, 6, 7, 8],
+            "angles_min": [-170, -83, -90, -155, -91, -153, -118],
+            "angles_max": [170, 83, 84, 153, 88, 153, 2],
+            "encoders_min": [137, 1163, 1035, 1013, 248, 979, 220, 706],
+            "encoders_max": [4004, 2945, 3079, 3026, 3724, 2994, 3704, 2048]
+        },
+        "MyArmMControl": {
+            "joint_id": [1, 2, 3, 4, 5, 6, 7],
+            "servo_id": [1, 2, 3, 4, 5, 6, 7, 8],
+            "coord_id": [1, 2, 3, 4, 5, 6],
+            "coord_min": [-833.325, -833.325, -351.11, -180, -180, -180],
+            "coord_max": [-833.325, -833.325, 1007.225, -180, -180, -180],
             "angles_min": [-170, -83, -90, -155, -91, -153, -118],
             "angles_max": [170, 83, 84, 153, 88, 153, 2],
             "encoders_min": [137, 1163, 1035, 1013, 248, 979, 220, 706],
@@ -1347,13 +1359,13 @@ def calibration_parameters(**kwargs):
             elif parameter == 'end_direction':
                 check_0_or_1(parameter, value, [1, 2, 3], value_type, MyPalletizer260DataException, int)
 
-    elif class_name in ["MyArmM", "MyArmC"]:
+    elif class_name in ["MyArmM", "MyArmC", "MyArmMControl"]:
         class_name = kwargs.pop("class_name", None)
         limit_info = robot_limit[class_name]
         for parameter in parameter_list[1:]:
             value = kwargs[parameter]
             value_type = type(value)
-            if parameter in ("servo_id", "joint_id") and value not in limit_info[parameter]:
+            if parameter in ("servo_id", "joint_id", "coord_id") and value not in limit_info[parameter]:
                 raise ValueError(
                     f"The {parameter} not right, should be in {limit_info[parameter]}, but received {value}.")
             elif parameter == 'angle':
@@ -1361,8 +1373,7 @@ def calibration_parameters(**kwargs):
                 min_angle = limit_info["angles_min"][i]
                 max_angle = limit_info["angles_max"][i]
                 if value < min_angle or value > max_angle:
-                    raise ValueError(
-                        f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}")
+                    raise ValueError(f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}")
             elif parameter == 'angles':
                 for i, v in enumerate(value):
                     min_angle = limit_info["angles_min"][i]
@@ -1370,6 +1381,18 @@ def calibration_parameters(**kwargs):
                     if v < min_angle or v > max_angle:
                         raise ValueError(
                             f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}")
+            elif parameter == 'coord':
+                coord_index = kwargs['coord_id'] - 1
+                min_coord = limit_info["coords_min"][coord_index]
+                max_coord = limit_info["coords_max"][coord_index]
+                if not min_coord <= value <= max_coord:
+                    raise ValueError(f"coord value not right, should be {min_coord} ~ {max_coord}, but received {value}")
+            elif parameter == 'coords':
+                for i, v in enumerate(value):
+                    min_coord = limit_info["coords_min"][i]
+                    max_coord = limit_info["coords_max"][i]
+                    if not min_coord <= v <= max_coord:
+                        raise ValueError(f"coord value not right, should be {min_coord} ~ {max_coord}, but received {v}")
             elif parameter == 'encoder':
                 i = kwargs['servo_id'] - 1
                 max_encoder = limit_info["encoders_max"][i]
@@ -1395,4 +1418,36 @@ def calibration_parameters(**kwargs):
                         raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
             elif parameter == "servo_addr":
                 if value in (0, 1, 2, 3, 4):
+                    if class_name == "MyArmMControl":
+                        raise ValueError("modification is not allowed between 0~4, current data id: {}".format(value))
                     raise ValueError("addr 0-4 cannot be modified")
+            elif parameter == "account":
+                if not (8 <= len(value) <= 63):
+                    raise ValueError("The length of password must be between 8 and 63.")
+            elif parameter == "password":
+                if not re.match(r'^[A-Za-z0-9]{8,63}$', value):
+                    raise ValueError("The password must be 8-63 characters long and contain only letters and numbers.")
+            elif parameter == "pin_number":
+                if not 1 <= value <= 6:
+                    raise ValueError("The pin number must be between 1 and 6.")
+            elif parameter in ("direction", "mode", "pin_signal", "is_linear", "move_type", "rftype"):
+                if not isinstance(value, int):
+                    raise TypeError(f"The {parameter} must be an integer.")
+                if value not in (0, 1):
+                    raise ValueError(f"The {parameter} must be 0 or 1.")
+            elif parameter == "end_direction":
+                if value not in (1, 2, 3):
+                    raise ValueError(f"end_direction not right, should be 1 ~ 3, the received end_direction is {value}")
+            elif parameter == "gripper_flag":
+                if value not in (0, 1, 254):
+                    raise ValueError(f"gripper_flag not right, should be 0 ~ 254, the received gripper_flag is {value}")
+            elif parameter == "gripper_value":
+                if not 0 <= value <= 100:
+                    raise ValueError(f"gripper_value not right, should be 0 ~ 100, the received gripper_value is {value}")
+            elif parameter == "basic_pin_number":
+                if not 1 <= value <= 2:
+                    raise ValueError("The basic pin number must be between 1 and 2.")
+            elif parameter == "rgb":
+                for v in value:
+                    if not 0 <= v <= 255:
+                        raise ValueError(f"rgb value not right, should be 0 ~ 255, the received rgb is {value}")
