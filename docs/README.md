@@ -18,6 +18,8 @@ We support Python2, Python3.5 or later.
 
 [myArm_M&C API说明](./myArm_M&C_zh.md) | [myArm_M&C API Description](./myArm_M&C_en.md)
 
+[ultraArm P340 API说明](./ultraArm_P340_zh.md) | [ultraArm P340 API Description](./ultraArm_P340_en.md)
+
 <details>
 <summary>Catalogue:</summary>
 
