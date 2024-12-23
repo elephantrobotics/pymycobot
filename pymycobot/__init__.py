@@ -9,7 +9,6 @@ from pymycobot.mecharm270 import MechArm270
 from pymycobot.mycobot280socket import MyCobot280Socket
 from pymycobot.mycobot320socket import MyCobot320Socket
 from pymycobot.mycobot320 import MyCobot320
-from pymycobot.ultraArmP340 import ultraArmP340
 from pymycobot.generate import CommandGenerator
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.mycobot import MyCobot
