@@ -399,10 +399,10 @@ def calibration_parameters(**kwargs):
         },
         "UltraArm": {
             "id": [1, 2, 3, 4, 7],
-            "angles_min": [-150, -20, -5, -180],
-            "angles_max": [170, 90, 110, 180],
-            "coords_min": [-340, -340, 0, -180],
-            "coords_max": [340, 340, 270.58, 180]
+            "angles_min": [-150, -20, -5, -179],
+            "angles_max": [170, 90, 110, 179],
+            "coords_min": [-360, -365.55, -140, -180],
+            "coords_max": [365.55, 365.55, 130, 180]
         },
         "MyBuddy": {
             "id": [1, 2, 3, 4, 5, 6, 7],

@@ -252,9 +252,9 @@ class ultraArm:
 
         Args:
             degrees: a list of coords value(List[float]).
-                x : -260 ~ 300 mm
-                y : -300 ~ 300 mm
-                z : -70 ~ 135 mm
+                x : -360 ~ 365.55 mm
+                y : -365.55 ~ 365.55 mm
+                z : -140 ~ 130 mm
             speed : (int) 0-200 mm/s
         """
         length = len(degrees)
@@ -282,9 +282,9 @@ class ultraArm:
 
         Args:
             coord:
-                x : -260 ~ 300 mm
-                y : -300 ~ 300 mm
-                z : -70 ~ 135 mm
+                x : -360 ~ 365.55 mm
+                y : -365.55 ~ 365.55 mm
+                z : -140 ~ 130 mm
             speed : (int) 0-200 mm/s
         """
 
@@ -424,8 +424,8 @@ class ultraArm:
             angle :
                 1 : -150° ~ +170°
                 2 : -20° ~ 90°
-                3 : -5° ~ 60°
-                4 : -180° ~ + 180°
+                3 : -5° ~ 110°
+                4 : -179° ~ + 179°
             speed : (int) 0-200 mm/s
         """
         command = ProtocolCode.SET_ANGLE
@@ -449,8 +449,8 @@ class ultraArm:
             angle :
                 1 : -150° ~ +170°
                 2 : -20° ~ 90°
-                3 : -5° ~ 60°
-                4 : -180° ~ + 180°
+                3 : -5° ~ 110°
+                4 : -179° ~ + 179°
             speed : (int) 0-200 mm/s
         """
         length = len(degrees)
@@ -478,9 +478,11 @@ class ultraArm:
 
         Args:
             degrees: a list of radians value(List[float]).
-                rx : -2.97 ~ +2.97
-                ry : 0.0 ~ 1.57
-                rz : 0.0 ~ 1.31
+            angle :
+                1 : 2.6179 ~ 2.9670
+                2 : -0.3490 ~ 1.5707
+                3 : -0.0872 ~ 1.9198
+                4 : -3.1241 ~ + 3.1241
             speed : (int) 0-200 mm/s
         """
         degrees = [round(degree * (180 / math.pi), 2) for degree in degrees]
