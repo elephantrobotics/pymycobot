@@ -43,8 +43,8 @@ class MyCobot320Socket(CommandGenerator):
             Look at parent class: `CommandGenerator`.
 
         # Atom IO
-            init_eletric_gripper()
-            set_eletric_gripper()
+            init_electric_gripper()
+            set_electric_gripper()
             set_gripper_mode()
             get_gripper_mode()
             Other at parent class: `CommandGenerator`.
@@ -407,11 +407,11 @@ class MyCobot320Socket(CommandGenerator):
         return self._mesg(ProtocolCode.SET_JOINT_MIN, id, angle)
 
     # Atom Gripper IO
-    def init_eletric_gripper(self):  # TODO 22-5-19 need test
+    def init_electric_gripper(self):  # TODO 22-5-19 need test
         """Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper"""
         return self._mesg(ProtocolCode.INIT_ELETRIC_GRIPPER)
 
-    def set_eletric_gripper(self, status):  # TODO 22-5-19 need test
+    def set_electric_gripper(self, status):  # TODO 22-5-19 need test
         """Set Electric Gripper Mode
 
         Args:
