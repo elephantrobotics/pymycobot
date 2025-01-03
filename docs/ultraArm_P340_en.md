@@ -50,6 +50,18 @@ from pymycobot.ultraArm import ultraArm
   - `address`: `int`, Parameter register address, 0 ~ 69
 - **Return value:** `int`, Corresponding register parameter value
 
+**1.7** `get_system_version()`
+
+- **Function:** Read the firmware major and minor versions
+
+- **Return value:** `float`, firmware version number
+
+**1.8** `get_modify_version()`
+
+- **Function:** Read the firmware modified version number
+
+- **Return value:** `int`, modified version number
+
 ## 2 Input program control mode (MDI mode)
 
   > Note：The limit of different series of mechanical arms is different, and the attitude value can be set is also different. For details, see the parameter introduction of the corresponding model
