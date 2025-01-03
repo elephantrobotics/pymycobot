@@ -55,11 +55,9 @@ class ultraArm:
                                 qsize = self._get_queue_size()
                                 print('respone_size2:', qsize)
                                 break
-                                
+
                         except Exception as e:
                             print(e)
-                   
-               
 
     def _request(self, flag=""):
         """Get data from the robot"""
@@ -76,12 +74,12 @@ class ultraArm:
                     flag = None
 
                 if flag == "angle":
-                    a = data[data.find("ANGLES") :]
+                    a = data[data.find("ANGLES"):]
                     astart = a.find("[")
                     aend = a.find("]")
                     if a != None and a != "":
                         try:
-                            all = list(map(float, a[astart + 1 : aend].split(",")))
+                            all = list(map(float, a[astart + 1: aend].split(",")))
                             return all
                         except Exception:
                             print("received angles is not completed! Retry receive...")
@@ -89,12 +87,12 @@ class ultraArm:
                             continue
 
                 elif flag == "coord":
-                    c = data[data.find("COORDS") :]
+                    c = data[data.find("COORDS"):]
                     cstart = c.find("[")
                     cend = c.find("]")
                     if c != None and c != "":
                         try:
-                            all = list(map(float, c[cstart + 1 : cend].split(",")))
+                            all = list(map(float, c[cstart + 1: cend].split(",")))
                             return all
                         except Exception:
                             print("received coords is not completed! Retry receive...")
@@ -102,7 +100,7 @@ class ultraArm:
                             continue
 
                 elif flag == "endstop":
-                    e = data[data.find("ENDSTOP") :]
+                    e = data[data.find("ENDSTOP"):]
                     eend = e.find("\n")
                     if e != None and e != "":
                         try:
@@ -115,11 +113,11 @@ class ultraArm:
 
                 elif flag == "size":
                     try:
-                        q = data[data.find("QUEUE SIZE") :]
+                        q = data[data.find("QUEUE SIZE"):]
                         qstart = q.find("[")
                         qend = q.find("]")
                         if q != None and q != "":
-                            qsize = int(q[qstart + 1 : qend])
+                            qsize = int(q[qstart + 1: qend])
                             return qsize
                     except Exception as e:
                         count += 1
@@ -131,15 +129,33 @@ class ultraArm:
                         return 0
                 elif flag == 'gripper':
                     header = "GRIPPERANGLE["
-                    read = data.find(header)+len(header)
+                    read = data.find(header) + len(header)
                     # print(data[read:])
                     end = data[read:].find(']')
-                    return data[read:read+end]
+                    return data[read:read + end]
                 elif flag == 'system':
                     header = "ReadSYS["
-                    read = data.find(header)+len(header)
+                    read = data.find(header) + len(header)
                     end = data[read:].find(']')
-                    return data[read:read+end]
+                    return data[read:read + end]
+                elif flag == 'system_version':
+                    start_idx = data.find("GetSystemVersion[")
+                    if start_idx != -1:
+                        version_str = data[start_idx + len("GetSystemVersion["):]
+                        version_str = version_str.split(']')[0]
+                        version = float(version_str.strip())
+                        return version
+                    else:
+                        return None
+                elif flag == 'modify_version':
+                    start_idx = data.find("GetModifyVersion[")
+                    if start_idx != -1:
+                        version_str = data[start_idx + len("GetModifyVersion["):]
+                        version_str = version_str.split(']')[0]
+                        version = int(version_str.strip())
+                        return version
+                    else:
+                        return None
                 elif flag == None:
                     return 0
 
@@ -595,13 +611,13 @@ class ultraArm:
             command = ""
 
         self.set_speed_mode(2)  # Acceleration / deceleration mode
-        
+
     def close(self):
         self._serial_port.close()
-        
+
     def open(self):
         self._serial_port.open()
-        
+
     def is_moving_end(self):
         """Get the current state of all home switches."""
         command = ProtocolCode.IS_MOVING_END + ProtocolCode.END
@@ -613,7 +629,7 @@ class ultraArm:
     def sync(self):
         while self.is_moving_end() != 1:
             pass
-        
+
     def get_gripper_angle(self):
         """
         
@@ -623,7 +639,7 @@ class ultraArm:
         self._serial_port.flush()
         self._debug(command)
         return self._request("gripper")
-    
+
     def set_system_value(self, id, address, value):
         """_summary_
 
@@ -632,11 +648,12 @@ class ultraArm:
             address (int): 0 ~ 69
             value (int): 
         """
-        command = ProtocolCode.SET_SYSTEM_VALUE +" X{} ".format(id) + "Y{} ".format(address) +"Z{} ".format(value)+ ProtocolCode.END
+        command = ProtocolCode.SET_SYSTEM_VALUE + " X{} ".format(id) + "Y{} ".format(address) + "Z{} ".format(
+            value) + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
-        
+
     def get_system_value(self, id, address):
         """_summary_
 
@@ -647,8 +664,34 @@ class ultraArm:
         Returns:
             _type_: _description_
         """
-        command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) +ProtocolCode.END
+        command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
         return self._request("system")
+
+    def get_system_version(self):
+        """
+        Get system firmware version
+
+        Returns:
+            (float) Firmware version
+        """
+        command = 'GetSystemVersion[1.50]' + ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        return self._request('system_version')
+
+    def get_modify_version(self):
+        """
+        Get firmware modify version
+
+        Returns:
+            (int) modify version
+        """
+        command = 'GetModifyVersion[0]' + ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        return self._request('modify_version')
