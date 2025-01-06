@@ -1235,12 +1235,12 @@ class MyCobot320(CommandGenerator):
             self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
                                         pinch_pose=pinch_pose, rank_mode=rank_mode)
             return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id,
-                              [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED], pinch_pose, rank_mode)
+                              [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT], pinch_pose, rank_mode)
         else:
             self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
                                         pinch_pose=pinch_pose, rank_mode=rank_mode, idle_flag=idle_flag)
             return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id,
-                              [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED], pinch_pose, rank_mode, idle_flag)
+                              [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT], pinch_pose, rank_mode, idle_flag)
 
     # Other
     def wait(self, t):
