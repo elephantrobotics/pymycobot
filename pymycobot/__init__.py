@@ -44,7 +44,6 @@ __all__ = [
     "MechArm270",
     "MyCobot280",
     "MyCobot320",
-    "ultraArmP340",
     "MyCobot",
     "CommandGenerator",
     "Angle",
