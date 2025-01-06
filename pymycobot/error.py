@@ -949,6 +949,15 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException(
                         "The range of 'value' in {} is 0 ~ 150, but the received value is {}".format(parameter,
                                                                                                      value))
+            elif parameter == 'pinch_pose':
+                check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MyCobot320DataException, int)
+
+            elif parameter == 'rank_mode':
+                check_0_or_1(parameter, value, [0, 1, 2, 3, 4, 5], value_type, MyCobot320DataException, int)
+
+            elif parameter == 'idle_flag':
+                check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MyCobot320DataException, int)
+
     elif class_name in ["MechArm", "MechArmSocket"]:
         public_check(parameter_list, kwargs, robot_limit, class_name, MechArmDataException)
     elif class_name in ["MechArm270", "MechArmSocket"]:
