@@ -1214,6 +1214,34 @@ class MyCobot320(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
 
+    def set_hand_gripper_pinch_action_speed_consort(self, gripper_id, pinch_pose, rank_mode, idle_flag=None):
+        """ Setting the gripper pinching action-speed coordination
+
+        Args:
+            gripper_id (int): 1 ~ 254
+            pinch_pose (int): 0 ~ 4
+                0: All joints return to zero
+                1: Index finger and thumb pinch together
+                2: Middle finger and thumb pinch together
+                3: Index finger and middle finger pinch together
+                4: Three fingers together
+            rank_mode (int): 0 ~ 5
+                The degree of closure,the higher the level, the more closed
+            idle_flag (int): default None, 0 ~ 4
+                Idle flag. By default, there is no such byte. When this byte is 1, the idle finger can be freely manipulated.
+
+        """
+        if idle_flag is None:
+            self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                        pinch_pose=pinch_pose, rank_mode=rank_mode)
+            return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id,
+                              [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED], pinch_pose, rank_mode)
+        else:
+            self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
+                                        pinch_pose=pinch_pose, rank_mode=rank_mode, idle_flag=idle_flag)
+            return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id,
+                              [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED], pinch_pose, rank_mode, idle_flag)
+
     # Other
     def wait(self, t):
         time.sleep(t)
