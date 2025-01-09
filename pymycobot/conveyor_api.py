@@ -125,7 +125,7 @@ class SerialProtocol(object):
         self._serial_port.flush()
 
 
-class Conveyor(SerialProtocol):
+class ConveyorAPI(SerialProtocol):
     class MotorModel:
         STEPPER_MOTOR_42 = 0x30
         STEPPER_MOTOR_57 = 0x31
