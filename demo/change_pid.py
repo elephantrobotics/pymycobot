@@ -1,7 +1,7 @@
 # coding: utf-8
 import time
 from turtle import goto
-from pymycobot.mycobot import MyCobot
+from pymycobot.mycobot280 import MyCobot280
 import serial.tools.list_ports
 
 data_id = [21, 22, 23, 24, 26, 27] 
@@ -44,7 +44,7 @@ def setup():                                                    #机械臂检测
 
     for port in ports:
         try:
-            mycobot = MyCobot(port, baud)
+            mycobot = MyCobot280(port, baud)
         except Exception as e:
             print(e)
             exit(1)

@@ -1,7 +1,7 @@
 import time
 import os
 import sys
-from pymycobot.mycobot import MyCobot
+from pymycobot.mycobot280 import MyCobot280
 from pymycobot.genre import Angle, Coord
 
 sys.path.append(os.path.dirname(__file__))
