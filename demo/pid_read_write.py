@@ -1,20 +1,24 @@
-from pymycobot import MyCobot
+from pymycobot import MyCobot280, MyCobot320
 # from pymycobot import PI_PORT
 import time
 import serial
 
 # pi
 # 280
-# mc = MyCobot(PI_PORT, 1000000)
-# mc = MyCobot('/dev/ttyAMA0', 1000000)
+# mc = MyCobot280(PI_PORT, 1000000)
+# mc = MyCobot280('/dev/ttyAMA0', 1000000)
 # 320
-# mc = MyCobot(PI_PORT, 115200)
-# mc = MyCobot('/dev/ttyAMA0', 115200)
+# mc = MyCobot320(PI_PORT, 115200)
+# mc = MyCobot320('/dev/ttyAMA0', 115200)
 
 # M5
-# 280/320
-mc = MyCobot('COM66', 115200)
-# mc = MyCobot('/dev/ttyUSB0',115200)
+# 280
+mc = MyCobot280('COM66', 115200)
+# mc = MyCobot280('/dev/ttyUSB0',115200)
+
+# 320
+# mc = MyCobot320('COM66', 115200)
+# mc = MyCobot320('/dev/ttyUSB0',115200)
 
 # 参数对应地址
 data_id = [7, 21, 22, 23, 24, 26, 27] 
