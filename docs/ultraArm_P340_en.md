@@ -120,7 +120,7 @@ from pymycobot.ultraArm import ultraArm
   - Triaxial：The length is 3, which is in turn ` [x, y, z, θ]`
 
 
-**2.5** `send_coord(id,coord,speed)`
+**2.5** `set_coord(id,coord,speed)`
 
 - **Function:** Send a single coordinate value to the mechanical arm for movement
 - **Parameter description:**
