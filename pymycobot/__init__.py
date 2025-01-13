@@ -38,7 +38,7 @@ from pymycobot.pro630client import Pro630Client
 from pymycobot.pro400 import Pro400
 from pymycobot.pro400client import Pro400Client
 from pymycobot.myarmm_control import MyArmMControl
-from conveyor_api import ConveyorAPI
+from pymycobot.conveyor_api import ConveyorAPI
 __all__ = [
     "MyPalletizer260",
     "MechArm270",
