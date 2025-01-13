@@ -119,7 +119,7 @@ from pymycobot.ultraArm import ultraArm
   - 三轴：长度为 4，依次为 `[x, y, z, θ]`
 
 
-**2.5** `send_coord(id,coord,speed)`
+**2.5** `set_coord(id,coord,speed)`
 
 - **功能：** 发送单个坐标值给机械臂进行移动
 - **参数说明：**
