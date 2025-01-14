@@ -1,9 +1,8 @@
 import logging
 import threading
 import time
-
-from serial import Serial
 import struct
+from serial import Serial
 
 
 class CommandGenre(object):
