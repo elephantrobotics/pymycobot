@@ -32,21 +32,27 @@ from pymycobot.ultraArm import ultraArm
   - `1`: 运动结束
   - `0`: 运动未结束
 
-**1.5** `set_system_value(id, address, value)`
+**1.5** `set_system_value(id, address, value, mode=None)`
 
 - **功能：** 设置系统参数
 - **参数说明：**
   - `id`: `int`, 电机ID，4 或者 7
-  - `address`: `int`, 参数寄存器地址，0 ~ 69
+  - `address`: `int`, 参数寄存器地址，7 ~ 69
   - `value`: `int`, 对应寄存器参数取值
+  - `mode`: `int`, 1 或者 2，可以为空，默认模式为1
+    - `1`: 设置范围为0-255，可使用地址21（P值）
+    - `2`: 设置取值范围0-65535，可使用地址56（设置位置）
 - **返回值：**  无
 
-**1.6** `get_system_value(id, address)`
+**1.6** `get_system_value(id, address, mode=None)`
 
 - **功能：** 读取系统参数
 - **参数说明：**
   - `id`: `int`, 电机ID，4 或者 7
   - `address`: `int`, 参数寄存器地址，0 ~ 69
+  - `mode`: `int`, 1 或者 2，可以为空，默认模式为1
+    - `1`: 读取范围为0-255，可使用地址21（P值）
+    - `2`: 读取取值范围0-65535，可使用地址56（读取位置）
 - **返回值：** `int`, 对应寄存器参数取值
 
 **1.7** `get_system_version()`

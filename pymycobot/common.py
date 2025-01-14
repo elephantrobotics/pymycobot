@@ -379,6 +379,8 @@ class ProtocolCode(object):
     GET_GRIPPER_ANGLE = "M50"
     SET_SYSTEM_VALUE = "M51"
     GET_SYSTEM_VALUE = "M52"
+    GET_SYSTEM_VERSION = "G6"
+    GET_MODIFY_VERSION = "G7"
 
 
 class DataProcessor(object):
