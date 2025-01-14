@@ -33,21 +33,27 @@ from pymycobot.ultraArm import ultraArm
   - `1`: Movement end
   - `0`: Movement not end
 
-**1.5** `set_system_value(id, address, value)`
+**1.5** `set_system_value(id, address, value, mode=None)`
 
 - **Function:** Set system parameters
 - **Parameter description:**
   - `id`: `int`, Motor ID, 4 or 7
-  - `address`: `int`, Parameter register address, 0 ~ 69
+  - `address`: `int`, Parameter register address, 7 ~ 69
   - `value`: `int`, Corresponding register parameter value
+  - `mode`: `int`, 1 or 2, can be empty, default mode is 1
+    - `1`: setting range is 0-255, address 21 (P value) can be used 
+    - `2`: setting value range is 0-65535, address 56 (setting position) can be used
 - **Return value:** None
 
-**1.6** `get_system_value(id, address)`
+**1.6** `get_system_value(id, address,mode=None)`
 
 - **Function:** Read system parameters
 - **Parameter description:**
   - `id`: `int`, Motor ID, 4 or 7
   - `address`: `int`, Parameter register address, 0 ~ 69
+  - `mode`: `int`, 1 or 2, can be empty, default mode is 1
+    - `1`: read range is 0-255, address 21 (P value) can be used 
+    - `2`: read value range is 0-65535, address 56 (read position) can be used
 - **Return value:** `int`, Corresponding register parameter value
 
 **1.7** `get_system_version()`

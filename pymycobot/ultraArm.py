@@ -137,7 +137,7 @@ class ultraArm:
                     header = "ReadSYS["
                     read = data.find(header) + len(header)
                     end = data[read:].find(']')
-                    return data[read:read + end]
+                    return int(data[read:read + end])
                 elif flag == 'system_version':
                     start_idx = data.find("GetSystemVersion[")
                     if start_idx != -1:
@@ -640,31 +640,45 @@ class ultraArm:
         self._debug(command)
         return self._request("gripper")
 
-    def set_system_value(self, id, address, value):
+    def set_system_value(self, id, address, value, mode=None):
         """_summary_
 
         Args:
             id (int): 4 or 7
-            address (int): 0 ~ 69
-            value (int): 
+            address (int): 7 ~ 69
+            value (int):
+            mode (int): 1 or 2, can be empty, default mode is 1
+                1 - setting range is 0-255, address 21 (P value) can be used
+                2 - setting value range is 0-65535, address 56 (setting position) can be used
         """
-        command = ProtocolCode.SET_SYSTEM_VALUE + " X{} ".format(id) + "Y{} ".format(address) + "Z{} ".format(
-            value) + ProtocolCode.END
+        if mode:
+            command = ProtocolCode.SET_SYSTEM_VALUE + " X{} ".format(id) + "Y{} ".format(address) + "Z{} ".format(
+                value) + "P{} ".format(mode) + ProtocolCode.END
+        else:
+            command = ProtocolCode.SET_SYSTEM_VALUE + " X{} ".format(id) + "Y{} ".format(address) + "Z{} ".format(
+                value) + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
 
-    def get_system_value(self, id, address):
+    def get_system_value(self, id, address, mode=None):
         """_summary_
 
         Args:
             id (int): 4 or 7
             address (_type_): 0 ~ 69
+            mode (int): 1 or 2, can be empty, default mode is 1
+                1 - read range is 0-255, address 21 (P value) can be used
+                2 - read value range is 0-65535, address 56 (read position) can be used
 
         Returns:
             _type_: _description_
         """
-        command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) + ProtocolCode.END
+        if mode:
+            command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) + "P{} ".format(
+                mode) + ProtocolCode.END
+        else:
+            command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
@@ -677,7 +691,7 @@ class ultraArm:
         Returns:
             (float) Firmware version
         """
-        command = 'GetSystemVersion[1.50]' + ProtocolCode.END
+        command = ProtocolCode.GET_SYSTEM_VERSION + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
@@ -690,7 +704,7 @@ class ultraArm:
         Returns:
             (int) modify version
         """
-        command = 'GetModifyVersion[0]' + ProtocolCode.END
+        command = ProtocolCode.GET_MODIFY_VERSION + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
