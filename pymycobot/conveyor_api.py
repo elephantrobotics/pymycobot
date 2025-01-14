@@ -3,7 +3,6 @@ import threading
 import time
 
 from serial import Serial
-from common import *
 import struct
 
 
