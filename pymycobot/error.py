@@ -384,7 +384,7 @@ def calibration_parameters(**kwargs):
                 if value not in [0,1,2]:
                     raise MercuryDataException("The parameter {} only supports 0 or 1 or 2, but received {}".format(parameter, value))
             elif parameter == "move_type":
-                if value not in [0,2]:
+                if value not in [0, 1, 2, 3]:
                     raise MercuryDataException("The parameter {} only supports 0 or 2, but received {}".format(parameter, value))
             elif parameter == "trajectory":
                 if value not in [0,1,2,3,4]:
