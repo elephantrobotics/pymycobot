@@ -131,7 +131,7 @@ class MyCobot320Socket(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyCobot320Socket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         with self.lock:
@@ -409,7 +409,7 @@ class MyCobot320Socket(CommandGenerator):
     # Atom Gripper IO
     def init_electric_gripper(self):  # TODO 22-5-19 need test
         """Electric gripper initialization (it needs to be initialized once after inserting and removing the gripper"""
-        return self._mesg(ProtocolCode.INIT_ELETRIC_GRIPPER)
+        return self._mesg(ProtocolCode.INIT_ELECTRIC_GRIPPER)
 
     def set_electric_gripper(self, status):  # TODO 22-5-19 need test
         """Set Electric Gripper Mode
@@ -418,7 +418,7 @@ class MyCobot320Socket(CommandGenerator):
             status: 0 - open, 1 - close.
         """
         self.calibration_parameters(class_name=self.__class__.__name__, status=status)
-        return self._mesg(ProtocolCode.SET_ELETRIC_GRIPPER, status)
+        return self._mesg(ProtocolCode.SET_ELECTRIC_GRIPPER, status)
 
     def set_gripper_mode(self, mode):
         """Set gripper mode
@@ -1279,3 +1279,6 @@ class MyCobot320Socket(CommandGenerator):
 
     def close(self):
         self.sock.close()
+
+    def go_home(self):
+        return self.send_angles([0,0,0,0,0,0], 10)

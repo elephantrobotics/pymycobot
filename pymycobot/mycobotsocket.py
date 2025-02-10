@@ -4,6 +4,7 @@ from __future__ import division
 import time
 import math
 import socket
+import logging
 import threading
 
 from pymycobot.generate import CommandGenerator
@@ -78,7 +79,7 @@ class MyCobotSocket(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyCobotSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         with self.lock:
@@ -189,24 +190,24 @@ class MyCobotSocket(CommandGenerator):
         self.send_angles(degrees, speed)
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
-            if f:
-                break
+            if f == 1:
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode, timeout=15):
         t = time.time()
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
-            if self.is_in_position(coords, 1):
-                break
+            if self.is_in_position(coords, 1) == 1:
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def set_gpio_mode(self, mode):
         """Set pin coding method
         Args:
-            mode: (str) BCM or BOARD 
+            mode: (str) BCM or BOARD
         """
         self.calibration_parameters(gpiomode=mode)
         if mode == "BCM":
@@ -244,6 +245,16 @@ class MyCobotSocket(CommandGenerator):
     def wait(self, t):
         time.sleep(t)
         return self
-    
+
     def close(self):
         self.sock.close()
+        
+    def open(self):
+        # 关闭之后需要重新连接
+        self.sock = self.connect_socket()
+        # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # print("====open=",self.sock)
+        # self.sock.connect((self.SERVER_IP, self.SERVER_PORT))
+        
+    def go_home(self):
+        self.sync_send_angles([0,0,0,0,0,0], 30)

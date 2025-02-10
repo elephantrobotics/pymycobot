@@ -24,12 +24,12 @@ from pymycobot.mybuddybluetooth import MyBuddyBlueTooth
 from pymycobot.mypalletizersocket import MyPalletizerSocket
 from pymycobot.myarm import MyArm
 from pymycobot.myarmsocket import MyArmSocket
-from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
+from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
-from pymycobot.mercurychassis import MercuryChassis
+from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.mercurysocket import MercurySocket
 from pymycobot.myarmm import MyArmM
 from pymycobot.myarmc import MyArmC
@@ -38,6 +38,7 @@ from pymycobot.pro630client import Pro630Client
 from pymycobot.pro400 import Pro400
 from pymycobot.pro400client import Pro400Client
 from pymycobot.myarmm_control import MyArmMControl
+from pymycobot.mercurychassis_api import ChassisControl
 from pymycobot.conveyor_api import ConveyorAPI
 __all__ = [
     "MyPalletizer260",
@@ -64,7 +65,6 @@ __all__ = [
     "MyAgv",
     "MechArmSocket",
     "MyArmSocket",
-    "MercuryChassis",
     "MercurySocket",
     "MyArmM",
     "MyArmC",
@@ -76,6 +76,7 @@ __all__ = [
     "MyCobot280Socket",
     "MyCobot320Socket",
     "MyArmMControl",
+    "ChassisControl",
     "ConveyorAPI"
 ]
 
@@ -83,7 +84,7 @@ if sys.platform == "linux":
     from pymycobot.mybuddyemoticon import MyBuddyEmoticon
     __all__.append("MyBuddyEmoticon")
 
-__version__ = "3.7.0" 
+__version__ = "3.8.0" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

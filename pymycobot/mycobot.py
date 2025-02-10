@@ -11,9 +11,10 @@ from pymycobot.generate import CommandGenerator
 from pymycobot.public import PublicCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
 
-class MyCobot(CommandGenerator, PublicCommandGenerator):
+class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -57,9 +58,6 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         """
         super(MyCobot, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        self.thread_lock = thread_lock
-        if thread_lock:
-            self.lock = threading.Lock()
         import serial
         self._serial_port = serial.Serial()
         self._serial_port.port = port
@@ -67,9 +65,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
-        print("Note: Starting from version v3.6.0, the MyCobot class will no longer be maintained. For new usage, please refer to the documentation: https://github.com/elephantrobotics/pymycobot/tree/main/docs")
         time.sleep(1.5)
-
+        self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
     _read = read
@@ -86,7 +84,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyCobot, self)._mesg(genre, *args, **kwargs)
         if self.thread_lock:
             with self.lock:
@@ -196,7 +194,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
-    def sync_send_angles(self, degrees, speed, timeout=15):
+    def sync_send_angles(self, degrees, speed, timeout=30):
         """Send the angle in synchronous state and return when the target point is reached
             
         Args:
@@ -209,9 +207,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -226,9 +224,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
             if self.is_in_position(coords, 1) == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -272,3 +270,20 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             acc: int
         """
         return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
+    
+    def go_home(self):
+        return self.send_angles([0,0,0,0,0,0], 10)
+    
+    def angles_to_coords(self, angles):
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
+    
+    def solve_inv_kinematics(self, target_coords, current_angles):
+        angles = [self._angle2int(angle) for angle in current_angles]
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(target_coords[idx]))
+        for angle in target_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
+

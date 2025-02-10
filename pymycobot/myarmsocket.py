@@ -6,14 +6,15 @@ import math
 import socket
 import threading
 import logging
+import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
-
-class MyArmSocket(CommandGenerator):
+class MyArmSocket(CommandGenerator, sms_sts):
     """MyArm Python API Serial communication class.
     Note: Please use this class under the same network
 
@@ -62,6 +63,7 @@ class MyArmSocket(CommandGenerator):
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -80,7 +82,7 @@ class MyArmSocket(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyArmSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         with self.lock:

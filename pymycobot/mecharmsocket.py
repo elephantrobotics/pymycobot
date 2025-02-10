@@ -7,6 +7,7 @@ import time
 import math
 import socket
 import logging
+import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
@@ -119,7 +120,7 @@ class MechArmSocket(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MechArmSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         # data = self._write(self._flatten(real_command), "socket")
@@ -296,9 +297,9 @@ class MechArmSocket(CommandGenerator):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return 1
+        return 0
 
     def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -763,3 +764,6 @@ class MechArmSocket(CommandGenerator):
 
     def close(self):
         self.sock.close()
+        
+    def go_home(self):
+        self.sync_send_angles([0, 0, 0, 0, 0, 0], 30)

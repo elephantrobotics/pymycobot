@@ -6,14 +6,15 @@ import math
 import logging
 import threading
 import struct
+import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
-
-class MyBuddy(MyBuddyCommandGenerator):
+class MyBuddy(MyBuddyCommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -65,6 +66,7 @@ class MyBuddy(MyBuddyCommandGenerator):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
     
@@ -126,7 +128,7 @@ class MyBuddy(MyBuddyCommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyBuddy, self)._mesg(genre, *args, **kwargs)
         with self.lock:
             self._write(self._flatten(real_command))

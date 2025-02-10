@@ -4,15 +4,16 @@ from __future__ import division
 import time
 import math
 import socket
+import logging
 import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.generate import CommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
-
-class MyPalletizerSocket(CommandGenerator):
+class MyPalletizerSocket(CommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
     Note: Please use this class under the same network
 
@@ -81,7 +82,7 @@ class MyPalletizerSocket(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyPalletizerSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
         with self.lock:

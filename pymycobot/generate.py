@@ -484,6 +484,9 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
+    
+    def focus_all_servos(self):
+        return self._mesg(ProtocolCode.FOCUS_SERVO, 0)
 
     def focus_all_servos(self):
         """Power on all servo
@@ -523,7 +526,7 @@ class CommandGenerator(DataProcessor):
         """Set gripper switch state
 
         Args:
-            flag  (int): 0 - open, 1 - close, 254 - release
+            flag  (int): 0 - open, 1 - close, 10 - release
             speed (int): 1 ~ 100
             _type_1 (int): default 1
                 1 : Adaptive gripper. default to adaptive gripper
@@ -639,4 +642,5 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.GET_BASIC_VERSION, has_reply=True)
 
 
+    
 

@@ -2,6 +2,7 @@
 import time
 from pymycobot.common import ProtocolCode
 import math
+import threading
 
 
 class ultraArm:
@@ -24,6 +25,7 @@ class ultraArm:
         self._serial_port.dtr = True
         self._serial_port.open()
         self.debug = debug
+        self.lock = threading.Lock()
         time.sleep(1)
 
     def _respone(self):
@@ -166,102 +168,112 @@ class ultraArm:
 
     def _get_queue_size(self):
         """Get real queue_size from the robot."""
-        command = "M120" + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        return self._request("size")
+        with self.lock:
+            command = "M120" + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("size")
 
     def release_all_servos(self):
         """relax all joints."""
-        command = ProtocolCode.RELEASE_SERVOS + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.RELEASE_SERVOS + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def power_on(self):
         """Lock all joints."""
-        command = ProtocolCode.LOCK_SERVOS + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.LOCK_SERVOS + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def go_zero(self):
         """back to zero."""
-        command = ProtocolCode.BACK_ZERO + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        time.sleep(0.1)
-        data = None
-        while True:
-            if self._serial_port.inWaiting() > 0:
-                data = self._serial_port.read(self._serial_port.inWaiting())
-                if data != None:
-                    data = str(data.decode())
-                    if data.find("ok") > 0:
-                        if self.debug:
-                            print(data)
-                        break
+        with self.lock:
+            command = ProtocolCode.BACK_ZERO + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            time.sleep(0.1)
+            data = None
+            while True:
+                if self._serial_port.inWaiting() > 0:
+                    data = self._serial_port.read(self._serial_port.inWaiting())
+                    if data != None:
+                        data = str(data.decode())
+                        if data.find("ok") > 0:
+                            if self.debug:
+                                print(data)
+                            break
 
     def sleep(self, time):
-        command = ProtocolCode.SLEEP_TIME + " S" + str(time) + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.SLEEP_TIME + " S" + str(time) + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def get_angles_info(self):
         """Get the current joint angle information."""
-        command = ProtocolCode.GET_CURRENT_ANGLE_INFO + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        return self._request("angle")
+        with self.lock:
+            command = ProtocolCode.GET_CURRENT_ANGLE_INFO + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("angle")
 
     def get_radians_info(self):
         """Get the current joint radian information."""
-        while True:
-            angles = self.get_angles_info()
-            if angles != None:
-                break
-        radians = []
-        for i in angles:
-            radians.append(round(i * (math.pi / 180), 3))
-        return radians
+        with self.lock:
+            while True:
+                angles = self.get_angles_info()
+                if angles != None:
+                    break
+            radians = []
+            for i in angles:
+                radians.append(round(i * (math.pi / 180), 3))
+            return radians
 
     def get_coords_info(self):
         """Get current Cartesian coordinate information."""
-        command = ProtocolCode.GET_CURRENT_COORD_INFO + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        return self._request("coord")
+        with self.lock:
+            command = ProtocolCode.GET_CURRENT_COORD_INFO + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("coord")
 
     def get_switch_state(self):
         """Get the current state of all home switches."""
-        command = ProtocolCode.GET_BACK_ZERO_STATUS + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        return self._request("endstop")
+        with self.lock:
+            command = ProtocolCode.GET_BACK_ZERO_STATUS + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("endstop")
 
     def set_init_pose(self, x=None, y=None, z=None):
         """Set the current coords to zero."""
-        command = ProtocolCode.SET_JOINT
-        if x is not None:
-            command += " x" + str(x)
-        if y is not None:
-            command += " y" + str(y)
-        if z is not None:
-            command += " z" + str(z)
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.SET_JOINT
+            if x is not None:
+                command += " x" + str(x)
+            if y is not None:
+                command += " y" + str(y)
+            if z is not None:
+                command += " z" + str(z)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_coords(self, degrees, speed=0):
         """Set all joints coords.
@@ -273,25 +285,26 @@ class ultraArm:
                 z : -140 ~ 130 mm
             speed : (int) 0-200 mm/s
         """
-        length = len(degrees)
-        degrees = [degree for degree in degrees]
-        command = ProtocolCode.COORDS_SET
-        if degrees[0] is not None:
-            command += " X" + str(degrees[0])
-        if degrees[1] is not None:
-            command += " Y" + str(degrees[1])
-        if degrees[2] is not None:
-            command += " Z" + str(degrees[2])
-        if length == 4:
-            if degrees[3] is not None:
-                command += " E" + str(degrees[3])
-        if speed > 0:
-            command += " F" + str(speed)
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            length = len(degrees)
+            degrees = [degree for degree in degrees]
+            command = ProtocolCode.COORDS_SET
+            if degrees[0] is not None:
+                command += " X" + str(degrees[0])
+            if degrees[1] is not None:
+                command += " Y" + str(degrees[1])
+            if degrees[2] is not None:
+                command += " Z" + str(degrees[2])
+            if length == 4:
+                if degrees[3] is not None:
+                    command += " E" + str(degrees[3])
+            if speed > 0:
+                command += " F" + str(speed)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_coord(self, id=None, coord=None, speed=0):
         """Set single coord.
@@ -303,21 +316,21 @@ class ultraArm:
                 z : -140 ~ 130 mm
             speed : (int) 0-200 mm/s
         """
-
-        command = ProtocolCode.COORDS_SET
-        if id == "x" or id == "X":
-            command += " X" + str(coord)
-        if id == "y" or id == "Y":
-            command += " Y" + str(coord)
-        if id == "z" or id == "Z":
-            command += " Z" + str(coord)
-        if speed > 0:
-            command += " F" + str(speed)
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.COORDS_SET
+            if id == "x" or id == "X":
+                command += " X" + str(coord)
+            if id == "y" or id == "Y":
+                command += " Y" + str(coord)
+            if id == "z" or id == "Z":
+                command += " Z" + str(coord)
+            if speed > 0:
+                command += " F" + str(speed)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_mode(self, mode=None):
         """set coord mode.
@@ -328,15 +341,16 @@ class ultraArm:
 
                 1 - Relative Cartesian mode
         """
-        if mode == 0:
-            command = ProtocolCode.ABS_CARTESIAN + ProtocolCode.END
-        else:
-            command = ProtocolCode.REL_CARTESIAN + ProtocolCode.END
+        with self.lock:
+            if mode == 0:
+                command = ProtocolCode.ABS_CARTESIAN + ProtocolCode.END
+            else:
+                command = ProtocolCode.REL_CARTESIAN + ProtocolCode.END
 
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_speed_mode(self, mode=None):
         """set speed mode.
@@ -347,14 +361,15 @@ class ultraArm:
 
                 2 - Acceleration / deceleration mode
         """
-        if mode != None:
-            command = "M16 S" + str(mode) + ProtocolCode.END
-        else:
-            print("Please enter the correct value!")
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            if mode != None:
+                command = "M16 S" + str(mode) + ProtocolCode.END
+            else:
+                print("Please enter the correct value!")
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_pwm(self, p=None):
         """PWM control.
@@ -362,11 +377,12 @@ class ultraArm:
         Args:
             p (int) : Duty cycle 0 ~ 255; 128 means 50%
         """
-        command = ProtocolCode.SET_PWM + "p" + str(p) + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.SET_PWM + "p" + str(p) + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_gpio_state(self, state):
         """Set gpio state.
@@ -376,21 +392,23 @@ class ultraArm:
                 1 - open
                 0 - close
         """
-        if state:
-            command = ProtocolCode.GPIO_CLOSE + ProtocolCode.END
-        else:
-            command = ProtocolCode.GPIO_ON + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            if state:
+                command = ProtocolCode.GPIO_CLOSE + ProtocolCode.END
+            else:
+                command = ProtocolCode.GPIO_ON + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_gripper_zero(self):
-        command = ProtocolCode.GRIPPER_ZERO + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.GRIPPER_ZERO + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_gripper_state(self, state, speed):
         """Set gripper state.
@@ -401,18 +419,20 @@ class ultraArm:
                 100 - full open
             speed: 0 - 1500
         """
-        command = ProtocolCode.GIRPPER_OPEN + "A" + str(state) + "F" + str(speed) + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.GIRPPER_OPEN + "A" + str(state) + "F" + str(speed) + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_gripper_release(self):
-        command = ProtocolCode.GIRPPER_RELEASE + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.GIRPPER_RELEASE + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_fan_state(self, state):
         """Set fan state.
@@ -422,14 +442,15 @@ class ultraArm:
                 0 - close
                 1 - open
         """
-        if state:
-            command = ProtocolCode.FAN_ON + ProtocolCode.END
-        else:
-            command = ProtocolCode.FAN_CLOSE + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            if state:
+                command = ProtocolCode.FAN_ON + ProtocolCode.END
+            else:
+                command = ProtocolCode.FAN_CLOSE + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_angle(self, id=None, angle=None, speed=0):
         """Set single angle.
@@ -444,18 +465,19 @@ class ultraArm:
                 4 : -179° ~ + 179°
             speed : (int) 0-200 mm/s
         """
-        command = ProtocolCode.SET_ANGLE
-        if id is not None:
-            command += " j" + str(id)
-        if angle is not None:
-            command += " a" + str(angle)
-        if speed > 0:
-            command += " f" + str(speed)
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.SET_ANGLE
+            if id is not None:
+                command += " j" + str(id)
+            if angle is not None:
+                command += " a" + str(angle)
+            if speed > 0:
+                command += " f" + str(speed)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_angles(self, degrees, speed=0):
         """Set all joints angles.
@@ -469,25 +491,26 @@ class ultraArm:
                 4 : -179° ~ + 179°
             speed : (int) 0-200 mm/s
         """
-        length = len(degrees)
-        degrees = [degree for degree in degrees]
-        command = ProtocolCode.SET_ANGLES
-        if degrees[0] is not None:
-            command += " X" + str(degrees[0])
-        if degrees[1] is not None:
-            command += " Y" + str(degrees[1])
-        if degrees[2] is not None:
-            command += " Z" + str(degrees[2])
-        if length == 4:
-            if degrees[3] is not None:
-                command += " E" + str(degrees[3])
-        if speed > 0:
-            command += " F" + str(speed)
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            length = len(degrees)
+            degrees = [degree for degree in degrees]
+            command = ProtocolCode.SET_ANGLES
+            if degrees[0] is not None:
+                command += " X" + str(degrees[0])
+            if degrees[1] is not None:
+                command += " Y" + str(degrees[1])
+            if degrees[2] is not None:
+                command += " Z" + str(degrees[2])
+            if length == 4:
+                if degrees[3] is not None:
+                    command += " E" + str(degrees[3])
+            if speed > 0:
+                command += " F" + str(speed)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_radians(self, degrees, speed=0):
         """Set all joints radians
@@ -501,8 +524,9 @@ class ultraArm:
                 4 : -3.1241 ~ + 3.1241
             speed : (int) 0-200 mm/s
         """
-        degrees = [round(degree * (180 / math.pi), 2) for degree in degrees]
-        self.set_angles(degrees, speed)
+        with self.lock:
+            degrees = [round(degree * (180 / math.pi), 2) for degree in degrees]
+            self.set_angles(degrees, speed)
 
     def set_jog_angle(self, id=None, direction=None, speed=0):
         """Start jog movement with angle
@@ -515,18 +539,19 @@ class ultraArm:
                 1 : negative
             speed : (int) 0-200 mm/s
         """
-        command = ProtocolCode.SET_JOG_ANGLE
-        if id is not None:
-            command += " j" + str(id)
-        if direction is not None:
-            command += " d" + str(direction)
-        if speed > 0:
-            command += " f" + str(speed)
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.SET_JOG_ANGLE
+            if id is not None:
+                command += " j" + str(id)
+            if direction is not None:
+                command += " d" + str(direction)
+            if speed > 0:
+                command += " f" + str(speed)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_jog_coord(self, axis=None, direction=None, speed=0):
         """Start jog movement with coord
@@ -543,88 +568,94 @@ class ultraArm:
                 1 : negative
             speed : (int) 0-200 mm/s
         """
-        command = ProtocolCode.JOG_COORD_
-        if axis is not None:
-            command += " j" + str(axis)
-        if direction is not None:
-            command += " d" + str(direction)
-        if speed > 0:
-            command += " f" + str(speed)
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.JOG_COORD_
+            if axis is not None:
+                command += " j" + str(axis)
+            if direction is not None:
+                command += " d" + str(direction)
+            if speed > 0:
+                command += " f" + str(speed)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_jog_stop(self):
         """Stop jog movement"""
-        command = ProtocolCode.SET_JOG_STOP
-        command += ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = ProtocolCode.SET_JOG_STOP
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def play_gcode_file(self, filename=None):
         """Play the imported track file"""
-        X = []
-        try:
-            with open(filename) as f:
-                lines = f.readlines()
-                for line in lines:
-                    line = line.strip("\n")
-                    X.append(line)
-        except Exception:
-            print("There is no such file!")
+        with self.lock:
+            X = []
+            try:
+                with open(filename) as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        line = line.strip("\n")
+                        X.append(line)
+            except Exception:
+                print("There is no such file!")
 
-        begin, end = 0, len(X)
+            begin, end = 0, len(X)
 
-        self.set_speed_mode(0)  # Constant speed mode
+            self.set_speed_mode(0)  # Constant speed mode
 
-        for i in range(begin, end):
-            command = X[i] + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            time.sleep(0.02)
+            for i in range(begin, end):
+                command = X[i] + ProtocolCode.END
+                self._serial_port.write(command.encode())
+                self._serial_port.flush()
+                time.sleep(0.02)
 
-            self._debug(command)
+                self._debug(command)
 
-            queue_size = self._request("size")
-            if 0 <= queue_size <= 90:
-                try:
-                    if self.debug:
-                        print("queue_size1: %s \n" % queue_size)
-                except Exception as e:
-                    print(e)
-            else:
-                qs = 0
-                while True:
+                queue_size = self._request("size")
+                if 0 <= queue_size <= 90:
                     try:
-                        qs = self._get_queue_size()
                         if self.debug:
-                            print("queue_size2: %s \n" % qs)
-                        if qs <= 40:
-                            begin = i
-                            break
-                    except Exception:
-                        print("Retry receive...")
-            command = ""
+                            print("queue_size1: %s \n" % queue_size)
+                    except Exception as e:
+                        print(e)
+                else:
+                    qs = 0
+                    while True:
+                        try:
+                            qs = self._get_queue_size()
+                            if self.debug:
+                                print("queue_size2: %s \n" % qs)
+                            if qs <= 40:
+                                begin = i
+                                break
+                        except Exception:
+                            print("Retry receive...")
+                command = ""
 
         self.set_speed_mode(2)  # Acceleration / deceleration mode
 
     def close(self):
-        self._serial_port.close()
-
+        with self.lock:
+            self._serial_port.close()
+        
     def open(self):
-        self._serial_port.open()
-
-    def is_moving_end(self):
-        """Get the current state of all home switches."""
-        command = ProtocolCode.IS_MOVING_END + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        return self._request("isStop")
+        with self.lock:
+            self._serial_port.open()
+        
+    def is_moving_end(self, timeout = 10):
+        with self.lock:
+            """Get the current state of all home switches."""
+            command = ProtocolCode.IS_MOVING_END + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("isStop", timeout=10)
 
     def sync(self):
         while self.is_moving_end() != 1:

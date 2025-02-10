@@ -21,8 +21,11 @@ class MercurySocket(MercuryCommandGenerator):
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
-        self.read_threading = threading.Thread(target=self.read_thread, daemon=True)
+        self.lock_out = threading.Lock()
+        self.read_threading = threading.Thread(target=self.read_thread, args=("socket", ))
+        self.read_threading.daemon = True
         self.read_threading.start()
+        self.get_limit_switch()
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

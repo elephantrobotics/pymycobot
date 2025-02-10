@@ -122,7 +122,7 @@ class MechArm270(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MechArm270, self)._mesg(genre, *args, **kwargs)
         if self.thread_lock:
             with self.lock:
@@ -751,3 +751,6 @@ class MechArm270(CommandGenerator):
 
     def open(self):
         self._serial_port.open()
+
+    def go_home(self):
+        return self.send_angles([0, 0, 0, 0, 0, 0], 10)
