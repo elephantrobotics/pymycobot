@@ -2030,7 +2030,7 @@ class MercuryCommandGenerator(DataProcessor):
         """Set movement type
         
         Args:
-            move_type: 0 - moveJ, 1 - moveL, 2 - moveF, 3 - moveS
+            move_type: 0 - moveJ, 1 - moveL, 2 - moveF, 3 - moveS, 4 - CP
         """
         self.calibration_parameters(class_name=self.__class__.__name__, move_type=move_type)
         return self._mesg(ProtocolCode.SET_MOVEMENT_TYPE, move_type)
