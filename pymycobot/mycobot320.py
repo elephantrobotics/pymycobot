@@ -1242,6 +1242,36 @@ class MyCobot320(CommandGenerator):
             return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id,
                               [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT], pinch_pose, rank_mode, idle_flag)
 
+    def angles_to_coords(self, angles):
+        """ Convert angles to coordinates
+
+        Args:
+            angles : A float list of all angle.
+
+        Return:
+            list: A float list of all coordinates.
+        """
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
+
+    def solve_inv_kinematics(self, target_coords, current_angles):
+        """ Convert target coordinates to angles
+
+        Args:
+            target_coords: A float list of all coordinates.
+            current_angles : A float list of all angle.
+
+        Return:
+            list: A float list of all angle.
+        """
+        angles = [self._angle2int(angle) for angle in current_angles]
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(target_coords[idx]))
+        for angle in target_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
+
     # Other
     def wait(self, t):
         time.sleep(t)
