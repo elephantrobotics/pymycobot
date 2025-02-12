@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import datetime
 import sys
 from pymycobot.mycobot280 import MyCobot280
+from pymycobot.mycobot280x5pi import MyCobot280X5PI
 from pymycobot.mypalletizer260 import MyPalletizer260
 from pymycobot.mecharm270 import MechArm270
 from pymycobot.mycobot280socket import MyCobot280Socket
@@ -77,7 +78,8 @@ __all__ = [
     "MyCobot320Socket",
     "MyArmMControl",
     "ChassisControl",
-    "ConveyorAPI"
+    "ConveyorAPI",
+    "MyCobot280X5PI"
 ]
 
 if sys.platform == "linux":
