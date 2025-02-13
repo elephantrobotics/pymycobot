@@ -10,7 +10,7 @@ API (Application Programming Interface), also known as Application Programming I
 # Example
 from pymycobot import MyCobot280X5PI
 
-mc = MyCobot280X5PI('COM3')
+mc = MyCobot280X5PI('/dev/ttyS1')
 
 # Gets the current angle of all joints
 angles = mc.get_angles()
