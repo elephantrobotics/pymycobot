@@ -4,7 +4,6 @@ from __future__ import division
 
 import functools
 import time
-import math
 import threading
 import serial
 
@@ -284,46 +283,6 @@ class MyCobot280X5PI(MyCobot280X5Api):
         self.calibration_parameters(flag=flag)
         return self._mesg(ProtocolCode.SET_VISION_MODE, flag)
 
-    # Overall Status
-    def set_free_mode(self, flag):
-        """set to free mode
-
-        Args:
-            flag: 0/1
-        """
-        self.calibration_parameters(flag=flag)
-        return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
-
-    def is_free_mode(self):
-        """Check if it is free mode
-
-        Return:
-            0/1
-        """
-        return self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True)
-
-    # MDI mode and operation
-    def get_radians(self):
-        """Get the radians of all joints
-
-        Return:
-            list: A list of float radians [radian1, ...]
-        """
-        angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
-        return [round(angle * (math.pi / 180), 3) for angle in angles]
-
-    def send_radians(self, radians, speed):
-        """Send the radians of all joints to robot arm
-
-        Args:
-            radians: a list of radian values( List[float]), length 6
-            speed: (int )0 ~ 100
-        """
-        calibration_parameters(len6=radians, speed=speed)
-        degrees = [self._angle2int(radian * (180 / math.pi))
-                   for radian in radians]
-        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
-
     def sync_send_angles(self, degrees, speed, timeout=15):
         """Send the angle in synchronous state and return when the target point is reached
 
@@ -504,7 +463,7 @@ class MyCobot280X5PI(MyCobot280X5Api):
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
 
-    def get_tool_modified_version(self):
+    def get_tool_modify_version(self):
         """
         Read the terminal modified version number
         """
@@ -588,6 +547,14 @@ class MyCobot280X5PI(MyCobot280X5Api):
             A list unit step/s
         """
         return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
+
+    def get_servo_currents(self):
+        """Get all joint current
+
+        Return:
+             A list unit mA
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
 
     def get_servo_voltages(self):
         """Get joint voltages
