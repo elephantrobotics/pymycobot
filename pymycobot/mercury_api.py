@@ -964,7 +964,7 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS)
 
     @restrict_serial_port
-    def send_base_coord(self, axis, coord, speed):
+    def send_base_coord(self, axis, coord, speed, _async=False):
         """Single coordinate control with the torso base as the coordinate system
 
         Args:
@@ -982,10 +982,10 @@ class MercuryCommandGenerator(DataProcessor):
             coord = self._coord2int(coord)
         else:
             coord = self._angle2int(coord)
-        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed)
+        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
-    def send_base_coords(self, coords, speed):
+    def send_base_coords(self, coords, speed, _async=False):
         """Full coordinate control
 
         Args:
@@ -997,7 +997,7 @@ class MercuryCommandGenerator(DataProcessor):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed)
+        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
     def jog_base_coord(self, axis, direction, speed, _async=True):

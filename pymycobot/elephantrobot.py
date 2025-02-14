@@ -5,6 +5,7 @@ import sys
 from enum import Enum
 import base64
 import hashlib
+import math
 import numpy as np
 from multiprocessing import Lock
 import logging
