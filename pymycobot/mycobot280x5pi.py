@@ -3,8 +3,8 @@
 from __future__ import division
 
 import functools
+import socket
 import time
-import math
 import threading
 import serial
 
@@ -13,7 +13,7 @@ from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-def setup_serial_port(port, baudrate, timeout):
+def setup_serial_connect(port, baudrate, timeout):
     serial_api = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
     serial_api.rts = False
     if not serial_api.is_open:
@@ -21,17 +21,27 @@ def setup_serial_port(port, baudrate, timeout):
     return serial_api
 
 
+def setup_socket_connect(host, port, timeout):
+    socket_api = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_api.settimeout(timeout)
+    socket_api.connect((host, port))
+    return socket_api
+
+
+class GPIOProtocolCode:
+    SETUP_GPIO_MODE = 0xAA
+    SETUP_GPIO_STATE = 0xAB
+    SET_GPIO_OUTPUT = 0xAC
+    GET_GPIO_INPUT = 0xAD
+
+
 class MyCobot280X5Api(CommandGenerator):
 
-    def __init__(self, port, baudrate=100_0000, timeout=0.1, debug=False, thread_lock=True):
+    def __init__(self, debug=False, thread_lock=True):
         super(MyCobot280X5Api, self).__init__(debug)
-        self._serial_port = setup_serial_port(port, baudrate, timeout)
+        self.calibration_parameters = functools.partial(calibration_parameters, class_name="MyCobot280")
         self.thread_lock = thread_lock
         self.lock = threading.Lock()
-
-        self.calibration_parameters = functools.partial(calibration_parameters, class_name="MyCobot280")
-        self._write = functools.partial(write, self)
-        self._read = functools.partial(read, self)
 
     def _mesg(self, genre, *args, **kwargs):
         """
@@ -162,24 +172,8 @@ class MyCobot280X5Api(CommandGenerator):
         time.sleep(t)
         return self
 
-    def close(self):
-        self._serial_port.close()
 
-    def open(self):
-        self._serial_port.open()
-
-
-class MyCobot280X5PI(MyCobot280X5Api):
-
-    def __init__(self, port, baudrate=100_0000, timeout=0.1, debug=False, thread_lock=True):
-        """
-        Args:
-            port     : port string
-            baudrate : baud rate int, default 100_0000
-            timeout  : default 0.1
-            debug    : whether show debug info
-        """
-        super().__init__(port, baudrate, timeout, debug, thread_lock)
+class MyCobot280X5PICommandGenerator(MyCobot280X5Api):
 
     # System Status
     def get_modify_version(self):
@@ -283,46 +277,6 @@ class MyCobot280X5PI(MyCobot280X5Api):
         """
         self.calibration_parameters(flag=flag)
         return self._mesg(ProtocolCode.SET_VISION_MODE, flag)
-
-    # Overall Status
-    def set_free_mode(self, flag):
-        """set to free mode
-
-        Args:
-            flag: 0/1
-        """
-        self.calibration_parameters(flag=flag)
-        return self._mesg(ProtocolCode.SET_FREE_MODE, flag)
-
-    def is_free_mode(self):
-        """Check if it is free mode
-
-        Return:
-            0/1
-        """
-        return self._mesg(ProtocolCode.IS_FREE_MODE, has_reply=True)
-
-    # MDI mode and operation
-    def get_radians(self):
-        """Get the radians of all joints
-
-        Return:
-            list: A list of float radians [radian1, ...]
-        """
-        angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
-        return [round(angle * (math.pi / 180), 3) for angle in angles]
-
-    def send_radians(self, radians, speed):
-        """Send the radians of all joints to robot arm
-
-        Args:
-            radians: a list of radian values( List[float]), length 6
-            speed: (int )0 ~ 100
-        """
-        calibration_parameters(len6=radians, speed=speed)
-        degrees = [self._angle2int(radian * (180 / math.pi))
-                   for radian in radians]
-        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
     def sync_send_angles(self, degrees, speed, timeout=15):
         """Send the angle in synchronous state and return when the target point is reached
@@ -504,7 +458,7 @@ class MyCobot280X5PI(MyCobot280X5Api):
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION, has_reply=True)
 
-    def get_tool_modified_version(self):
+    def get_tool_modify_version(self):
         """
         Read the terminal modified version number
         """
@@ -588,6 +542,14 @@ class MyCobot280X5PI(MyCobot280X5Api):
             A list unit step/s
         """
         return self._mesg(ProtocolCode.GET_SERVO_SPEED, has_reply=True)
+
+    def get_servo_currents(self):
+        """Get all joint current
+
+        Return:
+             A list unit mA
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_CURRENTS, has_reply=True)
 
     def get_servo_voltages(self):
         """Get joint voltages
@@ -835,3 +797,102 @@ class MyCobot280X5PI(MyCobot280X5Api):
         """
 
         return self._mesg(ProtocolCode.DRAG_CLEAR_RECORD_DATA, has_reply=True)
+
+
+class MyCobot280X5PI(MyCobot280X5PICommandGenerator):
+
+    def __init__(self, port, baudrate=100_0000, timeout=0.1, debug=False, thread_lock=True):
+        """
+        Args:
+            port     : port string
+            baudrate : baud rate int, default 100_0000
+            timeout  : default 0.1
+            debug    : whether show debug info
+        """
+        super().__init__(debug, thread_lock)
+        self._serial_port = setup_serial_connect(port=port, baudrate=baudrate, timeout=timeout)
+        self._write = functools.partial(write, self)
+        self._read = functools.partial(read, self)
+
+    def close(self):
+        self._serial_port.close()
+
+    def open(self):
+        self._serial_port.open()
+
+
+class MyCobot280X5PISocket(MyCobot280X5PICommandGenerator):
+    """MyCobot 280 X5 PI Socket Control Class
+
+    server file: https://github.com/elephantrobotics/pymycobot/demo/Server_280_X5PI.py
+    """
+    def __init__(self, ip, port=30002, timeout=0.1, debug=False, thread_lock=True):
+        super().__init__(debug, thread_lock)
+        self.sock = setup_socket_connect(ip, port, timeout)
+        self._write = functools.partial(write, self, method="socket")
+        self._read = functools.partial(read, self, method="socket")
+
+    def set_gpio_mode(self, mode):
+        """Set pin coding method
+        Args:
+            mode: (int) 0 - BCM, 1 - BOARD
+
+        returns:
+            (int) 1 - success, 255 - error
+        """
+        if mode not in (0, 1):
+            raise ValueError("mode must be 0 or 1")
+        return self._mesg(GPIOProtocolCode.SETUP_GPIO_MODE, mode)
+
+    def setup_gpio_state(self, pin_no, mode, initial=1):
+        """Set the pin as input or output
+        Args:
+            pin_no: (int) pin id
+            mode: (int) 0 - input, 1 - output
+            initial: (int) 0 - low, 1 - high
+        returns:
+            (int) 1 - success, 255 - error
+        """
+        if mode not in (0, 1):
+            raise ValueError("mode must be 0 or 1")
+
+        if initial not in (0, 1):
+            raise ValueError("initial must be 0 or 1")
+
+        return self._mesg(GPIOProtocolCode.SETUP_GPIO_STATE, pin_no, mode, initial)
+
+    def set_gpio_output(self, pin_no, state):
+        """Set the pin to high or low level
+        Args:
+            pin_no: (int) pin id.
+            state: (int) 0 - low, 1 - high
+        returns:
+            (int) 1 - success, 255 - error
+        """
+        return self._mesg(GPIOProtocolCode.SET_GPIO_OUTPUT, pin_no, state)
+
+    def get_gpio_input(self, pin_no):
+        """Get pin level status.
+        Args:
+            pin_no: (int) pin id.
+        Returns:
+            (int) 0 - low, 1 - high, 255 - error
+        """
+        return self._mesg(GPIOProtocolCode.GET_GPIO_INPUT, pin_no, has_reply=True)
+
+    def close(self):
+        self.sock.close()
+
+
+def main():
+    mc_sock = MyCobot280X5PISocket('192.168.1.246', port=30002, debug=True)
+    # print(mc_sock.send_angle(1, 100, 50))
+    # print(mc_sock.get_quick_move_message())
+    print(mc_sock.set_gpio_mode(0))
+    print(mc_sock.setup_gpio_state(5, 1, initial=1))
+    print(mc_sock.set_gpio_output(5, 0))
+    # print(mc_sock.get_gpio_input(5))
+
+
+if __name__ == '__main__':
+    main()
