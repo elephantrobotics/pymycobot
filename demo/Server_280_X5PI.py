@@ -19,11 +19,11 @@ class GPIOProtocolCode:
     GET_GPIO_INPUT = 0xAD
 
 
-def to_string(data: bytes) -> str:
+def to_string(data: bytes):
     return ' '.join(map(lambda x: f'{x:02x}', data))
 
 
-def get_local_host(name: str) -> T.Optional[str]:
+def get_local_host(name: str):
     host = None
     dgram_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -40,7 +40,7 @@ localhost = get_local_host("wlan0")
 
 
 class SocketTransport(object):
-    def __init__(self, host: str = "0.0.0.0", port: int = 30002):
+    def __init__(self, host="0.0.0.0", port=30002):
         self.port = port
         self.host = host
         self.running = True
@@ -56,7 +56,7 @@ class SocketTransport(object):
         while self.running is True:
             yield self.socket.accept()
 
-    def context(self, conn: socket.socket, buffer_size: int = 1024):
+    def context(self, conn, buffer_size=1024):
         while self.running is True:
             try:
                 data_buffer = conn.recv(buffer_size)
@@ -75,7 +75,7 @@ class SocketTransport(object):
 
 
 class SerialTransport(object):
-    def __init__(self, comport: str = "/dev/ttyS1", baudrate: int = 100_0000, timeout: float = None):
+    def __init__(self, comport="/dev/ttyS1", baudrate=100_0000, timeout=None):
         self.serial = serial.Serial(port=comport, baudrate=baudrate, timeout=timeout)
         self.log = logging.getLogger("serial")
         self.baudrate = baudrate
@@ -83,10 +83,10 @@ class SerialTransport(object):
         self.open()
         self.log.info(f"start serial on [{self.comport}] with baudrate [{self.baudrate}]")
 
-    def send(self, data: bytes):
+    def send(self, data):
         self.serial.write(data)
 
-    def recv(self, size: int = 1024) -> bytes:
+    def recv(self, size=1024):
         return self.serial.read(size)
 
     @property
@@ -111,7 +111,7 @@ class Server280X5PI(object):
     4. Instruction parsing is done entirely by the client
     5. The server is responsible for setting the GPIO mode
     """
-    def __init__(self, socket_transport: SocketTransport, serial_transport: SerialTransport, debug=True):
+    def __init__(self, socket_transport, serial_transport, debug=True):
         self.debug = debug
         self.socket_transport = socket_transport
         self.serial_transport = serial_transport
@@ -181,7 +181,7 @@ class Server280X5PI(object):
             self.log.info("server closed")
 
 
-def main(debug: bool = False):
+def main(debug=False):
     logging.basicConfig(
         level=logging.DEBUG if debug else logging.INFO,
         format="%(asctime)s - [%(name)s] %(levelname)7s - %(message)s",
