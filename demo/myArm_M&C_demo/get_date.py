@@ -8,7 +8,6 @@ class CreateSerial(QThread):
     progress = Signal(dict)
 
     def __init__(self, port, index, parent_serial=None):
-        """下载类"""
         super().__init__()
         if index in [1,2]:
             self.serial = MyArmC(port)

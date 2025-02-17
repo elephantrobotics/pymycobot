@@ -17,7 +17,7 @@ sp: int = 80
 
 
 @pytest.fixture(scope="module")
-def setup():
+def  setup():
     print("")
     global port, mc
 

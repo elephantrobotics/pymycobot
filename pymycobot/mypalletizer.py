@@ -3,11 +3,12 @@
 import threading
 import math
 import time
+import threading
 
 from .log import setup_logging
 from .generate import CommandGenerator
 from .common import ProtocolCode, read, write
-
+from pymycobot.sms import sms_sts
 
 class MyPalletizedataException(Exception):
     pass
@@ -80,7 +81,7 @@ def calibration_parameters(**kwargs):
                 )
 
 
-class MyPalletizer(CommandGenerator):
+class MyPalletizer(CommandGenerator, sms_sts):
     def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
         """
         Args:
@@ -101,6 +102,7 @@ class MyPalletizer(CommandGenerator):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
     _read = read

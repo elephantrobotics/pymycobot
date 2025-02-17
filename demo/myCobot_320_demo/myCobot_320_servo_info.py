@@ -6,9 +6,9 @@ sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
 
-from pymycobot import MyCobot
+from pymycobot import MyCobot320
 
-mc = MyCobot("COM12", 115200)
+mc = MyCobot320("COM12", 115200)
  
 POINTS = 7
 sin_list = [0] * (POINTS -1)

@@ -9,11 +9,11 @@ import serial
 import serial.tools.list_ports
 sys.path.append(os.getcwd())
 
-from pymycobot.mycobot import MyCobot
+from pymycobot.mycobot320 import MyCobot320
 
 
 port: str
-mc: MyCobot
+mc: MyCobot320
 sp: int = 80
 
 
@@ -45,7 +45,7 @@ def setup():
     if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
     # mc = MyCobot(port, debug=True)
-    mc = MyCobot(port, baud, debug=DEBUG)
+    mc = MyCobot320(port, baud, debug=DEBUG)
 
 
 class Raw(object):

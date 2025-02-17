@@ -2,13 +2,16 @@
 
 import time
 import threading
+import serial
+import serial.serialutil
+
 
 from pymycobot.mercury_api import MercuryCommandGenerator
 from pymycobot.error import calibration_parameters
 
 
 class Mercury(MercuryCommandGenerator):
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
         """
         Args:
             port     : port string
@@ -18,8 +21,7 @@ class Mercury(MercuryCommandGenerator):
         """
         super(Mercury, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        import serial
-
+        self.save_serial_log = save_serial_log
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -27,11 +29,24 @@ class Mercury(MercuryCommandGenerator):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
+        self.lock_out = threading.Lock()
         self.has_reply_command = []
         self.is_stop = False
         self.read_threading = threading.Thread(target=self.read_thread)
         self.read_threading.daemon = True
         self.read_threading.start()
+        try:
+            self._serial_port.write(b"\xfa")
+        except serial.serialutil.SerialException as e:
+            self._serial_port.close()
+            time.sleep(0.5)
+            self._serial_port = serial.Serial()
+            self._serial_port.port = port
+            self._serial_port.baudrate = baudrate
+            self._serial_port.timeout = timeout
+            self._serial_port.rts = False
+            self._serial_port.open()
+        self.get_limit_switch()
 
     def open(self):
         self._serial_port.open()

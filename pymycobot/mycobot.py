@@ -11,9 +11,10 @@ from pymycobot.generate import CommandGenerator
 from pymycobot.public import PublicCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
+from pymycobot.sms import sms_sts
 
 
-class MyCobot(CommandGenerator, PublicCommandGenerator):
+class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
 
     Supported methods:
@@ -57,9 +58,6 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         """
         super(MyCobot, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        self.thread_lock = thread_lock
-        if thread_lock:
-            self.lock = threading.Lock()
         import serial
         self._serial_port = serial.Serial()
         self._serial_port.port = port
@@ -67,7 +65,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
-        
+        time.sleep(1.5)
+        self.lock = threading.Lock()
+        super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
     _read = read
@@ -84,7 +84,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyCobot, self)._mesg(genre, *args, **kwargs)
         if self.thread_lock:
             with self.lock:
@@ -93,80 +93,85 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             return self._res(real_command, has_reply, genre)
             
     def _res(self, real_command, has_reply, genre):
-        self._write(self._flatten(real_command))
-        if has_reply:
+        try_count = 0
+        while try_count < 3:
+            self._write(self._flatten(real_command))
             data = self._read(genre)
-            if genre == ProtocolCode.SET_SSID_PWD:
-                return None
-            res = self._process_received(data, genre)
-            if res == []:
-                return None
-            if res == []:
-                return None
-            if genre in [
-                ProtocolCode.ROBOT_VERSION,
-                ProtocolCode.GET_ROBOT_ID,
-                ProtocolCode.IS_POWER_ON,
-                ProtocolCode.IS_CONTROLLER_CONNECTED,
-                ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
-                ProtocolCode.IS_IN_POSITION,
-                ProtocolCode.IS_MOVING,
-                ProtocolCode.IS_SERVO_ENABLE,
-                ProtocolCode.IS_ALL_SERVO_ENABLE,
-                ProtocolCode.GET_SERVO_DATA,
-                ProtocolCode.GET_DIGITAL_INPUT,
-                ProtocolCode.GET_GRIPPER_VALUE,
-                ProtocolCode.IS_GRIPPER_MOVING,
-                ProtocolCode.GET_SPEED,
-                ProtocolCode.GET_ENCODER,
-                ProtocolCode.GET_BASIC_INPUT,
-                ProtocolCode.GET_TOF_DISTANCE,
-                ProtocolCode.GET_END_TYPE,
-                ProtocolCode.GET_MOVEMENT_TYPE,
-                ProtocolCode.GET_REFERENCE_FRAME,
-                ProtocolCode.GET_FRESH_MODE,
-                ProtocolCode.GET_GRIPPER_MODE,
-                ProtocolCode.GET_ERROR_INFO,
-                ProtocolCode.GET_COMMUNICATE_MODE,
-                ProtocolCode.SET_COMMUNICATE_MODE,
-                ProtocolCode.SetHTSGripperTorque,
-                ProtocolCode.GetHTSGripperTorque,
-                ProtocolCode.GetGripperProtectCurrent,
-                ProtocolCode.InitGripper,
-                ProtocolCode.SET_FOUR_PIECES_ZERO
-            ]:
-                return self._process_single(res)
-            elif genre in [ProtocolCode.GET_ANGLES]:
-                return [self._int2angle(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
-                if res:
-                    r = []
-                    for idx in range(3):
-                        r.append(self._int2coord(res[idx]))
-                    for idx in range(3, 6):
-                        r.append(self._int2angle(res[idx]))
-                    return r
-                else:
-                    return res
-            elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-                return [self._int2coord(angle) for angle in res]
-            elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
-                return self._int2coord(res[0])
-            elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
-                return self._int2coord(self._process_single(res))
-            elif genre == ProtocolCode.GET_ANGLES_COORDS:
+            if data is not None and data != b'':
+                break
+            try_count += 1
+        else:
+            return -1
+        if genre == ProtocolCode.SET_SSID_PWD:
+            return None
+        res = self._process_received(data, genre)
+        if res is None:
+            return None
+        if res is not None and isinstance(res, list) and len(res) == 1:
+            return res[0]
+        if genre in [
+            ProtocolCode.ROBOT_VERSION,
+            ProtocolCode.GET_ROBOT_ID,
+            ProtocolCode.IS_POWER_ON,
+            ProtocolCode.IS_CONTROLLER_CONNECTED,
+            ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
+            ProtocolCode.IS_IN_POSITION,
+            ProtocolCode.IS_MOVING,
+            ProtocolCode.IS_SERVO_ENABLE,
+            ProtocolCode.IS_ALL_SERVO_ENABLE,
+            ProtocolCode.GET_SERVO_DATA,
+            ProtocolCode.GET_DIGITAL_INPUT,
+            ProtocolCode.GET_GRIPPER_VALUE,
+            ProtocolCode.IS_GRIPPER_MOVING,
+            ProtocolCode.GET_SPEED,
+            ProtocolCode.GET_ENCODER,
+            ProtocolCode.GET_BASIC_INPUT,
+            ProtocolCode.GET_TOF_DISTANCE,
+            ProtocolCode.GET_END_TYPE,
+            ProtocolCode.GET_MOVEMENT_TYPE,
+            ProtocolCode.GET_REFERENCE_FRAME,
+            ProtocolCode.GET_FRESH_MODE,
+            ProtocolCode.GET_GRIPPER_MODE,
+            ProtocolCode.GET_ERROR_INFO,
+            ProtocolCode.GET_COMMUNICATE_MODE,
+            ProtocolCode.SET_COMMUNICATE_MODE,
+            ProtocolCode.SetHTSGripperTorque,
+            ProtocolCode.GetHTSGripperTorque,
+            ProtocolCode.GetGripperProtectCurrent,
+            ProtocolCode.InitGripper,
+            ProtocolCode.SET_FOUR_PIECES_ZERO
+        ]:
+            return self._process_single(res)
+        elif genre in [ProtocolCode.GET_ANGLES]:
+            return [self._int2angle(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+            if res:
                 r = []
-                for index in range(len(res)):
-                    if index < 6:
-                        r.append(self._int2angle(res[index]))
-                    elif index < 9:
-                        r.append(self._int2coord(res[index]))
-                    else:
-                        r.append(self._int2angle(res[index]))
+                for idx in range(3):
+                    r.append(self._int2coord(res[idx]))
+                for idx in range(3, 6):
+                    r.append(self._int2angle(res[idx]))
                 return r
             else:
                 return res
-        return None
+        elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+            return [self._int2coord(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+            return self._int2coord(res[0])
+        elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+            return self._int2coord(self._process_single(res))
+        elif genre == ProtocolCode.GET_ANGLES_COORDS:
+            r = []
+            for index in range(len(res)):
+                if index < 6:
+                    r.append(self._int2angle(res[index]))
+                elif index < 9:
+                    r.append(self._int2coord(res[index]))
+                else:
+                    r.append(self._int2angle(res[index]))
+            return r
+        else:
+            return res
 
     def get_radians(self):
         """Get the radians of all joints
@@ -189,7 +194,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
 
-    def sync_send_angles(self, degrees, speed, timeout=15):
+    def sync_send_angles(self, degrees, speed, timeout=30):
         """Send the angle in synchronous state and return when the target point is reached
             
         Args:
@@ -202,9 +207,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         while time.time() - t < timeout:
             f = self.is_in_position(degrees, 0)
             if f == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     def sync_send_coords(self, coords, speed, mode=0, timeout=15):
         """Send the coord in synchronous state and return when the target point is reached
@@ -219,9 +224,9 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
         self.send_coords(coords, speed, mode)
         while time.time() - t < timeout:
             if self.is_in_position(coords, 1) == 1:
-                break
+                return 1
             time.sleep(0.1)
-        return self
+        return 0
 
     # Basic for raspberry pi.
     def gpio_init(self):
@@ -265,3 +270,20 @@ class MyCobot(CommandGenerator, PublicCommandGenerator):
             acc: int
         """
         return self._mesg(ProtocolCode.SET_ACCELERATION, acc)
+    
+    def go_home(self):
+        return self.send_angles([0,0,0,0,0,0], 10)
+    
+    def angles_to_coords(self, angles):
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
+    
+    def solve_inv_kinematics(self, target_coords, current_angles):
+        angles = [self._angle2int(angle) for angle in current_angles]
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(target_coords[idx]))
+        for angle in target_coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
+

@@ -32,7 +32,7 @@ class MyBuddyEmoticon:
         """
         return self.__file_path
     
-    def add_file_path(self, path_time):
+    def add_file_path(self, path_time: list):
         """Add Playback File
         
         Args:
@@ -40,7 +40,7 @@ class MyBuddyEmoticon:
         """
         self.__file_path.append(path_time)
         
-    def del_file_path(self, index):
+    def del_file_path(self, index: int):
         """Delete the element with the specified subscript in the playlist list
         
         Args:
@@ -55,7 +55,7 @@ class MyBuddyEmoticon:
         return self.__window_size
     
     @window_size.setter
-    def window_size(self, data):
+    def window_size(self, data: tuple):
         """Set playback window size"""
         self.__window_size = data
         

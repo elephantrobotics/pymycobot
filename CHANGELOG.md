@@ -1,5 +1,81 @@
 # ChangeLog for pymycobot
 
+## v3.6.9 (2024-12-26)
+
+- release v3.6.9
+- The set_basic_output interface adds IO 5 to open the suction pump solenoid valve and automatically close it after 0.5S
+- Fix bugs
+
+## v3.6.7 (2024-11-15)
+
+- release v3.6.7
+- Fixed the issue of incorrect naming of 320 electric gripper
+
+## v3.6.5 (2024-10-25)
+
+- release v3.6.5
+- Added 280 set_encoders_drag interface
+
+## v3.6.4 (2024-10-22)
+
+- release v3.6.4
+- Fix set_encoder function BUG
+
+## v3.6.3 (2024-10-17)
+
+- release v3.6.3
+- Fix bug and add new function
+
+## v3.6.2 (2024-10-11)
+
+- release v3.6.2
+- 630 adds partial control interface for force control gripper 
+
+## v3.6.1 (2024-10-09)
+
+- release v3.6.1
+- Update 320 limit date
+
+## v3.6.0 (2024-10-8)
+
+- release v3.6.0
+- Refactoring by robot type
+
+## v3.5.3 (2024-9-24)
+
+- release v3.5.3
+- Fix(mycobotpro630): Remove clear_encoder_error() calls
+
+## v3.5.2 (2024-9-13)
+
+- release v3.5.2
+- add mycobot class  init delay 1.5S
+
+## v3.5.1 (2024-9-12)
+
+- release v3.5.1
+- fix bug
+
+## v3.5.0 (2024-9-9)
+
+- release v3.5.0
+- Added 320 abnormal status acquisition interface
+
+## v3.4.9 (2024-7-18)
+
+- release v3.4.9
+- fix A1 bug
+
+## v3.4.8 (2024-7-11)
+
+- release v3.4.7
+- fix 280 get VOLTAGES error
+
+## v3.4.7 (2024-6-28)
+
+- release v3.4.7
+- Mycobot 280 stop interface adds return (applicable to Atom v7.0 and later versions)
+
 ## v3.4.6 (2024-4-23)
 
 - release v3.4.6

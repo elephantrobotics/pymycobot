@@ -8,13 +8,14 @@ import json
 import serial
 import serial.tools.list_ports
 
-from pymycobot.mycobot import MyCobot
-from pymycobot.mecharm import MechArm
+from pymycobot.mycobot280 import MyCobot280
+from pymycobot.mycobot320 import MyCobot320
+from pymycobot.mecharm270 import MechArm270
 from pymycobot.myarm import MyArm
 
 
 port: str
-mc: MyCobot
+mc: MyCobot280
 sp: int = 80
 
 def setup():
@@ -22,14 +23,15 @@ def setup():
 
     print("")
     
-    print("1 - MyCobot")
-    print("2 - MechArm")
-    print("3 - MyArm")
-    _in = input("Please input 1 - 3 to choose:")
+    print("1 - MyCobot280")
+    print("2 - MyCobot320")
+    print("3 - MechArm")
+    print("4 - MyArm")
+    _in = input("Please input 1 - 4 to choose:")
     robot_model = None
     if _in == "1":
-        robot_model = MyCobot
-        print("MyCobot\n")
+        robot_model = MyCobot280
+        print("MyCobot280\n")
         print("Please enter the model type:")
         print("1. Pi")
         print("2. Jetson Nano")
@@ -40,11 +42,23 @@ def setup():
             port = "/dev/ttyTHS1"
         else:
             pass
-        
     elif _in == "2":
-        robot_model = MechArm
-        print("MechArm\n")
+        robot_model = MyCobot320
+        print("MyCobot320\n")
+        print("Please enter the model type:")
+        print("1. Pi")
+        print("2. Jetson Nano")
+        print("Default is Pi")
+        model_type = input()
+
+        if model_type == "2":
+            port = "/dev/ttyTHS1"
+        else:
+            pass    
     elif _in == "3":
+        robot_model = MechArm270
+        print("MechArm\n")
+    elif _in == "4":
         robot_model = MyArm
         print("MyArm\n")
     else:
@@ -128,7 +142,7 @@ class TeachingTest(Helper):
                 speeds = self.mc.get_servo_speeds()
                 gripper_value = self.mc.get_encoder(7)
                 interval_time = time.time() - start_t
-                if angles and speeds and gripper_value:
+                if angles and speeds:
                     record = [angles, speeds, gripper_value, interval_time]
                     self.record_list.append(record)
                     # time.sleep(0.1)

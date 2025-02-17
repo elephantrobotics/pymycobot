@@ -1,16 +1,12 @@
 # coding=utf-8
 from __future__ import division
-
-import threading
-
-
 from pymycobot.common import ProtocolCode
 from pymycobot.myarm_api import MyArmAPI
 
 
 class MyArmM(MyArmAPI):
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="1000000", timeout=0.1, debug=False):
         super(MyArmM, self).__init__(port, baudrate, timeout,debug)
 
     def set_joint_angle(self, joint_id, angle, speed):
@@ -21,6 +17,7 @@ class MyArmM(MyArmAPI):
             angle (int) : 0 - 254
             speed (int) : 1 - 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed)
 
     def set_joints_angle(self, angles, speed):
@@ -30,6 +27,7 @@ class MyArmM(MyArmAPI):
             angles (list[int]):  0 - 254
             speed (int): 0 - 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
         angles = list(map(self._angle2int, angles))
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed)
 
@@ -62,6 +60,7 @@ class MyArmM(MyArmAPI):
             speed: (int) 1 - 100
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id, encoder=encoder, speed=speed)
         self._mesg(ProtocolCode.SET_ENCODER, servo_id, [encoder], speed)
 
     def set_servos_encoder(self, positions, speed):
@@ -71,6 +70,7 @@ class MyArmM(MyArmAPI):
             positions (list[int * 8]): 0 - 4095:
             speed (int): 1 - 100:
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, encoders=positions, speed=speed)
         self._mesg(ProtocolCode.SET_ENCODERS, positions, speed)
 
     def set_servos_encoder_drag(self, encoders, speeds):
@@ -100,3 +100,51 @@ class MyArmM(MyArmAPI):
         """
         return self._mesg(ProtocolCode.GET_AUXILIARY_PIN_STATUS, io_number, has_reply=True)
 
+    def get_robot_power_status(self):
+        """Get the robot power status
+        Returns:
+            power_status (int): 0: power off, 1: power on
+        """
+        return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
+
+    def set_robot_power_on(self):
+        """Set the robot to power on"""
+        return self._mesg(ProtocolCode.POWER_ON, has_reply=True)
+
+    def set_robot_power_off(self):
+        """Set the robot to power off"""
+        return self._mesg(ProtocolCode.POWER_OFF, has_reply=True)
+
+    def clear_robot_err(self):
+        """Clear the robot abnormality Ignore the error joint and continue to move"""
+        self._mesg(ProtocolCode.CLEAR_ROBOT_ERROR)
+
+    def set_servo_enabled(self, joint_id, state):
+        """Set the servo motor torque switch
+        Args:
+            joint_id (int): 0-254 254-all
+            state: 0/1
+                1-focus
+                0-release
+        """
+        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, joint_id, state)
+
+    def get_joints_max(self):
+        """Read the maximum angle of all joints"""
+        return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, has_reply=True)
+
+    def get_joints_min(self):
+        """Read the minimum angle of all joints"""
+        return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, has_reply=True)
+
+    def is_tool_btn_clicked(self):
+        """get the end button status
+
+        Returns:
+            int: 0/1, 1: press, 0: no press
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, has_reply=True)
+
+    def clear_recv_queue(self):
+        """Clear the queue for receiving commands"""
+        self._mesg(ProtocolCode.CLEAR_RECV_QUEUE)

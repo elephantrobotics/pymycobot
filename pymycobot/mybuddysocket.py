@@ -4,13 +4,14 @@ from __future__ import division
 import time
 import math
 import socket
+import logging
 import threading
 
 from pymycobot.log import setup_logging
 from pymycobot.Interface import MyBuddyCommandGenerator
 from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
-
+# from pymycobot.sms import sms_sts
 
 class MyBuddySocket(MyBuddyCommandGenerator):
     """MyCobot Python API Serial communication class.
@@ -61,6 +62,20 @@ class MyBuddySocket(MyBuddyCommandGenerator):
         self.rasp = False
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
+        # super(sms_sts, self).__init__(self._serial_port, 0)
+        
+    def connect(self, serialport="/dev/ttyAMA0", baudrate="1000000", timeout='0.1'):
+        """Connect the robot arm through the serial port and baud rate
+        Args:
+            serialport: (str) default /dev/ttyAMA0
+            baudrate: default 1000000
+            timeout: default 0.1
+        
+        """
+        self.rasp = True
+        self._write(serialport, "socket")
+        self._write(baudrate, "socket")
+        self._write(timeout, "socket")
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,14 +94,14 @@ class MyBuddySocket(MyBuddyCommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(
+        real_command, has_reply, _async = super(
             MyBuddySocket, self)._mesg(genre, *args, **kwargs)
         with self.lock:
             self._write(self._flatten(real_command), "socket")
             if has_reply:
                 data = self._read(genre, 'socket')
                 res = self._process_received(data, genre, arm=12)
-                if res == []:
+                if res is None:
                     return None
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
