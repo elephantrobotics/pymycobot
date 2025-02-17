@@ -532,9 +532,9 @@ def calibration_parameters(**kwargs):
                 for data in value:
                     data_type = type(data)
                     check_value_type(parameter, data_type, MyCobot280DataException, int)
-                    if data < 0 or data > 3400:
+                    if data < 0 or data > 4400:
                         raise MyCobot280DataException(
-                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+                            "The range of speed is 0 ~ 4400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyCobot280DataException, int)
                 if value < 1 or value > 7:
@@ -656,9 +656,9 @@ def calibration_parameters(**kwargs):
                 for data in value:
                     data_type = type(data)
                     check_value_type(parameter, data_type, MyCobot320DataException, int)
-                    if data < 0 or data > 3400:
+                    if data < 0 or data > 4400:
                         raise MyCobot320DataException(
-                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+                            "The range of speed is 0 ~ 4400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyCobot320DataException, int)
                 if value < 1 or value > 7:
@@ -956,9 +956,9 @@ def calibration_parameters(**kwargs):
                 for data in value:
                     data_type = type(data)
                     check_value_type(parameter, data_type, MechArmDataException, int)
-                    if data < 0 or data > 3400:
+                    if data < 0 or data > 4400:
                         raise MechArmDataException(
-                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+                            "The range of speed is 0 ~ 4400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MechArmDataException, int)
                 if value < 1 or value > 7:
@@ -1091,9 +1091,9 @@ def calibration_parameters(**kwargs):
                 for data in value:
                     data_type = type(data)
                     check_value_type(parameter, data_type, MyArmDataException, int)
-                    if data < 0 or data > 3400:
+                    if data < 0 or data > 4400:
                         raise MyArmDataException(
-                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+                            "The range of speed is 0 ~ 4400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyArmDataException, int)
                 if value < 1 or value > 8:
@@ -1237,9 +1237,9 @@ def calibration_parameters(**kwargs):
                 for data in value:
                     data_type = type(data)
                     check_value_type(parameter, data_type, MyPalletizer260DataException, int)
-                    if data < 0 or data > 3400:
+                    if data < 0 or data > 4400:
                         raise MyPalletizer260DataException(
-                            "The range of speed is 0 ~ 3400, but the received value is {}".format(data))
+                            "The range of speed is 0 ~ 4400, but the received value is {}".format(data))
             elif parameter in ['servo_id_pdi', 'encode_id']:
                 check_value_type(parameter, value_type, MyPalletizer260DataException, int)
                 if value < 1 or (value > 4 and value != 7):
