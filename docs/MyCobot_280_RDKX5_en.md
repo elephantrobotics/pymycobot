@@ -8,9 +8,9 @@ API (Application Programming Interface), also known as Application Programming I
 
 ```python
 # Example
-from pymycobot import MyCobot280X5PI
+from pymycobot import MyCobot280RDKX5
 
-mc = MyCobot280X5PI('/dev/ttyS1')
+mc = MyCobot280RDKX5('/dev/ttyS1')
 
 # Gets the current angle of all joints
 angles = mc.get_angles()
@@ -464,7 +464,7 @@ mc.send_angle(1, 40, 20)
 #### `get_servo_temps()`
 - **function:** Get joint temperature
 - **Return value:**
-  - **A list unit ¡æ**
+  - **A list unit ï¿½ï¿½**
 
 ### 13. Drag Track Interface
 

@@ -8,9 +8,9 @@ API（Application Programming Interface）即应用程序编程接口，是预先定义的函数。使
 
 ```python
 # 示例
-from pymycobot import MyCobot280X5PI
+from pymycobot import MyCobot280RDKX5
 
-mc = MyCobot280X5PI('/dev/ttyS1')
+mc = MyCobot280RDKX5('/dev/ttyS1')
 
 # 获取所有关节当前角度
 angles = mc.get_angles()
