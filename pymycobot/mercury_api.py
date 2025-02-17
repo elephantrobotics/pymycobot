@@ -313,6 +313,11 @@ class MercuryCommandGenerator(DataProcessor):
                         valid_data[i:i + 4], byteorder='big', signed=True)
                     i += 4
                     res.append(byte_value)
+            elif data_len == 24:
+                for i in range(0, data_len, 4):
+                    byte_value = int.from_bytes(
+                        valid_data[i:i+4], byteorder='big', signed=True)
+                    res.append(byte_value)
             elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES,
                                              ProtocolCode.GET_SERVO_CURRENTS]:
                 for i in range(data_len):
@@ -362,7 +367,7 @@ class MercuryCommandGenerator(DataProcessor):
             #             res.append(3)
             #         else:
             #             res.append(i)
-        elif data_len in [28, 32]:  # 28 left get_zero_pos, 32 right get_zero_pos
+        elif data_len in [28, 24]:  # 28 left get_zero_pos, 32 right get_zero_pos
             for i in range(0, data_len, 4):
                 byte_value = int.from_bytes(
                     valid_data[i:i + 4], byteorder='big', signed=True)
@@ -963,7 +968,7 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS)
 
     @restrict_serial_port
-    def send_base_coord(self, axis, coord, speed, _async=False):
+    def send_base_coord(self, coord_id, coord, speed, _async=False):
         """Single coordinate control with the torso base as the coordinate system
 
         Args:
@@ -977,11 +982,13 @@ class MercuryCommandGenerator(DataProcessor):
                 The coord range of `RZ` is -180 ~ 180.
             speed (int): 1 ~ 100
         """
-        if axis < 4:
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+        if coord_id < 4:
             coord = self._coord2int(coord)
         else:
             coord = self._angle2int(coord)
-        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed, _async=_async, has_reply=True)
+        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, coord_id, [coord], speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
     def send_base_coords(self, coords, speed, _async=False):
@@ -991,6 +998,8 @@ class MercuryCommandGenerator(DataProcessor):
             coords (list): coordinate value, [x, y, z, rx, ry, rz]
             speed (int): 1 ~ 100
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords, speed=speed)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -1528,47 +1537,47 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True,
                           _async=_async)
 
-    def send_coord(self, coord_id, coord, speed, _async=False):
-        """Send one coord to robot arm.
+    # def send_coord(self, coord_id, coord, speed, _async=False):
+    #     """Send one coord to robot arm.
 
-        Args:
-            coord_id (int): coord id, range 1 ~ 6
-            coord (float): coord value.
-                The coord range of `X` is -351.11 ~ 566.92.
-                The coord range of `Y` is -645.91 ~ 272.12.
-                The coord range of `Y` is -262.91 ~ 655.13.
-                The coord range of `RX` is -180 ~ 180.
-                The coord range of `RY` is -180 ~ 180.
-                The coord range of `RZ` is -180 ~ 180.
-            speed (int): 1 ~ 100
-        """
+    #     Args:
+    #         coord_id (int): coord id, range 1 ~ 6
+    #         coord (float): coord value.
+    #             The coord range of `X` is -351.11 ~ 566.92.
+    #             The coord range of `Y` is -645.91 ~ 272.12.
+    #             The coord range of `Y` is -262.91 ~ 655.13.
+    #             The coord range of `RX` is -180 ~ 180.
+    #             The coord range of `RY` is -180 ~ 180.
+    #             The coord range of `RZ` is -180 ~ 180.
+    #         speed (int): 1 ~ 100
+    #     """
 
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
-        value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
+    #     self.calibration_parameters(
+    #         class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+    #     value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
+    #     return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
-    def send_coords(self, coords, speed, _async=False):
-        """Send all coords to robot arm.
+    # def send_coords(self, coords, speed, _async=False):
+    #     """Send all coords to robot arm.
 
-        Args:
-            coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
-                The coord range of `X` is -351.11 ~ 566.92.
-                The coord range of `Y` is -645.91 ~ 272.12.
-                The coord range of `Y` is -262.91 ~ 655.13.
-                The coord range of `RX` is -180 ~ 180.
-                The coord range of `RY` is -180 ~ 180.
-                The coord range of `RZ` is -180 ~ 180.
-            speed : (int) 1 ~ 100
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords, speed=speed)
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
+    #     Args:
+    #         coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
+    #             The coord range of `X` is -351.11 ~ 566.92.
+    #             The coord range of `Y` is -645.91 ~ 272.12.
+    #             The coord range of `Y` is -262.91 ~ 655.13.
+    #             The coord range of `RX` is -180 ~ 180.
+    #             The coord range of `RY` is -180 ~ 180.
+    #             The coord range of `RZ` is -180 ~ 180.
+    #         speed : (int) 1 ~ 100
+    #     """
+    #     self.calibration_parameters(
+    #         class_name=self.__class__.__name__, coords=coords, speed=speed)
+    #     coord_list = []
+    #     for idx in range(3):
+    #         coord_list.append(self._coord2int(coords[idx]))
+    #     for angle in coords[3:]:
+    #         coord_list.append(self._angle2int(angle))
+    #     return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
 
     def resume(self):
         """Recovery movement"""
