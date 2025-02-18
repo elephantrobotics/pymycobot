@@ -1336,8 +1336,12 @@ def calibration_parameters(**kwargs):
                 if not re.match(r'^[A-Za-z0-9]{8,63}$', value):
                     raise ValueError("The password must be 8-63 characters long and contain only letters and numbers.")
             elif parameter == "pin_number":
-                if not 1 <= value <= 6:
-                    raise ValueError("The pin number must be between 1 and 6.")
+                pin = 6
+                if class_name == "MyArmC":
+                    pin = 2
+                if not 1 <= value <= pin:
+                    raise ValueError(f"The pin number must be between 1 and {pin}.")
+
             elif parameter in ("direction", "mode", "pin_signal", "is_linear", "move_type", "rftype"):
                 if not isinstance(value, int):
                     raise TypeError(f"The {parameter} must be an integer.")
