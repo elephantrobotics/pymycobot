@@ -1276,6 +1276,9 @@ def calibration_parameters(**kwargs):
                 if value < min_angle or value > max_angle:
                     raise ValueError(f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}")
             elif parameter == 'angles':
+                if not value:
+                    raise ValueError("angles value can't be empty")
+
                 for i, v in enumerate(value):
                     min_angle = limit_info["angles_min"][i]
                     max_angle = limit_info["angles_max"][i]
@@ -1284,14 +1287,14 @@ def calibration_parameters(**kwargs):
                             f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}")
             elif parameter == 'coord':
                 coord_index = kwargs['coord_id'] - 1
-                min_coord = limit_info["coords_min"][coord_index]
-                max_coord = limit_info["coords_max"][coord_index]
+                min_coord = limit_info["coord_min"][coord_index]
+                max_coord = limit_info["coord_max"][coord_index]
                 if not min_coord <= value <= max_coord:
                     raise ValueError(f"coord value not right, should be {min_coord} ~ {max_coord}, but received {value}")
             elif parameter == 'coords':
                 for i, v in enumerate(value):
-                    min_coord = limit_info["coords_min"][i]
-                    max_coord = limit_info["coords_max"][i]
+                    min_coord = limit_info["coord_min"][i]
+                    max_coord = limit_info["coord_max"][i]
                     if not min_coord <= v <= max_coord:
                         raise ValueError(f"coord value not right, should be {min_coord} ~ {max_coord}, but received {v}")
             elif parameter == 'encoder':
@@ -1318,19 +1321,26 @@ def calibration_parameters(**kwargs):
                     if not 1 <= s <= 100:
                         raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
             elif parameter == "servo_addr":
+                if not isinstance(value, int):
+                    raise TypeError(f"The {parameter} must be an integer.")
+
                 if value in (0, 1, 2, 3, 4):
                     if class_name == "MyArmMControl":
                         raise ValueError("modification is not allowed between 0~4, current data id: {}".format(value))
                     raise ValueError("addr 0-4 cannot be modified")
             elif parameter == "account":
-                if not (8 <= len(value) <= 63):
-                    raise ValueError("The length of password must be between 8 and 63.")
+                pass
+
             elif parameter == "password":
                 if not re.match(r'^[A-Za-z0-9]{8,63}$', value):
                     raise ValueError("The password must be 8-63 characters long and contain only letters and numbers.")
             elif parameter == "pin_number":
-                if not 1 <= value <= 6:
-                    raise ValueError("The pin number must be between 1 and 6.")
+                pin = 6
+                if class_name == "MyArmC":
+                    pin = 2
+                if not 1 <= value <= pin:
+                    raise ValueError(f"The pin number must be between 1 and {pin}.")
+
             elif parameter in ("direction", "mode", "pin_signal", "is_linear", "move_type", "rftype"):
                 if not isinstance(value, int):
                     raise TypeError(f"The {parameter} must be an integer.")
@@ -1341,13 +1351,16 @@ def calibration_parameters(**kwargs):
                     raise ValueError(f"end_direction not right, should be 1 ~ 3, the received end_direction is {value}")
             elif parameter == "gripper_flag":
                 if value not in (0, 1, 254):
-                    raise ValueError(f"gripper_flag not right, should be 0 ~ 254, the received gripper_flag is {value}")
+                    raise ValueError(f"gripper_flag not right, should be in (0, 1, 254), the received gripper_flag is {value}")
             elif parameter == "gripper_value":
                 if not 0 <= value <= 100:
                     raise ValueError(f"gripper_value not right, should be 0 ~ 100, the received gripper_value is {value}")
             elif parameter == "basic_pin_number":
-                if not 1 <= value <= 2:
-                    raise ValueError("The basic pin number must be between 1 and 2.")
+                if not isinstance(value, int):
+                    raise TypeError(f"The {parameter} must be an integer.")
+
+                if not 1 <= value <= 6:
+                    raise ValueError("The basic pin number must be between 1 ~ 6.")
             elif parameter == "rgb":
                 for v in value:
                     if not 0 <= v <= 255:

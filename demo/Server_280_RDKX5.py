@@ -3,7 +3,6 @@
 import fcntl
 import logging
 import traceback
-import typing as T
 import socket
 import struct
 import serial
@@ -101,11 +100,11 @@ class SerialTransport(object):
             self.serial.open()
 
 
-class Server280X5PI(object):
+class MyCobot280RDKX5Server(object):
     """
-    Server for 280 X5 Pi
+    Server for 280 RDK-X5
 
-    1. System GPIO operating protocol adheres to protocol MyCobot 280 x5 PI.
+    1. System GPIO operating protocol adheres to protocol MyCobot 280 RDK X5.
     2. This server only does the work of forwarding protocol and does not participate in the analysis of instructions.
     3. The server is only responsible for forwarding the data received from the socket to the serial port and vice versa.
     4. Instruction parsing is done entirely by the client
@@ -195,7 +194,7 @@ def main(debug=False):
 
     serial_transport = SerialTransport(comport="/dev/ttyS1", baudrate=100_0000, timeout=0.1)
 
-    Server280X5PI(socket_transport, serial_transport).mainloop()
+    MyCobot280RDKX5Server(socket_transport, serial_transport).mainloop()
     GPIO.cleanup()
 
 
