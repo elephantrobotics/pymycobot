@@ -383,6 +383,9 @@ class DataProcessor(object):
 
     def _int2angle(self, _int):
         return round(_int / 100.0, 3)
+    
+    def _int2angle1(self, _int):
+        return round(_int / 1000.0, 3)
 
     def _int2coord(self, _int):
         return round(_int / 10.0, 2)

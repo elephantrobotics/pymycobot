@@ -177,7 +177,7 @@ class Pro400(CloseLoop):
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
-            return [self._int2angle(angle) for angle in res]
+            return [self._int2angle1(angle) for angle in res]
         elif genre in [
             ProtocolCode.GET_COORDS,
             ProtocolCode.MERCURY_GET_BASE_COORDS,
