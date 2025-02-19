@@ -1,14 +1,13 @@
 # coding=utf-8
 
 from __future__ import division
-
 from pymycobot.common import ProtocolCode
 from pymycobot.myarm_api import MyArmAPI
 
 
 class MyArmC(MyArmAPI):
 
-    def __init__(self, port, baudrate="1000000", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate=1000000, timeout=0.1, debug=False):
         super(MyArmC, self).__init__(port, baudrate, timeout, debug)
 
     def is_tool_btn_clicked(self, mode=1):
@@ -21,6 +20,12 @@ class MyArmC(MyArmAPI):
         Returns:
             list[int]: 0/1, 1: press, 0: no press
         """
+        if not isinstance(mode, int):
+            raise TypeError('mode must be int')
+
+        if mode not in [1, 2, 3, 254]:
+            raise ValueError('mode must be 1, 2, 3 or 254')
+
         return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, mode, has_reply=True)
 
     def get_joints_coord(self):
