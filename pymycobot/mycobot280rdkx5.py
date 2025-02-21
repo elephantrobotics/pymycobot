@@ -35,10 +35,10 @@ class GPIOProtocolCode:
     GET_GPIO_INPUT = 0xAD
 
 
-class MyCobot280X5Api(CommandGenerator):
+class MyCobot280RDKX5Api(CommandGenerator):
 
     def __init__(self, debug=False, thread_lock=True):
-        super(MyCobot280X5Api, self).__init__(debug)
+        super(MyCobot280RDKX5Api, self).__init__(debug)
         self.calibration_parameters = functools.partial(calibration_parameters, class_name="MyCobot280")
         self.thread_lock = thread_lock
         self.lock = threading.Lock()
@@ -55,7 +55,7 @@ class MyCobot280X5Api(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply, _ = super(MyCobot280X5Api, self)._mesg(genre, *args, **kwargs)
+        real_command, has_reply, _ = super(MyCobot280RDKX5Api, self)._mesg(genre, *args, **kwargs)
         if self.thread_lock:
             with self.lock:
                 return self._res(real_command, has_reply, genre)
@@ -173,7 +173,7 @@ class MyCobot280X5Api(CommandGenerator):
         return self
 
 
-class MyCobot280X5PICommandGenerator(MyCobot280X5Api):
+class MyCobot280RDKX5CommandGenerator(MyCobot280RDKX5Api):
 
     # System Status
     def get_modify_version(self):
@@ -799,7 +799,7 @@ class MyCobot280X5PICommandGenerator(MyCobot280X5Api):
         return self._mesg(ProtocolCode.DRAG_CLEAR_RECORD_DATA, has_reply=True)
 
 
-class MyCobot280X5PI(MyCobot280X5PICommandGenerator):
+class MyCobot280RDKX5(MyCobot280RDKX5CommandGenerator):
 
     def __init__(self, port, baudrate=100_0000, timeout=0.1, debug=False, thread_lock=True):
         """
@@ -821,10 +821,10 @@ class MyCobot280X5PI(MyCobot280X5PICommandGenerator):
         self._serial_port.open()
 
 
-class MyCobot280X5PISocket(MyCobot280X5PICommandGenerator):
-    """MyCobot 280 X5 PI Socket Control Class
+class MyCobot280RDKX5Socket(MyCobot280RDKX5CommandGenerator):
+    """MyCobot 280 RDK X5 Socket Control Class
 
-    server file: https://github.com/elephantrobotics/pymycobot/demo/Server_280_X5PI.py
+    server file: https://github.com/elephantrobotics/pymycobot/demo/Server_280_RDK_X5.py
     """
     def __init__(self, ip, port=30002, timeout=0.1, debug=False, thread_lock=True):
         super().__init__(debug, thread_lock)
@@ -885,7 +885,7 @@ class MyCobot280X5PISocket(MyCobot280X5PICommandGenerator):
 
 
 def main():
-    mc_sock = MyCobot280X5PISocket('192.168.1.246', port=30002, debug=True)
+    mc_sock = MyCobot280RDKX5Socket('192.168.1.246', port=30002, debug=True)
     # print(mc_sock.send_angle(1, 100, 50))
     # print(mc_sock.get_quick_move_message())
     print(mc_sock.set_gpio_mode(0))

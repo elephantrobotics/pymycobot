@@ -167,7 +167,8 @@ class MercuryCommandGenerator(DataProcessor):
                 ProtocolCode.JOG_BASE_INCREMENT_COORD,
                 ProtocolCode.WRITE_MOVE_C,
                 ProtocolCode.JOG_RPY,
-                ProtocolCode.WRITE_MOVE_C_R] and self.sync_mode:
+                ProtocolCode.WRITE_MOVE_C_R,
+                ProtocolCode.MERCURY_DRAG_TECH_EXECUTE] and self.sync_mode:
             wait_time = 300
             is_in_position = True
             big_wait_time = True
@@ -1027,7 +1028,7 @@ class MercuryCommandGenerator(DataProcessor):
 
     def drag_teach_execute(self):
         """Start dragging the teaching point and only execute it once."""
-        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE)
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, has_reply=True)
 
     def drag_teach_pause(self):
         """Pause recording of dragging teaching point"""

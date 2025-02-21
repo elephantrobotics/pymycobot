@@ -10,9 +10,9 @@ class CreateSerial(QThread):
     def __init__(self, port, index, parent_serial=None):
         super().__init__()
         if index in [1,2]:
-            self.serial = MyArmC(port)
+            self.serial = MyArmC(port, 1000000)
         else:
-            self.serial = MyArmM(port)
+            self.serial = MyArmM(port, 1000000)
         self.index = index
         self.parent_serial = parent_serial
         self.serial_type = self.serial.__class__.__name__
