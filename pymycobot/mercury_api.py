@@ -979,7 +979,7 @@ class MercuryCommandGenerator(DataProcessor):
                 The coord range of `RZ` is -180 ~ 180.
             speed (int): 1 ~ 100
         """
-        self.calibration_parameters(self.__class__.__name__, coord_id=coord_id, base_coord=base_coord, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, base_coord=base_coord, speed=speed)
         if coord_id < 4:
             coord = self._coord2int(base_coord)
         else:
