@@ -965,12 +965,12 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.MERCURY_GET_BASE_COORDS)
 
     @restrict_serial_port
-    def send_base_coord(self, axis, coord, speed, _async=False):
+    def send_base_coord(self, coord_id, base_coord, speed, _async=False):
         """Single coordinate control with the torso base as the coordinate system
 
         Args:
-            axis (int): 1 to 6 correspond to x, y, z, rx, ry, rz
-            coord (float): coord value.
+            coord_id (int): 1 to 6 correspond to x, y, z, rx, ry, rz
+            base_coord (float): coord value.
                 The coord range of `X` is -351.11 ~ 566.92.
                 The coord range of `Y` is -645.91 ~ 272.12.
                 The coord range of `Y` is -262.91 ~ 655.13.
@@ -979,11 +979,12 @@ class MercuryCommandGenerator(DataProcessor):
                 The coord range of `RZ` is -180 ~ 180.
             speed (int): 1 ~ 100
         """
-        if axis < 4:
-            coord = self._coord2int(coord)
+        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, base_coord=base_coord, speed=speed)
+        if coord_id < 4:
+            coord = self._coord2int(base_coord)
         else:
-            coord = self._angle2int(coord)
-        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, axis, [coord], speed, _async=_async, has_reply=True)
+            coord = self._angle2int(base_coord)
+        return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, coord_id, [coord], speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
     def send_base_coords(self, coords, speed, _async=False):
@@ -2598,3 +2599,14 @@ class MercuryCommandGenerator(DataProcessor):
         value: 0 ~ 10000
         """
         return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
+    
+    def write_waist_sync(self, current_angle, target_angle, speed):
+        """_summary_
+
+        Args:
+            current_angle (_type_): _description_
+            target_angle (_type_): _description_
+            speed (_type_): _description_
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, current_angle=current_angle, target_angle=target_angle, speed=speed)
+        return self._mesg(ProtocolCode.WRITE_WAIST_SYNC, [self._angle2int(current_angle)], [self._angle2int(target_angle)], speed)
