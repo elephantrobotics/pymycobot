@@ -313,6 +313,16 @@ def calibration_parameters(**kwargs):
                             value, robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index]
                         )
                     )
+            elif parameter == 'base_coord':
+                coord_id = kwargs.get('coord_id', None)
+                if isinstance(coord_id, int):
+                    index = coord_id - 1
+                    if value < robot_limit[class_name]["base_coords_min"][index] or value > robot_limit[class_name]["base_coords_max"][index]:
+                        raise MercuryDataException(
+                            "The base_coord value of {} exceeds the limit, and the limit range is {} ~ {}".format(
+                                value, robot_limit[class_name]["base_coords_min"][index], robot_limit[class_name]["base_coords_max"][index]
+                            )
+                        )
             elif parameter == 'coords':
                 check_coords(value, robot_limit, class_name, MercuryDataException)
 
