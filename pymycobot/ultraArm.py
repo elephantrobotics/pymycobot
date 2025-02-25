@@ -168,12 +168,11 @@ class ultraArm:
 
     def _get_queue_size(self):
         """Get real queue_size from the robot."""
-        with self.lock:
-            command = "M120" + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._request("size")
+        command = "M120" + ProtocolCode.END
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        self._debug(command)
+        return self._request("size")
 
     def release_all_servos(self):
         """relax all joints."""

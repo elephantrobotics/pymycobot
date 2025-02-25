@@ -117,7 +117,7 @@ class MyPalletizer260(CommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply = super(MyPalletizer260, self)._mesg(
+        real_command, has_reply, _async = super(MyPalletizer260, self)._mesg(
             genre, *args, **kwargs
         )
         with self.lock:
