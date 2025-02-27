@@ -5,7 +5,6 @@ import threading
 import socket
 
 from pymycobot.close_loop import CloseLoop
-from pymycobot.error import calibration_parameters
 from pymycobot.common import ProtocolCode
 
 
@@ -19,7 +18,6 @@ class Pro400Client(CloseLoop):
             debug    : whether show debug info
         """
         super(Pro400Client, self).__init__(debug)
-        self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
@@ -258,40 +256,7 @@ class Pro400Client(CloseLoop):
         
     def close(self):
         self.sock.close()
-    
-    def power_on(self):
-        return super(Pro400Client, self).power_on()
-     
-    def power_off(self):
-        res = super(Pro400Client, self).power_off()
-        return res
         
-    def set_basic_output(self, pin_no, pin_signal):
-        """Set basic output.IO low-level output high-level, high-level output high resistance state
-
-        Args:
-            pin_no: pin port number. range 1 ~ 6
-            pin_signal: 0 / 1
-        """
-        return super(Pro400Client, self).set_basic_output(pin_no, pin_signal)
-        
-    def get_basic_input(self, pin_no):
-        """Get basic input.
-
-        Args:
-            pin_no: pin port number. range 1 ~ 6
-            
-        Return:
-            1 - high
-            0 - low
-        """
-        return super(Pro400Client, self).get_basic_input(pin_no)
-        
-    def send_angles_sync(self, angles, speed):
-        self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
-        angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, no_return=True)
-    
     def set_pos_switch(self, mode):
         """Set position switch mode.
 

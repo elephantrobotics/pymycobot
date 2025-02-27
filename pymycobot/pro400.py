@@ -4,12 +4,11 @@ import threading
 import serial
 
 from pymycobot.close_loop import CloseLoop
-from pymycobot.error import calibration_parameters
 from pymycobot.common import ProtocolCode
 
 
 class Pro400(CloseLoop):
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port="/dev/ttyAMA1", baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
         """
         Args:
             port     : port string
@@ -18,7 +17,7 @@ class Pro400(CloseLoop):
             debug    : whether show debug info
         """
         super(Pro400, self).__init__(debug)
-        self.calibration_parameters = calibration_parameters
+        self.save_serial_log = save_serial_log
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -26,8 +25,7 @@ class Pro400(CloseLoop):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
-        self.has_reply_command = []
-        self.is_stop = False
+        self.lock_out = threading.Lock()
         self.read_threading = threading.Thread(target=self.read_thread)
         self.read_threading.daemon = True
         self.read_threading.start()
@@ -177,7 +175,7 @@ class Pro400(CloseLoop):
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
-            return [self._int2angle(angle) for angle in res]
+            return [self._int3angle(angle) for angle in res]
         elif genre in [
             ProtocolCode.GET_COORDS,
             ProtocolCode.MERCURY_GET_BASE_COORDS,
@@ -256,13 +254,6 @@ class Pro400(CloseLoop):
         
     def close(self):
         self._serial_port.close()
-        
-    def power_on(self, delay=2):
-        return super(Pro400, self).power_on()
-     
-    def power_off(self):
-        res = super(Pro400, self).power_off()
-        return res
     
     # def power_on_only(self):
         # import RPi.GPIO as GPIO
@@ -316,11 +307,6 @@ class Pro400(CloseLoop):
     #         pin_no = 23
     #     GPIO.setup(pin_no, GPIO.IN)
     #     return GPIO.input(pin_no)
-        
-    def send_angles_sync(self, angles, speed):
-        self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
-        angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, no_return=True)
     
     def set_pos_switch(self, mode):
         """Set position switch mode.
