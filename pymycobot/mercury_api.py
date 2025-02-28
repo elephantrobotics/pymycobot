@@ -396,7 +396,7 @@ class MercuryCommandGenerator(DataProcessor):
                     one = valid_data[i: i + 2]
                     res.append(self._decode_int16(one))
                     i += 2
-        elif data_len == 36 and genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+        elif data_len in [32, 36] and genre == ProtocolCode.MERCURY_ROBOT_STATUS:
             # 图灵右臂上位机错误：2+6+8*2+6*2 = 36
             i = 0
             res = []
