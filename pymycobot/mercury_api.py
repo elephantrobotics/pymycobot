@@ -401,7 +401,7 @@ class MercuryCommandGenerator(DataProcessor):
             i = 0
             res = []
             while i < data_len:
-                if i < 9:
+                if i < 8:
                     res.append(valid_data[i])
                     i += 1
                 else:
