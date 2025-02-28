@@ -32,9 +32,9 @@ class MercuryCommandGenerator(DataProcessor):
         self.all_read_data = b""
 
     def _joint_limit_init(self):
-        max_joint = np.zeros(7)
-        min_joint = np.zeros(7)
-        for i in range(7):
+        max_joint = np.zeros(6)
+        min_joint = np.zeros(6)
+        for i in range(6):
             max_joint[i] = self.get_joint_max_angle(i + 1)
             min_joint[i] = self.get_joint_min_angle(i + 1)
         return max_joint, min_joint
@@ -318,8 +318,8 @@ class MercuryCommandGenerator(DataProcessor):
                     byte_value = int.from_bytes(
                         valid_data[i:i+4], byteorder='big', signed=True)
                     res.append(byte_value)
-            elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES,
-                                             ProtocolCode.GET_SERVO_CURRENTS]:
+            elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES,ProtocolCode.GET_TORQUE_COMP,
+                                             ProtocolCode.GET_SERVO_CURRENTS, ProtocolCode.GET_MODEL_DIRECTION, ProtocolCode.GET_COLLISION_THRESHOLD]:
                 for i in range(data_len):
                     res.append(valid_data[i])
             else:
@@ -396,8 +396,8 @@ class MercuryCommandGenerator(DataProcessor):
                     one = valid_data[i: i + 2]
                     res.append(self._decode_int16(one))
                     i += 2
-        elif data_len == 41 and genre == ProtocolCode.MERCURY_ROBOT_STATUS:
-            # 图灵右臂上位机错误
+        elif data_len == 36 and genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+            # 图灵右臂上位机错误：2+6+8*2+6*2 = 36
             i = 0
             res = []
             while i < data_len:
@@ -590,6 +590,7 @@ class MercuryCommandGenerator(DataProcessor):
         elif genre == ProtocolCode.COBOTX_GET_ANGLE:
             return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+            # 图灵：2+6+8*2+6*2 = 36
             if len(res) == 23:
                 index = 9
             else:
@@ -1537,47 +1538,47 @@ class MercuryCommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True,
                           _async=_async)
 
-    # def send_coord(self, coord_id, coord, speed, _async=False):
-    #     """Send one coord to robot arm.
+    def send_coord(self, coord_id, coord, speed, _async=False):
+        """Send one coord to robot arm.
 
-    #     Args:
-    #         coord_id (int): coord id, range 1 ~ 6
-    #         coord (float): coord value.
-    #             The coord range of `X` is -351.11 ~ 566.92.
-    #             The coord range of `Y` is -645.91 ~ 272.12.
-    #             The coord range of `Y` is -262.91 ~ 655.13.
-    #             The coord range of `RX` is -180 ~ 180.
-    #             The coord range of `RY` is -180 ~ 180.
-    #             The coord range of `RZ` is -180 ~ 180.
-    #         speed (int): 1 ~ 100
-    #     """
+        Args:
+            coord_id (int): coord id, range 1 ~ 6
+            coord (float): coord value.
+                The coord range of `X` is -351.11 ~ 566.92.
+                The coord range of `Y` is -645.91 ~ 272.12.
+                The coord range of `Y` is -262.91 ~ 655.13.
+                The coord range of `RX` is -180 ~ 180.
+                The coord range of `RY` is -180 ~ 180.
+                The coord range of `RZ` is -180 ~ 180.
+            speed (int): 1 ~ 100
+        """
 
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
-    #     value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
-    #     return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+        value = self._coord2int(coord) if coord_id <= 3 else self._angle2int(coord)
+        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
-    # def send_coords(self, coords, speed, _async=False):
-    #     """Send all coords to robot arm.
+    def send_coords(self, coords, speed, _async=False):
+        """Send all coords to robot arm.
 
-    #     Args:
-    #         coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
-    #             The coord range of `X` is -351.11 ~ 566.92.
-    #             The coord range of `Y` is -645.91 ~ 272.12.
-    #             The coord range of `Y` is -262.91 ~ 655.13.
-    #             The coord range of `RX` is -180 ~ 180.
-    #             The coord range of `RY` is -180 ~ 180.
-    #             The coord range of `RZ` is -180 ~ 180.
-    #         speed : (int) 1 ~ 100
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, coords=coords, speed=speed)
-    #     coord_list = []
-    #     for idx in range(3):
-    #         coord_list.append(self._coord2int(coords[idx]))
-    #     for angle in coords[3:]:
-    #         coord_list.append(self._angle2int(angle))
-    #     return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
+        Args:
+            coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
+                The coord range of `X` is -351.11 ~ 566.92.
+                The coord range of `Y` is -645.91 ~ 272.12.
+                The coord range of `Y` is -262.91 ~ 655.13.
+                The coord range of `RX` is -180 ~ 180.
+                The coord range of `RY` is -180 ~ 180.
+                The coord range of `RZ` is -180 ~ 180.
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords, speed=speed)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
 
     def resume(self):
         """Recovery movement"""
