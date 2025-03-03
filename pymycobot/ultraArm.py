@@ -647,14 +647,14 @@ class ultraArm:
         with self.lock:
             self._serial_port.open()
         
-    def is_moving_end(self, timeout = 10):
+    def is_moving_end(self):
         with self.lock:
             """Get the current state of all home switches."""
             command = ProtocolCode.IS_MOVING_END + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
-            return self._request("isStop", timeout=10)
+            return self._request("isStop")
 
     def sync(self):
         while self.is_moving_end() != 1:

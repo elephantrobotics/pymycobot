@@ -5,7 +5,6 @@ import socket
 import threading
 
 from pymycobot.mercury_api import MercuryCommandGenerator
-from pymycobot.error import calibration_parameters
 
 
 class MercurySocket(MercuryCommandGenerator):
@@ -16,13 +15,13 @@ class MercurySocket(MercuryCommandGenerator):
             netport: Server port(default 9000)
         """
         super(MercurySocket, self).__init__(debug)
-        self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
         self.lock_out = threading.Lock()
-        self.read_threading = threading.Thread(target=self.read_thread, args=("socket", ))
+        self.read_threading = threading.Thread(
+            target=self.read_thread, args=("socket", ))
         self.read_threading.daemon = True
         self.read_threading.start()
         self.get_limit_switch()
@@ -31,9 +30,9 @@ class MercurySocket(MercuryCommandGenerator):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.SERVER_IP, self.SERVER_PORT))
         return sock
-        
+
     def open(self):
         self.sock = self.connect_socket()
-        
+
     def close(self):
         self.sock.close()

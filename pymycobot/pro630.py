@@ -1,7 +1,7 @@
 # coding=utf-8
 
-import time
 import threading
+import serial
 
 from pymycobot.close_loop import CloseLoop
 from pymycobot.error import calibration_parameters
@@ -9,7 +9,7 @@ from pymycobot.common import ProtocolCode
 
 
 class Pro630(CloseLoop):
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port="/dev/ttyAMA1", baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
         """
         Args:
             port     : port string
@@ -18,8 +18,7 @@ class Pro630(CloseLoop):
             debug    : whether show debug info
         """
         super(Pro630, self).__init__(debug)
-        self.calibration_parameters = calibration_parameters
-        import serial
+        # self.calibration_parameters = calibration_parameters
         # import RPi.GPIO as GPIO
         # self.power_control_1 = 3
         # self.power_control_2 = 4
@@ -27,6 +26,7 @@ class Pro630(CloseLoop):
         # GPIO.setwarnings(False)
         # GPIO.setup(self.power_control_1, GPIO.IN)
         # GPIO.setup(self.power_control_2, GPIO.OUT)
+        self.save_serial_log = save_serial_log
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -34,8 +34,7 @@ class Pro630(CloseLoop):
         self._serial_port.rts = False
         self._serial_port.open()
         self.lock = threading.Lock()
-        self.has_reply_command = []
-        self.is_stop = False
+        self.lock_out = threading.Lock()
         self.read_threading = threading.Thread(target=self.read_thread)
         self.read_threading.daemon = True
         self.read_threading.start()
