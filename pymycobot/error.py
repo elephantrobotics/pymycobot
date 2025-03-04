@@ -291,8 +291,8 @@ def calibration_parameters(**kwargs):
                     check_id(value, robot_limit[class_name][parameter], MercuryDataException)
             elif parameter == 'angle':
                 joint_id = kwargs.get('joint_id', None)
-                if joint_id in [11,12,13]:
-                    index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
+                if joint_id in [11,12]:
+                    index = robot_limit[class_name]['joint_id'][joint_id-5] - 5
                 else:
                     index = robot_limit[class_name]['joint_id'][joint_id-1] - 1
                 if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
@@ -413,6 +413,11 @@ def calibration_parameters(**kwargs):
             elif parameter == "torque":
                 if value < 0 or value > 100:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+            elif parameter == "hand_id":
+                if value < 1 or value > 6:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 6, but received {}".format(parameter, value))
+            elif parameter == 'pinch_mode':
+                check_0_or_1(parameter, value, [0, 1, 2, 3], value_type, MercuryDataException, int)
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
