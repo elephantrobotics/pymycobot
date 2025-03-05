@@ -60,6 +60,7 @@ python3 6D_mouse_serial_serial_port_control.py
 
 >> 注意： raspberryPi版本 仅支持python3 使用此类前提的机械臂有服务器，并且已经开启服务。
 
+
 #### 启动服务端
 
 使用socket控制之前，需要注意：
