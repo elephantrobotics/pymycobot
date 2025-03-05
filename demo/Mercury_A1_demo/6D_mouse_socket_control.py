@@ -102,14 +102,19 @@ def handle_mouse_event(jog_callback, stop_callback, gripper_callback):
 # 定义回调函数
 def jog_callback(coord_id, direction):
     """触发机械臂JOG坐标运动"""
-    print(f"机械臂 {coord_id} 方向 {'正向' if direction == 1 else '负向'} 运动")
     if direction != 1:
         direction = 0
-    mc.jog_coord(coord_id, direction, jog_speed)
+    if coord_id in [1,2,3]:
+        mc.jog_coord(coord_id, direction, jog_speed)
+    else:
+        model = [2, 1, 1]
+        model_dir = [0, 0, 0]
+        model_id = model[coord_id-4]
+        model_dire = direction ^ model_dir[coord_id-4]
+        mc.jog_rpy(model_id, model_dire, jog_speed)
 
 def stop_callback(coord_id):
     """停止机械臂运动"""
-    print(f"停止机械臂 {coord_id} 运动")
     mc.stop(1)
 
 def gripper_callback():
@@ -117,7 +122,6 @@ def gripper_callback():
     global gripper_state
     gripper_state = not gripper_state
     flag = 1 if gripper_state else 0
-    print(f"夹爪 {'闭合' if flag else '张开'}")
     mc.set_gripper_state(flag, gripper_speed)
 
 
