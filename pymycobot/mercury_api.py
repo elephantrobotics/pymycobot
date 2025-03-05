@@ -167,7 +167,8 @@ class MercuryCommandGenerator(DataProcessor):
                 ProtocolCode.JOG_BASE_INCREMENT_COORD,
                 ProtocolCode.WRITE_MOVE_C,
                 ProtocolCode.JOG_RPY,
-                ProtocolCode.WRITE_MOVE_C_R] and self.sync_mode:
+                ProtocolCode.WRITE_MOVE_C_R,
+                ProtocolCode.MERCURY_DRAG_TECH_EXECUTE] and self.sync_mode:
             wait_time = 300
             is_in_position = True
             big_wait_time = True
@@ -1000,7 +1001,7 @@ class MercuryCommandGenerator(DataProcessor):
             speed (int): 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords, speed=speed)
+            class_name=self.__class__.__name__, coords=coords, speed=speed, serial_port=self._serial_port.port)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))

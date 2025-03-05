@@ -316,7 +316,15 @@ def calibration_parameters(**kwargs):
 
             elif parameter == 'coord':
                 index = kwargs.get('coord_id', None) - 1
-                if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
+                serial_port = kwargs.get('serial_port', None)
+                if serial_port == "/dev/left_arm":
+                    min_coord = robot_limit[class_name]["left_coords_min"][index]
+                elif serial_port == "/dev/right_arm":
+                    min_coord = robot_limit[class_name]["right_coords_min"][index]
+                else:
+                    min_coord = robot_limit[class_name]["coords_min"][index]
+                    max_coord = robot_limit[class_name]["coords_max"][index]
+                if value < min_coord or value > min_coord:
                     raise MercuryDataException(
                         "The coord value of {} exceeds the limit, and the limit range is {} ~ {}".format(
                             value, robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index]
