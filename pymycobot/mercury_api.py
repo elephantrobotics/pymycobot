@@ -985,7 +985,7 @@ class MercuryCommandGenerator(DataProcessor):
             speed (int): 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed, serial_port=self._serial_port.port)
         if coord_id < 4:
             coord = self._coord2int(coord)
         else:

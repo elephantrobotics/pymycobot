@@ -93,16 +93,26 @@ def check_value_type(parameter, value_type, exception_class, _type):
             "The acceptable parameter {} should be an {}, but the received {}".format(parameter, _type, value_type))
 
 
-def check_coords(value, robot_limit, class_name, exception_class):
+def check_coords(value, robot_limit, class_name, exception_class, serial_port=None):
     if not isinstance(value, list):
         raise exception_class("`coords` must be a list.")
     if len(value) != 6:
         raise exception_class("The length of `coords` must be 6.")
+    if serial_port:
+        if serial_port == "/dev/left_arm":
+            min_coord = robot_limit[class_name]["left_coords_min"]
+            max_coord = robot_limit[class_name]["left_coords_max"]
+        elif serial_port == "/dev/right_arm":
+            min_coord = robot_limit[class_name]["right_coords_min"]
+            max_coord = robot_limit[class_name]["right_coords_max"]
+        else:
+            min_coord = robot_limit[class_name]["coords_min"]
+            max_coord = robot_limit[class_name]["coords_max"]
     for idx, coord in enumerate(value):
-        if not robot_limit[class_name]["coords_min"][idx] <= coord <= robot_limit[class_name]["coords_max"][idx]:
+        if not min_coord[idx] <= coord <= max_coord[idx]:
             raise exception_class(
                 "Has invalid coord value, error on index {0}. received {3} .but angle should be {1} ~ {2}.".format(
-                    idx, robot_limit[class_name]["coords_min"][idx], robot_limit[class_name]["coords_max"][idx], coord
+                    idx, min_coord, max_coord, coord
                 )
             )
 
@@ -329,12 +339,13 @@ def calibration_parameters(**kwargs):
                 if value < min_coord or value > min_coord:
                     raise MercuryDataException(
                         "The coord value of {} exceeds the limit, and the limit range is {} ~ {}".format(
-                            value, robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index]
+                            value, min_coord, max_coord
                         )
                     )
             elif parameter == 'coords':
+                serial_port = kwargs.get('serial_port', None)
                 check_coords(value, robot_limit, class_name,
-                             MercuryDataException)
+                             MercuryDataException, serial_port)
 
             elif parameter == 'speed':
                 if not 1 <= value <= 100:
