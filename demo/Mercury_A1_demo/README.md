@@ -54,6 +54,8 @@ pip install pygame
 python3 6D_mouse_serial_serial_port_control.py
 ```
 
+程序启动后，机械臂将运行到预设的初始角度[0, 0, 0, -90, 0, 90, 0]，便于使用6D鼠标进行坐标控制。
+
 ### Socket控制
 
 >> 注意： raspberryPi版本 仅支持python3 使用此类前提的机械臂有服务器，并且已经开启服务。
@@ -80,6 +82,8 @@ mc = MercurySocket('192.168.1.4', 9001)
 ```python
 python3 6D_mouse_serial_socket_control.py
 ```
+
+程序启动后，机械臂将运行到预设的初始角度[0, 0, 0, -90, 0, 90, 0]，便于使用6D鼠标进行坐标控制。
 
 ### 修改速度
 
