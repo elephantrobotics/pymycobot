@@ -319,8 +319,10 @@ def calibration_parameters(**kwargs):
                 serial_port = kwargs.get('serial_port', None)
                 if serial_port == "/dev/left_arm":
                     min_coord = robot_limit[class_name]["left_coords_min"][index]
+                    max_coord = robot_limit[class_name]["left_coords_max"][index]
                 elif serial_port == "/dev/right_arm":
                     min_coord = robot_limit[class_name]["right_coords_min"][index]
+                    max_coord = robot_limit[class_name]["right_coords_max"][index]
                 else:
                     min_coord = robot_limit[class_name]["coords_min"][index]
                     max_coord = robot_limit[class_name]["coords_max"][index]
