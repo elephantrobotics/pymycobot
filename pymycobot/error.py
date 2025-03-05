@@ -336,7 +336,7 @@ def calibration_parameters(**kwargs):
                 else:
                     min_coord = robot_limit[class_name]["coords_min"][index]
                     max_coord = robot_limit[class_name]["coords_max"][index]
-                if value < min_coord or value > min_coord:
+                if value < min_coord or value > max_coord:
                     raise MercuryDataException(
                         "The coord value of {} exceeds the limit, and the limit range is {} ~ {}".format(
                             value, min_coord, max_coord
