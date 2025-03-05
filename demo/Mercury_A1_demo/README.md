@@ -1,6 +1,7 @@
 # 6D 鼠标控制
 
 **使用设备：** 3Dconnexion SpaceMouse Wireless 蓝牙无线版、蓝牙USB接收器。
+
 **适用机型：** Mercury A1。
 
 ## 摆放位置
