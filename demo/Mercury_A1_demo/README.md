@@ -60,9 +60,27 @@ python3 6D_mouse_serial_serial_port_control.py
 
 >> 注意： raspberryPi版本 仅支持python3 使用此类前提的机械臂有服务器，并且已经开启服务。
 
-**客户端修改IP地址和端口号**
+#### 启动服务端
 
-切换路径到 `pymycobot/demo/Mercury_A1_demo` 文件夹，编辑6D_mouse_serial_socket_control.py文件：
+使用socket控制之前，需要注意：
+
+- 机械臂系统和控制端（客户端）需要在同一网络。
+
+- 需要先在机械臂系统里执行服务器文件，开启服务端。
+
+- 服务器文件执行后，提示“Binding succeeded” 和 “waiting connect” 表示开启成功。
+
+打开终端， 切换路径到`pymycobot/demo` 文件夹，运行程序即可：
+
+```python
+python3 server_A1_close_loop.py
+```
+
+#### 客户端
+
+**修改IP地址和端口号**
+
+在PC电脑端，切换路径到 `pymycobot/demo/Mercury_A1_demo` 文件夹，编辑6D_mouse_serial_socket_control.py文件：
 
 根据服务端真实的IP和端口号进行修改即可。
 
@@ -72,7 +90,7 @@ import time
 from pymycobot import MercurySocket
 
 # 初始化机械臂,IP和端口号需根据实际进行修改
-mc = MercurySocket('192.168.1.4', 9001)
+mc = MercurySocket('192.168.1.4', 9000)
 
 ···
 ```
