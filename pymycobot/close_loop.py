@@ -1635,7 +1635,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
     def get_drag_fifo_len(self):
         return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN)
 
-    def jog_rpy(self, axis, direction, speed):
+    def jog_rpy(self, axis, direction, speed, _async=True):
         """Rotate the end point around the fixed axis of the base coordinate system
 
         Args:
@@ -1645,7 +1645,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, axis=axis, direction=direction, speed=speed)
-        return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, has_reply=True)
+        return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, _async=_async, has_reply=True)
 
     def get_collision_mode(self):
         """Get collision detection status
