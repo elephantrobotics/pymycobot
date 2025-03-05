@@ -36,7 +36,7 @@
 
 >> 注意：使用之前，请打开鼠标的电源开关。
 
-这里使用机械臂的通信方式有串口控制和socket控制两种，将鼠标的蓝牙接收器连接到电脑或者机器系统。
+** 这里使用机械臂的通信方式有串口控制和socket控制两种，将鼠标的蓝牙接收器连接到电脑或者机器系统。**
 
 下载代码: https://github.com/elephantrobotics/pymycobot
 
@@ -46,7 +46,7 @@
 pip install pygame
 ```
 
-### 串口控制
+### 方式1：串口控制
 
 打开终端，切换路径到 `pymycobot/demo/Mercury_A1_demo` 文件夹，运行程序即可：
 
@@ -56,7 +56,7 @@ python3 6D_mouse_serial_serial_port_control.py
 
 程序启动后，机械臂将运行到预设的初始角度[0, 0, 0, -90, 0, 90, 0]，便于使用6D鼠标进行坐标控制。
 
-### Socket控制
+### 方式2：Socket控制
 
 >> 注意： raspberryPi版本 仅支持python3 使用此类前提的机械臂有服务器，并且已经开启服务。
 
