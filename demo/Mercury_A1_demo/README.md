@@ -36,15 +36,15 @@
 
 >> 注意：使用之前，请打开鼠标的电源开关。
 
-**这里使用机械臂的通信方式有串口控制和socket控制两种，将鼠标的蓝牙接收器连接到电脑或者机器系统。**
-
-下载代码: https://github.com/elephantrobotics/pymycobot
-
 ### 安装依赖
 
 ```python
 pip install pygame
 ```
+
+下载代码: https://github.com/elephantrobotics/pymycobot
+
+**这里使用机械臂的通信方式有串口控制和socket控制两种，将鼠标的蓝牙接收器连接到电脑或者机器系统。**
 
 ### 方式1：串口控制
 
