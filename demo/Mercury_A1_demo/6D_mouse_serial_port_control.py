@@ -12,9 +12,6 @@ if mc.is_power_on() != 1:
 # 设置夹爪透传模式
 mc.set_gripper_mode(0)
 
-# 让机械臂回到初始点,便于坐标控制，速度为20
-mc.send_angles([0, 0, 0, -90, 0, 90, 0], 20)
-
 THRESHOLD = 0.7  # 鼠标轴触发运动的阈值
 DEAD_ZONE = 0.2  # 归零判断阈值
 
@@ -23,6 +20,9 @@ jog_speed = 20
 
 # 夹爪速度
 gripper_speed = 70
+
+# 初始点运动速度
+home_speed = 10
 
 # 夹爪状态（默认张开）
 gripper_state = True
@@ -67,6 +67,7 @@ def handle_mouse_event(jog_callback, stop_callback, gripper_callback):
     print(f"已连接 6D 鼠标: {joystick.get_name()}")
 
     active_axes = {}  # 记录当前运动状态
+    home_active = False  # 记录初始点运动状态
 
     try:
         while True:
@@ -92,10 +93,18 @@ def handle_mouse_event(jog_callback, stop_callback, gripper_callback):
                             stop_callback(coord_id)
                             del active_axes[axis_id]
 
-                # 处理按键（夹爪开合）
+                # 处理按键（按钮 0 回到初始点，按钮 1 控制夹爪）
                 elif event.type == pygame.JOYBUTTONDOWN:
-                    if event.button in [0, 1]:  # 任意按键触发
+                    if event.button == 0:  # 按下按钮 0，回到初始点
+                        home_callback()
+                        home_active = True
+                    elif event.button == 1:  # 按下按钮 1，切换夹爪状态
                         gripper_callback()
+
+                elif event.type == pygame.JOYBUTTONUP:
+                    if event.button == 0 and home_active:  # 松开按钮 0，停止初始点运动
+                        home_stop_callback()
+                        home_active = False
 
             time.sleep(0.01)
     except KeyboardInterrupt:
@@ -112,7 +121,7 @@ def jog_callback(coord_id, direction):
         mc.jog_coord(coord_id, direction, jog_speed)
     else:
         model = [2, 1, 3]
-        model_dir = [0, 0, 1]
+        model_dir = [0, 1, 1]
         model_id = model[coord_id-4]
         model_dire = direction ^ model_dir[coord_id-4]
         mc.jog_rpy(model_id, model_dire, jog_speed)
@@ -127,6 +136,14 @@ def gripper_callback():
     gripper_state = not gripper_state
     flag = 1 if gripper_state else 0
     mc.set_gripper_state(flag, gripper_speed)
+
+def home_callback():
+    """回到初始点"""
+    mc.send_angles([0, 0, 0, -90, 0, 90, 0], home_speed, _async=True)
+
+def home_stop_callback():
+    """停止回到初始点"""
+    mc.stop(1)
 
 
 if __name__ == '__main__':
