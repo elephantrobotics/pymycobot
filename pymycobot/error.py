@@ -105,9 +105,9 @@ def check_coords(value, robot_limit, class_name, exception_class, serial_port=No
         elif serial_port == "/dev/right_arm":
             min_coord = robot_limit[class_name]["right_coords_min"]
             max_coord = robot_limit[class_name]["right_coords_max"]
-        else:
-            min_coord = robot_limit[class_name]["coords_min"]
-            max_coord = robot_limit[class_name]["coords_max"]
+    else:
+        min_coord = robot_limit[class_name]["coords_min"]
+        max_coord = robot_limit[class_name]["coords_max"]
     for idx, coord in enumerate(value):
         if not min_coord[idx] <= coord <= max_coord[idx]:
             raise exception_class(
