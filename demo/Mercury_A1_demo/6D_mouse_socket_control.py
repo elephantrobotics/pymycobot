@@ -114,13 +114,13 @@ def jog_callback(coord_id, direction):
     if direction != 1:
         direction = 0
     if coord_id in [1,2,3]:
-        mc.jog_coord(coord_id, direction, jog_speed)
+        mc.jog_coord(coord_id, direction, jog_speed, _async=True)
     else:
         model = [2, 1, 3]
         model_dir = [0, 1, 1]
         model_id = model[coord_id-4]
         model_dire = direction ^ model_dir[coord_id-4]
-        mc.jog_rpy(model_id, model_dire, jog_speed)
+        mc.jog_rpy(model_id, model_dire, jog_speed, _async=True)
 
 def stop_callback(coord_id):
     """停止机械臂运动"""
