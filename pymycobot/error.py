@@ -111,7 +111,7 @@ def check_coords(value, robot_limit, class_name, exception_class, serial_port=No
     for idx, coord in enumerate(value):
         if not min_coord[idx] <= coord <= max_coord[idx]:
             raise exception_class(
-                "Has invalid coord value, error on index {0}. received {3} .but angle should be {1} ~ {2}.".format(
+                "Has invalid coord value, error on index {0}. received {3} .but coord should be {1} ~ {2}.".format(
                     idx, min_coord, max_coord, coord
                 )
             )

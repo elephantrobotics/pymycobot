@@ -1611,9 +1611,9 @@ class MercuryCommandGenerator(DataProcessor):
             0 - False\n
             -1 - Error
         """
-        if mode == 1:
+        if mode == 1 or mode == 2:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, coords=data)
+                class_name=self.__class__.__name__, coords=data, serial_port=self._serial_port.port)
             data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))
@@ -1624,7 +1624,7 @@ class MercuryCommandGenerator(DataProcessor):
                 class_name=self.__class__.__name__, angles=data)
             data_list = [self._angle2int(i) for i in data]
         else:
-            raise Exception("mode is not right, please input 0 or 1")
+            raise Exception("mode is not right, please input 0 or 1 or 2")
 
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
 
