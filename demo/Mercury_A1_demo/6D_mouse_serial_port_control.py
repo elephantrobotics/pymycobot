@@ -128,7 +128,7 @@ def jog_callback(coord_id, direction):
 
 def stop_callback(coord_id):
     """停止机械臂运动"""
-    mc.stop(1)
+    mc.stop()
 
 def gripper_callback():
     """控制夹爪开合"""
@@ -143,7 +143,7 @@ def home_callback():
 
 def home_stop_callback():
     """停止回到初始点"""
-    mc.stop(1)
+    mc.stop()
 
 
 if __name__ == '__main__':
