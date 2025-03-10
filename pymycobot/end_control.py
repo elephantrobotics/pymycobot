@@ -110,90 +110,100 @@ class ForceGripper:
     
 
 class ThreeHand:
+    def calibration_parameters(self, *args, **kwargs):
+        pass
     def _mesg(self, *args, **kwargs):
         pass
     def __set_tool_fittings_value(self, addr, *args, gripper_id=14, **kwargs):
         kwargs["has_replay"] = True
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self._mesg(ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, gripper_id, [addr], *args or ([0x00],), **kwargs)
 
     def __get_tool_fittings_value(self, addr, *args, gripper_id=14, **kwargs):
         kwargs["has_replay"] = True
         return self._mesg(ProtocolCode.MERCURY_GET_TOQUE_GRIPPER, gripper_id, [addr], *args or ([0x00],), **kwargs)
 
-    def get_hand_firmware_major_version(self, gripper_id):
+    def get_hand_firmware_major_version(self, gripper_id=14):
         return self.__get_tool_fittings_value(
             FingerGripper.GET_HAND_MAJOR_FIRMWARE_VERSION, gripper_id=gripper_id
         )
 
-    def get_hand_firmware_minor_version(self, gripper_id):
+    def get_hand_firmware_minor_version(self, gripper_id=14):
         return self.__get_tool_fittings_value(FingerGripper.GET_HAND_MINOR_FIRMWARE_VERSION, gripper_id=gripper_id)
 
-    def set_hand_gripper_id(self, gripper_id, hand_id):
+    def set_hand_gripper_id(self, hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
             FingerGripper.SET_HAND_GRIPPER_ID, [hand_id], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_id(self, gripper_id):
+    def get_hand_gripper_id(self, gripper_id=14):
         return self.__get_tool_fittings_value(
             FingerGripper.GET_HAND_GRIPPER_ID, gripper_id=gripper_id
         )
 
-    def set_hand_gripper_angle(self, gripper_id, joint_id, gripper_angle):
+    def set_hand_gripper_angle(self, hand_id, gripper_angle, gripper_id=14):
         """Set the angle of the single joint of the gripper
 
         Args:
-            gripper_id (int) : 1 ~ 254
-            joint_id (int): 1 ~ 6
+            hand_id (int): 1 ~ 6
             gripper_angle (int): 0 ~ 100
+            gripper_id (int) : 1 ~ 254
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id, gripper_angle=gripper_angle)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_ANGLE, [joint_id], [gripper_angle], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_ANGLE, [hand_id], [gripper_angle], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_angle(self, gripper_id, joint_id):
+    def get_hand_gripper_angle(self, hand_id, gripper_id=14):
         """Get the angle of the single joint of the gripper
 
         Args:
+            hand_id (int): 1 ~ 6
             gripper_id (int) : 1 ~ 254
-            joint_id (int): 1 ~ 6
 
         Return:
             gripper_angle (int): 0 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_ANGLE, [joint_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_ANGLE, [hand_id], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_angles(self, gripper_id, angles, speed):
+    def set_hand_gripper_angles(self, angles, speed, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
         return self.__set_tool_fittings_value(
             FingerGripper.SET_HAND_GRIPPER_ANGLES, [angles], [speed], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_angles(self, gripper_id):
+    def get_hand_gripper_angles(self, gripper_id=14):
         return self.__get_tool_fittings_value(FingerGripper.GET_HAND_ALL_ANGLES, gripper_id)
 
-    def set_hand_gripper_torque(self, gripper_id, joint_id, value):
+    def set_hand_gripper_torque(self, hand_id, torque, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id, torque=torque)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_TORQUE, [joint_id], [value], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_TORQUE, [hand_id], [torque], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_torque(self, gripper_id, joint_id):
+    def get_hand_gripper_torque(self, hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_TORQUE, [joint_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_TORQUE, [hand_id], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_calibrate(self, gripper_id, joint_id):
+    def set_hand_gripper_calibrate(self, hand_id, gripper_id=14):
         """ Setting the gripper jaw zero position
 
         Args:
+            hand_id (int): 1 ~ 6
             gripper_id (int): 1 ~ 254
-            joint_id (int): 1 ~ 6
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_CALIBRATION, [joint_id], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_CALIBRATION, [hand_id], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_status(self, gripper_id):
+    def get_hand_gripper_status(self, gripper_id=14):
         """ Get the clamping status of the gripper
 
         Args:
@@ -209,47 +219,50 @@ class ThreeHand:
             FingerGripper.GET_HAND_GRIPPER_STATUS, gripper_id=gripper_id
         )
 
-    def set_hand_gripper_enabled(self, gripper_id, flag):
+    def set_hand_gripper_enabled(self, flag, gripper_id=14):
         """ Set the enable state of the gripper
 
         Args:
             gripper_id (int): 1 ~ 254
-            flag (int): 1 ~ 6
+            flag (int): 0 or 1
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag)
         return self.__set_tool_fittings_value(
             FingerGripper.SET_HAND_GRIPPER_ENABLED, [flag], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_speed(self, gripper_id, joint_id, speed):
+    def set_hand_gripper_speed(self, hand_id, speed, gripper_id=14):
         """ Set the speed of the gripper
 
         Args:
-            gripper_id (int): 1 ~ 254
-            joint_id (int): 1 ~ 6
+            hand_id (int): 1 ~ 6
             speed (int): 1 ~ 100
+            gripper_id (int): 1 ~ 254
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id, speed=speed)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_SPEED, [joint_id], [speed], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_SPEED, [hand_id], [speed], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_default_speed(self, gripper_id, joint_id):
+    def get_hand_gripper_default_speed(self, hand_id, gripper_id=14):
         """ Get the default speed of the gripper
 
         Args:
+            hand_id (int): 1 ~ 6
             gripper_id (int): 1 ~ 254
-            joint_id (int): 1 ~ 6
 
         Return:
             default speed (int): 1 ~ 100
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_DEFAULT_SPEED, [joint_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_DEFAULT_SPEED, [hand_id], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_pinch_action(self, gripper_id, pinch_mode):
+    def set_hand_gripper_pinch_action(self, pinch_mode, gripper_id=14):
         """ Set the pinching action of the gripper
 
         Args:
@@ -260,107 +273,121 @@ class ThreeHand:
                 2 - Three-finger grip
                 3 - Two-finger grip
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, pinch_mode=pinch_mode)
         return self.__set_tool_fittings_value(
             FingerGripper.SET_HAND_GRIPPER_PINCH_ACTION, pinch_mode, gripper_id=gripper_id
         )
 
-    def set_hand_gripper_p(self, gripper_id, joint_id, value):
+    def set_hand_gripper_p(self, hand_id, value, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_P, [joint_id], [value], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_P, [hand_id], [value], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_p(self, gripper_id, joint_id):
+    def get_hand_gripper_p(self, hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_P, [joint_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_P, [hand_id], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_d(self, gripper_id, joint_id, value):
+    def set_hand_gripper_d(self, hand_id, value, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_D, [joint_id], [value], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_D, [hand_id], [value], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_d(self, gripper_id, joint_id):
+    def get_hand_gripper_d(self, hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_D, [joint_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_D, [hand_id], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_i(self, gripper_id, joint_id, value):
+    def set_hand_gripper_i(self, hand_id, value, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_I, [joint_id], [value], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_I, [hand_id], [value], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_i(self, gripper_id, joint_id):
+    def get_hand_gripper_i(self, hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_I, [joint_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_I, [hand_id], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_min_pressure(self, gripper_id, joint_id, value):
+    def set_hand_gripper_min_pressure(self, hand_id, value, gripper_id=14):
         """ Set the minimum starting force of the single joint of the gripper
 
         Args:
-            gripper_id (int): 1 ~ 254
-            joint_id (int): 1 ~ 6
+            hand_id (int): 1 ~ 6
             value (int): 0 ~ 254
+            gripper_id (int): 1 ~ 254
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_MIN_PRESSURE, [joint_id], [value], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_MIN_PRESSURE, [hand_id], [value], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_min_pressure(self, gripper_id, joint_id):
+    def get_hand_gripper_min_pressure(self, hand_id, gripper_id=14):
         """ Set the minimum starting force of the single joint of the gripper
 
         Args:
             gripper_id (int): 1 ~ 254
-            joint_id (int): 1 ~ 6
+            hand_id (int): 1 ~ 6
 
         Return:
             min pressure value (int): 0 ~ 254
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_MIN_PRESSURE, [joint_id], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_MIN_PRESSURE, [hand_id], gripper_id=gripper_id
         )
 
-    def set_hand_gripper_clockwise(self, gripper_id, joint_id, value):
+    def set_hand_gripper_clockwise(self, hand_id, value, gripper_id=14):
         """
         state: 0 or 1, 0 - disable, 1 - enable
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_CLOCKWISE, [joint_id], [value], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_CLOCKWISE, [hand_id], [value], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_clockwise(self, gripper_id, joint_id):
+    def get_hand_gripper_clockwise(self, hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_CLOCKWISE, joint_id, gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_CLOCKWISE, hand_id, gripper_id=gripper_id
         )
 
-    def set_hand_gripper_counterclockwise(self, gripper_id, joint_id, value):
+    def set_hand_gripper_counterclockwise(self, hand_id, value, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_COUNTERCLOCKWISE, [joint_id], [value], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_COUNTERCLOCKWISE, [hand_id], [value], gripper_id=gripper_id
         )
 
-    def get_hand_gripper_counterclockwise(self, gripper_id, joint_id):
+    def get_hand_gripper_counterclockwise(self, hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_GRIPPER_COUNTERCLOCKWISE, [joint_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_COUNTERCLOCKWISE, [hand_id], gripper_id=gripper_id
         )
 
-    def get_hand_single_pressure_sensor(self, gripper_id, finger_id):
+    def get_hand_single_pressure_sensor(self, hand_id, gripper_id=14):
         """ Get the counterclockwise runnable error of the single joint of the gripper
 
        Args:
            gripper_id (int): 1 ~ 254
-           finger_id (int): 1 ~ 5
+           hand_id (int): 1 ~ 6
 
        Return:
            int: 0 ~ 4096
 
        """
+        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.GET_HAND_SINGLE_PRESSURE_SENSOR, [finger_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_SINGLE_PRESSURE_SENSOR, [hand_id], gripper_id=gripper_id
         )
 
-    def get_hand_all_pressure_sensor(self, gripper_id):
+    def get_hand_all_pressure_sensor(self, gripper_id=14):
         """ Get the counterclockwise runnable error of the single joint of the gripper
 
         Args:
@@ -374,11 +401,10 @@ class ThreeHand:
             FingerGripper.GET_HAND_ALL_PRESSURE_SENSOR, gripper_id=gripper_id
         )
 
-    def set_hand_gripper_pinch_action_speed_consort(self, gripper_id, pinch_pose, rank_mode, idle_flag=None):
+    def set_hand_gripper_pinch_action_speed_consort(self, pinch_pose, rank_mode, gripper_id=14, idle_flag=None):
         """ Setting the gripper pinching action-speed coordination
 
         Args:
-            gripper_id (int): 1 ~ 254
             pinch_pose (int): 0 ~ 4
                 0: All joints return to zero
                 1: Index finger and thumb pinch together
@@ -387,10 +413,12 @@ class ThreeHand:
                 4: Three fingers together
             rank_mode (int): 0 ~ 5
                 The degree of closure,the higher the level, the more closed
-            idle_flag (int): default None, 0 ~ 4
+            gripper_id (int): 1 ~ 254
+            idle_flag (int): default None or 1
                 Idle flag. By default, there is no such byte. When this byte is 1, the idle finger can be freely manipulated.
 
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, pinch_pose=pinch_pose, rank_mode=rank_mode, idle_flag=idle_flag)
         if idle_flag is None:
             return self.__set_tool_fittings_value(
                 FingerGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT, pinch_pose, rank_mode, gripper_id=gripper_id

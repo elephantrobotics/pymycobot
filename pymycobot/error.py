@@ -92,16 +92,26 @@ def check_value_type(parameter, value_type, exception_class, _type):
             "The acceptable parameter {} should be an {}, but the received {}".format(parameter, _type, value_type))
 
 
-def check_coords(value, robot_limit, class_name, exception_class):
+def check_coords(parameter_name, value, robot_limit, class_name, exception_class, serial_port=None):
     if not isinstance(value, list):
-        raise exception_class("`coords` must be a list.")
+        raise exception_class(f"`{parameter_name}` must be a list.")
     if len(value) != 6:
-        raise exception_class("The length of `coords` must be 6.")
+        raise exception_class(f"The length of `{parameter_name}` must be 6.")
+    if serial_port:
+        if serial_port == "/dev/left_arm":
+            min_coord = robot_limit[class_name]["left_coords_min"]
+            max_coord = robot_limit[class_name]["left_coords_max"]
+        elif serial_port == "/dev/right_arm":
+            min_coord = robot_limit[class_name]["right_coords_min"]
+            max_coord = robot_limit[class_name]["right_coords_max"]
+    else:
+        min_coord = robot_limit[class_name]["coords_min"]
+        max_coord = robot_limit[class_name]["coords_max"]
     for idx, coord in enumerate(value):
-        if not robot_limit[class_name]["coords_min"][idx] <= coord <= robot_limit[class_name]["coords_max"][idx]:
+        if not min_coord[idx] <= coord <= max_coord[idx]:
             raise exception_class(
-                "Has invalid coord value, error on index {0}. received {3} .but angle should be {1} ~ {2}.".format(
-                    idx, robot_limit[class_name]["coords_min"][idx], robot_limit[class_name]["coords_max"][idx], coord
+                "Has invalid coord value, error on index {0}. received {3} .but coord should be {1} ~ {2}.".format(
+                    idx, min_coord[idx], max_coord[idx], coord
                 )
             )
 
@@ -309,22 +319,34 @@ def calibration_parameters(**kwargs):
                 index = kwargs.get('coord_id', None) - 1
                 if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
                     raise MercuryDataException(
-                        "The coord value of {} exceeds the limit, and the limit range is {} ~ {}".format(
+                        "The `coord` value of {} exceeds the limit, and the limit range is {} ~ {}".format(
                             value, robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index]
                         )
                     )
             elif parameter == 'base_coord':
                 coord_id = kwargs.get('coord_id', None)
+                
                 if isinstance(coord_id, int):
                     index = coord_id - 1
-                    if value < robot_limit[class_name]["base_coords_min"][index] or value > robot_limit[class_name]["base_coords_max"][index]:
+                    serial_port = kwargs.get('serial_port', None)
+                    if serial_port == "/dev/left_arm":
+                        min_coord = robot_limit[class_name]["left_coords_min"][index]
+                        max_coord = robot_limit[class_name]["left_coords_max"][index]
+                    elif serial_port == "/dev/right_arm":
+                        min_coord = robot_limit[class_name]["right_coords_min"][index]
+                        max_coord = robot_limit[class_name]["right_coords_max"][index]
+                    else:
+                        min_coord = robot_limit[class_name]["coords_min"][index]
+                        max_coord = robot_limit[class_name]["coords_max"][index]
+                    if value < min_coord or value > max_coord:
                         raise MercuryDataException(
-                            "The base_coord value of {} exceeds the limit, and the limit range is {} ~ {}".format(
-                                value, robot_limit[class_name]["base_coords_min"][index], robot_limit[class_name]["base_coords_max"][index]
+                            "The `base_coord` value of {} exceeds the limit, and the limit coord is {} ~ {}".format(
+                                value, min_coord, max_coord
                             )
                         )
-            elif parameter == 'coords':
-                check_coords(value, robot_limit, class_name, MercuryDataException)
+            elif parameter in ['coords', 'base_coords']:
+                serial_port = kwargs.get('serial_port', None)
+                check_coords(parameter, value, robot_limit, class_name, MercuryDataException, serial_port)
 
             elif parameter == 'speed':
                 if not 1 <= value <= 100:
@@ -412,6 +434,15 @@ def calibration_parameters(**kwargs):
             elif parameter == "torque":
                 if value < 0 or value > 100:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+            elif parameter == "pinch_pose":
+                if value < 0 or value > 4:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "rank_mode":
+                if value < 0 or value > 5:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 5, but received {}".format(parameter, value))
+            elif parameter == "idle_flag":
+                if value != 1:
+                    raise MercuryDataException("The parameter {} only supports 1, but received {}".format(parameter, value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
@@ -489,7 +520,7 @@ def calibration_parameters(**kwargs):
             elif parameter in ['account', 'password']:
                 check_value_type(parameter, value_type, MyCobot280DataException, str)
             elif parameter == 'coords':
-                check_coords(value, robot_limit, class_name, MyCobot280DataException)
+                check_coords(parameter, value, robot_limit, class_name, MyCobot280DataException)
             elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobot280DataException, int)
             elif parameter == 'acceleration':
@@ -613,7 +644,7 @@ def calibration_parameters(**kwargs):
             elif parameter in ['account', 'password']:
                 check_value_type(parameter, value_type, MyCobot320DataException, str)
             elif parameter == 'coords':
-                check_coords(value, robot_limit, class_name, MyCobot320DataException)
+                check_coords(parameter, value, robot_limit, class_name, MyCobot320DataException)
             elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobot320DataException, int)
             elif parameter == 'acceleration':
@@ -936,7 +967,7 @@ def calibration_parameters(**kwargs):
                         )
                     )
             elif parameter == "coords":
-                check_coords(value, robot_limit, class_name, MechArmDataException)
+                check_coords(parameter, value, robot_limit, class_name, MechArmDataException)
             elif parameter == 'coord':
                 id = kwargs.get('id', None)
                 index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
@@ -1036,7 +1067,7 @@ def calibration_parameters(**kwargs):
             elif parameter in ['account', 'password']:
                 check_value_type(parameter, value_type, MyArmDataException, str)
             elif parameter == 'coords':
-                check_coords(value, robot_limit, class_name, MyArmDataException)
+                check_coords(parameter, value, robot_limit, class_name, MyArmDataException)
             elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyArmDataException, int)
             elif parameter == 'acceleration':
