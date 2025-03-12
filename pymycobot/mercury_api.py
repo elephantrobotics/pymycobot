@@ -111,6 +111,8 @@ class MercuryCommandGenerator(CloseLoop):
             genre, *args, **kwargs)
         if isinstance(return_data, tuple):
             valid_data, data_len = return_data
+        elif isinstance(return_data, int):
+            return return_data
         else:
             return None
         res = []

@@ -20,11 +20,11 @@ class Pro630Client(CloseLoop):
         """
         super(Pro630Client, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
-        self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
+        self.lock_out = threading.Lock()
         self.is_stop = False
         self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True

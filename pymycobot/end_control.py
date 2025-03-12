@@ -131,10 +131,10 @@ class ThreeHand:
     def get_hand_firmware_minor_version(self, gripper_id=14):
         return self.__get_tool_fittings_value(FingerGripper.GET_HAND_MINOR_FIRMWARE_VERSION, gripper_id=gripper_id)
 
-    def set_hand_gripper_id(self, hand_id, gripper_id=14):
-        self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
+    def set_hand_gripper_id(self, new_hand_id, gripper_id=14):
+        self.calibration_parameters(class_name=self.__class__.__name__, new_hand_id=new_hand_id)
         return self.__set_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_ID, [hand_id], gripper_id=gripper_id
+            FingerGripper.SET_HAND_GRIPPER_ID, [new_hand_id], gripper_id=gripper_id
         )
 
     def get_hand_gripper_id(self, gripper_id=14):
@@ -341,7 +341,7 @@ class ThreeHand:
         """
         self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
         return self.__get_tool_fittings_value(
-            FingerGripper.SET_HAND_GRIPPER_MIN_PRESSURE, [hand_id], gripper_id=gripper_id
+            FingerGripper.GET_HAND_GRIPPER_MIN_PRESSURE, [hand_id], gripper_id=gripper_id
         )
 
     def set_hand_gripper_clockwise(self, hand_id, value, gripper_id=14):

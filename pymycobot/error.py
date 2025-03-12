@@ -422,7 +422,7 @@ def calibration_parameters(**kwargs):
             elif parameter == "trajectory":
                 if value not in [0,1,2,3,4]:
                     raise MercuryDataException("The parameter {} only supports [0,1,2,3,4], but received {}".format(parameter, value))
-            elif parameter == "gripper_id":
+            elif parameter in ["gripper_id", "new_hand_id"]:
                 if value < 1 or value > 254:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
             elif parameter == "gripper_address":
@@ -432,8 +432,13 @@ def calibration_parameters(**kwargs):
                 if value < 0 or value > 100:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
             elif parameter == "torque":
-                if value < 0 or value > 100:
-                    raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+                if value < 1 or value > 100:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 100, but received {}".format(parameter, value))
+            elif parameter == "hand_id":
+                if value < 1 or value > 6:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 6, but received {}".format(parameter, value))
+            elif parameter == 'pinch_mode':
+                check_0_or_1(parameter, value, [0, 1, 2, 3], value_type, MercuryDataException, int)
             elif parameter == "pinch_pose":
                 if value < 0 or value > 4:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
