@@ -111,6 +111,8 @@ class MercuryCommandGenerator(CloseLoop):
             genre, *args, **kwargs)
         if isinstance(return_data, tuple):
             valid_data, data_len = return_data
+        elif isinstance(return_data, int):
+            return return_data
         else:
             return None
         res = []
@@ -461,7 +463,7 @@ class MercuryCommandGenerator(CloseLoop):
             speed (int): 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, base_coord=base_coord, speed=speed)
+            class_name=self.__class__.__name__, coord_id=coord_id, base_coord=base_coord, speed=speed, serial_port=self._serial_port.port)
         if coord_id < 4:
             coord = self._coord2int(base_coord)
         else:
@@ -469,17 +471,18 @@ class MercuryCommandGenerator(CloseLoop):
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, coord_id, [coord], speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
-    def send_base_coords(self, coords, speed, _async=False):
+    def send_base_coords(self, base_coords, speed, _async=False):
         """Full coordinate control
 
         Args:
-            coords (list): coordinate value, [x, y, z, rx, ry, rz]
+            base_coords (list): coordinate value, [x, y, z, rx, ry, rz]
             speed (int): 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, base_coords=base_coords, speed=speed, serial_port=self._serial_port.port)
         coord_list = []
         for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
+            coord_list.append(self._coord2int(base_coords[idx]))
+        for angle in base_coords[3:]:
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed, _async=_async, has_reply=True)
 
