@@ -57,6 +57,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
             debug    : whether show debug info
         """
         super(MyCobot, self).__init__(debug)
+        print("Note: This class is no longer maintained since v3.6.0, please refer to the project documentation: https://github.com/elephantrobotics/pymycobot/blob/main/README.md")
         self.calibration_parameters = calibration_parameters
         import serial
         self._serial_port = serial.Serial()
