@@ -215,7 +215,7 @@ class ThreeHand:
             2 - Stopped moving, clamping detected
             3 - After clamping detected, the object fell
         """
-        return self.__set_tool_fittings_value(
+        return self.__get_tool_fittings_value(
             FingerGripper.GET_HAND_GRIPPER_STATUS, gripper_id=gripper_id
         )
 
@@ -258,7 +258,7 @@ class ThreeHand:
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
-        return self.__set_tool_fittings_value(
+        return self.__get_tool_fittings_value(
             FingerGripper.GET_HAND_GRIPPER_DEFAULT_SPEED, [hand_id], gripper_id=gripper_id
         )
 
