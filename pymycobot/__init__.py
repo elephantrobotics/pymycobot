@@ -80,7 +80,8 @@ __all__ = [
     "ChassisControl",
     "ConveyorAPI",
     "MyCobot280RDKX5",
-    "MyCobot280RDKX5Socket"
+    "MyCobot280RDKX5Socket",
+    "ultraArmP340"
 ]
 
 if sys.platform == "linux":
