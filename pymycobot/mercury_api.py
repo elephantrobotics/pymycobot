@@ -568,3 +568,30 @@ class MercuryCommandGenerator(CloseLoop):
             coord_list.append(self._angle2int(increment))
         return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, coord_list, speed, has_reply=True,
                           _async=_async)
+        
+    def is_in_position(self, data, mode=0):
+        """Judge whether in the position.
+
+        Args:
+            data: A data list, angles or coords. angles len 6, coords len 6.
+            mode: 0 - angles, 1 - coords, 2 - base coords
+
+        Return:
+            1 - True\n
+            0 - False\n
+            -1 - Error
+        """
+        if mode in [1,2]:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, coords=data)
+            data_list = []
+            for idx in range(3):
+                data_list.append(self._coord2int(data[idx]))
+            for idx in range(3, 6):
+                data_list.append(self._angle2int(data[idx]))
+        elif mode == 0:
+            self.calibration_parameters(class_name=self.__class__.__name__, angles=data)
+            data_list = [self._angle2int(i) for i in data]
+        else:
+            raise Exception("mode is not right, please input 0 or 1 or 2")
+        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
