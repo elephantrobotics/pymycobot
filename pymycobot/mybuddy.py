@@ -128,7 +128,7 @@ class MyBuddy(MyBuddyCommandGenerator, sms_sts):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply, _async = super(
+        real_command, has_reply = super(
             MyBuddy, self)._mesg(genre, *args, **kwargs)
         with self.lock:
             self._write(self._flatten(real_command))
