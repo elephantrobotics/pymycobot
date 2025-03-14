@@ -3,7 +3,7 @@
 **在使用下列函数接口的时候请先在开头导入我们的API库，否则无法运行成功，即输入以下代码：**
 
 ```python
-from pymycobot.ultraArm import ultraArm
+from pymycobot.ultraArmP340 import ultraArmP340
 ```
 
 **注意：** 若没有安装我们的API库，请参考 [README.md](../README.md) 文档进行安装。
@@ -324,17 +324,17 @@ from pymycobot.ultraArm import ultraArm
 
 ## 6 使用案例
 
-```bash
+```python
 import time
 import platform
-from pymycobot.ultraArm import ultraArm
+from pymycobot.ultraArmP340 import ultraArmP340
 
 # 自动选择系统并连接机械臂
 if platform.system() == "Windows":
-    ua = ultraArm('COM6', 115200)
+    ua = ultraArmP340('COM6', 115200)
     ua.go_zero()
 elif platform.system() == "Linux":
-    ua = ultraArm('/dev/ttyUSB0', 115200)
+    ua = ultraArmP340('/dev/ttyUSB0', 115200)
     ua.go_zero()
     
 # 机械臂运动的位置

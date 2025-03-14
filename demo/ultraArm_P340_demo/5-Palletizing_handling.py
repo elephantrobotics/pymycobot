@@ -1,4 +1,4 @@
-from pymycobot.ultraArm import ultraArm
+from pymycobot.ultraArmP340 import ultraArmP340
 import serial
 import serial.tools.list_ports
 
@@ -24,9 +24,9 @@ plist = [
 ]
 
 # 连接串口
-ua = ultraArm(plist[0],115200)
+ua = ultraArmP340(plist[0],115200)
 
-# ultraArm进行坐标运动/角度运动之前必须进行回零，否则无法获取到正确的角度/坐标
+# ultraArmP340进行坐标运动/角度运动之前必须进行回零，否则无法获取到正确的角度/坐标
 ua.go_zero()
 ua.sleep(0.5)
 

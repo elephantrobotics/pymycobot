@@ -2,7 +2,7 @@ import time
 import platform
 import serial
 import serial.tools.list_ports
-from pymycobot.ultraArm import ultraArm
+from pymycobot.ultraArmP340 import ultraArmP340
 
 plist = [
     str(x).split(" - ")[0].strip() for x in serial.tools.list_ports.comports()
@@ -10,10 +10,10 @@ plist = [
 
 # 自动选择系统并连接机械臂
 if platform.system() == "Windows":
-    ua = ultraArm(plist[0], 115200)
+    ua = ultraArmP340(plist[0], 115200)
     ua.go_zero()
 elif platform.system() == "Linux":
-    ua = ultraArm('/dev/ttyUSB0', 115200)
+    ua = ultraArmP340('/dev/ttyUSB0', 115200)
     ua.go_zero()
 
 # 机械臂运动的位置

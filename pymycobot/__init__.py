@@ -41,6 +41,7 @@ from pymycobot.pro400client import Pro400Client
 from pymycobot.myarmm_control import MyArmMControl
 from pymycobot.mercurychassis_api import ChassisControl
 from pymycobot.conveyor_api import ConveyorAPI
+from pymycobot.ultraArmP340 import ultraArmP340
 __all__ = [
     "MyPalletizer260",
     "MechArm270",
@@ -80,7 +81,8 @@ __all__ = [
     "ChassisControl",
     "ConveyorAPI",
     "MyCobot280RDKX5",
-    "MyCobot280RDKX5Socket"
+    "MyCobot280RDKX5Socket",
+    "ultraArmP340"
 ]
 
 if sys.platform == "linux":

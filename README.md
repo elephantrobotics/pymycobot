@@ -67,6 +67,8 @@ from pymycobot import MechArmSocket
 # for mypalletizer 260 machine
 from pymycobot import MyPalletizer260  
 from pymycobot import MyPalletizerSocket
+# for ultraArm P340 machine
+from pymycobot import ultraArmP340
 ```
 
 The [`demo`](./demo) directory stores some test case files.
