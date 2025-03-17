@@ -59,14 +59,13 @@ class MyBuddyCommandGenerator(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_ROBOT_ID, 0, has_reply=True)
 
-    def set_robot_id(self, id, new_id):
+    def set_robot_id(self, new_id):
         """Set this robot id
         
         Args:
-            id: 0/1/2/3 (ALL/L/R/W)
             new_id: 1 - 253
         """
-        return self._mesg(ProtocolCode.SET_ROBOT_ID, id, new_id)
+        return self._mesg(ProtocolCode.SET_ROBOT_ID, new_id)
 
     # Overall status
     def power_on(self, id=0):

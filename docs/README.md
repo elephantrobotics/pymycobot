@@ -409,13 +409,9 @@ Get the base coordinate system
 
     0 - base 1 - tool.
 
-### get_robot_id(id)
+### get_robot_id()
 
 Detect this robot id
-
-* **Parameters**
-
-    **id** – 0/1/2/3 (ALL/L/R/W)
 
 ### get_robot_version(id)
 
@@ -1089,13 +1085,11 @@ Set the base coordinate system
 
   * **rftype** – 0 - base 1 - tool.
 
-### set_robot_id(id, new_id)
+### set_robot_id(new_id)
 
 Set this robot id
 
 * **Parameters**
-
-  * **id** – 0/1/2/3 (ALL/L/R/W)
 
   * **new_id** – 1 - 253
 
