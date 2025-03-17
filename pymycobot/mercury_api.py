@@ -4,7 +4,7 @@ import locale
 import numpy as np
 
 from pymycobot.error import restrict_serial_port
-from pymycobot.common import ProtocolCode
+from pymycobot.common import ProtocolCode, FingerGripper
 from pymycobot.robot_info import _interpret_status_code
 from pymycobot.close_loop import CloseLoop
 
@@ -116,6 +116,14 @@ class MercuryCommandGenerator(CloseLoop):
         else:
             return None
         res = []
+        hand_address = None
+        if genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
+            if len(valid_data) > 1:
+                hand_address = self._decode_int16(valid_data[1:3])
+                valid_data = valid_data[3:]
+                data_len -= 3
+            else:
+                return valid_data[0]
         # print(data_len, valid_data)
         if data_len in [6, 8, 12, 14, 16, 20, 24, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
@@ -136,6 +144,7 @@ class MercuryCommandGenerator(CloseLoop):
                 for i in range(data_len):
                     res.append(valid_data[i])
             else:
+                
                 for header_i in range(0, len(valid_data), 2):
                     one = valid_data[header_i: header_i + 2]
                     res.append(self._decode_int16(one))
@@ -149,6 +158,8 @@ class MercuryCommandGenerator(CloseLoop):
                 res.append(self._decode_int8(valid_data[1:]))
             else:
                 res.append(self._decode_int16(valid_data))
+                if hand_address in [FingerGripper.GET_HAND_MAJOR_FIRMWARE_VERSION]:
+                    res[0] /=10
         elif data_len == 3:
             if genre in [ProtocolCode.GET_DIGITAL_INPUTS]:
                 for i in valid_data:
@@ -288,11 +299,11 @@ class MercuryCommandGenerator(CloseLoop):
             res[1] = coords
             res[2] = 0
             res[3] = 0
-        elif genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
-            res = self._decode_int16(valid_data[-2:])
-            address = self._decode_int16(valid_data[1:3])
-            if address == 1:
-                res /= 10
+        # elif genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
+        #     res = self._decode_int16(valid_data[-2:])
+        #     address = self._decode_int16(valid_data[1:3])
+        #     if address == 1:
+        #         res /= 10
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -595,3 +606,16 @@ class MercuryCommandGenerator(CloseLoop):
         else:
             raise Exception("mode is not right, please input 0 or 1 or 2")
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
+    
+    def write_waist_sync(self, current_angle, target_angle, speed):
+        """_summary_
+
+        Args:
+            current_angle (_type_): _description_
+            target_angle (_type_): _description_
+            speed (_type_): _description_
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__,
+                                    current_angle=current_angle, target_angle=target_angle, speed=speed)
+        return self._mesg(ProtocolCode.WRITE_WAIST_SYNC, [self._angle2int(current_angle)], [self._angle2int(target_angle)], speed)
+

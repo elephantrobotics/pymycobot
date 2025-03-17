@@ -1773,18 +1773,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
 
-    def write_waist_sync(self, current_angle, target_angle, speed):
-        """_summary_
-
-        Args:
-            current_angle (_type_): _description_
-            target_angle (_type_): _description_
-            speed (_type_): _description_
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__,
-                                    current_angle=current_angle, target_angle=target_angle, speed=speed)
-        return self._mesg(ProtocolCode.WRITE_WAIST_SYNC, [self._angle2int(current_angle)], [self._angle2int(target_angle)], speed)
-
     def get_system_version(self):
         """get system version"""
         return self._mesg(ProtocolCode.SOFTWARE_VERSION)
