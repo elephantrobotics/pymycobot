@@ -50,7 +50,7 @@ We support Python2, Python3.5 or later.
     - [get\_plan\_acceleration(id=0)](#get_plan_accelerationid0)
     - [get\_plan\_speed(id=0)](#get_plan_speedid0)
     - [get\_reference\_frame(id)](#get_reference_frameid)
-    - [get\_robot\_id(id)](#get_robot_idid)
+    - [get\_robot\_id()](#get_robot_id)
     - [get\_robot\_version(id)](#get_robot_versionid)
     - [get\_servo\_currents(id)](#get_servo_currentsid)
     - [get\_servo\_data(id, servo\_no, data\_id)](#get_servo_dataid-servo_no-data_id)
