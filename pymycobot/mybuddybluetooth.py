@@ -52,7 +52,7 @@ class MyBuddyBlueTooth(MyBuddyCommandGenerator):
             **kwargs: support `has_reply`
                 has_reply: Whether there is a return value to accept.
         """
-        real_command, has_reply, _async = super(
+        real_command, has_reply = super(
             MyBuddyBlueTooth, self)._mesg(genre, *args, **kwargs)
         
         with self.lock:

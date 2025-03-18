@@ -4,7 +4,7 @@
 
 ```python
 #For Mira Series
-from pymycobot.ultraArm import ultraArm
+from pymycobot.ultraArmP340 import ultraArmP340
 ```
 
 **Note：** If our API library is not installed, please refer to  [Python environment setup](../4-Python/1-InstallingthePythonEnvironment.md) section to install。
@@ -325,17 +325,17 @@ from pymycobot.ultraArm import ultraArm
 
 ## 6 Use Cases
 
-```bash
+```python
 import time
 import platform
-from pymycobot.ultraArm import ultraArm
+from pymycobot.ultraArmP340 import ultraArmP340
 
 # Automatically select the system and connect the mechanical arm
 if platform.system() == "Windows":
-    ua = ultraArm('COM6', 115200)
+    ua = ultraArmP340('COM6', 115200)
     ua.go_zero()
 elif platform.system() == "Linux":
-    ua = ultraArm('/dev/ttyUSB0', 115200)
+    ua = ultraArmP340('/dev/ttyUSB0', 115200)
     ua.go_zero()
     
 # Position of mechanical arm movement

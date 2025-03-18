@@ -41,6 +41,7 @@ from pymycobot.pro400client import Pro400Client
 from pymycobot.myarmm_control import MyArmMControl
 from pymycobot.mercurychassis_api import ChassisControl
 from pymycobot.conveyor_api import ConveyorAPI
+from pymycobot.ultraArmP340 import ultraArmP340
 __all__ = [
     "MyPalletizer260",
     "MechArm270",
@@ -80,14 +81,15 @@ __all__ = [
     "ChassisControl",
     "ConveyorAPI",
     "MyCobot280RDKX5",
-    "MyCobot280RDKX5Socket"
+    "MyCobot280RDKX5Socket",
+    "ultraArmP340"
 ]
 
 if sys.platform == "linux":
     from pymycobot.mybuddyemoticon import MyBuddyEmoticon
     __all__.append("MyBuddyEmoticon")
 
-__version__ = "3.9.0" 
+__version__ = "3.9.2b2" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

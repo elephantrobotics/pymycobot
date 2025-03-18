@@ -4,7 +4,7 @@ import locale
 import numpy as np
 
 from pymycobot.error import restrict_serial_port
-from pymycobot.common import ProtocolCode
+from pymycobot.common import ProtocolCode, FingerGripper
 from pymycobot.robot_info import _interpret_status_code
 from pymycobot.close_loop import CloseLoop
 
@@ -111,9 +111,19 @@ class MercuryCommandGenerator(CloseLoop):
             genre, *args, **kwargs)
         if isinstance(return_data, tuple):
             valid_data, data_len = return_data
+        elif isinstance(return_data, int):
+            return return_data
         else:
             return None
         res = []
+        hand_address = None
+        if genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
+            if len(valid_data) > 1:
+                hand_address = self._decode_int16(valid_data[1:3])
+                valid_data = valid_data[3:]
+                data_len -= 3
+            else:
+                return valid_data[0]
         # print(data_len, valid_data)
         if data_len in [6, 8, 12, 14, 16, 20, 24, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
@@ -134,6 +144,7 @@ class MercuryCommandGenerator(CloseLoop):
                 for i in range(data_len):
                     res.append(valid_data[i])
             else:
+                
                 for header_i in range(0, len(valid_data), 2):
                     one = valid_data[header_i: header_i + 2]
                     res.append(self._decode_int16(one))
@@ -147,6 +158,8 @@ class MercuryCommandGenerator(CloseLoop):
                 res.append(self._decode_int8(valid_data[1:]))
             else:
                 res.append(self._decode_int16(valid_data))
+                if hand_address in [FingerGripper.GET_HAND_MAJOR_FIRMWARE_VERSION]:
+                    res[0] /=10
         elif data_len == 3:
             if genre in [ProtocolCode.GET_DIGITAL_INPUTS]:
                 for i in valid_data:
@@ -286,11 +299,11 @@ class MercuryCommandGenerator(CloseLoop):
             res[1] = coords
             res[2] = 0
             res[3] = 0
-        elif genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
-            res = self._decode_int16(valid_data[-2:])
-            address = self._decode_int16(valid_data[1:3])
-            if address == 1:
-                res /= 10
+        # elif genre == ProtocolCode.MERCURY_GET_TOQUE_GRIPPER:
+        #     res = self._decode_int16(valid_data[-2:])
+        #     address = self._decode_int16(valid_data[1:3])
+        #     if address == 1:
+        #         res /= 10
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -461,7 +474,7 @@ class MercuryCommandGenerator(CloseLoop):
             speed (int): 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, base_coord=base_coord, speed=speed)
+            class_name=self.__class__.__name__, coord_id=coord_id, base_coord=base_coord, speed=speed, serial_port=self._serial_port.port)
         if coord_id < 4:
             coord = self._coord2int(base_coord)
         else:
@@ -469,17 +482,18 @@ class MercuryCommandGenerator(CloseLoop):
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORD, coord_id, [coord], speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
-    def send_base_coords(self, coords, speed, _async=False):
+    def send_base_coords(self, base_coords, speed, _async=False):
         """Full coordinate control
 
         Args:
-            coords (list): coordinate value, [x, y, z, rx, ry, rz]
+            base_coords (list): coordinate value, [x, y, z, rx, ry, rz]
             speed (int): 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, base_coords=base_coords, speed=speed, serial_port=self._serial_port.port)
         coord_list = []
         for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
+            coord_list.append(self._coord2int(base_coords[idx]))
+        for angle in base_coords[3:]:
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.MERCURY_SET_BASE_COORDS, coord_list, speed, _async=_async, has_reply=True)
 
@@ -565,3 +579,45 @@ class MercuryCommandGenerator(CloseLoop):
             coord_list.append(self._angle2int(increment))
         return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, coord_list, speed, has_reply=True,
                           _async=_async)
+        
+    def is_in_position(self, data, mode=0):
+        """Judge whether in the position.
+
+        Args:
+            data: A data list, angles or coords. angles len 6, coords len 6.
+            mode: 0 - angles, 1 - coords, 2 - base coords
+
+        Return:
+            1 - True\n
+            0 - False\n
+            -1 - Error
+        """
+        if mode in [1,2]:
+            if mode == 2:
+                self.calibration_parameters(class_name=self.__class__.__name__, base_coords=data, serial_port=self._serial_port.port)
+            else:
+                self.calibration_parameters(class_name=self.__class__.__name__, coords=data)
+            data_list = []
+            for idx in range(3):
+                data_list.append(self._coord2int(data[idx]))
+            for idx in range(3, 6):
+                data_list.append(self._angle2int(data[idx]))
+        elif mode == 0:
+            self.calibration_parameters(class_name=self.__class__.__name__, angles=data)
+            data_list = [self._angle2int(i) for i in data]
+        else:
+            raise Exception("mode is not right, please input 0 or 1 or 2")
+        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
+    
+    def write_waist_sync(self, current_angle, target_angle, speed):
+        """_summary_
+
+        Args:
+            current_angle (_type_): _description_
+            target_angle (_type_): _description_
+            speed (_type_): _description_
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__,
+                                    current_angle=current_angle, target_angle=target_angle, speed=speed)
+        return self._mesg(ProtocolCode.WRITE_WAIST_SYNC, [self._angle2int(current_angle)], [self._angle2int(target_angle)], speed)
+

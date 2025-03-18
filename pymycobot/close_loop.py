@@ -94,10 +94,9 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             big_wait_time = True
 
         elif genre in (ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, ProtocolCode.MERCURY_GET_TOQUE_GRIPPER):
+            wait_time = 0.3
             if real_command[3] == FingerGripper.SET_HAND_GRIPPER_CALIBRATION:
-                wait_time = 8
-            elif real_command[3] == FingerGripper.SET_HAND_GRIPPER_ANGLES:
-                wait_time = 0.5
+                wait_time = 10
 
         need_break = False
         data = None
@@ -152,6 +151,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                                 self.write_command.remove(genre)
                         break
             if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
+                # 发送指令以后，超时0.5S没有收到第一次反馈，并且是运动指令，并且超时时间是正常指令
                 t = time.time()
                 moving = self.is_moving()
                 if isinstance(moving, int):
@@ -1635,7 +1635,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
     def get_drag_fifo_len(self):
         return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN)
 
-    def jog_rpy(self, axis, direction, speed):
+    def jog_rpy(self, axis, direction, speed, _async=True):
         """Rotate the end point around the fixed axis of the base coordinate system
 
         Args:
@@ -1645,7 +1645,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, axis=axis, direction=direction, speed=speed)
-        return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, has_reply=True)
+        return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, _async=_async, has_reply=True)
 
     def get_collision_mode(self):
         """Get collision detection status
@@ -1773,14 +1773,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
 
-    def write_waist_sync(self, current_angle, target_angle, speed):
-        """_summary_
-
-        Args:
-            current_angle (_type_): _description_
-            target_angle (_type_): _description_
-            speed (_type_): _description_
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__,
-                                    current_angle=current_angle, target_angle=target_angle, speed=speed)
-        return self._mesg(ProtocolCode.WRITE_WAIST_SYNC, [self._angle2int(current_angle)], [self._angle2int(target_angle)], speed)
+    def get_system_version(self):
+        """get system version"""
+        return self._mesg(ProtocolCode.SOFTWARE_VERSION)
