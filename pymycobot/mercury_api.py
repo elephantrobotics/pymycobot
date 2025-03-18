@@ -593,8 +593,10 @@ class MercuryCommandGenerator(CloseLoop):
             -1 - Error
         """
         if mode in [1,2]:
-            self.calibration_parameters(
-                class_name=self.__class__.__name__, coords=data)
+            if mode == 2:
+                self.calibration_parameters(class_name=self.__class__.__name__, base_coords=data, serial_port=self._serial_port.port)
+            else:
+                self.calibration_parameters(class_name=self.__class__.__name__, coords=data)
             data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))

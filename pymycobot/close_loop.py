@@ -94,10 +94,9 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             big_wait_time = True
 
         elif genre in (ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, ProtocolCode.MERCURY_GET_TOQUE_GRIPPER):
+            wait_time = 0.3
             if real_command[3] == FingerGripper.SET_HAND_GRIPPER_CALIBRATION:
-                wait_time = 8
-            elif real_command[3] == FingerGripper.SET_HAND_GRIPPER_ANGLES:
-                wait_time = 0.5
+                wait_time = 10
 
         need_break = False
         data = None
@@ -152,6 +151,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                                 self.write_command.remove(genre)
                         break
             if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
+                # 发送指令以后，超时0.5S没有收到第一次反馈，并且是运动指令，并且超时时间是正常指令
                 t = time.time()
                 moving = self.is_moving()
                 if isinstance(moving, int):
