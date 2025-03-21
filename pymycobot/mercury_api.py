@@ -621,3 +621,16 @@ class MercuryCommandGenerator(CloseLoop):
                                     current_angle=current_angle, target_angle=target_angle, speed=speed)
         return self._mesg(ProtocolCode.WRITE_WAIST_SYNC, [self._angle2int(current_angle)], [self._angle2int(target_angle)], speed)
 
+    @restrict_serial_port
+    def jog_base_rpy(self, axis, direction, speed, _async=True):
+        """Rotate the end point around the fixed axis of the base coordinate system
+
+        Args:
+            axis (int): 1 ~ 3. 1 - Roll, 2 - Pitch, 3 - Yaw
+            direction (int): 1 - Forward. 0 - Reverse.
+            speed (int): 1 ~ 100.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, axis=axis, direction=direction, speed=speed)
+        return self._mesg(ProtocolCode.JOG_BASE_RPY, axis, direction, speed, _async=_async, has_reply=True)
+
