@@ -5,7 +5,8 @@ import serial.tools.list_ports
 import time
 import socket
 
-def get_port(): # 获取所有串口号
+
+def get_port():  # 获取所有串口号
     port_list = serial.tools.list_ports.comports()
     i = 1
     res = {}
@@ -15,14 +16,18 @@ def get_port(): # 获取所有串口号
         i += 1
     return res
 
+
 def processing_data(data):
     data = data.split('\n')[-1]
     angle = list(data[1:-1].split(','))
     angle = [float(i) for i in angle]
     angle[2] *= -1
     gripper_angle = angle.pop(-1)
-    angle.append((gripper_angle - 0.08) / (-95.27 - 0.08) * (-123.13 + 1.23) - 1.23)
+    gripper_angle = (gripper_angle - 0.08) / (-95.27 - 0.08) * (-123.13 + 1.23) - 1.23
+    gripper_angle = max(min(gripper_angle, -118), 2)
+    angle.append(gripper_angle)
     return angle
+
 
 def main():
     HOST = '127.0.0.1'
@@ -47,11 +52,11 @@ def main():
         while True:
             try:
                 data = conn.recv(1024).decode('utf-8')
-                angle = processing_data(data)
-                m.set_joints_angle(angle, speed)
+                angles = processing_data(data)
+                m.set_joints_angle(angles, speed)
             except MyArmDataException:
                 pass
-            
+
 
 if __name__ == "__main__":
     main()
