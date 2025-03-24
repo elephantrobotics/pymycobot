@@ -1325,6 +1325,9 @@ def calibration_parameters(**kwargs):
                 if not value:
                     raise ValueError("angles value can't be empty")
 
+                if len(value) != 7:
+                    raise ValueError("The length of `angles` must be 7.")
+
                 for i, v in enumerate(value):
                     min_angle = limit_info["angles_min"][i]
                     max_angle = limit_info["angles_max"][i]
@@ -1338,6 +1341,9 @@ def calibration_parameters(**kwargs):
                 if not min_coord <= value <= max_coord:
                     raise ValueError(f"coord value not right, should be {min_coord} ~ {max_coord}, but received {value}")
             elif parameter == 'coords':
+                if len(value) != 6:
+                    raise ValueError("The length of `coords` must be 6.")
+
                 for i, v in enumerate(value):
                     min_coord = limit_info["coord_min"][i]
                     max_coord = limit_info["coord_max"][i]
@@ -1351,12 +1357,19 @@ def calibration_parameters(**kwargs):
                     raise ValueError(
                         f"angle value not right, should be {min_encoder} ~ {max_encoder}, but received {value}")
             elif parameter == 'encoders':
+                if len(value) != 8:
+                    raise ValueError("The length of `encoders` must be 8.")
+
                 for i, v in enumerate(value):
                     max_encoder = limit_info["encoders_max"][i]
                     min_encoder = limit_info["encoders_min"][i]
                     if v < min_encoder or v > max_encoder:
                         raise ValueError(
                             f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}")
+
+                if (2048 - value[1]) + (2048 - value[2]) != 0:
+                    raise ValueError("The 2 and 3 servos must be inverse")
+
             elif parameter == "speed":
                 check_value_type(parameter, value_type, TypeError, int)
                 if not 1 <= value <= 100:

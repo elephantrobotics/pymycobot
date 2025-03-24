@@ -36,10 +36,12 @@ def setup_logging(debug: bool = False):
 
 
 def setup_serial_port(port, baudrate, timeout=0.1):
-    serial_api = serial.Serial(port, baudrate, timeout=timeout)
+    serial_api = serial.Serial()
+    serial_api.port = port
+    serial_api.baudrate = baudrate
+    serial_api.timeout = timeout
     serial_api.rts = False
-    if not serial_api.is_open:
-        serial_api.open()
+    serial_api.open()
     return serial_api
 
 
@@ -159,7 +161,6 @@ class MyArmMProcessor(DataProcessor):
                     r.append(self._int2angle(res[index]))
             return r
         elif self.__is_return(genre, data):
-            print("11111111111111111111111")
             return self._process_single(res)
         else:
             return res
@@ -387,10 +388,10 @@ class MyArmMControl(MyArmMProcessor):
             increment(int): incremental
             speed(int): int (0 - 100)
         """
-        if not (isinstance(increment, int) or isinstance(increment, float)):
+        if isinstance(increment, (int, float)):
             raise ValueError("increment must be int or float")
 
-        self.calibration_parameters(joint_id=joint_id, speed=speed)
+        self.calibration_parameters(joint_id=joint_id, speed=speed, angle=increment)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
     def pause(self):
