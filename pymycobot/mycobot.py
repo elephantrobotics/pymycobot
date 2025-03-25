@@ -68,6 +68,7 @@ class MyCobot(CommandGenerator, PublicCommandGenerator, sms_sts):
         self._serial_port.open()
         time.sleep(1.5)
         self.lock = threading.Lock()
+        self.thread_lock = thread_lock
         super(sms_sts, self).__init__(self._serial_port, 0)
 
     _write = write
