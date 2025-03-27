@@ -115,18 +115,21 @@ class MyArmM(MyArmAPI):
         """Clear the robot abnormality Ignore the error joint and continue to move"""
         self._mesg(ProtocolCode.CLEAR_ROBOT_ERROR)
 
-    def set_servo_enabled(self, joint_id, state):
+    def set_servo_enabled(self, servo_id, state):
         """Set the servo motor torque switch
         Args:
-            joint_id (int): 0-254 254-all
+            servo_id (int): 0-254 254-all
             state: 0/1
                 1-focus
                 0-release
         """
         if state not in (0, 1):
             raise ValueError("state must be 0 or 1")
-        self.calibration_parameters(jonit_id=joint_id, state=state)
-        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, joint_id, state)
+
+        if servo_id not in range(0, 255):
+            raise ValueError("servo_id must be between 0 and 254")
+
+        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, servo_id, state)
 
     def get_joints_max(self):
         """Read the maximum angle of all joints"""

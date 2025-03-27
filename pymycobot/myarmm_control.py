@@ -91,8 +91,14 @@ class MyArmMProcessor(DataProcessor):
             res = []
             valid_data = data[4:-1]
             for header_i in range(0, len(valid_data), 2):
-                one = valid_data[header_i: header_i + 2]
-                res.append(self._decode_int16(one))
+                d = self._decode_int16(valid_data[header_i: header_i + 2])
+                if d == 0:
+                    res.append(d)
+                    continue
+                reverse_bins = reversed(bin(d)[2:])
+                rank = [i for i, e in enumerate(reverse_bins) if e != '0']
+                res.append(rank)
+
         else:
             res = self._process_received(data, genre)
         if not res:
@@ -388,10 +394,10 @@ class MyArmMControl(MyArmMProcessor):
             increment(int): incremental
             speed(int): int (0 - 100)
         """
-        if isinstance(increment, (int, float)):
+        if not isinstance(increment, (int, float)):
             raise ValueError("increment must be int or float")
 
-        self.calibration_parameters(joint_id=joint_id, speed=speed, angle=increment)
+        self.calibration_parameters(joint_id=joint_id, angle=increment, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
     def pause(self):
@@ -558,10 +564,10 @@ class MyArmMControl(MyArmMProcessor):
             values 0 - 4096
         """
         if mode is not None:
-            self.calibration_parameters(servo_id=servo_id, servo_addr=data_id, mode=mode)
+            self.calibration_parameters(servo_id=servo_id, mode=mode)
             return self._mesg(ProtocolCode.GET_SERVO_DATA, servo_id, data_id, mode)
 
-        self.calibration_parameters(servo_id=servo_id, servo_addr=data_id)
+        self.calibration_parameters(servo_id=servo_id)
         return self._mesg(ProtocolCode.GET_SERVO_DATA, servo_id, data_id)
 
     def set_servo_calibration(self, servo_id):
