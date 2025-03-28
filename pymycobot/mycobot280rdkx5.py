@@ -13,11 +13,13 @@ from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 
 
-def setup_serial_connect(port, baudrate, timeout):
-    serial_api = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
+def setup_serial_port(port, baudrate, timeout=None):
+    serial_api = serial.Serial()
+    serial_api.port = port
+    serial_api.baudrate = baudrate
+    serial_api.timeout = timeout
     serial_api.rts = False
-    if not serial_api.is_open:
-        serial_api.open()
+    serial_api.open()
     return serial_api
 
 
@@ -79,16 +81,7 @@ class MyCobot280RDKX5Api(CommandGenerator):
         if genre == ProtocolCode.SET_SSID_PWD:
             return 1
 
-        if genre == ProtocolCode.GET_QUICK_INFO:
-            res = []
-            valid_data = data[4:-1]
-            for header_i in range(0, len(valid_data), 2):
-                if header_i < 26:
-                    one = valid_data[header_i: header_i + 2]
-                    res.append(self._decode_int16(one))
-            res.extend(valid_data[25:])
-        else:
-            res = self._process_received(data, genre)
+        res = self._process_received(data, genre)
 
         if res is None:
             return None
@@ -153,7 +146,7 @@ class MyCobot280RDKX5Api(CommandGenerator):
             return self._int2coord(self._process_single(res))
         elif genre in [ProtocolCode.GET_REBOOT_COUNT]:
             return self._process_high_low_bytes(res)
-        elif genre in (ProtocolCode.GET_ANGLES_COORDS, ProtocolCode.GET_QUICK_INFO):
+        elif genre in (ProtocolCode.GET_ANGLES_COORDS, ):
             r = []
             for index, el in enumerate(res):
                 if index < 6:
@@ -188,6 +181,9 @@ class MyCobot280RDKX5CommandGenerator(MyCobot280RDKX5Api):
         """Clear the command queue"""
         return self._mesg(ProtocolCode.CLEAR_COMMAND_QUEUE)
 
+    def get_queue_length(self):
+        return self._mesg(ProtocolCode.GET_COMMAND_QUEUE)
+
     def async_or_sync(self):
         """Set the command execution mode
         Return:
@@ -212,6 +208,25 @@ class MyCobot280RDKX5CommandGenerator(MyCobot280RDKX5Api):
         """Clear robot error message"""
         return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, has_reply=True)
 
+    def set_monitor_state(self, state):
+        """
+        Set the monitoring state
+        Args:
+            state: 0 - Disable monitoring
+                   1 - Enable monitoring
+        """
+        return self._mesg(ProtocolCode.SET_MONITOR_STATE, state)
+
+    def get_monitor_state(self):
+        """
+        Get the monitoring state
+        """
+        return self._mesg(ProtocolCode.GET_MONITOR_STATE, has_reply=True)
+
+    def get_reboot_count(self):
+        """Get the number of times the robot has been restarted"""
+        return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
+
     def power_on(self):
         """Open communication with Atom."""
         return self._mesg(ProtocolCode.POWER_ON)
@@ -231,15 +246,12 @@ class MyCobot280RDKX5CommandGenerator(MyCobot280RDKX5Api):
         return self._mesg(ProtocolCode.IS_POWER_ON, has_reply=True)
 
     def release_all_servos(self, data=None):
-        """Relax all joints
+        """Relax all joints"""
+        return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
 
-        Args:
-            data: 1 - Undamping (The default is damping)
-        """
-        if data is None:
-            return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS)
-        else:
-            return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
+    def focus_all_servos(self):
+        """Damping all joints"""
+        return self._mesg(ProtocolCode.FOCUS_ALL_SERVOS)
 
     def read_next_error(self):
         """Robot Error Detection
@@ -315,10 +327,6 @@ class MyCobot280RDKX5CommandGenerator(MyCobot280RDKX5Api):
     def get_angles_coords(self):
         """Get joint angles and coordinates"""
         return self._mesg(ProtocolCode.GET_ANGLES_COORDS, has_reply=True)
-
-    def get_quick_move_message(self):
-        """Get the quick move message"""
-        return self._mesg(ProtocolCode.GET_QUICK_INFO, has_reply=True)
 
     # JOG mode and operation
     def write_angles_time_control(self, angles, step_time):
@@ -508,6 +516,11 @@ class MyCobot280RDKX5CommandGenerator(MyCobot280RDKX5Api):
             int: 0 or 1 (1 - success)
         """
         return self._mesg(ProtocolCode.SET_FOUR_PIECES_ZERO, has_reply=True)
+
+    def set_servo_data(self, servo_id, data_id, value, mode=None):
+        if data_id in (0, 1, 2, 3, 4):
+            raise ValueError("Invalid data_id, addr 0 ~ 4 cannot be modified")
+        return super().set_servo_data(servo_id, data_id, value, mode)
 
     # Running Status and Settings
     def set_joint_max(self, id, angle):
@@ -810,7 +823,7 @@ class MyCobot280RDKX5(MyCobot280RDKX5CommandGenerator):
             debug    : whether show debug info
         """
         super().__init__(debug, thread_lock)
-        self._serial_port = setup_serial_connect(port=port, baudrate=baudrate, timeout=timeout)
+        self._serial_port = setup_serial_port(port=port, baudrate=baudrate, timeout=timeout)
         self._write = functools.partial(write, self)
         self._read = functools.partial(read, self)
 
@@ -885,12 +898,14 @@ class MyCobot280RDKX5Socket(MyCobot280RDKX5CommandGenerator):
 
 
 def main():
-    mc_sock = MyCobot280RDKX5Socket('192.168.1.246', port=30002, debug=True)
+    rdx_x5 = MyCobot280RDKX5("Com30", debug=True)
+    print(rdx_x5.get_reboot_count())
+    # mc_sock = MyCobot280RDKX5Socket('192.168.1.246', port=30002, debug=True)
     # print(mc_sock.send_angle(1, 100, 50))
     # print(mc_sock.get_quick_move_message())
-    print(mc_sock.set_gpio_mode(0))
-    print(mc_sock.setup_gpio_state(5, 1, initial=1))
-    print(mc_sock.set_gpio_output(5, 0))
+    # print(mc_sock.set_gpio_mode(0))
+    # print(mc_sock.setup_gpio_state(5, 1, initial=1))
+    # print(mc_sock.set_gpio_output(5, 0))
     # print(mc_sock.get_gpio_input(5))
 
 

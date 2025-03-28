@@ -117,7 +117,9 @@ class ProtocolCode(object):
     GET_ATOM_VERSION = 0x09
     
     CLEAR_ZERO_POS = 0x0A
+    SET_MONITOR_STATE = 0x0A
     SET_SERVO_CW = 0x0B
+    GET_MONITOR_STATE = 0x0B
     GET_SERVO_CW = 0x0C
     CLEAR_WAIST_QUEUE = 0x0D
     SET_LIMIT_SWITCH = 0x0E
@@ -125,6 +127,7 @@ class ProtocolCode(object):
 
     SET_POS_SWITCH = 0x0B
     GET_POS_SWITCH = 0x0C
+    GET_COMMAND_QUEUE = 0x0C
 
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
@@ -360,7 +363,6 @@ class ProtocolCode(object):
     GET_TOQUE_GRIPPER = 0xE9
     SET_ERROR_DETECT_MODE = 0xE8
     GET_ERROR_DETECT_MODE = 0xE9
-    JOG_BASE_RPY = 0xEB
 
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
