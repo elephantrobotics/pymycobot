@@ -418,12 +418,18 @@ class ThreeHand:
                 Idle flag. By default, there is no such byte. When this byte is 1, the idle finger can be freely manipulated.
 
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pinch_pose=pinch_pose, rank_mode=rank_mode, idle_flag=idle_flag)
+
         if idle_flag is None:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, pinch_pose=pinch_pose, rank_mode=rank_mode
+            )
             return self.__set_tool_fittings_value(
                 FingerGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT, pinch_pose, rank_mode, gripper_id=gripper_id
             )
         else:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, pinch_pose=pinch_pose, rank_mode=rank_mode, idle_flag=idle_flag
+            )
             return self.__set_tool_fittings_value(
                 FingerGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT, pinch_pose, rank_mode, idle_flag,
                 gripper_id=gripper_id
