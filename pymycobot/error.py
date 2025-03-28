@@ -1325,8 +1325,9 @@ def calibration_parameters(**kwargs):
                 if not value:
                     raise ValueError("angles value can't be empty")
 
-                if len(value) != 7:
-                    raise ValueError("The length of `angles` must be 7.")
+                joint_length = len(limit_info["joint_id"])
+                if len(value) != joint_length:
+                    raise ValueError(f"The length of `angles` must be {joint_length}.")
 
                 for i, v in enumerate(value):
                     min_angle = limit_info["angles_min"][i]

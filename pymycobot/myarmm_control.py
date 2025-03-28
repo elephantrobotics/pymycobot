@@ -254,7 +254,7 @@ class MyArmMControl(MyArmMProcessor):
         """Send the angle of a joint to robot arm.
 
         Args:
-            joint_id: (int) 1 ~ 7
+            joint_id: (int) 1 ~ 6
             degree: (float) -150 ~ 150
             speed : (int) 1 ~ 100
         """
