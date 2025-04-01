@@ -1,7 +1,7 @@
 # coding=utf-8
 
+import time
 import threading
-import serial
 
 from pymycobot.close_loop import CloseLoop
 from pymycobot.error import calibration_parameters
@@ -9,7 +9,7 @@ from pymycobot.common import ProtocolCode
 
 
 class Pro630(CloseLoop):
-    def __init__(self, port="/dev/ttyAMA1", baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
         """
         Args:
             port     : port string
@@ -18,15 +18,15 @@ class Pro630(CloseLoop):
             debug    : whether show debug info
         """
         super(Pro630, self).__init__(debug)
-        # self.calibration_parameters = calibration_parameters
-        # import RPi.GPIO as GPIO
-        # self.power_control_1 = 3
-        # self.power_control_2 = 4
-        # GPIO.setmode(GPIO.BCM)
-        # GPIO.setwarnings(False)
-        # GPIO.setup(self.power_control_1, GPIO.IN)
-        # GPIO.setup(self.power_control_2, GPIO.OUT)
-        self.save_serial_log = save_serial_log
+        self.calibration_parameters = calibration_parameters
+        import serial
+        import RPi.GPIO as GPIO
+        self.power_control_1 = 3
+        self.power_control_2 = 4
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(self.power_control_1, GPIO.IN)
+        GPIO.setup(self.power_control_2, GPIO.OUT)
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -265,69 +265,69 @@ class Pro630(CloseLoop):
         self._serial_port.close()
         
     def power_on(self, delay=2):
-        # import RPi.GPIO as GPIO
-        # GPIO.output(self.power_control_2, GPIO.HIGH)
-        # time.sleep(delay)
+        import RPi.GPIO as GPIO
+        GPIO.output(self.power_control_2, GPIO.HIGH)
+        time.sleep(delay)
         return super(Pro630, self).power_on()
      
     def power_off(self):
-        # import RPi.GPIO as GPIO
+        import RPi.GPIO as GPIO
         res = super(Pro630, self).power_off()
-        # GPIO.output(self.power_control_2, GPIO.LOW)
+        GPIO.output(self.power_control_2, GPIO.LOW)
         return res
     
-    # def power_on_only(self):
-        # import RPi.GPIO as GPIO
-        # GPIO.output(self.power_control_2, GPIO.HIGH)
+    def power_on_only(self):
+        import RPi.GPIO as GPIO
+        GPIO.output(self.power_control_2, GPIO.HIGH)
         
-    # def set_basic_output(self, pin_no, pin_signal):
-    #     """Set basic output.IO low-level output high-level, high-level output high resistance state
+    def set_basic_output(self, pin_no, pin_signal):
+        """Set basic output.IO low-level output high-level, high-level output high resistance state
 
-    #     Args:
-    #         pin_no: pin port number. range 1 ~ 6
-    #         pin_signal: 0 / 1
-    #     """
-    #     import RPi.GPIO as GPIO
-    #     if pin_no == 1:
-    #         pin_no = 17
-    #     elif pin_no == 2:
-    #         pin_no = 27
-    #     elif pin_no == 3:
-    #         pin_no = 22
-    #     elif pin_no == 4:
-    #         pin_no = 5
-    #     elif pin_no == 5:
-    #         pin_no = 6
-    #     elif pin_no == 6:
-    #         pin_no = 19
-    #     GPIO.setup(pin_no, GPIO.OUT)
-    #     GPIO.output(pin_no, pin_signal)
+        Args:
+            pin_no: pin port number. range 1 ~ 6
+            pin_signal: 0 / 1
+        """
+        import RPi.GPIO as GPIO
+        if pin_no == 1:
+            pin_no = 17
+        elif pin_no == 2:
+            pin_no = 27
+        elif pin_no == 3:
+            pin_no = 22
+        elif pin_no == 4:
+            pin_no = 5
+        elif pin_no == 5:
+            pin_no = 6
+        elif pin_no == 6:
+            pin_no = 19
+        GPIO.setup(pin_no, GPIO.OUT)
+        GPIO.output(pin_no, pin_signal)
         
-    # def get_basic_input(self, pin_no):
-    #     """Get basic input.
+    def get_basic_input(self, pin_no):
+        """Get basic input.
 
-    #     Args:
-    #         pin_no: pin port number. range 1 ~ 6
+        Args:
+            pin_no: pin port number. range 1 ~ 6
             
-    #     Return:
-    #         1 - high
-    #         0 - low
-    #     """
-    #     import RPi.GPIO as GPIO
-    #     if pin_no == 1: 
-    #         pin_no = 26
-    #     elif pin_no == 2:
-    #         pin_no = 21
-    #     elif pin_no == 3:
-    #         pin_no = 20 #23
-    #     elif pin_no == 4:
-    #         pin_no = 16
-    #     elif pin_no == 5:
-    #         pin_no = 24
-    #     elif pin_no == 6:
-    #         pin_no = 23
-    #     GPIO.setup(pin_no, GPIO.IN)
-    #     return GPIO.input(pin_no)
+        Return:
+            1 - high
+            0 - low
+        """
+        import RPi.GPIO as GPIO
+        if pin_no == 1: 
+            pin_no = 26
+        elif pin_no == 2:
+            pin_no = 21
+        elif pin_no == 3:
+            pin_no = 20 #23
+        elif pin_no == 4:
+            pin_no = 16
+        elif pin_no == 5:
+            pin_no = 24
+        elif pin_no == 6:
+            pin_no = 23
+        GPIO.setup(pin_no, GPIO.IN)
+        return GPIO.input(pin_no)
         
     def send_angles_sync(self, angles, speed):
         self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
