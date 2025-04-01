@@ -9,7 +9,7 @@ from pymycobot.common import ProtocolCode
 
 
 class Pro630(CloseLoop):
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
         """
         Args:
             port     : port string
@@ -27,6 +27,7 @@ class Pro630(CloseLoop):
         GPIO.setwarnings(False)
         GPIO.setup(self.power_control_1, GPIO.IN)
         GPIO.setup(self.power_control_2, GPIO.OUT)
+        self.save_serial_log = save_serial_log
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
