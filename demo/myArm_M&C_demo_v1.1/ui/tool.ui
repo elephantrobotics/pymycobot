@@ -27,6 +27,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="tip_label">
+     <property name="styleSheet">
+      <string notr="true">color: red;</string>
+     </property>
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_5">
      <item>
       <widget class="QWidget" name="widget" native="true">
@@ -58,10 +68,10 @@
           <item>
            <spacer name="horizontalSpacer">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Fixed</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -88,10 +98,10 @@
           <item>
            <spacer name="horizontalSpacer_5">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Fixed</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -118,10 +128,10 @@
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Fixed</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -148,10 +158,10 @@
           <item>
            <spacer name="horizontalSpacer_4">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Fixed</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -166,7 +176,7 @@
         <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -202,22 +212,22 @@
              <number>16</number>
             </property>
             <property name="editTriggers">
-             <set>QAbstractItemView::NoEditTriggers</set>
+             <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
             </property>
             <property name="dragDropOverwriteMode">
              <bool>true</bool>
             </property>
             <property name="dragDropMode">
-             <enum>QAbstractItemView::NoDragDrop</enum>
+             <enum>QAbstractItemView::DragDropMode::NoDragDrop</enum>
             </property>
             <property name="selectionBehavior">
-             <enum>QAbstractItemView::SelectItems</enum>
+             <enum>QAbstractItemView::SelectionBehavior::SelectItems</enum>
             </property>
             <property name="showGrid">
              <bool>true</bool>
             </property>
             <property name="gridStyle">
-             <enum>Qt::SolidLine</enum>
+             <enum>Qt::PenStyle::SolidLine</enum>
             </property>
             <property name="sortingEnabled">
              <bool>false</bool>
@@ -526,16 +536,16 @@
              <number>16</number>
             </property>
             <property name="editTriggers">
-             <set>QAbstractItemView::NoEditTriggers</set>
+             <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
             </property>
             <property name="selectionBehavior">
-             <enum>QAbstractItemView::SelectItems</enum>
+             <enum>QAbstractItemView::SelectionBehavior::SelectItems</enum>
             </property>
             <property name="showGrid">
              <bool>true</bool>
             </property>
             <property name="gridStyle">
-             <enum>Qt::SolidLine</enum>
+             <enum>Qt::PenStyle::SolidLine</enum>
             </property>
             <property name="sortingEnabled">
              <bool>false</bool>
@@ -841,16 +851,16 @@
              <number>16</number>
             </property>
             <property name="editTriggers">
-             <set>QAbstractItemView::NoEditTriggers</set>
+             <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
             </property>
             <property name="selectionBehavior">
-             <enum>QAbstractItemView::SelectItems</enum>
+             <enum>QAbstractItemView::SelectionBehavior::SelectItems</enum>
             </property>
             <property name="showGrid">
              <bool>true</bool>
             </property>
             <property name="gridStyle">
-             <enum>Qt::SolidLine</enum>
+             <enum>Qt::PenStyle::SolidLine</enum>
             </property>
             <property name="sortingEnabled">
              <bool>false</bool>
@@ -1156,16 +1166,16 @@
              <number>16</number>
             </property>
             <property name="editTriggers">
-             <set>QAbstractItemView::NoEditTriggers</set>
+             <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
             </property>
             <property name="selectionBehavior">
-             <enum>QAbstractItemView::SelectItems</enum>
+             <enum>QAbstractItemView::SelectionBehavior::SelectItems</enum>
             </property>
             <property name="showGrid">
              <bool>true</bool>
             </property>
             <property name="gridStyle">
-             <enum>Qt::SolidLine</enum>
+             <enum>Qt::PenStyle::SolidLine</enum>
             </property>
             <property name="sortingEnabled">
              <bool>false</bool>
