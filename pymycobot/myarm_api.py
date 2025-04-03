@@ -75,6 +75,8 @@ class MyArmMCProcessor(DataProcessor):
             timeout = 0.3
         elif genre in [ProtocolCode.SET_GRIPPER_CALIBRATION]:
             timeout = 0.4
+        elif genre == ProtocolCode.POWER_ON:
+            timeout = 2
         else:
             timeout = 0.1
 
