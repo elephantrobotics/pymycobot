@@ -70,8 +70,20 @@ class MyArmM(MyArmAPI):
         self._mesg(ProtocolCode.SET_ENCODERS, positions, speed)
 
     def set_servos_encoder_drag(self, encoders, speeds):
-        """Set multiple servo motors with a specified speed to the target encoder potential value"""
-        self.calibration_parameters(encoders=encoders, speeds=speeds)
+        """
+        Set multiple servo motors with a specified speed to the target encoder potential value
+        Args:
+            encoders (list[int * 8]): 0 - 4095:
+            speeds (list[int * 8]): -10000 - 10000:
+        """
+        self.calibration_parameters(encoders=encoders)
+        if len(encoders) != len(speeds):
+            raise ValueError("encoders and speeds must have the same length")
+
+        for sid, speed in enumerate(speeds):
+            if not -10000 < speed < 1000:
+                raise ValueError(f"servo {sid} speed must be between -10000 and 1000")
+
         self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
 
     def set_assist_out_io_state(self, io_number, status=1):
