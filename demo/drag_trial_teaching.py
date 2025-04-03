@@ -37,11 +37,14 @@ def setup():
         print("Please enter the model type:")
         print("1. Pi")
         print("2. Jetson Nano")
+        print("3. RISCV")
         print("Default is Pi")
         model_type = input()
 
         if model_type == "2":
             port = "/dev/ttyTHS1"
+        elif model_type == "3":
+            port = "/dev/ttyAMA0"
         else:
             pass
     elif _in == "2":

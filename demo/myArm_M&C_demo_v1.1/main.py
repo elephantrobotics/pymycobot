@@ -18,7 +18,7 @@ class MyWindow(QWidget, Ui_Form):
         self.setupUi(self)
         self.icon = QIcon()
         self.icon.addPixmap(QPixmap(os.getcwd()+"/resources/mystudio.ico"), QIcon.Normal, QIcon.Off)
-
+        self.tip_label.setText("Note: After the program is started, the M750 will follow the C650 to do the same action. Please place the two machines in the same position to avoid sudden swinging of the machines.")
         self.setWindowIcon(self.icon)
         # 设置表格列宽均分
         
