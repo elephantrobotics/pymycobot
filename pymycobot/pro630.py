@@ -44,8 +44,10 @@ class Pro630(CloseLoop):
         read_data = super(Pro630, self)._mesg(genre, *args, **kwargs)
         if read_data is None:
             return None
-        elif read_data == 1:
-            return 1
+
+        if isinstance(read_data, int):
+            return read_data
+
         valid_data, data_len = read_data
         res = []
         if data_len in [8, 12, 14, 16, 26, 60]:
@@ -60,6 +62,14 @@ class Pro630(CloseLoop):
             elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_CURRENTS]:
                 for i in range(data_len):
                     res.append(valid_data[i])
+            elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
+                res.extend(valid_data[:8])
+                data = valid_data[8:20]
+                for header_i in range(0, len(data), 2):
+                    one = data[header_i: header_i + 2]
+                    res.append(self._decode_int16(one))
+                res.extend(valid_data[20:26])
+                return res
             else:
                 for header_i in range(0, len(valid_data), 2):
                     one = valid_data[header_i : header_i + 2]
@@ -140,7 +150,8 @@ class Pro630(CloseLoop):
                     data1 = self._decode_int8(valid_data[i : i + 1])
                     res.append(0xFF & data1 if data1 < 0 else data1)
             res.append(self._decode_int8(valid_data))
-        if res == []:
+
+        if len(res) == 0:
             return None
         
         if genre in [
