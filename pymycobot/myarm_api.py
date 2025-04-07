@@ -261,6 +261,13 @@ class MyArmAPI(MyArmMCProcessor):
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
+    def get_joints_coord(self):
+        """Get the coordinates
+        Returns:
+            list[float] * 6: joints angle
+        """
+        return self._mesg(ProtocolCode.GET_JOINTS_COORD, has_reply=True)
+
     def set_servo_calibrate(self, servo_id):
         """Sets the zero position of the specified servo motor
 
