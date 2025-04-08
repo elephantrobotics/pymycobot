@@ -10,10 +10,12 @@ import serial
 
 
 def setup_serial_connect(port, baudrate, timeout=None):
-    serial_api = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
+    serial_api = serial.Serial()
+    serial_api.port = port
+    serial_api.baudrate = baudrate
+    serial_api.timeout = timeout
     serial_api.rts = False
-    if not serial_api.is_open:
-        serial_api.open()
+    serial_api.open()
     return serial_api
 
 
@@ -65,7 +67,7 @@ class MyArmMCProcessor(DataProcessor):
         return commands
 
     def _read(self, genre):
-        if genre == ProtocolCode.GET_ROBOT_STATUS:
+        if genre == ProtocolCode.GET_ROBOT_ERROR_STATUS:
             timeout = 90
         elif genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
             timeout = 0.05
@@ -73,6 +75,8 @@ class MyArmMCProcessor(DataProcessor):
             timeout = 0.3
         elif genre in [ProtocolCode.SET_GRIPPER_CALIBRATION]:
             timeout = 0.4
+        elif genre == ProtocolCode.POWER_ON:
+            timeout = 2
         else:
             timeout = 0.1
 
@@ -99,7 +103,6 @@ class MyArmMCProcessor(DataProcessor):
         """
         real_command, has_reply, _async = super(MyArmMCProcessor, self)._mesg(genre, *args, **kwargs)
         with self.lock:
-            time.sleep(0.1)
             self._write(self._flatten(real_command))
 
             if not has_reply:
@@ -258,6 +261,13 @@ class MyArmAPI(MyArmMCProcessor):
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
+    def get_joints_coord(self):
+        """Get the coordinates
+        Returns:
+            list[float] * 6: joints angle
+        """
+        return self._mesg(ProtocolCode.GET_JOINTS_COORD, has_reply=True)
+
     def set_servo_calibrate(self, servo_id):
         """Sets the zero position of the specified servo motor
 
@@ -388,8 +398,11 @@ class MyArmAPI(MyArmMCProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 32
         """
-        assert 0 <= data <= 32, "data must be between 0 and 32"
         self.calibration_parameters(servo_id=servo_id)
+        if servo_id == 8:
+            assert 0 <= data <= 16, "data must be between 0 and 16"
+        else:
+            assert 0 <= data <= 32, "data must be between 0 and 32"
         self._mesg(ProtocolCode.SET_SERVO_MOTOR_CLOCKWISE, servo_id, data)
 
     def get_servo_cw(self, servo_id):
@@ -408,8 +421,11 @@ class MyArmAPI(MyArmMCProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 32
         """
-        assert 0 <= data <= 32, "data must be between 0 and 32"
         self.calibration_parameters(servo_id=servo_id)
+        if servo_id == 8:
+            assert 0 <= data <= 16, "data must be between 0 and 16"
+        else:
+            assert 0 <= data <= 32, "data must be between 0 and 32"
         return self._mesg(ProtocolCode.SET_SERVO_MOTOR_COUNTER_CLOCKWISE, servo_id, data)
 
     def get_servo_cww(self, servo_id):
@@ -449,7 +465,7 @@ class MyArmAPI(MyArmMCProcessor):
         """
         if mode not in (1, 2):
             raise ValueError('mode must be 1 or 2')
-        self.calibration_parameters(servo_id=servo_id, servo_addr=addr)
+        self.calibration_parameters(servo_id=servo_id)
         return self._mesg(ProtocolCode.GET_SERVO_MOTOR_CONFIG, servo_id, addr, mode, has_reply=True)
 
     def set_master_out_io_state(self, pin_number, status=1):
@@ -484,7 +500,10 @@ class MyArmAPI(MyArmMCProcessor):
             io_number (int): 1 - 2
             status: 0 or 1; 0: low; 1: high. default: 1
         """
-        self.calibration_parameters(master_pin=io_number, status=status)
+        if io_number not in (1, 2):
+            raise ValueError("io_number must be 1 or 2")
+        if status not in (0, 1):
+            raise ValueError("status must be 0 or 1")
         self._mesg(ProtocolCode.SET_ATOM_PIN_STATUS, io_number, status)
 
     def get_tool_in_io_state(self, pin):
@@ -497,8 +516,8 @@ class MyArmAPI(MyArmMCProcessor):
             0 or 1. 1: high 0: low
 
         """
-        if pin not in (0, 1):
-            raise ValueError("pin must be 0 or 1")
+        if pin not in (1, 2):
+            raise ValueError("pin must be 1 or 2")
 
         return self._mesg(ProtocolCode.GET_ATOM_PIN_STATUS, pin, has_reply=True)
 
@@ -511,8 +530,13 @@ class MyArmAPI(MyArmMCProcessor):
             b: 0-255
 
         """
-        self._mesg(ProtocolCode.GET_ATOM_LED_COLOR, r, g, b)
+        return self._mesg(ProtocolCode.GET_ATOM_LED_COLOR, r, g, b)
 
-    def restore_servo_system_param(self):
-        """Restore servo motor system parameters"""
-        self._mesg(ProtocolCode.RESTORE_SERVO_SYSTEM_PARAM)
+    def restore_servo_system_param(self, servo_id):
+        """
+        Restore servo motor system parameters
+        Args:
+            servo_id: 0 - 255
+        """
+        self.calibration_parameters(servo_id=servo_id)
+        return self._mesg(ProtocolCode.RESTORE_SERVO_SYSTEM_PARAM, servo_id)

@@ -824,7 +824,24 @@ class MyCobot280(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
 
-    # Other
+    def set_basic_output(self, pin_no, pin_signal):
+        """Set basic output for M5 version.
+
+        Args:
+            pin_no: pin port number.
+            pin_signal: 0 / 1
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        if (pin_no == 5 and pin_signal == 0):
+            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+            time.sleep(3)
+            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, 1)
+        else:
+            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+        return
+
+        # Other
+
     def wait(self, t):
         time.sleep(t)
         return self
@@ -834,6 +851,6 @@ class MyCobot280(CommandGenerator):
 
     def open(self):
         self._serial_port.open()
-    
+
     def go_home(self):
-        return self.send_angles([0,0,0,0,0,0], 10)
+        return self.send_angles([0, 0, 0, 0, 0, 0], 10)

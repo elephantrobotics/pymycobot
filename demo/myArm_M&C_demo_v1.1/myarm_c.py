@@ -16,6 +16,7 @@ def get_port(): # 获取所有串口号
 
 def main():
     port_dict = get_port()
+    print("Note: After the program is started, the M750 will follow the C650 to do the same action. Please place the two machines in the same position to avoid sudden swinging of the machines.")
     port_c = input("input myArm C port: ")
     c_port = port_dict[port_c]
     c = MyArmC(c_port, debug=False)

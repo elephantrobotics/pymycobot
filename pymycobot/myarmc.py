@@ -28,9 +28,3 @@ class MyArmC(MyArmAPI):
 
         return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, mode, has_reply=True)
 
-    def get_joints_coord(self):
-        """Get the coordinates
-        Returns:
-            list[float] * 6: joints angle
-        """
-        return self._mesg(ProtocolCode.GET_JOINTS_COORD, has_reply=True)

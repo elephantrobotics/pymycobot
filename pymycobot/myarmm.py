@@ -1,5 +1,8 @@
 # coding=utf-8
 from __future__ import division
+
+import time
+
 from pymycobot.common import ProtocolCode
 from pymycobot.myarm_api import MyArmAPI
 
@@ -17,7 +20,7 @@ class MyArmM(MyArmAPI):
             angle (int) : 0 - 254
             speed (int) : 1 - 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
+        self.calibration_parameters(joint_id=joint_id, angle=angle, speed=speed)
         self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed)
 
     def set_joints_angle(self, angles, speed):
@@ -27,7 +30,7 @@ class MyArmM(MyArmAPI):
             angles (list[int]):  0 - 254
             speed (int): 0 - 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
+        self.calibration_parameters(angles=angles, speed=speed)
         angles = list(map(self._angle2int, angles))
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed)
 
@@ -44,13 +47,6 @@ class MyArmM(MyArmAPI):
         """The robot stops moving"""
         self._mesg(ProtocolCode.STOP)
 
-    # def is_in_position(self):
-    #     """Whether the robot has reached the specified point
-    #     Returns:
-    #
-    #     """
-    #     return self._mesg(ProtocolCode.IS_IN_POSITION, reply=True)
-
     def set_servo_encoder(self, servo_id, encoder, speed):
         """Sets the individual motor motion to the target encoder potential value
 
@@ -60,7 +56,7 @@ class MyArmM(MyArmAPI):
             speed: (int) 1 - 100
 
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id, encoder=encoder, speed=speed)
+        self.calibration_parameters(servo_id=servo_id, encoder=encoder, speed=speed)
         self._mesg(ProtocolCode.SET_ENCODER, servo_id, [encoder], speed)
 
     def set_servos_encoder(self, positions, speed):
@@ -70,12 +66,24 @@ class MyArmM(MyArmAPI):
             positions (list[int * 8]): 0 - 4095:
             speed (int): 1 - 100:
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, encoders=positions, speed=speed)
+        self.calibration_parameters(encoders=positions, speed=speed)
         self._mesg(ProtocolCode.SET_ENCODERS, positions, speed)
 
     def set_servos_encoder_drag(self, encoders, speeds):
-        """Set multiple servo motors with a specified speed to the target encoder potential value"""
-        self.calibration_parameters(class_name=self.__class__.__name__, encoders=encoders, speeds=speeds)
+        """
+        Set multiple servo motors with a specified speed to the target encoder potential value
+        Args:
+            encoders (list[int * 8]): 0 - 4095:
+            speeds (list[int * 8]): -10000 - 10000:
+        """
+        self.calibration_parameters(encoders=encoders)
+        if len(encoders) != len(speeds):
+            raise ValueError("encoders and speeds must have the same length")
+
+        for sid, speed in enumerate(speeds):
+            if not -10000 < speed < 1000:
+                raise ValueError(f"servo {sid} speed must be between -10000 and 1000")
+
         self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
 
     def set_assist_out_io_state(self, io_number, status=1):
@@ -119,15 +127,21 @@ class MyArmM(MyArmAPI):
         """Clear the robot abnormality Ignore the error joint and continue to move"""
         self._mesg(ProtocolCode.CLEAR_ROBOT_ERROR)
 
-    def set_servo_enabled(self, joint_id, state):
+    def set_servo_enabled(self, servo_id, state):
         """Set the servo motor torque switch
         Args:
-            joint_id (int): 0-254 254-all
+            servo_id (int): 0-254 254-all
             state: 0/1
                 1-focus
                 0-release
         """
-        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, joint_id, state)
+        if state not in (0, 1):
+            raise ValueError("state must be 0 or 1")
+
+        if servo_id not in range(0, 255):
+            raise ValueError("servo_id must be between 0 and 254")
+
+        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, servo_id, state)
 
     def get_joints_max(self):
         """Read the maximum angle of all joints"""

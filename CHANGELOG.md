@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.9.3 (2025-4-1)
+
+- release v3.9.3
+- Fix Pro630 class bugs
+
+## v3.9.2 (2025-3-28)
+
+- release v3.9.2
+- Fix bugs
+
 ## v3.9.1 (2025-3-4)
 
 - release v3.9.1
