@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v3.9.4 (2025-4-10)
+
+- release v3.9.4
+- Suction pump interface optimization
+- Fix bugs
+
 ## v3.9.3 (2025-4-1)
 
 - release v3.9.3
