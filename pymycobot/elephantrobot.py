@@ -895,7 +895,7 @@ if __name__ == "__main__":
     # print("发送指令")
     Jiont = [100,100,100,100,100,100]
     time.sleep(2)
-    # ep.Force_SetAngle(14,0)
+    # ep.Force_SetAngle(14,0) 
     # print(ep.Force_SetAngle(14,20))
     time.sleep(2)
     print(ep.Force_SetCalibrate(14))
