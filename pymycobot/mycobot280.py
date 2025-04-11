@@ -154,8 +154,7 @@ class MyCobot280(CommandGenerator):
         res = self._process_received(data, genre)
         if res is None:
             return None
-        if genre in [ProtocolCode.SET_BASIC_OUTPUT]:
-            return 1
+
         if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
                                                                                          ProtocolCode.GET_JOINT_MIN_ANGLE,
                                                                                          ProtocolCode.GET_JOINT_MAX_ANGLE,
@@ -824,6 +823,16 @@ class MyCobot280(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
 
+    def set_basic_output(self, pin_no, pin_signal):
+        """Set basic output for M5 version.
+
+        Args:
+            pin_no: pin port number.
+            pin_signal: 0 / 1
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+
     # Other
     def wait(self, t):
         time.sleep(t)
@@ -834,6 +843,6 @@ class MyCobot280(CommandGenerator):
 
     def open(self):
         self._serial_port.open()
-    
+
     def go_home(self):
-        return self.send_angles([0,0,0,0,0,0], 10)
+        return self.send_angles([0, 0, 0, 0, 0, 0], 10)

@@ -770,7 +770,8 @@ class MyCobot280Socket(CommandGenerator):
                 1: Force control
                 0: Non-force control
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1, is_torque=is_torque)
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1,
+                                    is_torque=is_torque)
         args = [flag, speed]
         if _type_1 is not None:
             args.append(_type_1)
@@ -856,6 +857,16 @@ class MyCobot280Socket(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
 
+    def set_basic_output(self, pin_no, pin_signal):
+        """Set basic output for M5 version.
+
+        Args:
+            pin_no: pin port number.
+            pin_signal: 0 / 1
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+
     # Other
     def wait(self, t):
         time.sleep(t)
@@ -863,6 +874,6 @@ class MyCobot280Socket(CommandGenerator):
 
     def close(self):
         self.sock.close()
-        
+
     def go_home(self):
-        return self.send_angles([0,0,0,0,0,0], 10)
+        return self.send_angles([0, 0, 0, 0, 0, 0], 10)
