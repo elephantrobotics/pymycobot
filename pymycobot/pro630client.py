@@ -1,6 +1,4 @@
 # coding=utf-8
-
-import time
 import threading
 import socket
 
@@ -296,22 +294,9 @@ class Pro630Client(CloseLoop):
         self.calibration_parameters(class_name = self.__class__.__name__, angles=angles, speed=speed)
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, no_return=True)
-    
-    def set_pos_switch(self, mode):
-        """Set position switch mode.
 
-        Args:
-            mode: 0 - switch off, 1 - switch on
-        """
-        if mode == 0:
-            return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, asyn_mode=True)
-        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode,asyn_mode=False)
-        
-    
-    def get_pos_switch(self):
-        """Get position switch mode.
+    def set_monitor_mode(self, mode):
+        raise NotImplementedError("Pro630 does not support monitor mode")
 
-        Return:
-            1 - switch on, 0 - switch off
-        """
-        return self._mesg(ProtocolCode.GET_POS_SWITCH, has_reply=True)
+    def get_monitor_mode(self):
+        raise NotImplementedError("Pro630 does not support monitor mode")
