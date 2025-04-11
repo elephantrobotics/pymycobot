@@ -1,5 +1,15 @@
 # ChangeLog for pymycobot
 
+## v3.9.6 (2025-4-11)
+
+- release v3.9.6
+- update mercury new limit value
+
+## v3.9.5 (2025-4-11)
+
+- release v3.9.5
+- update mercury new limit value
+
 ## v3.9.4 (2025-4-10)
 
 - release v3.9.4
