@@ -11,6 +11,8 @@ import struct
 import traceback
 import RPi.GPIO as GPIO
 import threading
+
+
 class ProtocolCode(object):
     # BASIC
     HEADER = 0xFE
@@ -22,14 +24,14 @@ class ProtocolCode(object):
     GET_ROBOT_ID = 0x03
     OVER_LIMIT_RETURN_ZERO = 0x04
     SET_ROBOT_ID = 0x04
-    
+
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
-    
+
     SET_POS_SWITCH = 0x0B
     GET_POS_SWITCH = 0x0C
-    
+
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
@@ -81,10 +83,10 @@ class ProtocolCode(object):
     JOG_INCREMENT = 0x33
     JOG_STOP = 0x34
     JOG_INCREMENT_COORD = 0x34
-    
+
     COBOTX_GET_SOLUTION_ANGLES = 0x35
     COBOTX_SET_SOLUTION_ANGLES = 0x36
-    
+
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
     SET_ENCODERS = 0x3C
@@ -114,8 +116,7 @@ class ProtocolCode(object):
     SET_GRIPPER_ENABLED = 0x58
     GET_ZERO_POS = 0x59
     IS_INIT_CALIBRATION = 0x5A
-    
-    
+
     # ATOM IO
     SET_PIN_MODE = 0x60
     SET_DIGITAL_OUTPUT = 0x61
@@ -148,7 +149,6 @@ class ProtocolCode(object):
     SET_MODEL_DIRECTION = 0x7D
     GET_FILTER_LEN = 0x7E
     SET_FILTER_LEN = 0x7F
-    
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -228,12 +228,12 @@ class ProtocolCode(object):
     SET_VOID_COMPENSATE = 0xE7
     SET_ERROR_DETECT_MODE = 0xE8
     GET_ERROR_DETECT_MODE = 0xE9
-    
+
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
-    
+
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
     MERCURY_DRAG_TECH_PAUSE = 0x72
@@ -277,8 +277,25 @@ class ProtocolCode(object):
     CLEAR_ROBOT_ERROR = 0x16
     GET_RECV_QUEUE_SIZE = 0x17
     SET_RECV_QUEUE_SIZE = 0x18
-has_return = [0x02, 0x03, 0x04, 0x09, 0x10, 0x11, 0x12, 0x13, 0x1c, 0x18, 0x19, 0x20, 0x23, 0x27, 0x29, 0x2A, 0x2B, 0x35, 0x4A, 0x4B,0x4C, 0x4D,
-              0x50, 0x51, 0x56,0x57, 0x59,0x5A,0x62, 0x82, 0x84, 0x86, 0x88, 0x8A, 0xA1, 0xA2, 0xB2, 0xB3, 0xB4, 0xB5, 0xB7, 0xD6, 0xe1, 0xe2, 0xe4, 0xC]
+
+
+has_return = [
+    0x02, 0x03, 0x04, 0x09, 0x10, 0x11, 0x12, 0x13, 0x1c, 0x18, 0x19, 0x20, 0x23, 0x27, 0x29, 0x2A, 0x2B, 0x35, 0x4A,
+    0x4B, 0x4C, 0x4D,
+    0x50, 0x51, 0x56, 0x57, 0x59, 0x5A, 0x62, 0x82, 0x84, 0x86, 0x88, 0x8A, 0xA1, 0xA2, 0xB2, 0xB3,
+    0xB4, 0xB5, 0xB7, 0xD6, 0xe1, 0xe2, 0xe4, 0xC, 0x9C
+]
+
+has_closed_loop = [
+    ProtocolCode.SEND_ANGLE,
+    ProtocolCode.SEND_ANGLES,
+    ProtocolCode.SEND_COORD,
+    ProtocolCode.SEND_COORDS,
+    ProtocolCode.JOG_INCREMENT,
+    ProtocolCode.JOG_INCREMENT_COORD,
+    ProtocolCode.COBOTX_SET_SOLUTION_ANGLES
+]
+
 
 def get_logger(name):
     logger = logging.getLogger(name)
@@ -299,10 +316,11 @@ def get_logger(name):
     logger.addHandler(console)
     return logger
 
+
 class pro630Server(object):
-    
+
     def __init__(self, host, port, serial_num="/dev/ttyAMA0", baud=115200) -> None:
-        
+
         self.logger = get_logger("AS")
         self.mc = None
         self.serial_num = serial_num
@@ -320,22 +338,20 @@ class pro630Server(object):
         GPIO.setup(self.power_control_1, GPIO.IN)
         GPIO.setup(self.power_control_2, GPIO.OUT)
         self.conn = None
-        check_mode = [0xfe,0xfe,0x3,0xc,0xc9,0x50]
+        check_mode = [0xfe, 0xfe, 0x3, 0xc, 0xc9, 0x50]
         self.connected = True
-        self.asynchronous=False
+        self.asynchronous = False
         self.mc.write(check_mode)
         res = self.read(check_mode)
         self.connected = False
-        
-        
+
         if len(res) > 5 and res[4] == 0:
             print("This is asynchronous mode")
-            self.asynchronous=True
+            self.asynchronous = True
         else:
             print("This is synchronous mode")
-            self.asynchronous=False
+            self.asynchronous = False
         self.connect()
-        
 
     def connect(self):
         while True:
@@ -395,12 +411,12 @@ class pro630Server(object):
                                 continue
                             elif command[3] == 161:
                                 pin_no = command[4]
-                                if pin_no == 1: 
+                                if pin_no == 1:
                                     pin_no = 26
                                 elif pin_no == 2:
                                     pin_no = 21
                                 elif pin_no == 3:
-                                    pin_no = 20 #23
+                                    pin_no = 20  # 23
                                 elif pin_no == 4:
                                     pin_no = 16
                                 elif pin_no == 5:
@@ -409,8 +425,8 @@ class pro630Server(object):
                                     pin_no = 23
                                 GPIO.setup(pin_no, GPIO.IN)
                                 statue = GPIO.input(pin_no)
-                                res = command[:-2]+[statue]
-                                res+=self.crc_check(res)
+                                res = command[:-2] + [statue]
+                                res += self.crc_check(res)
                                 self.conn.sendall(bytearray(res))
                                 continue
                             self.write(command)
@@ -421,7 +437,8 @@ class pro630Server(object):
                                 elif command[4] == 0:
                                     # 关闭闭环
                                     self.asynchronous = True
-                            if command[3] in has_return or (command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.asynchronous == False):
+                            if command[3] in has_return or (
+                                    command[3] in has_closed_loop and self.asynchronous is False):
                                 # res = self.read(command)
                                 self.read_thread = threading.Thread(target=self.read, args=(command,), daemon=True)
                                 self.read_thread.start()
@@ -436,7 +453,7 @@ class pro630Server(object):
                 self.connected = False
                 self.conn.close()
                 self.mc.close()
-            
+
     def _encode_int16(self, data):
         if isinstance(data, int):
             return [
@@ -449,15 +466,15 @@ class pro630Server(object):
                 t = self._encode_int16(v)
                 res.extend(t)
         return res
-    
-    @classmethod  
+
+    @classmethod
     def crc_check(cls, command):
         crc = 0xffff
         for index in range(len(command)):
             crc ^= command[index]
             for _ in range(8):
                 if crc & 1 == 1:
-                    crc >>=  1
+                    crc >>= 1
                     crc ^= 0xA001
                 else:
                     crc >>= 1
@@ -481,7 +498,9 @@ class pro630Server(object):
             wait_time = 8
         elif command[3] in [0x11, 0x13, 0x18, 0x56, 0x57, 0x29]:
             wait_time = 3
-        elif command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD, ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD, ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.asynchronous == False:
+        elif command[3] in [ProtocolCode.SEND_ANGLE, ProtocolCode.SEND_ANGLES, ProtocolCode.SEND_COORD,
+                            ProtocolCode.SEND_COORDS, ProtocolCode.JOG_INCREMENT, ProtocolCode.JOG_INCREMENT_COORD,
+                            ProtocolCode.COBOTX_SET_SOLUTION_ANGLES] and self.asynchronous == False:
             wait_time = 300
         while True and time.time() - t < wait_time and self.connected:
             data = self.mc.read()
@@ -493,7 +512,7 @@ class pro630Server(object):
                 datas += data
                 crc = self.mc.read(2)
                 if self.crc_check(datas) == [v for v in crc]:
-                    datas+=crc
+                    datas += crc
                     break
             if data_len == 1 and data == b"\xfa":
                 datas += data
@@ -527,11 +546,13 @@ class pro630Server(object):
                     else:
                         datas = b"\xfe"
                         pre = k
+            else:
+                time.sleep(0.001)
         else:
             datas = b''
         if self.conn is not None:
             self.logger.info("return datas: {}".format([hex(v) for v in datas]))
-            
+
             self.conn.sendall(datas)
             datas = b''
         return datas

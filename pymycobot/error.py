@@ -1426,7 +1426,7 @@ def calibration_parameters(**kwargs):
                     if not 0 <= v <= 255:
                         raise ValueError(f"rgb value not right, should be 0 ~ 255, the received rgb is {value}")
 
-    elif class_name in ["Pro630"]:
+    elif class_name in ["Pro630", "Pro630Client"]:
         limit_info = robot_limit[class_name]
         for parameter, value in kwargs.items():
             value_type = type(value)

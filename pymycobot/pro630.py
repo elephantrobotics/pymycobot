@@ -41,37 +41,20 @@ class Pro630Api(CloseLoop):
         6: 19
     }
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
-        """
-        Args:
-            port     : port string
-            baudrate : baud rate string, default '115200'
-            timeout  : default 0.1
-            debug    : whether show debug info
-        """
+    def __init__(self, debug=False, save_serial_log=False, method=None):
         super(Pro630Api, self).__init__(debug)
-        import RPi.GPIO as GPIO
-
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(self.power_control_1, GPIO.IN)
-        GPIO.setup(self.power_control_2, GPIO.OUT)
-
+        self._joint_max_angles = [0] * self.joint_number
+        self._joint_min_angles = [0] * self.joint_number
         self.save_serial_log = save_serial_log
 
-        self._serial_port = setup_serial_connect(port, baudrate, timeout)
         self.calibration_parameters = calibration_parameters
         self.language = get_local_language()
-
         self.lock = threading.Lock()
         self.lock_out = threading.Lock()
 
-        self.read_threading = threading.Thread(target=self.read_thread)
+        self.read_threading = threading.Thread(target=self.read_thread, args=(method, ))
         self.read_threading.daemon = True
         self.read_threading.start()
-
-        self._joint_max_angles = [0] * self.joint_number
-        self._joint_min_angles = [0] * self.joint_number
 
     def _decode_command(self, genre, read_data):
         if read_data is None:
@@ -392,6 +375,15 @@ class Pro630Api(CloseLoop):
 
 
 class Pro630(Pro630Api):
+
+    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
+        self._serial_port = setup_serial_connect(port, baudrate, timeout)
+        super(Pro630, self).__init__(debug, save_serial_log)
+        import RPi.GPIO as GPIO
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(self.power_control_1, GPIO.IN)
+        GPIO.setup(self.power_control_2, GPIO.OUT)
 
     def open(self):
         self._serial_port.open()
