@@ -2,6 +2,7 @@
 
 from socket import socket, AF_INET, SOCK_STREAM
 import sys
+import time
 from enum import Enum
 import base64
 import hashlib
@@ -11,27 +12,10 @@ from multiprocessing import Lock
 import logging
 from pymycobot.log import setup_logging
 from pymycobot.tool_coords import *
+from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
 
 
 COORDS_EPSILON = 0.50
-
-
-class Axis(Enum):
-    X = 0
-    Y = 1
-    Z = 2
-    RX = 3
-    RY = 4
-    RZ = 5
-
-
-class Joint(Enum):
-    J1 = 0
-    J2 = 1
-    J3 = 2
-    J4 = 3
-    J5 = 4
-    J6 = 5
 
 
 class JogMode(Enum):
@@ -243,6 +227,16 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return True
 
+    def is_power_on(self):
+        """Checks whether robot is powered on.
+
+        Returns:
+            bool: True if robot is powered on, False otherwise.
+        """
+        command = "is_power_on()\n"
+        res = self.send_command(command)
+        return res == "1"
+
     def _state_on(self):
         command = "state_on()\n"
         self.send_command(command)
@@ -252,11 +246,21 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def state_check(self):
+        """Checks if robot is enabled.
+
+        Returns:
+            bool: True if robot is enabled, False otherwise.
+        """
         command = "state_check()\n"
         res = self.send_command(command)
         return res == "1"
 
     def check_running(self):
+        """Checks whether robot is moving.
+
+        Returns:
+            bool: True if robot is moving, False otherwise.
+        """
         command = "check_running()\n"
         res = self.send_command(command)
         return res == "1"
@@ -395,6 +399,7 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def task_stop(self):
+        """Stops the movement of robot."""
         command = "task_stop()\n"
         self.send_command(command)
 
@@ -515,6 +520,27 @@ class ElephantRobot(object):
         """
         command = "jog_increment({},{},{},{})\n".format(joint_id, angle, speed, mode)
         return self.send_command(command)
+
+    def enable_manual_brake_control(self, enable=True):
+        """Enables or disables manual brake control.
+
+        Args:
+            enable (bool, optional): enable (True) or disable (False) manual
+                                     brake control. Defaults to True.
+        """
+        self.set_digital_out(DO.BRAKE_MANUAL_MODE_ENABLE, enable)
+        time.sleep(0.05)
+        for joint in Joint:
+            self.release_joint_brake(joint, False)
+
+    def release_joint_brake(self, joint, release=True):
+        """Releases or focuses (enables) specified joint's brake.
+
+        Args:
+            joint (Joint): joint Joint.J1 ~ Joint.J6
+            release (bool): True to release, False to enable brake. Defaults to True.
+        """
+        self.set_digital_out(DO(joint.value + DO.J1_BRAKE_RELEASE.value), release)
 
     def set_gripper_state(self, state, speed):
         """Sets gripper state.
@@ -662,21 +688,25 @@ class ElephantRobot(object):
         """
         command = "force_gripper_get_torque()\n"
         return self.send_command(command)
-    
+
     def set_tool_reference(self, tool_reference):
         """Set tool coordinate system.
 
         Args:
-            tool_reference (list): 
+            tool_reference (list):
 
         Returns:
             _type_: _description_
         """
         rotation_matrix = np.eye(3)  # No rotation example
-        translation_vector = tool_reference[:3] # Tool offset along z-axis of flange
-        rotation_matrix = CvtEulerAngleToRotationMatrix(tool_reference[3:6]* np.pi/180.0)  
-        return transformation_matrix_from_parameters(rotation_matrix, translation_vector)
-    
+        translation_vector = tool_reference[:3]  # Tool offset along z-axis of flange
+        rotation_matrix = CvtEulerAngleToRotationMatrix(
+            tool_reference[3:6] * np.pi / 180.0
+        )
+        return transformation_matrix_from_parameters(
+            rotation_matrix, translation_vector
+        )
+
     def get_tool_coords(self):
         """Set tool coordinate system.
 
