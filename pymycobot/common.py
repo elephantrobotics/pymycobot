@@ -494,7 +494,6 @@ class DataProcessor(object):
                 has_reply: Whether there is a return value to accept.
         """
         command_data = self._process_data_command(genre, self.__class__.__name__, args)
-        print(command_data)
         if genre == 178:
             # 修改wifi端口
             command_data = self._encode_int16(command_data)
