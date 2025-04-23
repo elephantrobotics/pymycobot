@@ -617,7 +617,10 @@ class DataProcessor(object):
                             res.append(byte_value[i])
                         processed_args.extend(res)
                 else:
-                    processed_args.extend(self._encode_int16(args[index]))
+                    if _class in self.crc_robot_class and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+                        processed_args.extend(args[index])
+                    else:
+                        processed_args.extend(self._encode_int16(args[index]))
             else:
                 if isinstance(args[index], str):
                     processed_args.append(args[index])
@@ -669,7 +672,7 @@ class DataProcessor(object):
         elif arm == 14:
             data_len = data[header_i + 2] - 3
         # unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT, ProtocolCode.SET_BASIC_OUTPUT]
-        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
+        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT, ProtocolCode.SET_BASIC_OUTPUT]
         if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
             data_pos = header_i + 4
         elif cmd_id in unique_data:

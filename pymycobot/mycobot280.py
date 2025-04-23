@@ -154,8 +154,7 @@ class MyCobot280(CommandGenerator):
         res = self._process_received(data, genre)
         if res is None:
             return None
-        if genre in [ProtocolCode.SET_BASIC_OUTPUT]:
-            return 1
+
         if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
                                                                                          ProtocolCode.GET_JOINT_MIN_ANGLE,
                                                                                          ProtocolCode.GET_JOINT_MAX_ANGLE,
@@ -832,16 +831,9 @@ class MyCobot280(CommandGenerator):
             pin_signal: 0 / 1
         """
         self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
-        if (pin_no == 5 and pin_signal == 0):
-            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
-            time.sleep(3)
-            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, 1)
-        else:
-            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
-        return
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
-        # Other
-
+    # Other
     def wait(self, t):
         time.sleep(t)
         return self

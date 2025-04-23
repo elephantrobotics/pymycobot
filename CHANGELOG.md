@@ -1,5 +1,26 @@
 # ChangeLog for pymycobot
 
+## v3.9.7 (2025-4-14)
+
+- release v3.9.7
+- Fix Pro630 pico version bugs
+
+## v3.9.6 (2025-4-11)
+
+- release v3.9.6
+- update mercury new limit value
+
+## v3.9.5 (2025-4-11)
+
+- release v3.9.5
+- update mercury new limit value
+
+## v3.9.4 (2025-4-10)
+
+- release v3.9.4
+- Suction pump interface optimization
+- Fix bugs
+
 ## v3.9.3 (2025-4-1)
 
 - release v3.9.3

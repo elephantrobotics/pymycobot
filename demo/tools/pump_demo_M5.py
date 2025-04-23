@@ -15,7 +15,7 @@ from pymycobot import MyCobot280               #import mycobot library,if don't 
 import time
 
 # if use PC and M5 control
-mc = MyCobot280('COM9', 115200)                 # WINDOWS use ，need check port number when you PC
+mc = MyCobot280('COM3', 115200)                 # WINDOWS use ，need check port number when you PC
 # mc = MyCobot('/dev/ttyUSB0',115200)        #VM linux use
 
 #init robot
@@ -45,14 +45,15 @@ def pump_V1_off():
 #If you are using the suction pump V2.0 version of 
 # the device, then define his interface as follows:
 def pump_V2_on():
+    mc.set_basic_output(pump_relay_pin, pump_close)
+    time.sleep(0.05)
     mc.set_basic_output(pump_motor_pin, pump_open)
     time.sleep(0.05)
 
 def pump_V2_off():
-    mc.set_basic_output(pump_motor_pin, pump_close)
-    time.sleep(0.05)
     mc.set_basic_output(pump_relay_pin, pump_open)
-    time.sleep(1)
+    mc.set_basic_output(pump_motor_pin, pump_close)
+    time.sleep(1.5)
     mc.set_basic_output(pump_relay_pin, pump_close)
     time.sleep(0.05)
 

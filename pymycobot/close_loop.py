@@ -626,79 +626,79 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         return self._mesg(ProtocolCode.IS_BTN_CLICKED)
 
-    # def tool_serial_restore(self):
-    #     """485 factory reset
-    #     """
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_RESTORE)
+    def tool_serial_restore(self):
+        """485 factory reset
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_RESTORE)
 
-    # def tool_serial_ready(self):
-    #     """Set up 485 communication
+    def tool_serial_ready(self):
+        """Set up 485 communication
 
-    #     Return:
-    #         0 : not set
-    #         1 : Setup completed
-    #     """
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_READY, has_reply=True)
+        Return:
+            0 : not set
+            1 : Setup completed
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_READY)
 
-    # def tool_serial_available(self):
-    #     """Read 485 buffer length
+    def tool_serial_available(self):
+        """Read 485 buffer length
 
-    #     Return:
-    #         485 buffer length available for reading
-    #     """
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_AVAILABLE, has_reply=True)
+        Return:
+            485 buffer length available for reading
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_AVAILABLE)
 
-    # def tool_serial_read_data(self, data_len):
-    #     """Read fixed length data. Before reading, read the buffer length first. After reading, the data will be cleared
+    def tool_serial_read_data(self, data_len):
+        """Read fixed length data. Before reading, read the buffer length first. After reading, the data will be cleared
 
-    #     Args:
-    #         data_len (int): The number of bytes to be read, range 1 ~ 45
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, data_len=data_len)
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_READ_DATA, data_len, has_reply=True)
+        Args:
+            data_len (int): The number of bytes to be read, range 1 ~ 45
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, data_len=data_len)
+        return self._mesg(ProtocolCode.TOOL_SERIAL_READ_DATA, data_len)
 
-    # def tool_serial_write_data(self, command):
-    #     """End 485 sends data， Data length range is 1 ~ 45 bytes
+    def tool_serial_write_data(self, command):
+        """End 485 sends data， Data length range is 1 ~ 45 bytes
 
-    #     Args:
-    #         command : data instructions
+        Args:
+            command : data instructions
 
-    #     Return:
-    #         number of bytes received
-    #     """
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_WRITE_DATA, command, has_reply=True)
+        Return:
+            number of bytes received
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_WRITE_DATA, command)
 
-    # def tool_serial_flush(self):
-    #     """Clear 485 buffer
-    #     """
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_FLUSH)
+    def tool_serial_flush(self):
+        """Clear 485 buffer
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_FLUSH)
 
-    # def tool_serial_peek(self):
-    #     """View the first data in the buffer, the data will not be cleared
+    def tool_serial_peek(self):
+        """View the first data in the buffer, the data will not be cleared
 
-    #     Return:
-    #         1 byte data
-    #     """
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_PEEK, has_reply=True)
+        Return:
+            1 byte data
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_PEEK)
 
-    # def tool_serial_set_baud(self, baud=115200):
-    #     """Set 485 baud rate, default 115200
+    def tool_serial_set_baud(self, baud=115200):
+        """Set 485 baud rate, default 115200
 
-    #     Args:
-    #         baud (int): baud rate
-    #     """
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_SET_BAUD, baud)
+        Args:
+            baud (int): baud rate
+        """
+        return self._mesg(ProtocolCode.TOOL_SERIAL_SET_BAUD, baud)
 
-    # def tool_serial_set_timeout(self, max_time):
-    #     """Set 485 timeout in milliseconds, default 30ms
+    def tool_serial_set_timeout(self, max_time):
+        """Set 485 timeout in milliseconds, default 30ms
 
-    #     Args:
-    #         max_time (int): timeout
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, max_time=max_time)
-    #     return self._mesg(ProtocolCode.TOOL_SERIAL_SET_TIME_OUT, max_time)
+        Args:
+            max_time (int): timeout
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, max_time=max_time)
+        return self._mesg(ProtocolCode.TOOL_SERIAL_SET_TIME_OUT, max_time)
 
     def get_robot_status(self):
         return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS)
