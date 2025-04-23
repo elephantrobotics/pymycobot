@@ -1426,6 +1426,62 @@ def calibration_parameters(**kwargs):
                     if not 0 <= v <= 255:
                         raise ValueError(f"rgb value not right, should be 0 ~ 255, the received rgb is {value}")
 
+    elif class_name in ["Pro630", "Pro630Client"]:
+        limit_info = robot_limit[class_name]
+        for parameter, value in kwargs.items():
+            value_type = type(value)
+            if parameter in ("servo_id", "joint_id", "coord_id") and value not in limit_info[parameter]:
+                raise ValueError(
+                    f"The {parameter} not right, should be in {limit_info[parameter]}, but received {value}.")
+            elif parameter == 'angle':
+                i = kwargs['joint_id'] - 1
+                min_angle = limit_info["angles_min"][i]
+                max_angle = limit_info["angles_max"][i]
+                if value < min_angle or value > max_angle:
+                    raise ValueError(
+                        f"angle value not right, should be {min_angle} ~ {max_angle}, but received {value}")
+            elif parameter == 'angles':
+                if not value:
+                    raise ValueError("angles value can't be empty")
+
+                joint_length = len(limit_info["joint_id"])
+                if len(value) != joint_length:
+                    raise ValueError(f"The length of `angles` must be {joint_length}.")
+
+                for i, v in enumerate(value):
+                    min_angle = limit_info["angles_min"][i]
+                    max_angle = limit_info["angles_max"][i]
+                    if v < min_angle or v > max_angle:
+                        raise ValueError(
+                            f"angle value not right, should be {min_angle} ~ {max_angle}, but received {v}")
+            elif parameter == 'coord':
+                coord_index = kwargs['coord_id'] - 1
+                min_coord = limit_info["coords_min"][coord_index]
+                max_coord = limit_info["coords_max"][coord_index]
+                if not min_coord <= value <= max_coord:
+                    raise ValueError(
+                        f"coord value not right, should be {min_coord} ~ {max_coord}, but received {value}")
+            elif parameter == 'coords':
+                if len(value) != 6:
+                    raise ValueError("The length of `coords` must be 6.")
+
+                for i, v in enumerate(value):
+                    min_coord = limit_info["coords_min"][i]
+                    max_coord = limit_info["coords_max"][i]
+                    if not min_coord <= v <= max_coord:
+                        raise ValueError(
+                            f"coord value not right, should be {min_coord} ~ {max_coord}, but received {v}")
+            elif parameter == "speed":
+                check_value_type(parameter, value_type, TypeError, int)
+                if not 1 <= value <= 100:
+                    raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
+            elif parameter == "speeds":
+                assert len(value) == 8, "The length of `speeds` must be 8."
+                for i, s in enumerate(value):
+                    if not 1 <= s <= 100:
+                        raise ValueError(
+                            f"speed value not right, should be 1 ~ 100, the received speed is {value}")
+
 
 def restrict_serial_port(func):
     """

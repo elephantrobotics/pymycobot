@@ -572,13 +572,7 @@ class CommandGenerator(DataProcessor):
             pin_signal: 0 / 1
         """
         self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
-        if (pin_no == 5 and pin_signal == 0):
-            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
-            time.sleep(0.5)
-            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, 1)
-        else:
-            self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
-        return 
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_basic_input(self, pin_no):
         """Get basic input for M5 version.
