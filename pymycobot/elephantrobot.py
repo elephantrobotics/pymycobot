@@ -542,6 +542,14 @@ class ElephantRobot(object):
         """
         self.set_digital_out(DO(joint.value + DO.J1_BRAKE_RELEASE.value), release)
 
+    def is_collision_detected(self):
+        """Checks if collision is detected.
+
+        Returns:
+            bool: True if collision is detected, False otherwise.
+        """
+        return self.get_digital_in(DI.COLLISION_DETECTED) == 1
+
     def set_gripper_state(self, state, speed):
         """Sets gripper state.
 
