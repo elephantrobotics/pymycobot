@@ -58,6 +58,7 @@ class DI(Enum):
     PIN_31 = 31
     PIN_32 = 32
     PIN_33 = 33
+    COLLISION_DETECTED = 33
 
     J1_COMMUNICATION = 34
     J2_COMMUNICATION = 35
