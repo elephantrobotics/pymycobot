@@ -42,6 +42,9 @@ from pymycobot.myarmm_control import MyArmMControl
 from pymycobot.mercurychassis_api import ChassisControl
 from pymycobot.conveyor_api import ConveyorAPI
 from pymycobot.ultraArmP340 import ultraArmP340
+from pymycobot.exoskeleton import Exoskeleton
+from pymycobot.exoskeletonsocket import ExoskeletonSocket
+
 __all__ = [
     "MyPalletizer260",
     "MechArm270",
@@ -82,7 +85,9 @@ __all__ = [
     "ConveyorAPI",
     "MyCobot280RDKX5",
     "MyCobot280RDKX5Socket",
-    "ultraArmP340"
+    "ultraArmP340",
+    "Exoskeleton",
+    "ExoskeletonSocket"
 ]
 
 if sys.platform == "linux":

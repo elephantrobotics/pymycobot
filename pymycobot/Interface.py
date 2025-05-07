@@ -44,28 +44,10 @@ class MyBuddyCommandGenerator(CommandGenerator):
         return real_command, has_reply
 
     # System status
-    def get_robot_version(self):
-        """Get cobot version
-        """
-        return self._mesg(ProtocolCode.ROBOT_VERSION, 0, has_reply=True)
-
     def get_system_version(self):
         """Get cobot version
         """
         return self._mesg(ProtocolCode.SOFTWARE_VERSION, 0, has_reply=True)
-
-    def get_robot_id(self):
-        """Detect this robot id
-        """
-        return self._mesg(ProtocolCode.GET_ROBOT_ID, 0, has_reply=True)
-
-    def set_robot_id(self, new_id):
-        """Set this robot id
-        
-        Args:
-            new_id: 1 - 253
-        """
-        return self._mesg(ProtocolCode.SET_ROBOT_ID, new_id)
 
     # Overall status
     def power_on(self, id=0):

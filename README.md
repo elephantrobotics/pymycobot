@@ -95,3 +95,7 @@ Please go to [here](./docs/README.md).
 [myArm_M&C API说明](./docs/myArm_M&C_zh.md) | [myArm_M&C API Description](./docs/myArm_M&C_en.md)
 
 [ultraArm P340 API说明](./docs/ultraArm_P340_zh.md) | [ultraArm P340 API Description](./docs/ultraArm_P340_en.md)
+
+[MyBuddy API说明](./docs/MyBuddy_zh.md) | [MyBuddy API Description](./docs/MyBuddy_en.md)
+
+[MyBuddyEmoticon API说明](./docs/mybuddy_emoticon_zh.md) | [MyBuddyEmoticon API Description](./docs/mybuddy_emoticon_en.md)

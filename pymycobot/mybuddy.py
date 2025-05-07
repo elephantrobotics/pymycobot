@@ -139,9 +139,7 @@ class MyBuddy(MyBuddyCommandGenerator, sms_sts):
                 if res is None:
                     return None
                 if genre in [
-                    ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.SOFTWARE_VERSION,
-                    ProtocolCode.GET_ROBOT_ID,
                     ProtocolCode.IS_POWER_ON,
                     ProtocolCode.IS_CONTROLLER_CONNECTED,
                     ProtocolCode.IS_PAUSED,  # TODO have bug: return b''
