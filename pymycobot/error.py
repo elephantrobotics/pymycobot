@@ -278,6 +278,8 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
         elif parameter == "pin_no":
             if  "Mercury" in class_name:
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, exception_class, int)
+
+
 def calibration_parameters(**kwargs):
     # with open(os.path.dirname(os.path.abspath(__file__))+"/robot_limit.json") as f:
     robot_limit = RobotLimit.robot_limit
@@ -1481,6 +1483,115 @@ def calibration_parameters(**kwargs):
                     if not 1 <= s <= 100:
                         raise ValueError(
                             f"speed value not right, should be 1 ~ 100, the received speed is {value}")
+    elif class_name in ("MyCobot280RDK-X5", ):
+        robotic_limit_table = RobotLimit.robot_limit["MyCobot280RDK-X5"]
+        kwargs.pop("class_name", None)
+        for parameter, value in kwargs.items():
+            if value is None:
+                continue
+
+            if parameter in ("servo_id", "joint_id", "coord_id"):
+                servo_ids = robot_limit[class_name][parameter]
+                if value not in servo_ids:
+                    raise ValueError(f"The {parameter} not right, should be in {servo_ids}, but received {value}.")
+
+            elif parameter in ('angle', 'coord'):
+                if parameter == "angle":
+                    _id = kwargs.get("joint_id")
+                else:
+                    _id = kwargs.get("coord_id")
+
+                index = _id - 1
+                minimum_position = robotic_limit_table[f"{parameter}s_min"][index]
+                maximum_position = robotic_limit_table[f"{parameter}s_max"][index]
+                if not minimum_position <= value <= maximum_position:
+                    raise ValueError(
+                        f"The {parameter} not right, should be in {minimum_position} ~ {maximum_position}, but received {value}."
+                    )
+
+            elif parameter in ('angles', 'coords'):
+                if len(value) != 6:
+                    raise ValueError(f"The length of `{parameter}` must be 6.")
+                minimum_position = robotic_limit_table[f"{parameter}_min"]
+                maximum_position = robotic_limit_table[f"{parameter}_max"]
+                for index, angle in enumerate(value):
+                    min_pos = minimum_position[index]
+                    max_pos = maximum_position[index]
+                    if not min_pos <= angle <= max_pos:
+                        raise ValueError(
+                            f"The {parameter} not right, should be in {min_pos} ~ {max_pos}, but received {angle}."
+                        )
+
+            elif parameter == "speed":
+                if not 1 <= value <= 100:
+                    raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
+
+            elif parameter == "speeds":
+                if len(value) != 6:
+                    raise ValueError("The length of `speeds` must be 6.")
+
+                for speed in value:
+                    if not 1 <= speed <= 100:
+                        raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {speed}")
+
+            elif parameter == 'encoder':
+                if not 0 <= value <= 4096:
+                    raise ValueError(f"The range of encoder is 0 ~ 4096, but the received value is {value}")
+
+            elif parameter == 'encoders':
+                if not len(value) == 6:
+                    raise ValueError(f"The length of encoders is 6, but the received value is {len(value)}")
+
+                for encoder in value:
+                    if not 0 <= encoder <= 4096:
+                        raise ValueError(f"The range of encoder is 0 ~ 4096, but the received value is {encoder}")
+            elif parameter == "drag_speeds":
+                if len(value) != 6:
+                    raise ValueError("The length of `speeds` must be 6.")
+
+                for speed in value:
+                    if not 1 <= speed <= 10000:
+                        raise ValueError(f"speed value not right, should be 1 ~ 10000, the received speed is {speed}")
+
+            elif parameter in (
+                "monitor_state", "fresh_mode", "vision_mode", "move_type", "pin_signal", "transponder_mode",
+                "reference_frame_type", "end_type", "direction", "coord_mode"
+            ):
+                if value not in (0, 1):
+                    raise ValueError(f"The {parameter} not right, should be in (0, 1), but received {value}.")
+
+            elif parameter == "gripper_state":
+                if value not in (0, 1, 254):
+                    raise ValueError(f"The {parameter} not right, should be in (0, 1, 254), but received {value}.")
+
+            elif parameter == "gripper_speed":
+                if not 0 <= value <= 100:
+                    raise ValueError(f"The gripper_speed value not right, should be 0 ~ 100, the received speed is {value}")
+            elif parameter == "gripper_torque":
+                if not 150 <= value <= 980:
+                    raise ValueError(f"The gripper_torque value not right, should be 150 ~ 980, the received speed is {value}")
+            elif parameter == "gripper_type":
+                gripper_types = (1, 2, 3, 4)
+                if value not in gripper_types:
+                    raise ValueError(f"The gripper_type not right, should be in {gripper_types}, but received {value}.")
+            elif parameter == "is_torque":
+                torque_gripper_types = (0, 1)
+                if value not in torque_gripper_types:
+                    raise ValueError(f"The is_torque not right, should be in {torque_gripper_types}, but received {value}.")
+            elif parameter == "value":
+                if not 0 <= value <= 4096:
+                    raise ValueError(f"The value not right, should be 0 ~ 4096, but received {value}.")
+            elif parameter == "protect_current":
+                if not 1 <= value <= 500:
+                    raise ValueError(f"The protect_current not right, should be 1 ~ 500, but received {value}.")
+            elif parameter == "end_direction":
+                if value not in (1, 2, 3):
+                    raise ValueError(f"The end_direction not right, should be in (1, 2, 3), but received {value}.")
+
+            elif parameter == "color":
+                for color in value:
+                    if not 0 <= color <= 255:
+                        raise ValueError(f"The color not right, should be 0 ~ 255, but received {color}.")
 
 
 def restrict_serial_port(func):
