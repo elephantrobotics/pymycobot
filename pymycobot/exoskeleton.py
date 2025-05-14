@@ -172,3 +172,7 @@ class Exoskeleton:
     def get_atom_version(self, arm):
         send_array = [0xFE, 0xFE, 0x03, 0x07, arm, 0xFA]
         return int(self._commmon(send_array)[2:], 16)/10
+
+    def set_atom_matrix(self, arm):
+        send_array = [0xFE, 0xFE, 0x03, 0x08, arm, 0xFA]
+        return self._commmon(send_array)
