@@ -207,10 +207,20 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return self.string_to_coords(res)
 
+    def get_angle(self, joint):
+        command = "get_angle(" + str(joint) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
+
     def get_coords(self):
         command = "get_coords()\n"
         res = self.send_command(command)
         return self.string_to_coords(res)
+
+    def get_coord(self, axis):
+        command = "get_coord(" + str(axis) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
 
     def get_speed(self):
         command = "get_speed()\n"
