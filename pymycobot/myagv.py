@@ -1,4 +1,4 @@
-import enum
+# -*- coding: utf-8 -*-
 import threading
 import serial
 import time
@@ -9,7 +9,7 @@ import logging.handlers
 
 def setup_logging(name: str = __name__, debug: bool = False) -> logging.Logger:
     debug_formatter = logging.Formatter(
-        fmt="%(asctime)s %(levelname)s [%(name)s] - %(message)s",
+        fmt="%(asctime)s.%(msecs)06d %(levelname).4s [%(name)s] %(message)s",
         datefmt="%H:%M:%S",
     )
     logger = logging.getLogger(name)
@@ -30,7 +30,17 @@ def setup_logging(name: str = __name__, debug: bool = False) -> logging.Logger:
     return logger
 
 
-class ProtocolCode(enum.Enum):
+def setup_serial_connect(port, baudrate, timeout=None):
+    serial_api = serial.Serial()
+    serial_api.port = port
+    serial_api.baudrate = baudrate
+    serial_api.timeout = timeout
+    serial_api.rts = False
+    serial_api.open()
+    return serial_api
+
+
+class ProtocolCode:
     HEADER = (0xFE, 0xFE)
     RESTORE = (0x01, 0x00)
     SET_LED = (0x01, 0x02)
@@ -43,35 +53,33 @@ class ProtocolCode(enum.Enum):
     UNDEFINED = ()
 
 
-class SerialStreamProtocol(object):
+class CommunicationProtocol(object):
+    def write(self, command):
+        raise NotImplementedError
 
-    def __init__(self, port="/dev/ttyAMA0", baudrate=115200, timeout=0.1):
-        self._serial_port = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
-        self._serial_port.rts = False
-
-    def open(self):
-        if self._serial_port.is_open is False:
-            self._serial_port.open()
+    def read(self, size=1):
+        raise NotImplementedError
 
     def close(self):
-        if self._serial_port.is_open is True:
-            self._serial_port.close()
+        raise NotImplementedError
 
-    def flush(self):
-        self._serial_port.flush()
+    def open(self):
+        raise NotImplementedError
 
-    def write(self, data):
-        self._serial_port.write(data)
-        self._serial_port.flush()
+    def is_open(self):
+        raise NotImplementedError
 
-    def read(self, size):
-        return self._serial_port.read(size)
-
-    def readall(self):
-        return self._serial_port.read_all()
+    def clear(self):
+        raise NotImplementedError
 
 
-class CommandProtocol(object):
+class MyAGVCommandProtocolApi(CommunicationProtocol):
+
+    def __init__(self, debug=False):
+        self.__movement = False
+        self.__mutex = threading.Lock()
+        self.__command_buffer_table = {}
+        self.log = setup_logging(name=f"{__name__}.{self.__class__.__name__}", debug=debug)
 
     def _process_data_command(self, args):
         if not args:
@@ -118,32 +126,21 @@ class CommandProtocol(object):
     def _decode_int16(cls, data):
         return struct.unpack(">h", data)[0]
 
-
-class MyAgv(SerialStreamProtocol, CommandProtocol):
-
-    def __init__(self, comport, baudrate=115200, timeout=0.1, debug=False):
-        super().__init__(comport, baudrate, timeout)
-        self.__movement = False
-        self.__command_buffer_table = {}
-        self.__mutex = threading.Lock()
-        self.log = setup_logging(name=self.__class__.__name__, debug=debug)
-        self._command_read_thread = threading.Thread(target=self._read_command_buffer_thread, daemon=True)
-        self._command_read_thread.start()
-
-    @classmethod
-    def __is_complete_command(cls, command):
-        return sum(command[2:-1]) & 0xff == command[-1] and len(command) > 5
-
-    def _read_command_buffer(self):
+    def _read_command_buffer(self, timeout=1, conditional=None):
         previous_frame = b""
         is_record = False
-        commands = b"\xfe\xfe"
+        commands = b""
 
-        while True:
-            current_frame = self.read(1)
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            current_frame = self.read()
+            if current_frame == b'':
+                time.sleep(0.001)
+                continue
 
             if current_frame == b"\xfe" and previous_frame == b"\xfe" and is_record is False:
                 is_record = True
+                commands += b"\xfe\xfe"
                 continue
 
             previous_frame = current_frame
@@ -151,46 +148,36 @@ class MyAgv(SerialStreamProtocol, CommandProtocol):
                 continue
 
             commands += current_frame
-            if sum(commands[2:-1]) & 0xff == commands[-1] and len(commands) > 5:
-                break
-        return commands
 
-    def _read_command_buffer_thread(self):
-        while True:
-            command_buffers = self._read_command_buffer()
-            if self.__is_complete_command(command_buffers):
-                self.log.info(f"write: {' '.join(f'{x:02x}' for x in command_buffers)}")
-                genre = tuple(command_buffers[2:4])
-                if genre == (128, 128):
-                    genre = ProtocolCode.GET_MCU_INFO.value
-                self.__command_buffer_table[genre] = (time.perf_counter(), command_buffers)
-            time.sleep(0.008)
+            cond_res = True if conditional is None else conditional(commands)
+            if sum(commands[2:-1]) & 0xff == commands[-1] and cond_res:
+                break
+        else:
+            commands = b""
+        return commands
 
     def _compose_complete_command(self, genre: ProtocolCode, params):  # packing command
         command_args = self._process_data_command(params)
         command_args = self._flatten(command_args)
 
-        command = [*ProtocolCode.HEADER.value]
-        if isinstance(genre.value, tuple):
-            command.extend(genre.value)
+        command = [*ProtocolCode.HEADER]
+        if isinstance(genre, tuple):
+            command.extend(genre)
         else:
-            command.append(genre.value)
+            command.append(genre)
 
         command.extend(command_args)
         command.append(sum(command[2:]) & 0xff)
         return command
 
-    def _parse_reply_instruction(self, genre: ProtocolCode):  # unpacking command
-        timestamp, reply_data = self.__command_buffer_table.get(genre.value, (time.perf_counter(), []))
-        if not reply_data:
+    def _parse_reply_instruction(self, genre, reply_data):  # unpacking command
+        if len(reply_data) == 0:
             return None
 
-        self.log.info(f"read : {' '.join(f'{x:02x}' for x in reply_data)}")
         if genre == ProtocolCode.GET_FIRMWARE_VERSION:
             return self._float(reply_data[4], 1)
+
         elif genre == ProtocolCode.GET_MCU_INFO:
-            if len(reply_data) < 30:
-                return None
             index = 0
             res = []
             datas = reply_data[2:][:-1]  # header and footer frames are not counted
@@ -231,17 +218,38 @@ class MyAgv(SerialStreamProtocol, CommandProtocol):
             return res
         return reply_data[4]
 
-    def _merge(self, genre: ProtocolCode, *args, has_reply=False, in_buffer=False):
-        if in_buffer is False:
-            real_command = self._compose_complete_command(genre, args)
-            self.log.info(f"write: {' '.join(f'{x:02x}' for x in real_command)}")
-            with self.__mutex:
+    def _merge(self, genre, *args, has_reply=False):
+        with self.__mutex:
+            self.clear()
+            if genre not in (ProtocolCode.GET_MCU_INFO,):
+                real_command = self._compose_complete_command(genre, args)
+                self.log.info(f"write: {' '.join(f'{x:02x}' for x in real_command)}")
                 self.write(real_command)
                 if has_reply is False:
                     return None
-        time.sleep(0.1)
-        return self._parse_reply_instruction(genre)
 
+                for _ in range(8):
+                    reply_data = self._read_command_buffer(conditional=lambda x: len(x) > 5, timeout=1)
+                    if len(reply_data) == 0:
+                        time.sleep(0.01)
+                        continue
+
+                    if reply_data[2] == genre[0] and reply_data[3] == genre[1]:
+                        break
+
+                    self.log.info(f"-read: {' '.join(f'{x:02x}' for x in reply_data)}")
+                    time.sleep(0.01)
+
+                else:
+                    reply_data = b""
+            else:
+                reply_data = self._read_command_buffer(conditional=lambda x: len(x) in (45, 29), timeout=1)
+
+            self.log.info(f"_read: {' '.join(f'{x:02x}' for x in reply_data)}")
+            return self._parse_reply_instruction(genre, reply_data)
+
+
+class MyAGVCommandApi(MyAGVCommandProtocolApi):
     def set_led(self, mode, r, g, b):
         """Set up LED lights
 
@@ -367,8 +375,8 @@ class MyAgv(SerialStreamProtocol, CommandProtocol):
 
     def stop(self):
         """stop-motion"""
-        self.__movement = False
         self._merge(ProtocolCode.UNDEFINED, 128, 128, 128)
+        self.__movement = False
 
     def get_mcu_info(self):
         """
@@ -394,7 +402,7 @@ class MyAgv(SerialStreamProtocol, CommandProtocol):
                     20-24: stall state 1 - stalled, 0 - normal
                     24-28: encoder status 1 - normal, 0 - abnormal
         """
-        return self._merge(ProtocolCode.GET_MCU_INFO, has_reply=True, in_buffer=True)
+        return self._merge(ProtocolCode.GET_MCU_INFO, has_reply=True)
 
     def restore(self):
         """Motor stall recovery"""
@@ -426,3 +434,32 @@ class MyAgv(SerialStreamProtocol, CommandProtocol):
     def get_modified_version(self):
         """Get modified version number"""
         return self._merge(ProtocolCode.GET_MODIFIED_VERSION, has_reply=True)
+
+
+class MyAgv(MyAGVCommandApi):
+
+    def __init__(self, comport, baudrate=115200, timeout=0.1, debug=False):
+        super().__init__(debug=debug)
+        self._serial_port = setup_serial_connect(comport, baudrate, timeout)
+
+    def write(self, command):
+        self._serial_port.write(bytearray(command))
+        self._serial_port.flush()
+
+    def read(self, size=1):
+        return self._serial_port.read(size)
+
+    def close(self):
+        if self._serial_port.is_open:
+            self._serial_port.close()
+
+    def open(self):
+        if not self._serial_port.is_open:
+            self._serial_port.open()
+
+    def is_open(self):
+        return self._serial_port.is_open
+
+    def clear(self):
+        self._serial_port.reset_output_buffer()
+        self._serial_port.flush()
