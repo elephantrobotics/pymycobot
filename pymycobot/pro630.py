@@ -2,7 +2,6 @@
 import locale
 import time
 import threading
-import numpy as np
 import serial
 from pymycobot.close_loop import CloseLoop
 from pymycobot.error import calibration_parameters
@@ -46,6 +45,10 @@ class Pro630Api(CloseLoop):
         self._joint_max_angles = [0] * self.joint_number
         self._joint_min_angles = [0] * self.joint_number
         self.save_serial_log = save_serial_log
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError("Please install numpy")
 
         self.calibration_parameters = calibration_parameters
         self.language = get_local_language()
