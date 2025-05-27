@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import locale
-import numpy as np
 
 from pymycobot.error import restrict_serial_port
 from pymycobot.common import ProtocolCode, FingerGripper
@@ -12,6 +11,10 @@ from pymycobot.close_loop import CloseLoop
 class MercuryCommandGenerator(CloseLoop):
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError("Please install numpy")
         # 同步模式
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:

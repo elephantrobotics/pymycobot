@@ -7,7 +7,6 @@ from enum import Enum
 import base64
 import hashlib
 import math
-import numpy as np
 from multiprocessing import Lock
 import logging
 from pymycobot.log import setup_logging
@@ -29,6 +28,10 @@ mutex = Lock()
 class ElephantRobot(object):
     def __init__(self, host, port, debug=False):
         # setup connection
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError("Please install numpy")
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
@@ -207,10 +210,20 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return self.string_to_coords(res)
 
+    def get_angle(self, joint):
+        command = "get_angle(" + str(joint) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
+
     def get_coords(self):
         command = "get_coords()\n"
         res = self.send_command(command)
         return self.string_to_coords(res)
+
+    def get_coord(self, axis):
+        command = "get_coord(" + str(axis) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
 
     def get_speed(self):
         command = "get_speed()\n"
