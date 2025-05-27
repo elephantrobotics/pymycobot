@@ -35,7 +35,7 @@ class Exoskeleton:
                 data_h = data[34 + j * 4: 36 + j * 4]
                 data_l = data[36 + j * 4: 38 + j * 4]
                 coord = hex_to_signed_decimal(data_h + data_l, 16)
-                parsed_data.append(round(coord / 100, 2))
+                parsed_data.append(round(coord / 10, 2))
         return parsed_data
 
     def _parse_all_data(self, data):
@@ -71,13 +71,13 @@ class Exoskeleton:
                 data_h = data[68 + j * 4: 70 + j * 4]
                 data_l = data[70 + j * 4: 72 + j * 4]
                 coord = hex_to_signed_decimal(data_h + data_l, 16)
-                left_data.append(round(coord / 100, 2))
+                left_data.append(round(coord / 10, 2))
 
             for j in range(6):
                 data_h = data[92 + j * 4: 94 + j * 4]
                 data_l = data[94 + j * 4: 96 + j * 4]
                 coord = hex_to_signed_decimal(data_h + data_l, 16)
-                right_data.append(round(coord / 100, 2))
+                right_data.append(round(coord / 10, 2))
         else:
             for i in range(7):
                 data_h = data[0 + i * 4: 2 + i * 4]
