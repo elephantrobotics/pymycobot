@@ -41,11 +41,11 @@ class CreateSerial(QThread):
                             data["angle"][-1] = 2
                         elif data["angle"][-1] < -118:
                             data["angle"][-1] = -118
-                        for i in range(len(data)):
-                            if data[i] > 0 and (RobotLimit.robot_limit["MyArmM"]["angles_max"][i] - data[i]) < 5:
-                                data[i] = RobotLimit.robot_limit["MyArmM"]["angles_max"][i] - 5
-                            elif data[i] < 0 and (data[i] - RobotLimit.robot_limit["MyArmM"]["angles_min"][i]) < 5:
-                                data[i] = RobotLimit.robot_limit["MyArmM"]["angles_min"][i] + 5
+                        for i in range(len(data["angle"])):
+                            if data["angle"][i] > 0 and (RobotLimit.robot_limit["MyArmM"]["angles_max"][i] - data["angle"][i]) < 5:
+                                data["angle"][i] = RobotLimit.robot_limit["MyArmM"]["angles_max"][i] - 5
+                            elif data["angle"][i] < 0 and (data["angle"][i] - RobotLimit.robot_limit["MyArmM"]["angles_min"][i]) < 5:
+                                data["angle"][i] = RobotLimit.robot_limit["MyArmM"]["angles_min"][i] + 5
                         self.parent_serial.serial.set_joints_angle(data["angle"], 100)
                     else:
                         # data["angle"] = self.serial.get_servos_encoder()
