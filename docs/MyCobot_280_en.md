@@ -177,6 +177,12 @@ mc.send_angle(1, 40, 20)
 - **function:** get the degree of all joints
 - **Return value**: `list  `a float list of all degree
 
+#### `get_angles_plan()`
+
+- **Function:** Get the planned angles of all joints
+
+- **Return value**: `list` List of floating points of all degrees
+
 #### `send_angle(id, degree, speed)`
 
 - **function:** send one degree of joint to robot arm
@@ -209,6 +215,11 @@ mc.send_angle(1, 40, 20)
 
 - **function:** Obtain robot arm coordinates from a base based coordinate system
 - **Return value:** a float list of coord:[x, y, z, rx, ry, rz]
+
+#### `get_coords_plan()`
+
+- **Function:** Get the planned coordinates of the robot arm from the reference-based coordinate system
+- **Return value:** List of floating point coordinates: [x, y, z, rx, ry, rz]
 
 #### `send_coord(id, coord, speed)`
 
