@@ -1,43 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 import threading
-import serial
 import time
-import struct
-import logging
-import logging.handlers
 
-
-def setup_logging(name: str = __name__, debug: bool = False) -> logging.Logger:
-    debug_formatter = logging.Formatter(
-        fmt="%(asctime)s.%(msecs)06d %(levelname).4s [%(name)s] %(message)s",
-        datefmt="%H:%M:%S",
-    )
-    logger = logging.getLogger(name)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(debug_formatter)
-    if debug is True:
-        logger.addHandler(stream_handler)
-        logger.setLevel(logging.INFO)  # 100M日志
-        file_handler = logging.handlers.RotatingFileHandler(
-            filename="python_debug.log", maxBytes=100 * 1024 * 1024, backupCount=1
-        )
-        file_handler.setFormatter(debug_formatter)
-        logger.addHandler(file_handler)
-
-    else:
-        logger.setLevel(logging.DEBUG)
-
-    return logger
-
-
-def setup_serial_connect(port, baudrate, timeout=None):
-    serial_api = serial.Serial()
-    serial_api.port = port
-    serial_api.baudrate = baudrate
-    serial_api.timeout = timeout
-    serial_api.rts = False
-    serial_api.open()
-    return serial_api
+from .myagvapi import CommunicationProtocol, Utils, setup_serial_connect, setup_logging
 
 
 class ProtocolCode:
@@ -53,78 +19,12 @@ class ProtocolCode:
     UNDEFINED = ()
 
 
-class CommunicationProtocol(object):
-    def write(self, command):
-        raise NotImplementedError
-
-    def read(self, size=1):
-        raise NotImplementedError
-
-    def close(self):
-        raise NotImplementedError
-
-    def open(self):
-        raise NotImplementedError
-
-    def is_open(self):
-        raise NotImplementedError
-
-    def clear(self):
-        raise NotImplementedError
-
-
 class MyAGVCommandProtocolApi(CommunicationProtocol):
 
     def __init__(self, debug=False):
         self.__movement = False
         self.__mutex = threading.Lock()
-        self.__command_buffer_table = {}
         self.log = setup_logging(name=f"{__name__}.{self.__class__.__name__}", debug=debug)
-
-    def _process_data_command(self, args):
-        if not args:
-            return []
-
-        processed_args = []
-        for index in range(len(args)):
-            if isinstance(args[index], list):
-                data = self._encode_int16(args[index])
-                processed_args.extend(data)
-            else:
-                processed_args.append(args[index])
-
-        return processed_args
-
-    def _flatten(self, datas):
-        flat_list = []
-        for item in datas:
-            if not isinstance(item, list):
-                flat_list.append(item)
-            else:
-                flat_list.extend(self._flatten(item))
-        return flat_list
-
-    @classmethod
-    def _float(cls, number, decimal=2):
-        return round(number / 10 ** decimal, 2)
-
-    @classmethod
-    def _encode_int16(cls, data):
-        if isinstance(data, int):
-            return [
-                ord(i) if isinstance(i, str) else i
-                for i in list(struct.pack(">h", data))
-            ]
-        else:
-            res = []
-            for v in data:
-                t = cls._encode_int16(v)
-                res.extend(t)
-            return res
-
-    @classmethod
-    def _decode_int16(cls, data):
-        return struct.unpack(">h", data)[0]
 
     def _read_command_buffer(self, timeout=1, conditional=None):
         previous_frame = b""
@@ -157,8 +57,8 @@ class MyAGVCommandProtocolApi(CommunicationProtocol):
         return commands
 
     def _compose_complete_command(self, genre: ProtocolCode, params):  # packing command
-        command_args = self._process_data_command(params)
-        command_args = self._flatten(command_args)
+        command_args = Utils.process_data_command(params)
+        command_args = Utils.flatten(command_args)
 
         command = [*ProtocolCode.HEADER]
         if isinstance(genre, tuple):
@@ -175,7 +75,7 @@ class MyAGVCommandProtocolApi(CommunicationProtocol):
             return None
 
         if genre == ProtocolCode.GET_FIRMWARE_VERSION:
-            return self._float(reply_data[4], 1)
+            return Utils.float(reply_data[4], 1)
 
         elif genre == ProtocolCode.GET_MCU_INFO:
             index = 0
@@ -187,8 +87,8 @@ class MyAGVCommandProtocolApi(CommunicationProtocol):
                     index += 1
 
                 elif index in range(3, 15, 2):
-                    data = self._decode_int16(datas[index:index + 2])
-                    res.append(self._float(data, 2))
+                    data = Utils.decode_int16(datas[index:index + 2])
+                    res.append(Utils.float(data, 2))
                     index += 2
 
                 elif index == 15:
@@ -202,11 +102,11 @@ class MyAGVCommandProtocolApi(CommunicationProtocol):
                     index += 1
 
                 elif index in range(18, 26, 2):
-                    res.append(self._float(self._decode_int16(datas[index:index + 2]), 3))
+                    res.append(Utils.float(Utils.decode_int16(datas[index:index + 2]), 3))
                     index += 2
 
                 elif index in range(26, 32, 2):
-                    res.append(self._float(self._decode_int16(datas[index:index + 2]), 3))
+                    res.append(Utils.float(Utils.decode_int16(datas[index:index + 2]), 3))
                     index += 2
 
                 elif index in range(32, 42, 1):
@@ -237,7 +137,6 @@ class MyAGVCommandProtocolApi(CommunicationProtocol):
                     if reply_data[2] == genre[0] and reply_data[3] == genre[1]:
                         break
 
-                    self.log.info(f"-read: {' '.join(f'{x:02x}' for x in reply_data)}")
                     time.sleep(0.01)
 
                 else:
@@ -245,7 +144,7 @@ class MyAGVCommandProtocolApi(CommunicationProtocol):
             else:
                 reply_data = self._read_command_buffer(conditional=lambda x: len(x) in (45, 29), timeout=1)
 
-            self.log.info(f"_read: {' '.join(f'{x:02x}' for x in reply_data)}")
+            self.log.info(f" read: {' '.join(f'{x:02x}' for x in reply_data)}")
             return self._parse_reply_instruction(genre, reply_data)
 
 
@@ -444,7 +343,6 @@ class MyAgv(MyAGVCommandApi):
 
     def write(self, command):
         self._serial_port.write(bytearray(command))
-        self._serial_port.flush()
 
     def read(self, size=1):
         return self._serial_port.read(size)
@@ -462,4 +360,4 @@ class MyAgv(MyAGVCommandApi):
 
     def clear(self):
         self._serial_port.reset_output_buffer()
-        self._serial_port.flush()
+        self._serial_port.reset_input_buffer()
