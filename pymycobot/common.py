@@ -433,6 +433,8 @@ class ProtocolCode(object):
     DRAG_GET_RECORD_DATA = 0xF3
     DRAG_GET_RECORD_LEN = 0xF4
     DRAG_CLEAR_RECORD_DATA = 0xF5
+    GET_ANGLES_PLAN = 0xF6
+    GET_COORDS_PLAN = 0xF7
 
 
     # ultraArm

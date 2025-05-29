@@ -194,6 +194,17 @@ mc.send_angle(1, 40, 20)
   - speed`(int)`: 1 ~ 100
   - mode: `(int)` 0 - angluar, 1 - linear
 
+#### `get_angles_plan()`
+
+- **Function:** Get the planned angles of all joints
+
+- **Return value**: `list` List of floating points of all degrees
+
+#### `get_coords_plan()`
+
+- **Function:** Get the planned coordinates of the robot arm from the reference-based coordinate system
+- **Return value:** List of floating point coordinates: [x, y, z, rx, ry, rz]
+
 #### `pause()`
 
 - **function:** Control the instruction to pause the core and stop all movement instructions
