@@ -28,6 +28,7 @@ from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
+from pymycobot.myagvpro import MyAGVPro
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
 # from pymycobot.mycobotpro630 import Phoenix
@@ -70,6 +71,7 @@ __all__ = [
     "ElephantRobot",
     "Mercury",
     "MyAgv",
+    "MyAGVPro",
     "MechArmSocket",
     "MyArmSocket",
     "MercurySocket",
