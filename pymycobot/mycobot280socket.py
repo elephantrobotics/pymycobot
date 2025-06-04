@@ -154,7 +154,7 @@ class MyCobot280Socket(CommandGenerator):
             ProtocolCode.GET_BASIC_VERSION,
             ProtocolCode.GET_JOINT_MIN_ANGLE,
             ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ProtocolCode.SOFTWARE_VERSION]:
+            ProtocolCode.SOFTWARE_VERSION, ProtocolCode.SET_BASIC_OUTPUT]:
             return res[0]
         if genre in [
             ProtocolCode.ROBOT_VERSION,
@@ -191,7 +191,8 @@ class MyCobot280Socket(CommandGenerator):
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS, ProtocolCode.GET_ANGLES_PLAN]:
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_COORDS_PLAN]:
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE,
+                       ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -210,6 +211,8 @@ class MyCobot280Socket(CommandGenerator):
             return self._int2coord(self._process_single(res))
         elif genre in [ProtocolCode.GET_REBOOT_COUNT]:
             return self._process_high_low_bytes(res)
+        elif genre in [ProtocolCode.SET_BASIC_OUTPUT]:
+            return 1
         elif genre == ProtocolCode.GET_ANGLES_COORDS:
             r = []
             for index in range(len(res)):
@@ -883,6 +886,26 @@ class MyCobot280Socket(CommandGenerator):
             list : A float list of coord .[x, y, z, rx, ry, rz]
         """
         return self._mesg(ProtocolCode.GET_COORDS_PLAN, has_reply=True)
+
+    def get_modify_version(self):
+        """get modify version
+
+        Return: int
+        """
+        return self._mesg(ProtocolCode.MODIFY_VERSION, has_reply=True)
+
+    def clear_queue(self):
+        """Clear Queue Data"""
+        return self._mesg(ProtocolCode.CLEAR_COMMAND_QUEUE, has_reply=True)
+
+    def check_async_or_sync(self):
+        """Check whether it is synchronous or asynchronous
+
+        Return:
+            1 : synchronous
+            0 : asynchronous
+        """
+        return self._mesg(ProtocolCode.CHECK_ASYNC_OR_SYNC, has_reply=True)
 
     # Other
     def wait(self, t):

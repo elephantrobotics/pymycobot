@@ -22,6 +22,28 @@ mc.send_angle(1, 40, 20)
 
 ### 1. System Status
 
+#### `get_modify_version()`
+
+- **Function:** Check the robot correction version
+
+- **Return value:** Corrected version number
+
+#### `clear_queue()`
+
+- **Function:** Clear the queue data
+
+- **Return value:** 1
+
+#### `check_async_or_sync()`
+
+- **Function:** Check whether it is synchronous or asynchronous
+
+- **Return value:**
+
+  - `1`: synchronous
+
+  - `0`: asynchronous
+
 #### `get_system_version()`
 
 - **function：** get system version

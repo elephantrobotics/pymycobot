@@ -105,7 +105,8 @@ class ProtocolCode(object):
     FOOTER = 0xFA
 
     # System status
-    ROBOT_VERSION = 0x01
+    # ROBOT_VERSION = 0x01
+    MODIFY_VERSION = 0x01
     SOFTWARE_VERSION = 0x02
     GET_ROBOT_ID = 0x03
     OVER_LIMIT_RETURN_ZERO = 0x04
@@ -519,7 +520,6 @@ class DataProcessor(object):
             command.extend(self.crc_check(command))
         else:
             command.append(ProtocolCode.FOOTER)
-
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
         _async = kwargs.get("_async", False)
