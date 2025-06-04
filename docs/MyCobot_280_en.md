@@ -22,6 +22,28 @@ mc.send_angle(1, 40, 20)
 
 ### 1. System Status
 
+#### `get_modify_version()`
+
+- **Function:** Check the robot correction version
+
+- **Return value:** Corrected version number
+
+#### `clear_queue()`
+
+- **Function:** Clear the queue data
+
+- **Return value:** 1
+
+#### `check_async_or_sync()`
+
+- **Function:** Check whether it is synchronous or asynchronous
+
+- **Return value:**
+
+  - `1`: synchronous
+
+  - `0`: asynchronous
+
 #### `get_system_version()`
 
 - **function：** get system version
@@ -341,6 +363,36 @@ mc.send_angle(1, 40, 20)
   - `target_coords`: `list` List of floating points for all coordinates.
   - `current_angles`: `list` List of floating points for all angles, current angles of the robot
 - **Return value**: `list` List of floating points for all angles.
+
+#### `drag_start_record()`
+
+- **Function** : Start trajectory recording.
+
+- **Return value**: `int` Recording queue length.
+
+#### `drag_end_record()`
+
+- **Function** : End trajectory recording.
+
+- **Return value**: `int` Recording queue length.
+
+#### `drag_get_record_data()`
+
+- **Function** : Get the recorded trajectory. This interface can be used with the `drag_get_record_len` interface. If the queue length is 0, it returns -1.
+
+- **Return value**: `list` List of potential values ​​(encoder values) and motion speeds of each joint. eg: `[[J1_encoder,J2_encoder,J3_encoder,J4_encoder, J5_encoder, J6_encoder],[J1_run_speed, J2_run_speed, J3_run_speed, J4_run_speed, J5_run_speed, J6_run_speed]]`
+
+#### `drag_get_record_len()`
+
+- **Function** : Get the total number of recording points.
+
+- **Return value**: `int` Recording queue length.
+
+#### `drag_clear_record_data()`
+
+- **Function** : Clear the recording track.
+
+- **Return value**: `int` Recording queue length.
 
 ### 4. JOG Mode and Operation
 
