@@ -888,6 +888,20 @@ class DataProcessor(object):
         combined_value = (high_byte << 8) | low_byte
         return combined_value
 
+    def _parse_bytes_to_int(self, data: list[int]) -> int:
+        """将多个字节组合为一个整数（大端）"""
+        value = 0
+        for byte in data:
+            value = (value << 8) | byte
+        return value
+
+    def _split_joint_and_speed(self, data):
+        if all(x == 0 for x in data):
+            return -1
+        joints = data[::2]  # 偶数索引：关节角度
+        speeds = data[1::2]  # 奇数索引：对应速度
+        return [joints, speeds]
+
     @staticmethod
     def check_python_version():
         if sys.version_info.major == 2:

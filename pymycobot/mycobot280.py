@@ -159,7 +159,8 @@ class MyCobot280(CommandGenerator):
         if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
                                                                                          ProtocolCode.GET_JOINT_MIN_ANGLE,
                                                                                          ProtocolCode.GET_JOINT_MAX_ANGLE,
-                                                                                         ProtocolCode.SOFTWARE_VERSION, ProtocolCode.SET_BASIC_OUTPUT]:
+                                                                                         ProtocolCode.SOFTWARE_VERSION,
+                                                                                         ProtocolCode.SET_BASIC_OUTPUT]:
             return res[0]
 
         if genre in [
@@ -195,7 +196,8 @@ class MyCobot280(CommandGenerator):
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS, ProtocolCode.GET_ANGLES_PLAN]:
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_COORDS_PLAN]:
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE,
+                       ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -215,6 +217,11 @@ class MyCobot280(CommandGenerator):
             return self._process_high_low_bytes(res)
         elif genre in [ProtocolCode.SET_BASIC_OUTPUT]:
             return 1
+        elif genre in [ProtocolCode.DRAG_CLEAR_RECORD_DATA, ProtocolCode.DRAG_GET_RECORD_LEN,
+                       ProtocolCode.DRAG_START_RECORD, ProtocolCode.DRAG_END_RECORD]:
+            return self._parse_bytes_to_int(res)
+        elif genre in [ProtocolCode.DRAG_GET_RECORD_DATA]:
+            return self._split_joint_and_speed(res)
         elif genre == ProtocolCode.GET_ANGLES_COORDS:
             r = []
             for index in range(len(res)):
@@ -794,8 +801,7 @@ class MyCobot280(CommandGenerator):
 
         Return:
             List of potential values (encoder values) and operating speeds of each joint
-            eg: [J1_encoder, J1_run_speed,J2_encoder, J2_run_speed,J3_encoder, J3_run_speed,J4_encoder, J4_run_speed,J5_
-            encoder, J5_run_speed,J6_encoder, J6_run_speed]
+            eg: [[J1_encoder,J2_encoder,J3_encoder,J4_encoder, J5_encoder, J6_encoder],[J1_run_speed, J2_run_speed, J3_run_speed, J4_run_speed, J5_run_speed, J6_run_speed]]
         """
 
         return self._mesg(ProtocolCode.DRAG_GET_RECORD_DATA, has_reply=True)

@@ -356,6 +356,31 @@ mc.send_angle(1, 40, 20)
   - `current_angles`: `list` 所有角度的浮点列表，机械臂当前角度
 - **返回值**: `list` 所有角度的浮点列表。
 
+#### `drag_start_record()`
+
+- **功能** : 开始轨迹录制。
+- **返回值**: `int` 录制队列长度。
+
+#### `drag_end_record()`
+
+- **功能** : 结束轨迹录制。
+- **返回值**: `int` 录制队列长度。
+
+#### `drag_get_record_data()`
+
+- **功能** : 获取录制轨迹。此接口可匹配`drag_get_record_len`接口使用，如果队列长度为0，则返回-1.
+- **返回值**: `list` 各关节的电位值（编码器值）和动作速度列表。eg: `[[J1_encoder,J2_encoder,J3_encoder,J4_encoder, J5_encoder, J6_encoder],[J1_run_speed, J2_run_speed, J3_run_speed, J4_run_speed, J5_run_speed, J6_run_speed]]`
+
+#### `drag_get_record_len()`
+
+- **功能** : 获取录制总点位数。
+- **返回值**: `int` 录制队列长度。
+
+#### `drag_clear_record_data()`
+
+- **功能** : 清除录制轨迹。
+- **返回值**: `int` 录制队列长度。
+
 ### 4. JOG运行与操作
 
 #### `jog_angle(joint_id, direction, speed)`

@@ -213,6 +213,11 @@ class MyCobot280Socket(CommandGenerator):
             return self._process_high_low_bytes(res)
         elif genre in [ProtocolCode.SET_BASIC_OUTPUT]:
             return 1
+        elif genre in [ProtocolCode.DRAG_CLEAR_RECORD_DATA, ProtocolCode.DRAG_GET_RECORD_LEN,
+                       ProtocolCode.DRAG_START_RECORD, ProtocolCode.DRAG_END_RECORD]:
+            return self._parse_bytes_to_int(res)
+        elif genre in [ProtocolCode.DRAG_GET_RECORD_DATA]:
+            return self._split_joint_and_speed(res)
         elif genre == ProtocolCode.GET_ANGLES_COORDS:
             r = []
             for index in range(len(res)):
@@ -829,8 +834,7 @@ class MyCobot280Socket(CommandGenerator):
 
         Return:
             List of potential values (encoder values) and operating speeds of each joint
-            eg: [J1_encoder, J1_run_speed,J2_encoder, J2_run_speed,J3_encoder, J3_run_speed,J4_encoder, J4_run_speed,J5_
-            encoder, J5_run_speed,J6_encoder, J6_run_speed]
+            eg: [[J1_encoder,J2_encoder,J3_encoder,J4_encoder, J5_encoder, J6_encoder],[J1_run_speed, J2_run_speed, J3_run_speed, J4_run_speed, J5_run_speed, J6_run_speed]]
         """
 
         return self._mesg(ProtocolCode.DRAG_GET_RECORD_DATA, has_reply=True)
