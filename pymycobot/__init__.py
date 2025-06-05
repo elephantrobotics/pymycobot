@@ -95,7 +95,7 @@ __all__ = [
     "MyBuddyEmoticon"
 ]
 
-__version__ = "3.9.8b0" 
+__version__ = "3.9.8" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
