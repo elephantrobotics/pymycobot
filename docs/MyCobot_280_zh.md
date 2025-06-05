@@ -22,6 +22,23 @@ mc.send_angle(1, 40, 20)
 
 ### 1. 系统状态
 
+#### `get_modify_version()`
+
+- **功能:** 检查机器人更正版本
+- **返回值：** 更正版本号
+
+#### `clear_queue()`
+
+- **功能:** 清空队列数据
+- **返回值：** 1
+
+#### `check_async_or_sync()`
+
+- **功能:** 检查当前为同步还是异步
+- **返回值：** 
+  - `1`: 同步
+  - `0`: 异步
+  
 #### `get_system_version()`
 
 - **功能:** 获取机器主控版本（atom固件版本）
@@ -338,6 +355,31 @@ mc.send_angle(1, 40, 20)
   - `target_coords`: `list` 所有坐标的浮点列表。
   - `current_angles`: `list` 所有角度的浮点列表，机械臂当前角度
 - **返回值**: `list` 所有角度的浮点列表。
+
+#### `drag_start_record()`
+
+- **功能** : 开始轨迹录制。
+- **返回值**: `int` 录制队列长度。
+
+#### `drag_end_record()`
+
+- **功能** : 结束轨迹录制。
+- **返回值**: `int` 录制队列长度。
+
+#### `drag_get_record_data()`
+
+- **功能** : 获取录制轨迹。此接口可匹配`drag_get_record_len`接口使用，如果队列长度为0，则返回-1.
+- **返回值**: `list` 各关节的电位值（编码器值）和动作速度列表。eg: `[[J1_encoder,J2_encoder,J3_encoder,J4_encoder, J5_encoder, J6_encoder],[J1_run_speed, J2_run_speed, J3_run_speed, J4_run_speed, J5_run_speed, J6_run_speed]]`
+
+#### `drag_get_record_len()`
+
+- **功能** : 获取录制总点位数。
+- **返回值**: `int` 录制队列长度。
+
+#### `drag_clear_record_data()`
+
+- **功能** : 清除录制轨迹。
+- **返回值**: `int` 录制队列长度。
 
 ### 4. JOG运行与操作
 
