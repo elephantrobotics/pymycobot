@@ -160,8 +160,8 @@
   - **position(int):**
   - **0: Left LED**
   - **1: Right LED**
-  - **brightness(int): 0 - 255**
   - **color(tuple(int, int, int)): RGB color**
+  - **brightness(int): 0 - 255(default 255)**
 - **Return value:**
   - **int: 1: Success, 0: Failed**
 
@@ -175,7 +175,7 @@
 #### get_pin_input(pin):
 - **function:** Get the input IO
 - **parameter:**
-  - **pin(int): 1, 2, 3, 4, 5, 6, 7, 8, 254**
+  - **pin(int): 1 - 6**
 - **Return value:**
   - **int: 0: Low, 1: High, -1: There is no such pin**
 
@@ -186,6 +186,11 @@
   - **state(int): 0: Low, 1: High**
 - **Return value:**
   - **int: 1: Success, 0: Failed**
+
+#### get_emergency_stop_state()
+- **function:** Get the emergency stop state
+- **Return value:**
+  - **int: 0: Release, 1: Press**
 
 ### 5. WiFi & Bluetooth
 
