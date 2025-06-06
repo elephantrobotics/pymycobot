@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+import decimal
 import re
 import threading
 import time
@@ -81,6 +82,10 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
         if to_local is True:
             self._save_file(self._serial_filename, " ".join(map(str, self._data_buffer)) + "\n")
             self._data_buffer.clear()
+
+    @staticmethod
+    def get_significant_bit(number):
+        return -decimal.Decimal(str(number)).as_tuple().exponent
 
     @staticmethod
     def _save_file(filename, data):
@@ -359,52 +364,64 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """Pan the robot forward
 
         Args:
-            speed(float): 0 ~ 1.5 m/s
+            speed(float): 0.01 ~ 1.50m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0 <= speed <= 1.5:
-            raise ValueError("Speed must be between 0 and 1.5")
+        if not 0.01 <= speed <= 1.50:
+            raise ValueError("Speed must be between 0.01 and 1.50")
+
+        if self.get_significant_bit(speed) > 2:
+            raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
         return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [int(speed * 100 * 1), 0x00])
 
     def move_backward(self, speed):
         """Pan the robot backward
 
         Args:
-            speed(float): 0 ~ 1.5 m/s
+            speed(float): 0.01 ~ 1.50m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0 <= speed <= 1.5:
-            raise ValueError("Speed must be between 0 and 1.5")
+        if not 0.01 <= speed <= 1.50:
+            raise ValueError("Speed must be between 0.01 and 1.50")
+
+        if self.get_significant_bit(speed) > 2:
+            raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
         return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [int(speed * 100 * -1)])
 
     def move_left_lateral(self, speed):
         """Pan the robot left
 
         Args:
-            speed(float): 0 ~ 1 m/s
+            speed(float): 0.01 ~ 1.00 m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0 <= speed <= 1:
-            raise ValueError("Speed must be between 0 and 1")
+        if not 0.01 <= speed <= 1.00:
+            raise ValueError("Speed must be between 0.01 and 1.00")
+
+        if self.get_significant_bit(speed) > 2:
+            raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
         return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
 
     def move_right_lateral(self, speed):
         """Pan the robot right
 
         Args:
-            speed(float): 0 ~ 1 m/s
+            speed(float): 0.01 ~ 1.00m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0 <= speed <= 1:
-            raise ValueError("Speed must be between 0 and 1")
+        if not 0.01 <= speed <= 1.00:
+            raise ValueError("Speed must be between 0.00 and 1.00")
+
+        if self.get_significant_bit(speed) > 2:
+            raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
         return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
 
     def turn_left(self, speed):
@@ -416,6 +433,8 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         Returns:
             int: 1: Success, 0: Failed
         """
+        if self.get_significant_bit(speed) > 2:
+            raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
         return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * -1), 0x00])
 
     def turn_right(self, speed):
@@ -427,6 +446,8 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         Returns:
             int: 1: Success, 0: Failed
         """
+        if self.get_significant_bit(speed) > 2:
+            raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
         return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * 1)])
 
     def stop(self):
@@ -578,15 +599,15 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         return self._merge(ProtocolCode.GET_COMMUNICATION_MODE)
 
-    def set_led_color(self, position, brightness, color):
+    def set_led_color(self, position, color, brightness=255):
         """Set the LED color
 
         Args:
             position(int):
                 0: Left LED
                 1: Right LED
-            brightness(int): 0 - 255
             color(tuple(int, int, int)): RGB color
+            brightness(int): 0 - 255 (default: 255)
 
         Returns:
             int: 1: Success, 0: Failed
@@ -597,7 +618,10 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         if not 0 <= brightness <= 255:
             raise ValueError("Brightness must be between 0 and 255")
 
-        if any(not 0 <= c <= 255 for c in color):
+        if len(color) != 3:
+            raise ValueError("Color must be a tuple of 3 values")
+
+        if any(map(lambda c: not 0 <= c <= 255, color)):
             raise ValueError("Color must be between 0 and 255")
 
         return self._merge(ProtocolCode.SET_LED_COLOR, position, brightness, *color)
@@ -639,15 +663,22 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """Get the input IO
 
         Args:
-            pin(int): 1, 2, 3, 4, 5, 6, 7, 8, 254
+            pin(int): 1 - 6
 
         Returns:
             int: 0: Low, 1: High, -1: There is no such pin
         """
-        supported_pins = [1, 2, 3, 4, 5, 6, 7, 8, 254]
-        if pin not in supported_pins:
-            raise ValueError(f"Pin must be in {supported_pins}")
+        if not 1 <= pin <= 6:
+            raise ValueError("Pin must be between 1 and 6")
         return self._merge(ProtocolCode.GET_INPUT_IO, pin)
+
+    def get_estop_state(self):
+        """Get the emergency stop state
+
+        Returns:
+            int: 0: Release, 1: Press
+        """
+        return self._merge(ProtocolCode.GET_INPUT_IO, 254)
 
     def get_wifi_account(self):
         """Get the wi-fi account
