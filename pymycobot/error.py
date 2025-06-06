@@ -1386,7 +1386,7 @@ def calibration_parameters(**kwargs):
                             f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}")
 
                 if (2048 - value[1]) + (2048 - value[2]) != 0:
-                    raise ValueError("The 2 and 3 servos must be inverse")
+                    raise ValueError("The 2 and 3 servo encoder values must be reversed")
 
             elif parameter == "speed":
                 check_value_type(parameter, value_type, TypeError, int)
