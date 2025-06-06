@@ -129,6 +129,11 @@ class Utils:
         return crc_res
 
     @classmethod
+    def crc16_check_bytes(cls, command):
+        data = cls.crc16_check(command)
+        return bytes(bytearray(data))
+
+    @classmethod
     def get_bits(cls, data):
         reverse_bins = reversed(bin(data)[2:])
         rank = [i for i, e in enumerate(reverse_bins) if e != '0']
