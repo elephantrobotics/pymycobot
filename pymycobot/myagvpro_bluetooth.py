@@ -400,7 +400,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             raise ValueError(f"Pin must be in {supported_pins}")
         return await self._merge(ProtocolCode.GET_INPUT_IO, pin)
 
-    def get_emergency_stop_state(self):
+    def get_estop_state(self):
         """Get the emergency stop state
 
         Returns:

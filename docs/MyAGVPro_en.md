@@ -187,7 +187,7 @@
 - **Return value:**
   - **int: 1: Success, 0: Failed**
 
-#### get_emergency_stop_state()
+#### get_estop_state()
 - **function:** Get the emergency stop state
 - **Return value:**
   - **int: 0: Release, 1: Press**
