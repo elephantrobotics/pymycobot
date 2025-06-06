@@ -29,6 +29,8 @@ from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
 from pymycobot.myagvpro import MyAGVPro
+from pymycobot.myagvpro_socket import MyAGVProSocket
+from pymycobot.myagvpro_bluetooth import MyAGVProBluetooth
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
 # from pymycobot.mycobotpro630 import Phoenix
@@ -72,6 +74,8 @@ __all__ = [
     "Mercury",
     "MyAgv",
     "MyAGVPro",
+    "MyAGVProSocket",
+    "MyAGVProBluetooth",
     "MechArmSocket",
     "MyArmSocket",
     "MercurySocket",
@@ -95,7 +99,7 @@ __all__ = [
     "MyBuddyEmoticon"
 ]
 
-__version__ = "3.9.8b0" 
+__version__ = "3.9.8" 
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

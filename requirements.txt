@@ -5,3 +5,4 @@ flake8
 opencv-python
 numpy
 crc
+bleak~=0.22.3
