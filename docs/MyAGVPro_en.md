@@ -215,7 +215,7 @@
 from pymycobot import MyAGVPro
 
 # Initialize the AGVPro object
-agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+agv_pro = MyAGVPro("/dev/ttyTHS1", baudrate=1000000, debug=True)
 
 # Obtain the system version number
 version = agv_pro.get_system_version()
@@ -227,7 +227,7 @@ import time
 from pymycobot import MyAGVPro
 
 # Initialize the AGVPro object
-agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+agv_pro = MyAGVPro("/dev/ttyTHS1", baudrate=1000000, debug=True)
 
 # The control AGVPro moves forward at a speed of 0.5ms
 agv_pro.move_forward(0.5)

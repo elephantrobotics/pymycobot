@@ -214,7 +214,7 @@
 ```python
 from pymycobot import MyAGVPro
 # 初始化 AGVPro 对象
-agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+agv_pro = MyAGVPro("/dev/ttyTHS1", baudrate=1000000, debug=True)
 # 获取系统版本号
 version = agv_pro.get_system_version()
 print(version)
@@ -225,7 +225,7 @@ import time
 from pymycobot import MyAGVPro
 
 # 初始化 AGVPro 对象
-agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+agv_pro = MyAGVPro("/dev/ttyTHS1", baudrate=1000000, debug=True)
 
 # 控制 agv_pro 以 0.5m/s 的速度向前移动
 agv_pro.move_forward(0.5)
