@@ -208,3 +208,33 @@
 - **function:** Get the bluetooth uuid
 - **Return value:**
   - **tuple(str, str, str): bluetooth name, service uuid, characteristic uuid**
+
+### 6. Use Cases:
+#### 6.1 Get the system version number of AGVPro
+```python
+from pymycobot import MyAGVPro
+
+# Initialize the AGVPro object
+agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+
+# Obtain the system version number
+version = agv_pro.get_system_version()
+print(version)
+```
+#### 6.2 Control AGVPro to move forward at a speed of 0.5ms for 3 seconds
+```python
+import time
+from pymycobot import MyAGVPro
+
+# Initialize the AGVPro object
+agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+
+# The control AGVPro moves forward at a speed of 0.5ms
+agv_pro.move_forward(0.5)
+
+# Sleep for 3 seconds
+time.sleep(3)
+
+# Stop moving
+agv_pro.stop()
+```

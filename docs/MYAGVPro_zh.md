@@ -208,3 +208,31 @@
 - **功能:** 获取蓝牙 uuid
 - **返回值:**
   - **tuple(str, str, str): 蓝牙名称, 服务 uuid, 特征 uuid**
+
+### 6. 使用案例
+#### 6.1 获取 AGVPro 的系统版本号
+```python
+from pymycobot import MyAGVPro
+# 初始化 AGVPro 对象
+agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+# 获取系统版本号
+version = agv_pro.get_system_version()
+print(version)
+```
+#### 6.2 控制 AGVPro以0.5m/s的速度向前移动3秒
+```python
+import time
+from pymycobot import MyAGVPro
+
+# 初始化 AGVPro 对象
+agv_pro = MyAGVPro("COM3", baudrate=1000000, debug=True)
+
+# 控制 agv_pro 以 0.5m/s 的速度向前移动
+agv_pro.move_forward(0.5)
+
+# 睡眠 3 秒
+time.sleep(3)
+
+# 停止移动
+agv_pro.stop()
+```
