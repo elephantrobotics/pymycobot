@@ -32,19 +32,33 @@ previous_state = [0, 0, 0, 0, 0, 0]
 # Function to turn on the vacuum pump (electromagnetic valve)
 def pump_on():
     # 打开电磁阀
-    GPIO.output(20, 0)
+    if platform.system() == "Linux":
+        GPIO.output(20, 0)
+    elif platform.system() == "Windows":
+        mc.set_basic_output(5, 0)
+        time.sleep(0.05)
 
 
 # Function to turn off the vacuum pump (close electromagnetic valve and open release)
 def pump_off():
-    # Close valve
-    GPIO.output(20, 1)
-    time.sleep(0.05)
-    # Open release valve
-    GPIO.output(21, 0)
-    time.sleep(1)
-    GPIO.output(21, 1)
-    time.sleep(0.05)
+    if platform.system() == "Linux":
+        # Close valve
+        GPIO.output(20, 1)
+        time.sleep(0.05)
+        # Open release valve
+        GPIO.output(21, 0)
+        time.sleep(1)
+        GPIO.output(21, 1)
+        time.sleep(0.05)
+    elif platform.system() == "Windows":
+        # Close valve
+        mc.set_basic_output(5, 1)
+        time.sleep(0.05)
+        # Open release valve
+        mc.set_basic_output(2, 0)
+        time.sleep(1)
+        mc.set_basic_output(2, 1)
+        time.sleep(0.05)
 
 
 # Function to safely stop the robot (used in a thread)
@@ -54,8 +68,6 @@ def safe_stop():
         time.sleep(0.02)
     except Exception as e:
         print("stop 出错：", e)
-        previous_state[axis] = 0
-
 
 # Handler for joystick input events
 def joy_handler():
