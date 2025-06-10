@@ -413,10 +413,10 @@ class CommandGenerator(DataProcessor):
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
         """
         if mode is None:
-            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address=data_id, value=value)
+            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address_id=data_id, value=value)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
         else:
-            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address=data_id, value=value,
+            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address_id=data_id, value=value,
                                         mode=mode)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, [value], mode)
 
