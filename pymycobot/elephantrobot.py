@@ -13,6 +13,9 @@ from pymycobot.log import setup_logging
 from pymycobot.tool_coords import *
 import time
 
+error_For = "Parameter out of range, correct parameter range:"
+error_Jion = "Joint out of range, correct joint range:"
+
 COORDS_EPSILON = 0.50
 
 
@@ -729,6 +732,8 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Force_SetId(self, ID, value):
+        if value < 0 or value > 255:
+            return error_For + "1 - 254"
         command = "force_SetGripperId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
@@ -737,10 +742,14 @@ class ElephantRobot(object):
         return self.send_command(command)
 
     def Force_SetEnabled(self, ID, value):
+        if value < 0 or value > 1:
+            return error_For + "0 - 1"
         command = "force_SetGripperEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Force_SetAngle(self, ID, value):
+        if value < 0 or value > 100:
+            return error_For + "10 - 100"
         command = "force_SetAngle(" + str(ID) + "," + str(value) + ")\n"
         print(command)
         return self.send_command(command)
@@ -758,6 +767,8 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Force_SetTorque(self, ID, value):
+        if value < 0 or value > 100:
+            return error_For + "0 - 100"
         command = "force_SetGripperTorque(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
@@ -766,14 +777,20 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Force_SetOpen(self, ID, value):
+        if value < 0 or value > 100:
+            return error_For + "0 - 100"
         command = "force_SetOpen(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Force_SetClose(self, ID, value):
+        if value < 0 or value > 100:
+            return error_For + "0 - 100"
         command = "force_SetClose(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Force_SetSpeed(self, ID, value):
+        if value < 0 or value > 100:
+            return error_For + "0 - 100"
         command = "force_SetSpeed(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
@@ -790,14 +807,16 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Force_SetAbsAngle(self, ID, value):
+        if value < 0 or value > 100:
+            return error_For + "0 - 100"
         command = "force_SetAbsAngle(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_Pause(self, ID, value):
+    def Force_Pause(self, ID):
         command = "force_Pause(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_Resume(self, ID, value):
+    def Force_Resume(self, ID):
         command = "force_Resume(" + str(ID) + ")\n"
         return self.send_command(command)
     
@@ -819,6 +838,8 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Hand_SetId(self, ID, value):
+        if value < 1 or value > 255:
+            return error_For + "1 - 254"
         command = "Hand_SetId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
@@ -827,19 +848,29 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Hand_SetEnabled(self, ID, value):
+        if value < 0 or value > 1:
+            return error_For + "0 - 1"
         command = "Hand_SetEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Hand_SetJointAngle(self, ID, Jiont, value):
+            if value < 0 or value > 100:
+                return error_For + "0 - 100"
+            if Jiont < 0 or Jiont > 6:
+                return error_Jion + " 1 - 6"
             command = "Hand_SetJointAngle(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
             return self.send_command(command)
     
     def Hand_GetJointAngle(self, ID, Jiont):
+        if Jiont < 0 or Jiont > 6:
+            return error_Jion + " 1 - 6"
         command = "Hand_GetJointAngle(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
     
     def Hand_SetJointCalibrate(self, ID, Jiont):
+        if Jiont < 0 or Jiont > 6:
+            return error_Jion + " 1 - 6"
         command = "Hand_SetJointCalibrate(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
@@ -849,27 +880,49 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Hand_SetTorque(self, ID, Jiont, value):
+        if value < 0 or value > 100:
+                return error_For + "0 - 100"
+        if Jiont < 0 or Jiont > 6:
+            return error_Jion + " 1 - 6"
         command = "Hand_SetTorque(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Hand_GetTorque(self, ID, Jiont):
+        if Jiont < 0 or Jiont > 6:
+            return error_Jion + " 1 - 6"
         command = "Hand_GetTorque(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
     def Hand_SetSpeed(self, ID, Jiont, value):
+        if value < 0 or value > 100:
+                return error_For + "0 - 100"
+        if Jiont < 0 or Jiont > 6:
+            return error_Jion + " 1 - 6"
         command = "Hand_SetSpeed(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
 
     def Hand_GetSpeed(self, ID, Jiont):
+        if Jiont < 0 or Jiont > 6:
+            return error_Jion + " 1 - 6"
         command = "Hand_GetSpeed(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
     def Hand_SetFullAngles(self, ID, Jiont, speed):
-        command = "Hand_SetFullAngles(" + str(ID) + "," + str(Jiont[0]) + "," \
+        if value < 0 or value > 100:
+                return error_For + "0 - 100"
+        if len(Jiont) == 6:
+            if all(x < 0 or x > 6 for x in Jiont):
+                return error_Jion + " 1 - 6"
+            else:
+                command = "Hand_SetFullAngles(" + str(ID) + "," + str(Jiont[0]) + "," \
                                         + str(Jiont[1]) + "," + str(Jiont[2]) + "," \
                                         + str(Jiont[3]) + "," + str(Jiont[4]) + "," \
                                         + str(Jiont[5])+ "," + str(speed) + ")\n"
-        return self.send_command(command)
+                return self.send_command(command)
+        else:
+            return "Number of joints does not match"
+        
+
     
     def Hand_GetFullAngles(self, ID):
         command = "Hand_GetFullAngles(" + str(ID) + ")\n"
@@ -877,10 +930,37 @@ class ElephantRobot(object):
     
 
     def Hand_SetCatch(self, ID, value, num=0):
+        if ID < 0 or ID > 4:
+                return error_For + "0 - 4"
+        if ID == 4:
+            if value < 0 or value > 20:
+                return "The parameter range is: 0 - 20"
+            else:
+                if value < 0 or value > 5:
+                    return "The parameter range is: 0 - 5"
         if num <= 0:
             command = "Hand_SetCatch(" + str(ID) + "," + str(value) + ")\n"
         else :
             command = "Hand_SetCatch(" + str(ID) + "," + str(value) +  "," + str(num) +")\n"
+        return self.send_command(command)
+
+    #末端
+    def get_end_Firmware():             #主版本
+        command = "GetFirmwareEnd()\n"
+        return self.send_command(command)
+    def get_end_Modify():                #更新版本
+        command = "GetModifyEnd()\n"
+        return self.send_command(command)
+    def get_end_bt_status():                #获取按键状态
+        command = "SetEndBtStatus()\n"
+        return self.send_command(command)
+    def set_end_color(self, red, green, blue):
+        if red < 0 or green < 0 or blue < 0:
+            return "Parameter out of range, range should be: 0-255"
+        if red > 255 or green > 255 or blue > 255:
+            return "Parameter out of range, range should be: 0-255"
+
+        command = "SetLedColor(" + str(red) + "," + str(green) + "," + str(blue) + ")\n"
         return self.send_command(command)
     
         
@@ -895,7 +975,7 @@ if __name__ == "__main__":
     # print("发送指令")
     Jiont = [100,100,100,100,100,100]
     time.sleep(2)
-    # ep.Force_SetAngle(14,0) 
+    # ep.Force_SetAngle(14,0)
     # print(ep.Force_SetAngle(14,20))
     time.sleep(2)
     print(ep.Force_SetCalibrate(14))
