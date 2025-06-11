@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 from .myagvpro import MyAGVProCommandProtocolApi, ProtocolCode, PLAINTEXT_REPLY_PROTOCOL_CODE
-from bleak import BleakClient
 
 
 class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
@@ -400,7 +399,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             raise ValueError(f"Pin must be in {supported_pins}")
         return await self._merge(ProtocolCode.GET_INPUT_IO, pin)
 
-    def get_emergency_stop_state(self):
+    def get_estop_state(self):
         """Get the emergency stop state
 
         Returns:
@@ -445,6 +444,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 class MyAGVProBluetooth(MyAGVProCommandApi):
     def __init__(self, address, service_uuid, char_uuid, debug=False, save_serial_log=False):
         super().__init__(debug=debug, save_serial_log=save_serial_log)
+        from bleak import BleakClient
         self._bluetooth = BleakClient(address, timeout=10)
         self._address = address
         self._char_uuid = char_uuid

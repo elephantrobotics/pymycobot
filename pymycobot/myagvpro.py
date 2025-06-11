@@ -672,7 +672,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             raise ValueError("Pin must be between 1 and 6")
         return self._merge(ProtocolCode.GET_INPUT_IO, pin)
 
-    def get_emergency_stop_state(self):
+    def get_estop_state(self):
         """Get the emergency stop state
 
         Returns:
