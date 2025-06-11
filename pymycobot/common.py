@@ -105,7 +105,7 @@ class ProtocolCode(object):
     FOOTER = 0xFA
 
     # System status
-    # ROBOT_VERSION = 0x01
+    ROBOT_VERSION = 0x01
     MODIFY_VERSION = 0x01
     SOFTWARE_VERSION = 0x02
     GET_ROBOT_ID = 0x03
@@ -888,7 +888,7 @@ class DataProcessor(object):
         combined_value = (high_byte << 8) | low_byte
         return combined_value
 
-    def _parse_bytes_to_int(self, data: list[int]) -> int:
+    def _parse_bytes_to_int(self, data):
         """将多个字节组合为一个整数（大端）"""
         value = 0
         for byte in data:
