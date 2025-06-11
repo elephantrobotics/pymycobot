@@ -14,25 +14,25 @@ pip3 install -r requirements.txt
 
 ## 3.Modify port number
 
-Edit the handle_control.py file
+Edit the myCobot280_handle_control.py file
 
 ```python
 import pygame
 import time
 from pymycobot import MyCobot280
 import threading
-# Change com7 to the port number detected by your computer
-mc = MyCobot280("com7")
+# Change /dev/ttyAMA0 to the port number and rate detected by your computer
+mc = MyCobot280("/dev/ttyANA0", 1000000)
 ...
 ```
 
 Finally. run the program.
 
 ```bash
-python3 handle_control.py
+python3 myCobot280_handle_control.py
 ```
 
-> Note: After running the program, first click the **14** button to check the machine connection status, the machine connection status is normal (if it is abnormal, you will not be able to perform other operations, please solve the abnormal connection problem first), and then click **Right 1** button, other operations can only be performed after the machine reaches the initial point.
+> Note: After running the program, you must first click the **Right 1** button. Only after the machine reaches the initial point can other operations be performed.
 
 ![img_en](./handle.jpg)
 
@@ -50,12 +50,14 @@ The corresponding functions of the handle buttons are as follows:
 - **10**: Z direction coordinate value decreases
 - **11**: RZ direction coordinate value decreases
 - **12**: RZ direction coordinate value increases
-- **13**: Wake up the handle. After the handle is not used for a long time after connection, it will enter sleep mode. You need to press this button to wake up.
-- **14**: Check the connection status of the machine. The atom LED flashes green three times to indicate that the machine is normal; flashes red three times to indicate that the state is abnormal.
-- **X**: Press and hold the button, the jaws continue to open
-- **Y**: Press and hold the button, the jaws continue to close
-- **A**: open suction pump
-- **B**: Shut down the suction pump
+
+[//]: # (- **13**: Wake up the handle. After the handle is not used for a long time after connection, it will enter sleep mode. You need to press this button to wake up.)
+
+[//]: # (- **14**: Check the connection status of the machine. The atom LED flashes green three times to indicate that the machine is normal; flashes red three times to indicate that the state is abnormal.)
+- **X**: Click the button, open gripper
+- **Y**: Click the button, close gripper
+- **A**: Click the button, open suction pump
+- **B**: Click the button, Shut down the suction pump
 - **Left 1**: Press and hold for 2s to initialize the robot to the joint zero state.
 - **Left 2**: Press and hold for 2s, the robot stops torque output and relaxes all joints.
 - **Right 1**: Press and hold for 2s to initialize the robot to move to the initial point.
@@ -77,25 +79,25 @@ pip3 install -r requirements.txt
 
 ## 3.修改端口号
 
-编辑 handle_control.py 文件
+编辑 myCobot280_handle_control.py 文件
 
 ```python
 import pygame
 import time
 from pymycobot import MyCobot280
 import threading
-# 将com7修改为你的电脑检测到的实际端口号
-mc = MyCobot280("com7")
+# 将/dev/ttyAMA0和1000000修改为你的电脑检测到的实际端口号和波特率
+mc = MyCobot280("/dev/ttyAMA0", 1000000)
 ...
 ```
 
 最后，运行程序即可。
 
 ```bash
-python3 handle_control.py
+python3 myCobot280_handle_control.py
 ```
 
-> 注意：在运行程序以后，首先要先点击**14**按钮，检查机器连接状态，机器连接状态正常(若为异常，将无法进行其他的操作，请先解决连接异常问题)，再点击**Right 1**按钮，机器到达初始点位以后，才可以进行其他的操作。
+> 注意：在运行程序以后，首先要点击**Right 1**按钮，机器到达初始点位以后，才可以进行其他的操作。
 
 手柄按钮对应功能如下：
 
@@ -111,12 +113,14 @@ python3 handle_control.py
 - **10**: Z方向坐标值减小
 - **11**: RZ方向坐标值减小
 - **12**: RZ方向坐标值增加
-- **13**: 唤醒手柄，手柄连接以后长时间不使用会进入休眠，需要按下此键来唤醒
-- **14**: 检测机器连接状态，atom LED闪烁绿灯三次表示机器正常，闪烁红灯三次表示状态异常。
-- **X**: 夹爪累加张开
-- **Y**: 夹爪累加关闭
-- **X**: 打开吸泵
-- **X**: 关闭吸泵
+
+[//]: # (- **13**: 唤醒手柄，手柄连接以后长时间不使用会进入休眠，需要按下此键来唤醒)
+
+[//]: # (- **14**: 检测机器连接状态，atom LED闪烁绿灯三次表示机器正常，闪烁红灯三次表示状态异常。)
+- **X**: 点击按钮，夹爪张开
+- **Y**: 点击按钮，夹爪关闭
+- **A**: 点击按钮，打开吸泵
+- **B**: 点击按钮，关闭吸泵
 - **Left 1**: 长按2s，初始化机器人至关节零位状态。
 - **Left 2**: 长按2s，机器人停止力矩输出，放松所有关节。
 - **Right 1**: 长按2s，初始化机器人至移动初始点位。
