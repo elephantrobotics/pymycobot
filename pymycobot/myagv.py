@@ -11,12 +11,14 @@ class ProtocolCode:
     RESTORE = (0x01, 0x00)
     SET_LED = (0x01, 0x02)
     SET_LED_MODE = (0x01, 0x0A)
+    SET_MOTION_CONTROL = (0x01, 0x0B)
     GET_FIRMWARE_VERSION = (0x01, 0x03)
     GET_MODIFIED_VERSION = (0x01, 0x09)
     SET_GYRO_STATE = (0x01, 0x07)
+    SET_AUTO_REPORT_STATE = (0x01, 0x0c)
+    GET_AUTO_REPORT_STATE = (0x01, 0x0d)
     GET_GYRO_STATE = (0x01, 0x08)
-    GET_MCU_INFO = (0x01, 0x0B)
-    UNDEFINED = ()
+    GET_MCU_INFO = ()
 
 
 class MyAGVCommandProtocolApi(CommunicationProtocol):
@@ -190,7 +192,7 @@ class MyAGVCommandApi(MyAGVCommandProtocolApi):
         while time.time() - t < timeout:
             if self.__movement is False:
                 break
-            self._merge(ProtocolCode.UNDEFINED, *genre)
+            self._merge(ProtocolCode.SET_MOTION_CONTROL, *genre)
             time.sleep(0.1)
         self.stop()
 
@@ -274,7 +276,7 @@ class MyAGVCommandApi(MyAGVCommandProtocolApi):
 
     def stop(self):
         """stop-motion"""
-        self._merge(ProtocolCode.UNDEFINED, 128, 128, 128)
+        self._merge(ProtocolCode.SET_MOTION_CONTROL, 128, 128, 128)
         self.__movement = False
 
     def get_mcu_info(self):
@@ -333,6 +335,27 @@ class MyAGVCommandApi(MyAGVCommandProtocolApi):
     def get_modified_version(self):
         """Get modified version number"""
         return self._merge(ProtocolCode.GET_MODIFIED_VERSION, has_reply=True)
+
+    def set_auto_report_state(self, state):
+        """Set the state of automatic reporting
+
+        Args:
+            state (int): 1 - open. 0 - close. Defaults to 0.
+        """
+        if state not in (0, 1):
+            raise ValueError("state must be 0 or 1")
+
+        self._merge(ProtocolCode.SET_AUTO_REPORT_STATE, state)
+
+    def get_auto_report_state(self):
+        """Get the state of automatic reporting
+
+        Return:
+            1 - open
+            0 - close
+        """
+
+        return self._merge(ProtocolCode.GET_AUTO_REPORT_STATE, has_reply=True)
 
 
 class MyAgv(MyAGVCommandApi):
