@@ -769,7 +769,7 @@ class MyCobot280Socket(CommandGenerator):
 
         Args:
             flag  (int): 0 - open, 1 - close, 254 - release
-            speed (int): 1 ~ 100
+            speed (int): 0 ~ 100
             _type_1 (int): default 1
                 1 : Adaptive gripper. default to adaptive gripper
                 2 : 5 finger dexterous hand
@@ -779,7 +779,7 @@ class MyCobot280Socket(CommandGenerator):
                 1: Force control
                 0: Non-force control
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1,
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, gripper_speed=speed, _type_1=_type_1,
                                     is_torque=is_torque)
         args = [flag, speed]
         if _type_1 is not None:
@@ -793,7 +793,7 @@ class MyCobot280Socket(CommandGenerator):
 
         Args:
             gripper_value (int): 0 ~ 100
-            speed (int): 1 ~ 100
+            speed (int): 0 ~ 100
             gripper_type (int): default 1
                 1: Adaptive gripper
                 3: Parallel gripper, this parameter can be omitted
@@ -802,7 +802,7 @@ class MyCobot280Socket(CommandGenerator):
                 1: Force control
                 0: Non-force control
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, gripper_speed=speed,
                                     gripper_type=gripper_type, is_torque=is_torque)
         args = [gripper_value, speed]
         if gripper_type is not None:
@@ -910,6 +910,10 @@ class MyCobot280Socket(CommandGenerator):
             0 : asynchronous
         """
         return self._mesg(ProtocolCode.CHECK_ASYNC_OR_SYNC, has_reply=True)
+
+    def gripper_stop(self):
+        """Stop gripper"""
+        return self.set_gripper_value(0, 0)
 
     # Other
     def wait(self, t):
