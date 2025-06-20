@@ -944,6 +944,7 @@ class ElephantRobot(object):
             command = "Hand_SetCatch(" + str(ID) + "," + str(value) +  "," + str(num) +")\n"
         return self.send_command(command)
 
+
     #末端
     def get_end_Firmware():             #主版本
         command = "GetFirmwareEnd()\n"
