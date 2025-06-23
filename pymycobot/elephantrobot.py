@@ -9,6 +9,9 @@ import hashlib
 import math
 from multiprocessing import Lock
 import logging
+
+import numpy as np
+
 from pymycobot.log import setup_logging
 from pymycobot.tool_coords import *
 from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
