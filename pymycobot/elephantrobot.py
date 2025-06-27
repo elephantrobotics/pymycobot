@@ -367,6 +367,117 @@ class ElephantRobot(object):
         while self.read_next_error() != "":
             pass
 
+    def get_robot_state(self) -> str:
+        """Returns current robot state, which is 64 bits represented as a
+        string of 64 zeroes or ones.
+
+        Meaning of each bit from eft to right is as follows:
+        Bit number | Meaning
+        0          | Power on
+        1          | Emergency stop button, 0 - pressed, 1 - released
+        2          | Joint 6 status, 0 - error, 1 - OK
+        3          | Joint 5 status, 0 - error, 1 - OK
+        4          | Joint 4 status, 0 - error, 1 - OK
+        5          | Joint 3 status, 0 - error, 1 - OK
+        6          | Joint 2 status, 0 - error, 1 - OK
+        7          | Joint 1 status, 0 - error, 1 - OK
+        8          | Reserved
+        9          | Reserved
+        10         | Reserved
+        11         | Motion enabled, 0 - disabled, 1 - enabled
+        12         | Hardware Free Move
+        13         | Joint 6 servo enabled, 0 - disabled, 1 - enabled
+        14         | Joint 5 servo enabled, 0 - disabled, 1 - enabled
+        15         | Joint 4 servo enabled, 0 - disabled, 1 - enabled
+        16         | Joint 3 servo enabled, 0 - disabled, 1 - enabled
+        17         | Joint 2 servo enabled, 0 - disabled, 1 - enabled
+        18         | Joint 1 servo enabled, 0 - disabled, 1 - enabled
+        19         | Brake activation running, 0 - not running, 1 - running
+        20         | Hardware Pause Pressed, 0 - not pressed, 1 - pressed
+        21         | Reserved
+        22         | IO Run Triggered, 0 - not triggered, 1 - triggered
+        23         | IO Stop Triggered, 0 - not triggered, 1 - triggered
+        24         | Joint 6 communication status, 0 - error, 1 - OK
+        25         | Joint 5 communication status, 0 - error, 1 - OK
+        26         | Joint 4 communication status, 0 - error, 1 - OK
+        27         | Joint 3 communication status, 0 - error, 1 - OK
+        28         | Joint 2 communication status, 0 - error, 1 - OK
+        29         | Joint 1 communication status, 0 - error, 1 - OK
+        30         | Collision detected, 0 - not detected, 1 - detected
+        31         | Reserved
+        32         | Reserved
+        33         | Reserved
+        34         | Reserved
+        35         | Reserved
+        36         | Reserved
+        37         | Reserved
+        38         | Reserved
+        39         | Reserved
+        40         | Reserved
+        41         | Reserved
+        42         | Reserved
+        43         | Reserved
+        44         | Reserved
+        45         | Reserved
+        46         | C Series Physical User button
+        47         | C Series Physical Stop button
+        48         | C Series Physical Start button
+        49         | Reserved
+        50         | Reserved
+        51         | Reserved
+        52         | Reserved
+        53         | Reserved
+        54         | Reserved
+        55         | Reserved
+        56         | Reserved
+        57         | Reserved
+        58         | Reserved
+        59         | Reserved
+        60         | Reserved
+        61         | Reserved
+        62         | Reserved
+        63         | Reserved
+
+        For example, if robot is powered on, enabled and in position,
+        the returned string will be:
+        '1011111100000111111000001111110000000000000000110000000000000000'
+
+        Returns:
+            str: robot state as a string of 64 zeroes or ones.
+        """
+        command = "get_robot_state()\n"
+        res = self.send_command(command)
+        return res
+
+    def set_servos_calibration(self) -> str:
+        """Sets servos calibration, that is, current robot pose will become
+        robot's zero position.
+
+        This function will shutdown robot. You will need to restart the robot
+        and reconnect to continue working with it.
+
+        Returns:
+            str: empty string if success, error message otherwise.
+        """
+        command = "set_servos_calibration()\n"
+        res = self.send_command(command)
+        return res
+
+    def get_joint_loss_pkg(self, joint_number: Joint) -> int:
+        """Retrieves the loss package count for a specific joint.
+
+        Args:
+            joint_number (Joint): The joint number for which the loss package
+                                  value is requested.
+
+        Returns:
+            int: The loss package count for the specified joint.
+        """
+        command = "get_joint_loss_pkg(" + str(joint_number) + ")\n"
+        res = self.send_command(command)
+        return int(self.string_to_double(res))
+
+    # TODO: rename to set_coords()
     def write_coords(self, coords, speed):
         command = "set_coords("
         for item in coords:
@@ -374,12 +485,14 @@ class ElephantRobot(object):
         command += str(speed) + ")\n"
         self.send_command(command)
 
+    # TODO: change to set_coord() socket API (already impemented)
     def write_coord(self, axis, value, speed):
         coords = self.get_coords()
         if coords != self.invalid_coords():
             coords[axis] = value
             self.write_coords(coords, speed)
 
+    # TODO: rename to set_angles()
     def write_angles(self, angles, speed):
         command = "set_angles("
         for item in angles:
@@ -387,6 +500,7 @@ class ElephantRobot(object):
         command += str(speed) + ")\n"
         self.send_command(command)
 
+    # TODO: change to set_angle() socket API (already impemented)
     def write_angle(self, joint, value, speed):
         angles = self.get_angles()
         if angles != self.invalid_coords():
