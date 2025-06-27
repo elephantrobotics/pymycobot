@@ -62,49 +62,56 @@ class ChassisControl:
         :param flag: Data type parameter variable
         :return:
         """
-        receive_all_data = self._read()
-        receive_all_data = [byte for byte in receive_all_data]
         return_data = ''
-        if flag == "voltage":
-            receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer)
-            # print(receive_data, len(receive_data))
-            self._debug(receive_data)
-            transition_16 = 0
-            transition_16 |= receive_data[20] << 8
-            transition_16 |= receive_data[21]
-            return_data = round(transition_16 / 1000 + (transition_16 % 1000) * 0.001, 3)
+        expected_lengths = 26
+        for _ in range(3):
+            receive_all_data = self._read()
+            receive_all_data = [byte for byte in receive_all_data]
+            if flag == "voltage":
+                receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer,
+                                                   expected_lengths)
+                # print(receive_data, len(receive_data))
+                if receive_data:
+                    self._debug(receive_data)
+                    transition_16 = 0
+                    transition_16 |= receive_data[20] << 8
+                    transition_16 |= receive_data[21]
+                    return_data = round(transition_16 / 1000 + (transition_16 % 1000) * 0.001, 3)
 
-            return return_data
+                    return return_data
 
-        elif flag == "ultrasonic":
-            receive_data = self._extract_frame(receive_all_data, ProtocolCode.ultrasound_header,
-                                               ProtocolCode.ultrasound_footer)
-            # print(receive_data, len(receive_data))
-            self._debug(receive_data)
-            return_data = [receive_data[1] * 256 + receive_data[2], receive_data[3] * 256 + receive_data[4],
-                           receive_data[5] * 256 + receive_data[6]]
-            return return_data
-        
-        elif flag == "version":
-            receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer)
-            # print(receive_data, len(receive_data))
-            self._debug(receive_data)
-            
-            major_version = receive_data[22]
-            minor_version = receive_data[23]
-            return_data = f"v{major_version}.{minor_version}"
+            elif flag == "ultrasonic":
+                receive_data = self._extract_frame(receive_all_data, ProtocolCode.ultrasound_header,
+                                                   ProtocolCode.ultrasound_footer, expected_lengths)
+                # print(receive_data, len(receive_data))
+                if receive_data:
+                    self._debug(receive_data)
+                    return_data = [receive_data[1] * 256 + receive_data[2], receive_data[3] * 256 + receive_data[4],
+                                   receive_data[5] * 256 + receive_data[6]]
+                    return return_data
 
-            return return_data
+            elif flag == "version":
+                receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer,
+                                                   expected_lengths)
+                # print(receive_data, len(receive_data))
+                if receive_data:
+                    self._debug(receive_data)
 
-        else:
-            print('no data', return_data)
+                    major_version = receive_data[22]
+                    minor_version = receive_data[23]
+                    return_data = f"v{major_version}.{minor_version}"
 
-    def _extract_frame(self, data, frame_header, frame_tail):
+                    return return_data
+
+        return None
+
+    def _extract_frame(self, data, frame_header, frame_tail, expected_length=None):
         """
         Extract the corresponding data
         :param data: Get all data
         :param frame_header: Frame Header
         :param frame_tail: Frame tail
+        :param expected_length: Expected length
         :return: A list of integers
         """
         try:
@@ -114,6 +121,9 @@ class ChassisControl:
             end_index = data.index(frame_tail, start_index)
             # Extracting dataframe
             frame = data[start_index:end_index + 1]
+            if expected_length is not None and len(frame) != expected_length:
+                print(f"Error in frame length: expected {expected_length}, actual {len(frame)}, content: {frame}")
+                return []
             return frame
         except ValueError:
             # If the frame header or frame trailer is not found, an empty list is returned.
@@ -151,7 +161,7 @@ class ChassisControl:
         :return: A list of length 3,Unit: mm
         """
         return self._request('ultrasonic')
-    
+
     def get_base_version(self):
         """
         Get base version
@@ -364,5 +374,3 @@ class ChassisControl:
         except serial.SerialException as e:
             e = traceback.format_exc()
             print('Unable to send data through serial port: {}'.format(e))
-
-

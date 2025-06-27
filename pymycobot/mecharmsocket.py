@@ -185,9 +185,9 @@ class MechArmSocket(CommandGenerator):
             ProtocolCode.SET_FOUR_PIECES_ZERO
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS, ProtocolCode.GET_ANGLES_PLAN]:
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -759,6 +759,22 @@ class MechArmSocket(CommandGenerator):
             reboot count
         """
         return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
+
+    def get_angles_plan(self):
+        """ Get the angle plan of all joints.
+
+        Return:
+            list: A float list of all angle.
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES_PLAN, has_reply=True)
+
+    def get_coords_plan(self):
+        """Get the coords plan from robot arm, coordinate system based on base.
+
+        Return:
+            list : A float list of coord .[x, y, z, rx, ry, rz]
+        """
+        return self._mesg(ProtocolCode.GET_COORDS_PLAN, has_reply=True)
 
     # Other
     def wait(self, t):

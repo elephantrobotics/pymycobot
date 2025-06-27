@@ -5,13 +5,11 @@
 import platform
 import time
 import math
-from enum import Enum
 import subprocess
 import logging
 import os
 import sys
 
-import crc
 
 from pymycobot.log import setup_logging
 from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
@@ -60,6 +58,8 @@ def is_debian_os():
 
 
 if platform.system() == "Linux" and platform.machine() == "aarch64" and is_debian_os():
+    from enum import Enum
+    import crc
     import linuxcnc as elerob
     import hal
     import can

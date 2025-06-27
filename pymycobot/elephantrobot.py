@@ -7,9 +7,11 @@ from enum import Enum
 import base64
 import hashlib
 import math
-import numpy as np
 from multiprocessing import Lock
 import logging
+
+import numpy as np
+
 from pymycobot.log import setup_logging
 from pymycobot.tool_coords import *
 from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
@@ -29,6 +31,10 @@ mutex = Lock()
 class ElephantRobot(object):
     def __init__(self, host, port, debug=False):
         # setup connection
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError("Please install numpy")
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)

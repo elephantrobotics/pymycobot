@@ -1,7 +1,6 @@
 # coding=utf-8
 
 from __future__ import division
-import cv2 as cv
 import time
 import threading
 
@@ -16,6 +15,10 @@ class MyBuddyEmoticon:
             loop: Loop playback or not (only once by default).
 
         """
+        try:
+            import cv2 as cv
+        except ImportError:
+            raise ImportError("Please install opencv-python")
         self.__file_path = file_path
         self.__window_size = window_size
         self.quit = False

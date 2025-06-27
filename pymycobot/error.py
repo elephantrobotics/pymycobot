@@ -488,6 +488,9 @@ def calibration_parameters(**kwargs):
             elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
                 raise MyCobot280DataException(
                     "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
+            elif parameter == 'address_id' and value in range(0, 5):
+                raise MyCobot280DataException(
+                    "The address_id is invalid: should not be in [0, 1, 2, 3, 4], but received {}.".format(value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MyCobot280DataException, class_name)
             elif parameter == 'value':
@@ -509,6 +512,13 @@ def calibration_parameters(**kwargs):
                 if not 1 <= value <= 100:
                     raise MyCobot280DataException(
                         "speed value not right, should be 1 ~ 100, the received speed is %s"
+                        % value
+                    )
+            elif parameter == 'gripper_speed':
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if not 0 <= value <= 100:
+                    raise MyCobot280DataException(
+                        "speed value not right, should be 0 ~ 100, the received speed is %s"
                         % value
                     )
             elif parameter == 'flag':
@@ -614,6 +624,9 @@ def calibration_parameters(**kwargs):
             elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
                 raise MyCobot320DataException(
                     "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
+            elif parameter == 'address_id' and value in range(0, 5):
+                raise MyCobot320DataException(
+                    "The address_id is invalid: should not be in [0, 1, 2, 3, 4], but received {}.".format(value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MyCobot320DataException, class_name)
             elif parameter == 'value':
@@ -910,6 +923,9 @@ def calibration_parameters(**kwargs):
             elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
                 raise MechArmDataException(
                     "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
+            elif parameter == 'address_id' and value in range(0, 5):
+                raise MechArmDataException(
+                    "The address_id is invalid: should not be in [0, 1, 2, 3, 4], but received {}.".format(value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MechArmDataException, class_name)
             elif parameter == 'value':
@@ -1037,6 +1053,9 @@ def calibration_parameters(**kwargs):
                 check_id(value, robot_limit[class_name][parameter], MyArmDataException)
             elif parameter == 'rgb':
                 check_rgb_value(value, MyArmDataException, class_name)
+            elif parameter == 'address_id' and value in range(0, 5):
+                raise MyArmDataException(
+                    "The address_id is invalid: should not be in [0, 1, 2, 3, 4], but received {}.".format(value))
             elif parameter == 'value':
                 check_value_type(parameter, value_type, MyArmDataException, int)
                 if value < 0 or value > 4096:
@@ -1169,6 +1188,9 @@ def calibration_parameters(**kwargs):
             elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 7]:
                 raise MyPalletizer260DataException(
                     "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 7], value))
+            elif parameter == 'address_id' and value in range(0, 5):
+                raise MyCobot280DataException(
+                    "The address_id is invalid: should not be in [0, 1, 2, 3, 4], but received {}.".format(value))
             elif parameter == 'rgb':
                 check_rgb_value(value, MyPalletizer260DataException, class_name)
             elif parameter == 'value':
@@ -1371,7 +1393,7 @@ def calibration_parameters(**kwargs):
                             f"encoder value not right, should be {min_encoder} ~ {max_encoder}, but received {v}")
 
                 if (2048 - value[1]) + (2048 - value[2]) != 0:
-                    raise ValueError("The 2 and 3 servos must be inverse")
+                    raise ValueError("The 2 and 3 servo encoder values must be reversed")
 
             elif parameter == "speed":
                 check_value_type(parameter, value_type, TypeError, int)

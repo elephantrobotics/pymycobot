@@ -154,7 +154,7 @@ class MyCobot280Socket(CommandGenerator):
             ProtocolCode.GET_BASIC_VERSION,
             ProtocolCode.GET_JOINT_MIN_ANGLE,
             ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ProtocolCode.SOFTWARE_VERSION]:
+            ProtocolCode.SOFTWARE_VERSION, ProtocolCode.SET_BASIC_OUTPUT]:
             return res[0]
         if genre in [
             ProtocolCode.ROBOT_VERSION,
@@ -189,9 +189,10 @@ class MyCobot280Socket(CommandGenerator):
             ProtocolCode.SET_FOUR_PIECES_ZERO
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS, ProtocolCode.GET_ANGLES_PLAN]:
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE,
+                       ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -210,6 +211,13 @@ class MyCobot280Socket(CommandGenerator):
             return self._int2coord(self._process_single(res))
         elif genre in [ProtocolCode.GET_REBOOT_COUNT]:
             return self._process_high_low_bytes(res)
+        elif genre in [ProtocolCode.SET_BASIC_OUTPUT]:
+            return 1
+        elif genre in [ProtocolCode.DRAG_CLEAR_RECORD_DATA, ProtocolCode.DRAG_GET_RECORD_LEN,
+                       ProtocolCode.DRAG_START_RECORD, ProtocolCode.DRAG_END_RECORD]:
+            return self._parse_bytes_to_int(res)
+        elif genre in [ProtocolCode.DRAG_GET_RECORD_DATA]:
+            return self._split_joint_and_speed(res)
         elif genre == ProtocolCode.GET_ANGLES_COORDS:
             r = []
             for index in range(len(res)):
@@ -761,7 +769,7 @@ class MyCobot280Socket(CommandGenerator):
 
         Args:
             flag  (int): 0 - open, 1 - close, 254 - release
-            speed (int): 1 ~ 100
+            speed (int): 0 ~ 100
             _type_1 (int): default 1
                 1 : Adaptive gripper. default to adaptive gripper
                 2 : 5 finger dexterous hand
@@ -771,7 +779,7 @@ class MyCobot280Socket(CommandGenerator):
                 1: Force control
                 0: Non-force control
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, speed=speed, _type_1=_type_1,
+        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, gripper_speed=speed, _type_1=_type_1,
                                     is_torque=is_torque)
         args = [flag, speed]
         if _type_1 is not None:
@@ -785,7 +793,7 @@ class MyCobot280Socket(CommandGenerator):
 
         Args:
             gripper_value (int): 0 ~ 100
-            speed (int): 1 ~ 100
+            speed (int): 0 ~ 100
             gripper_type (int): default 1
                 1: Adaptive gripper
                 3: Parallel gripper, this parameter can be omitted
@@ -794,7 +802,7 @@ class MyCobot280Socket(CommandGenerator):
                 1: Force control
                 0: Non-force control
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, speed=speed,
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, gripper_speed=speed,
                                     gripper_type=gripper_type, is_torque=is_torque)
         args = [gripper_value, speed]
         if gripper_type is not None:
@@ -826,8 +834,7 @@ class MyCobot280Socket(CommandGenerator):
 
         Return:
             List of potential values (encoder values) and operating speeds of each joint
-            eg: [J1_encoder, J1_run_speed,J2_encoder, J2_run_speed,J3_encoder, J3_run_speed,J4_encoder, J4_run_speed,J5_
-            encoder, J5_run_speed,J6_encoder, J6_run_speed]
+            eg: [[J1_encoder,J2_encoder,J3_encoder,J4_encoder, J5_encoder, J6_encoder],[J1_run_speed, J2_run_speed, J3_run_speed, J4_run_speed, J5_run_speed, J6_run_speed]]
         """
 
         return self._mesg(ProtocolCode.DRAG_GET_RECORD_DATA, has_reply=True)
@@ -867,6 +874,46 @@ class MyCobot280Socket(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+
+    def get_angles_plan(self):
+        """ Get the angle plan of all joints.
+
+        Return:
+            list: A float list of all angle.
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES_PLAN, has_reply=True)
+
+    def get_coords_plan(self):
+        """Get the coords plan from robot arm, coordinate system based on base.
+
+        Return:
+            list : A float list of coord .[x, y, z, rx, ry, rz]
+        """
+        return self._mesg(ProtocolCode.GET_COORDS_PLAN, has_reply=True)
+
+    def get_modify_version(self):
+        """get modify version
+
+        Return: int
+        """
+        return self._mesg(ProtocolCode.MODIFY_VERSION, has_reply=True)
+
+    def clear_queue(self):
+        """Clear Queue Data"""
+        return self._mesg(ProtocolCode.CLEAR_COMMAND_QUEUE, has_reply=True)
+
+    def check_async_or_sync(self):
+        """Check whether it is synchronous or asynchronous
+
+        Return:
+            1 : synchronous
+            0 : asynchronous
+        """
+        return self._mesg(ProtocolCode.CHECK_ASYNC_OR_SYNC, has_reply=True)
+
+    def gripper_stop(self):
+        """Stop gripper"""
+        return self.set_gripper_value(0, 0)
 
     # Other
     def wait(self, t):

@@ -106,6 +106,7 @@ class ProtocolCode(object):
 
     # System status
     ROBOT_VERSION = 0x01
+    MODIFY_VERSION = 0x01
     SOFTWARE_VERSION = 0x02
     GET_ROBOT_ID = 0x03
     OVER_LIMIT_RETURN_ZERO = 0x04
@@ -433,6 +434,8 @@ class ProtocolCode(object):
     DRAG_GET_RECORD_DATA = 0xF3
     DRAG_GET_RECORD_LEN = 0xF4
     DRAG_CLEAR_RECORD_DATA = 0xF5
+    GET_ANGLES_PLAN = 0xF6
+    GET_COORDS_PLAN = 0xF7
 
 
     # ultraArm
@@ -517,7 +520,6 @@ class DataProcessor(object):
             command.extend(self.crc_check(command))
         else:
             command.append(ProtocolCode.FOOTER)
-
         real_command = self._flatten(command)
         has_reply = kwargs.get("has_reply", False)
         _async = kwargs.get("_async", False)
@@ -672,7 +674,7 @@ class DataProcessor(object):
         elif arm == 14:
             data_len = data[header_i + 2] - 3
         # unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT, ProtocolCode.SET_BASIC_OUTPUT]
-        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT, ProtocolCode.SET_BASIC_OUTPUT]
+        unique_data = [ProtocolCode.GET_BASIC_INPUT, ProtocolCode.GET_DIGITAL_INPUT]
         if cmd_id == ProtocolCode.GET_DIGITAL_INPUT and arm == 14:
             data_pos = header_i + 4
         elif cmd_id in unique_data:
@@ -885,6 +887,20 @@ class DataProcessor(object):
         high_byte = data[-2]
         combined_value = (high_byte << 8) | low_byte
         return combined_value
+
+    def _parse_bytes_to_int(self, data):
+        """将多个字节组合为一个整数（大端）"""
+        value = 0
+        for byte in data:
+            value = (value << 8) | byte
+        return value
+
+    def _split_joint_and_speed(self, data):
+        if all(x == 0 for x in data):
+            return -1
+        joints = data[::2]  # 偶数索引：关节角度
+        speeds = data[1::2]  # 奇数索引：对应速度
+        return [joints, speeds]
 
     @staticmethod
     def check_python_version():

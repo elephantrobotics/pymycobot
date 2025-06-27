@@ -211,9 +211,9 @@ class MyCobot320(CommandGenerator):
                 data = self._read(genre)
                 res = self._process_received(data, genre)
             return self._process_high_low_bytes(res)
-        elif genre in [ProtocolCode.GET_ANGLES]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_ANGLES_PLAN]:
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -1271,6 +1271,22 @@ class MyCobot320(CommandGenerator):
         for angle in target_coords[3:]:
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.SOLVE_INV_KINEMATICS, coord_list, angles, has_reply=True)
+
+    def get_angles_plan(self):
+        """ Get the angle plan of all joints.
+
+        Return:
+            list: A float list of all angle.
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES_PLAN, has_reply=True)
+
+    def get_coords_plan(self):
+        """Get the coords plan from robot arm, coordinate system based on base.
+
+        Return:
+            list : A float list of coord .[x, y, z, rx, ry, rz]
+        """
+        return self._mesg(ProtocolCode.GET_COORDS_PLAN, has_reply=True)
 
     # Other
     def wait(self, t):
