@@ -30,7 +30,13 @@ mutex = Lock()
 
 class ElephantRobot(object):
     def __init__(self, host, port, debug=False):
-        # setup connection
+        """Initializes the ElephantRobot instance.
+
+        Args:
+            host (str): IP address or hostname of the robot.
+            port (int): Port number for the robot's socket server.
+            debug (bool): Enables debug mode if True.
+        """
         try:
             import numpy as np
         except ImportError:
@@ -74,6 +80,11 @@ class ElephantRobot(object):
         return True
 
     def start_client(self):
+        """Starts the TCP client connection to the robot.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
         try:
             self.tcp_client.connect(self.ADDR)
             self.is_client_started = True
@@ -83,10 +94,19 @@ class ElephantRobot(object):
             return False
 
     def stop_client(self):
+        """Stops the TCP client connection."""
         self.tcp_client.close()
         self.is_client_started = False
 
     def send_command(self, command):
+        """Sends a command to the robot and receives the response.
+
+        Args:
+            command (str): Command string to send.
+
+        Returns:
+            str: Response from the robot.
+        """
         with mutex:
             self.tcp_client.send(command.encode())
             recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
@@ -100,6 +120,14 @@ class ElephantRobot(object):
                 return ""
 
     def string_to_coords(self, data):
+        """Converts a string representation of coordinates to a list.
+
+        Args:
+            data (str): String representation of coordinates.
+
+        Returns:
+            list: List of coordinates or invalid coordinates if conversion fails.
+        """
         data = data.replace("[", "")
         data = data.replace("]", "")
         data_arr = data.split(",")
@@ -118,6 +146,14 @@ class ElephantRobot(object):
         return self.invalid_coords()
 
     def string_to_double(self, data):
+        """Converts a string to a double value.
+
+        Args:
+            data (str): String representation of a number.
+
+        Returns:
+            float: Converted double value or -9999.99 if conversion fails.
+        """
         try:
             val = round(float(data), 3)
             return val
@@ -184,10 +220,20 @@ class ElephantRobot(object):
             return -9999
 
     def invalid_coords(self):
+        """Returns a predefined set of invalid coordinates.
+
+        Returns:
+            list: Invalid coordinates.
+        """
         coords = [-1.0, -2.0, -3.0, -4.0, -1.0, -1.0]
         return coords
 
     def detect_robot(self):
+        """Detects the robot's model.
+
+        Returns:
+            int: Integer value indicating robot model.
+        """
         return int(self.get_analog_in(55))
 
     def start_robot(self):
@@ -209,26 +255,85 @@ class ElephantRobot(object):
         return self.start_robot()
 
     def get_angles(self):
+        """Retrieves the current joint angles of the robot.
+
+        Returns:
+            list: List of joint angles.
+        """
         command = "get_angles()\n"
         res = self.send_command(command)
         return self.string_to_coords(res)
 
-    def get_angle(self, joint):
+    def get_angle(self, joint: Joint) -> float:
+        """Retrieves the angle of a specific joint.
+
+        Args:
+            joint (Joint): specific joint.
+
+        Example:
+            >>> e.get_angle(Joint.J1)
+            >>> 1.234
+            >>> e.get_angle(Joint.J2)
+            >>> -92.345
+            >>> e.get_angle(Joint.J3)
+            >>> 3.456
+            >>> e.get_angle(Joint.J4)
+            >>> -94.567
+            >>> e.get_angle(Joint.J5)
+            >>> 5.678
+            >>> e.get_angle(Joint.J6)
+            >>> 6.789
+
+        Returns:
+            float: Angle of the specified joint.
+        """
         command = "get_angle(" + str(joint) + ")\n"
         res = self.send_command(command)
         return self.string_to_double(res)
 
     def get_coords(self):
+        """Retrieves the current coordinates of the robot.
+
+        Returns:
+            list: List of coordinates.
+        """
         command = "get_coords()\n"
         res = self.send_command(command)
         return self.string_to_coords(res)
 
-    def get_coord(self, axis):
+    def get_coord(self, axis: Axis) -> float:
+        """Retrieves the value of a specific coordinate axis.
+
+        Args:
+            axis (Axis): specified Axis.
+
+        Example:
+            >>> e.get_coord(Axis.X)
+            >>> 0.0
+            >>> e.get_coord(Axis.Y)
+            >>> 140.0
+            >>> e.get_coord(Axis.Z)
+            >>> 835.0
+            >>> e.get_coord(Axis.RX)
+            >>> 90.0
+            >>> e.get_coord(Axis.RY)
+            >>> 0.0
+            >>> e.get_coord(Axis.RZ)
+            >>> 180.0
+
+        Returns:
+            float: Value of the specified axis.
+        """
         command = "get_coord(" + str(axis) + ")\n"
         res = self.send_command(command)
         return self.string_to_double(res)
 
     def get_speed(self):
+        """Retrieves the current speed of the robot.
+
+        Returns:
+            float: Speed value.
+        """
         command = "get_speed()\n"
         res = self.send_command(command)
         return self.string_to_double(res)
@@ -350,64 +455,251 @@ class ElephantRobot(object):
         return res
 
     def read_text_file(self, remote_filename):
+        """Reads the content of a text file from the robot.
+
+        Args:
+            remote_filename (str): Path to the file on the robot.
+
+        Returns:
+            str: Content of the file.
+        """
         command = f"read_text_file({remote_filename})"
         res = self.send_command(command)
         return res
 
     def program_open(self, file_path):
+        """Opens a program file on the robot. File must be a g-code file.
+
+        Args:
+            file_path (str): Path to the program (g-code) file.
+
+        Returns:
+            int: Status code indicating success or failure.
+        """
         command = "program_open(" + file_path + ")\n"
         res = self.send_command(command)
         return self.string_to_int(res)
 
     def program_run(self, start_line):
+        """Runs a program on the robot starting from a specific line.
+        Program must be opened before running using program_open() method.
+
+        Args:
+            start_line (int): Line number to start execution.
+
+        Returns:
+            int: Status code indicating success or failure.
+        """
         command = "program_run(" + str(start_line) + ")\n"
         res = self.send_command(command)
         return self.string_to_int(res)
 
     def read_next_error(self):
+        """Reads the next error message from the robot.
+
+        Returns:
+            str: Error message or an empty string if no errors.
+        """
         command = "read_next_error()\n"
         res = self.send_command(command)
         return res
 
     def clear_all_errors(self):
+        """Clears all error messages from the robot."""
         while self.read_next_error() != "":
             pass
 
+    def get_robot_state(self) -> str:
+        """Returns current robot state, which is 64 bits represented as a
+        string of 64 zeroes or ones.
+
+        Meaning of each bit from eft to right is as follows:
+        Bit number | Meaning
+        0          | Power on
+        1          | Emergency stop button, 0 - pressed, 1 - released
+        2          | Joint 6 status, 0 - error, 1 - OK
+        3          | Joint 5 status, 0 - error, 1 - OK
+        4          | Joint 4 status, 0 - error, 1 - OK
+        5          | Joint 3 status, 0 - error, 1 - OK
+        6          | Joint 2 status, 0 - error, 1 - OK
+        7          | Joint 1 status, 0 - error, 1 - OK
+        8          | Reserved
+        9          | Reserved
+        10         | Reserved
+        11         | Motion enabled, 0 - disabled, 1 - enabled
+        12         | Hardware Free Move
+        13         | Joint 6 servo enabled, 0 - disabled, 1 - enabled
+        14         | Joint 5 servo enabled, 0 - disabled, 1 - enabled
+        15         | Joint 4 servo enabled, 0 - disabled, 1 - enabled
+        16         | Joint 3 servo enabled, 0 - disabled, 1 - enabled
+        17         | Joint 2 servo enabled, 0 - disabled, 1 - enabled
+        18         | Joint 1 servo enabled, 0 - disabled, 1 - enabled
+        19         | Brake activation running, 0 - not running, 1 - running
+        20         | Hardware Pause Pressed, 0 - not pressed, 1 - pressed
+        21         | Reserved
+        22         | IO Run Triggered, 0 - not triggered, 1 - triggered
+        23         | IO Stop Triggered, 0 - not triggered, 1 - triggered
+        24         | Joint 6 communication status, 0 - error, 1 - OK
+        25         | Joint 5 communication status, 0 - error, 1 - OK
+        26         | Joint 4 communication status, 0 - error, 1 - OK
+        27         | Joint 3 communication status, 0 - error, 1 - OK
+        28         | Joint 2 communication status, 0 - error, 1 - OK
+        29         | Joint 1 communication status, 0 - error, 1 - OK
+        30         | Collision detected, 0 - not detected, 1 - detected
+        31         | Reserved
+        32         | Reserved
+        33         | Reserved
+        34         | Reserved
+        35         | Reserved
+        36         | Reserved
+        37         | Reserved
+        38         | Reserved
+        39         | Reserved
+        40         | Reserved
+        41         | Reserved
+        42         | Reserved
+        43         | Reserved
+        44         | Reserved
+        45         | Reserved
+        46         | C Series Physical User button
+        47         | C Series Physical Stop button
+        48         | C Series Physical Start button
+        49         | Reserved
+        50         | Reserved
+        51         | Reserved
+        52         | Reserved
+        53         | Reserved
+        54         | Reserved
+        55         | Reserved
+        56         | Reserved
+        57         | Reserved
+        58         | Reserved
+        59         | Reserved
+        60         | Reserved
+        61         | Reserved
+        62         | Reserved
+        63         | Reserved
+
+        For example, if robot is powered on, enabled and in position,
+        the returned string will be:
+        '1011111100000111111000001111110000000000000000110000000000000000'
+
+        Returns:
+            str: robot state as a string of 64 zeroes or ones.
+        """
+        command = "get_robot_state()\n"
+        res = self.send_command(command)
+        return res
+
+    def set_servos_calibration(self) -> str:
+        """Sets servos calibration, that is, current robot pose will become
+        robot's zero position.
+
+        This function will shutdown robot. You will need to restart the robot
+        and reconnect to continue working with it.
+
+        Returns:
+            str: empty string if success, error message otherwise.
+        """
+        command = "set_servos_calibration()\n"
+        res = self.send_command(command)
+        return res
+
+    def get_joint_loss_pkg(self, joint_number: Joint) -> int:
+        """Retrieves the loss package count for a specific joint.
+
+        Args:
+            joint_number (Joint): The joint number for which the loss package
+                                  value is requested.
+
+        Returns:
+            int: The loss package count for the specified joint.
+        """
+        command = "get_joint_loss_pkg(" + str(joint_number) + ")\n"
+        res = self.send_command(command)
+        return int(self.string_to_double(res))
+
+    # TODO: rename to set_coords()
     def write_coords(self, coords, speed):
+        """Sets the robot's coordinates.
+
+        Args:
+            coords (list[float]): List of coordinates [X, Y, Z, RX, RY, RZ].
+            speed (int): Speed of movement.
+        """
         command = "set_coords("
         for item in coords:
             command += str(round(item, 3)) + ","
         command += str(speed) + ")\n"
         self.send_command(command)
 
+    # TODO: change to set_coord() socket API (already impemented)
     def write_coord(self, axis, value, speed):
+        """Sets the value of a specific coordinate axis.
+
+        Args:
+            axis (int): Axis index from 0 to 5 (for X, Y, Z, RX, RY, RZ).
+            value (float): Value to set for the axis.
+            speed (int): Speed of movement.
+        """
         coords = self.get_coords()
         if coords != self.invalid_coords():
             coords[axis] = value
             self.write_coords(coords, speed)
 
+    # TODO: rename to set_angles()
     def write_angles(self, angles, speed):
+        """Sets the robot's joint angles.
+
+        Args:
+            angles (list[float]): List of joint angles [J1, J2, J3, J4, J5, J6].
+            speed (int): Speed of movement.
+        """
         command = "set_angles("
         for item in angles:
             command += str(round(item, 3)) + ","
         command += str(speed) + ")\n"
         self.send_command(command)
 
+    # TODO: change to set_angle() socket API (already impemented)
     def write_angle(self, joint, value, speed):
+        """Sets the angle of a specific joint.
+
+        Args:
+            joint (int): Joint index from 0 to 5 (for J1, J2, J3, J4, J5, J6).
+            value (float): Angle value to set.
+            speed (int): Speed of movement.
+        """
         angles = self.get_angles()
         if angles != self.invalid_coords():
             angles[joint] = value
             self.write_angles(angles, speed)
 
     def set_speed(self, percentage):
+        """Sets the robot's movement speed.
+
+        Args:
+            percentage (int): Speed percentage (0-100).
+        """
         command = "set_speed(" + str(percentage) + ")\n"
         self.send_command(command)
 
     def set_carte_torque_limit(self, axis_str, value):
+        """Sets the torque limit for a specific Cartesian axis.
+
+        Args:
+            axis_str (str): Axis name (e.g., "X", "Y", "Z", "RX", "RY", "RZ").
+            value (float): Torque limit value.
+        """
         command = "set_torque_limit(" + axis_str + "," + str(value) + ")\n"
         self.send_command(command)
 
     def set_upside_down(self, up_down):
+        """Sets the robot's upside-down mode.
+
+        Args:
+            up_down (bool): True to enable upside-down mode, False to disable.
+        """
         up = "1"
         if up_down:
             up = "0"
@@ -420,29 +712,65 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def jog_angle(self, joint_str, direction, speed):
+        """Performs a jog operation on a specific joint.
+
+        Args:
+            joint_str (str): Joint identifier (e.g., 'J1', 'J2', ..., 'J6').
+            direction (int): Direction of movement (-1 for negative, 1 for positive).
+            speed (int): Speed of the jog operation.
+        """
         command = (
             "jog_angle(" + joint_str + "," + str(direction) + "," + str(speed) + ")\n"
         )
         self.send_command(command)
 
     def jog_coord(self, axis_str, direction, speed):
+        """Performs a jog operation on a specific coordinate axis.
+
+        Args:
+            axis_str (str): Axis identifier (e.g., 'X', 'Y', 'Z', 'RX', 'RY', 'RZ').
+            direction (int): Direction of movement (-1 for negative, 1 for positive).
+            speed (int): Speed of the jog operation.
+        """
         command = (
             "jog_coord(" + axis_str + "," + str(direction) + "," + str(speed) + ")\n"
         )
         self.send_command(command)
 
     def get_digital_in(self, pin_number):
+        """Retrieves the state of a digital input pin.
+
+        Args:
+            pin_number (int): Pin number (0-63).
+
+        Returns:
+            int: State of the pin (0 or 1).
+        """
         command = "get_digital_in(" + str(pin_number) + ")\n"
         res = self.send_command(command)
         return self.string_to_int(res)
 
     def get_digital_out(self, pin_number):
+        """Retrieves the state of a digital output pin.
+
+        Args:
+            pin_number (int): Pin number (0-63).
+
+        Returns:
+            int: State of the pin (0 or 1).
+        """
         command = "get_digital_out(" + str(pin_number) + ")\n"
         print(command)
         res = self.send_command(command)
         return self.string_to_int(res)
 
     def set_digital_out(self, pin_number, pin_signal):
+        """Sets the state of a digital output pin.
+
+        Args:
+            pin_number (int): Pin number (0-63).
+            pin_signal (int): Signal to set (0 or 1).
+        """
         command = "set_digital_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
         self.send_command(command)
 
@@ -483,38 +811,84 @@ class ElephantRobot(object):
         self.send_command(command)
 
     def get_joint_current(self, joint_number):
+        """Retrieves the current value of a specific joint.
+
+        Args:
+            joint_number (int): Joint index from 0 to 5 (for J1, J2, J3, J4, J5, J6).
+
+        Returns:
+            float: Current value of the specified joint.
+        """
         command = "get_joint_current(" + str(joint_number) + ")\n"
         print(command)
         res = self.send_command(command)
         return self.string_to_double(res)
 
     def send_feed_override(self, override):
+        """Sets the feed rate override percentage.
+
+        Args:
+            override (int): Feed rate override percentage (0-100).
+
+        Returns:
+            int: Status code indicating success or failure.
+        """
         command = "set_feed_rate(" + str(override) + ")\n"
         res = self.send_command(command)
         return self.string_to_int(res)
 
     def get_acceleration(self):
+        """Retrieves the current acceleration setting of the robot.
+
+        Returns:
+            int: Acceleration value.
+        """
         command = "get_acceleration()\n"
         res = self.send_command(command)
         return self.string_to_int(res)
 
     def set_acceleration(self, acceleration):
+        """Sets the acceleration value for the robot.
+
+        Args:
+            acceleration (int): Acceleration value to set.
+        """
         command = "set_acceleration(" + str(acceleration) + ")\n"
         self.send_command(command)
 
     def command_wait_done(self):
+        """Waits until the current command execution is completed."""
         command = "wait_command_done()\n"
         self.send_command(command)
 
     def wait(self, seconds):
+        """Pauses execution for a specified number of seconds.
+
+        Args:
+            seconds (int): Number of seconds to wait.
+        """
         command = "wait(" + str(seconds) + ")\n"
         self.send_command(command)
 
     def assign_variable(self, var_name, var_value):
+        """Assigns a value to a variable on the robot.
+
+        Args:
+            var_name (str): Name of the variable.
+            var_value (str): Value to assign to the variable.
+        """
         command = 'assign_variable("' + str(var_name) + '",' + str(var_value) + ")\n"
         self.send_command(command)
 
     def get_variable(self, var_name):
+        """Retrieves the value of a variable from the robot.
+
+        Args:
+            var_name (str): Name of the variable.
+
+        Returns:
+            str: Value of the variable.
+        """
         command = 'get_variable("' + str(var_name) + '")\n'
         return self.send_command(command)
 
