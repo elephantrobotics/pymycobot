@@ -49,7 +49,10 @@ class ProtocolCode(enum.Enum):
     GET_BLUETOOTH_ADDRESS = 0x53
 
     def equal(self, other):
-        return self.value == other.value
+        if isinstance(other, ProtocolCode):
+            return self.value == other.value
+        else:
+            return self.value == other
 
 
 PLAINTEXT_REPLY_PROTOCOL_CODE = (
@@ -117,6 +120,8 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
                 reply_data = self._read_plaintext_data(timeout=timeout)
             else:
                 reply_data = self._read_protocol_data(timeout=timeout)
+                if not genre.equal(reply_data[3]):  # check genre
+                    continue
 
             if len(reply_data) == 0:
                 continue
@@ -220,7 +225,7 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             return data[0] if len(data) == 1 else None
 
         if ProtocolCode.GET_BLUETOOTH_ADDRESS.equal(genre):
-            data = re.findall(r'AGVPro:BLE:MAC:(.*)', reply_data)
+            data = re.findall(r'AGVPro:BLE:MAC:(.*);\r\n', reply_data)
             return data[0] if len(data) == 1 else None
 
         if ProtocolCode.GET_MOTOR_STATUS.equal(genre):
@@ -360,6 +365,26 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         return self._merge(ProtocolCode.GET_POWER_STATE)
 
+    def _basic_move(self, vertical_speed=0.0, horizontal_speed=0.0, rotate_speed=0.0):
+        """ Basic moving control
+
+        Args:
+            vertical_speed: +-0.01 ~ +-1.50m/s
+            horizontal_speed: +-0.01 ~ +-1.00m/s
+            rotate_speed:
+
+        Returns:
+
+        """
+        return self._merge(
+            ProtocolCode.AGV_MOTION_CONTROL,
+            [
+                int(vertical_speed * 100),
+                int(horizontal_speed * 100),
+                int(rotate_speed * 100)
+            ]
+        )
+
     def move_forward(self, speed):
         """Pan the robot forward
 
@@ -390,6 +415,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
+
         return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [int(speed * 100 * -1)])
 
     def move_left_lateral(self, speed):
