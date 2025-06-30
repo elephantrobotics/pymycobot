@@ -120,10 +120,14 @@ class MyPalletizer260(CommandGenerator):
         real_command, has_reply, _async = super(MyPalletizer260, self)._mesg(
             genre, *args, **kwargs
         )
-        with self.lock:
-            result = self._res(real_command, has_reply, genre)
-
-        return None if _async else result
+        if _async:
+            with self.lock:
+                self._write(self._flatten(real_command))
+            return None
+        else:
+            with self.lock:
+                result = self._res(real_command, has_reply, genre)
+            return result
 
     def _res(self, real_command, has_reply, genre):
         self._write(self._flatten(real_command))

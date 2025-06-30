@@ -682,7 +682,7 @@ mc.send_angle(1, 40, 20)
 
   - `flag (int) `: 0 - open 1 - close, 254 - release
 
-  - `speed (int)`: 1 ~ 100
+  - `speed (int)`: 0 ~ 100
 
   - `_type_1 (int)`:
 
@@ -704,7 +704,7 @@ mc.send_angle(1, 40, 20)
 
   - `gripper_value (int) `: 0 ~ 100
 
-  - `speed (int)`: 1 ~ 100
+  - `speed (int)`: 0 ~ 100
 
   - `gripper_type (int)`:
 
@@ -717,6 +717,12 @@ mc.send_angle(1, 40, 20)
     - `4` : Flexible gripper
 - **Return value**：
   - `1`: complete
+
+#### `gripper_stop()`
+
+- **Function**: Stop gripper movement
+- **Return value**:
+  - `1`: Completed
 
 #### `set_gripper_calibration()`
 

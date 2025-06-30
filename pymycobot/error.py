@@ -514,6 +514,13 @@ def calibration_parameters(**kwargs):
                         "speed value not right, should be 1 ~ 100, the received speed is %s"
                         % value
                     )
+            elif parameter == 'gripper_speed':
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if not 0 <= value <= 100:
+                    raise MyCobot280DataException(
+                        "speed value not right, should be 0 ~ 100, the received speed is %s"
+                        % value
+                    )
             elif parameter == 'flag':
                 check_0_or_1(parameter, value, [0, 1, 254], value_type, MyCobot280DataException, int)
             elif parameter == 'gripper_type':
