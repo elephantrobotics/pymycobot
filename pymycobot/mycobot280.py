@@ -129,13 +129,20 @@ class MyCobot280(CommandGenerator):
         """
         real_command, has_reply, _async = super(
             MyCobot280, self)._mesg(genre, *args, **kwargs)
-        if self.thread_lock:
-            with self.lock:
-                result = self._res(real_command, has_reply, genre)
+        if _async:
+            if self.thread_lock:
+                with self.lock:
+                    self._write(self._flatten(real_command))
+            else:
+                self._write(self._flatten(real_command))
+            return None
         else:
-            result = self._res(real_command, has_reply, genre)
-
-        return None if _async else result
+            if self.thread_lock:
+                with self.lock:
+                    result = self._res(real_command, has_reply, genre)
+            else:
+                result = self._res(real_command, has_reply, genre)
+            return result
 
     def _res(self, real_command, has_reply, genre):
         if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
