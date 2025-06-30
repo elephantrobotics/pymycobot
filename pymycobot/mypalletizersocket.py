@@ -86,10 +86,14 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
         real_command, has_reply, _async = super(
             MyPalletizerSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        with self.lock:
-            result = self._res(real_command, has_reply, genre)
-
-        return None if _async else result
+        if _async:
+            with self.lock:
+                self._write(self._flatten(real_command), "socket")
+            return None
+        else:
+            with self.lock:
+                result = self._res(real_command, has_reply, genre)
+            return result
 
     def _res(self, real_command, has_reply, genre):
         self._write(self._flatten(real_command), "socket")

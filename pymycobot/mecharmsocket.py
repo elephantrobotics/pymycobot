@@ -123,9 +123,14 @@ class MechArmSocket(CommandGenerator):
         real_command, has_reply, _async = super(
             MechArmSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        with self.lock:
-            result = self._res(real_command, has_reply, genre)
-        return None if _async else result
+        if _async:
+            with self.lock:
+                self._write(self._flatten(real_command), "socket")
+            return None
+        else:
+            with self.lock:
+                result = self._res(real_command, has_reply, genre)
+            return result
 
     def _res(self, real_command, has_reply, genre):
         if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
