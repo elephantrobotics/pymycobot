@@ -615,7 +615,7 @@ class ElephantRobot(object):
         Returns:
             int: The loss package count for the specified joint.
         """
-        command = "get_joint_loss_pkg(" + str(joint_number) + ")\n"
+        command = "get_joint_loss_pkg(" + str(joint_number.value) + ")\n"
         res = self.send_command(command)
         return int(self.string_to_double(res))
 
