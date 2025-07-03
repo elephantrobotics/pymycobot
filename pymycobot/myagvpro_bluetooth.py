@@ -55,11 +55,33 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         return await self._merge(ProtocolCode.GET_MODIFY_VERSION)
 
+    async def get_robot_status(self):
+        """Obtain the machine status, and support the acquisition in the case of power failure
+
+        Returns:
+            tuple: (list[int] | int, float)
+                0 - list[int] | int: machine status，Normally 0
+                    0 - (int)Emergency stop status
+                    1 - (int)Power status
+                    2 - (int)Front bumper strip
+                    3 - (int)Rear bumper strip
+                    4 - (int)Motor No. 1 connection status
+                    5 - (int)Motor No. 2 connection status
+                    6 - (int)Motor No. 3 connection status
+                    7 - (int)Motor No. 4 connection status
+        """
+        return await self._merge(ProtocolCode.GET_ROBOT_STATUS)
+
     async def power_on(self):
         """Turn on the robot
 
         Returns:
-            int: Power-on result, 1: Success, 0: Failed
+            int: Power-on result
+                1 - Success
+                2 - Emergency stop triggered
+                3 - The battery is too low
+                4 - CAN initialization is abnormal
+                5 - Motor initialization exception
         """
         return await self._merge(ProtocolCode.POWER_ON)
 

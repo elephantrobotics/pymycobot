@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 import decimal
+import locale
 import re
 import threading
 import time
@@ -8,11 +9,14 @@ import enum
 
 from .myagvapi import CommunicationProtocol, Utils, setup_serial_connect, setup_logging
 
+LOCAL_LANGUAGE_CODE, _ = locale.getdefaultlocale()
+
 
 class ProtocolCode(enum.Enum):
     # System & Product Information
     GET_MODIFY_VERSION = 0x01
     GET_SYSTEM_VERSION = 0x02
+    GET_ROBOT_STATUS = 0x05
     POWER_ON = 0x10
     POWER_ON_ONLY = 0x19
     POWER_OFF = 0x11
@@ -67,6 +71,26 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
     genre_timeout_table = {
         ProtocolCode.POWER_ON: 2.1
     }
+    language_prompt_tips = {
+        "en_US": {
+            ProtocolCode.POWER_ON: {
+                1: "[Power-on Tips]: Power on success",
+                2: "[Power-on Tips]: Emergency stop triggered",
+                3: "[Power-on Tips]: The battery is too low",
+                4: "[Power-on Tips]: CAN initialization is abnormal",
+                5: "[Power-on Tips]: Motor initialization exception"
+            }
+        },
+        "zh_CN": {
+            ProtocolCode.POWER_ON: {
+                0: "[上电提示]: 上电成功",
+                2: "[上电提示]: 紧急触发",
+                3: "[上电提示]: 电量过低",
+                4: "[上电提示]: CAN初始化异常",
+                5: "[上电提示]: 电机初始化异常"
+            }
+        }
+    }
 
     def __init__(self, debug=False, save_serial_log=False):
         self._mutex = threading.Lock()
@@ -86,6 +110,19 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             self._save_file(self._serial_filename, " ".join(map(str, self._data_buffer)) + "\n")
             self._data_buffer.clear()
 
+    def _prompt(self, genre, code):
+        default_prompt_tips = self.language_prompt_tips.get("en_US")
+        code_prompt_tips = self.language_prompt_tips.get(LOCAL_LANGUAGE_CODE, default_prompt_tips)
+        prompt_tips = code_prompt_tips.get(genre, None)
+        if prompt_tips is None:
+            return
+
+        tips = prompt_tips.get(code, None)
+        if tips is None:
+            return
+
+        print(tips)
+
     @staticmethod
     def get_significant_bit(number):
         return -decimal.Decimal(str(number)).as_tuple().exponent
@@ -97,7 +134,7 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
 
     def _match_protocol_data(self, genre, timeout=0.1):
         is_save_mac_addr = False
-        for _ in range(10):
+        for _ in range(5):
             if ProtocolCode.SET_COMMUNICATION_MODE.equal(genre) and self._communication_mode == 2:
                 data = self._read_plaintext_data(timeout=timeout)
                 if len(data) == 0:
@@ -120,7 +157,8 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
                 reply_data = self._read_plaintext_data(timeout=timeout)
             else:
                 reply_data = self._read_protocol_data(timeout=timeout)
-                if not genre.equal(reply_data[3]):  # check genre
+
+                if reply_data and not genre.equal(reply_data[3]):  # check genre
                     continue
 
             if len(reply_data) == 0:
@@ -160,6 +198,7 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             reply_data = self._match_protocol_data(genre, timeout)
             decode_respond = self._instruction_decoding(genre, reply_data)
             data = self._parsing_data(genre, decode_respond)
+            self._prompt(genre, data)
             self._save_buffer_data(b'', to_local=True)
             return data
 
@@ -238,6 +277,15 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
                 rank = Utils.get_bits(item)
                 respond.append(rank)
             return respond
+
+        if ProtocolCode.GET_ROBOT_STATUS.equal(genre):
+            machine_status = reply_data[0]
+            if machine_status != 0:
+                machine_status = Utils.get_bits(machine_status)
+
+            battery_voltage = round(reply_data[1] / 10, 2)
+
+            return machine_status, battery_voltage
 
         if ProtocolCode.GET_AUTO_REPORT_MESSAGE.equal(genre):
             respond = []
@@ -333,11 +381,33 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         return self._merge(ProtocolCode.GET_MODIFY_VERSION)
 
+    def get_robot_status(self):
+        """Obtain the machine status, and support the acquisition in the case of power failure
+
+        Returns:
+            tuple: (list[int] | int, float)
+                0 - list[int] | int: machine status，Normally 0
+                    0 - (int)Emergency stop status
+                    1 - (int)Power status
+                    2 - (int)Front bumper strip
+                    3 - (int)Rear bumper strip
+                    4 - (int)Motor No. 1 connection status
+                    5 - (int)Motor No. 2 connection status
+                    6 - (int)Motor No. 3 connection status
+                    7 - (int)Motor No. 4 connection status
+        """
+        return self._merge(ProtocolCode.GET_ROBOT_STATUS)
+
     def power_on(self):
         """Turn on the robot
 
         Returns:
-            int: Power-on result, 1: Success, 0: Failed
+            int: Power-on result
+                1 - Success
+                2 - Emergency stop triggered
+                3 - The battery is too low
+                4 - CAN initialization is abnormal
+                5 - Motor initialization exception
         """
         return self._merge(ProtocolCode.POWER_ON)
 
@@ -374,7 +444,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             rotate_speed:
 
         Returns:
-
+            int: 1: Success, 0: Failed
         """
         return self._merge(
             ProtocolCode.AGV_MOTION_CONTROL,
@@ -514,8 +584,12 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
              0 - (float)rx
              1 - (float)ry
              2 - (float)rw
-             3 - (list[int])Machine status
-             4 - (list[int])Motor information
+             3 - (list[int] | int)Machine status, 0 in normal cases and a list in abnormal cases
+                0 - (int)Emergency stop status
+                1 - (int)Power status
+                2 - (int)Front bumper strip
+                3 - (int)Rear bumper strip
+             4 - (list[int] | int)Motor information, It is 0 when it is normal, and returns the motor number list when it is abnormal
              5 - (float)Battery voltage
              6 - (int)Motor enable status 0: Enabled, 1: Disabled
         """
