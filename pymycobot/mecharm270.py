@@ -766,6 +766,17 @@ class MechArm270(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_COORDS_PLAN, has_reply=True)
 
+    def get_modify_version(self):
+        """get modify version
+
+        Return: int
+        """
+        return self._mesg(ProtocolCode.MODIFY_VERSION, has_reply=True)
+
+    def clear_queue(self):
+        """Clear Queue Data"""
+        return self._mesg(ProtocolCode.CLEAR_COMMAND_QUEUE, has_reply=True)
+
     # Other
     def wait(self, t):
         time.sleep(t)
