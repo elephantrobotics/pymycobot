@@ -13,6 +13,7 @@ from pymycobot.common import ProtocolCode, write, read
 from pymycobot.error import calibration_parameters
 from pymycobot.sms import sms_sts
 
+
 class MyPalletizerSocket(CommandGenerator, sms_sts):
     """MyCobot Python API Serial communication class.
     Note: Please use this class under the same network
@@ -85,74 +86,83 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
         real_command, has_reply, _async = super(
             MyPalletizerSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        with self.lock:
-            data = self._write(self._flatten(real_command), "socket")
-            if has_reply:
-                data = self._read(genre, method='socket')
-                if genre == ProtocolCode.SET_SSID_PWD:
-                    return None
-                res = self._process_received(data, genre)
-                if res is None:
-                    return None
-                if genre in [
-                    ProtocolCode.ROBOT_VERSION,
-                    ProtocolCode.IS_POWER_ON,
-                    ProtocolCode.IS_CONTROLLER_CONNECTED,
-                    ProtocolCode.IS_PAUSED,
-                    ProtocolCode.IS_IN_POSITION,
-                    ProtocolCode.IS_MOVING,
-                    ProtocolCode.IS_SERVO_ENABLE,
-                    ProtocolCode.IS_ALL_SERVO_ENABLE,
-                    ProtocolCode.GET_SERVO_DATA,
-                    ProtocolCode.GET_DIGITAL_INPUT,
-                    ProtocolCode.GET_GRIPPER_VALUE,
-                    ProtocolCode.IS_GRIPPER_MOVING,
-                    ProtocolCode.GET_SPEED,
-                    ProtocolCode.GET_ENCODER,
-                    ProtocolCode.GET_BASIC_INPUT,
-                    ProtocolCode.GET_TOF_DISTANCE,
-                    ProtocolCode.GET_GPIO_IN,
-                    ProtocolCode.GET_COMMUNICATE_MODE,
-                    ProtocolCode.SET_COMMUNICATE_MODE,
-                    ProtocolCode.SetHTSGripperTorque,
-                    ProtocolCode.GetHTSGripperTorque,
-                    ProtocolCode.GetGripperProtectCurrent,
-                    ProtocolCode.InitGripper,
-                    ProtocolCode.SET_FOUR_PIECES_ZERO
-                ]:
-                    return self._process_single(res)
-                elif genre in [ProtocolCode.GET_ANGLES]:
-                    return [self._int2angle(angle) for angle in res]
-                elif genre in [ProtocolCode.GET_COORDS]:
-                    if res:
-                        r = []
-                        for idx in range(3):
-                            r.append(self._int2coord(res[idx]))
-                        if len(res) > 3:
-                            r.append(self._int2angle(res[3]))
-                        return r
-                    else:
-                        return res
-                elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-                    return [self._int2coord(angle) for angle in res]
-                elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
-                    return self._int2coord(res[0])
-                elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION,
-                               ProtocolCode.GET_ATOM_VERSION]:
-                    return self._int2coord(self._process_single(res))
-                elif genre == ProtocolCode.GET_ANGLES_COORDS:
-                    r = []
-                    for index in range(len(res)):
-                        if index < 4:
-                            r.append(self._int2angle(res[index]))
-                        elif index < 7:
-                            r.append(self._int2coord(res[index]))
-                        else:
-                            r.append(self._int2angle(res[index]))
-                    return r
-                else:
-                    return res
+        if _async:
+            with self.lock:
+                self._write(self._flatten(real_command), "socket")
             return None
+        else:
+            with self.lock:
+                result = self._res(real_command, has_reply, genre)
+            return result
+
+    def _res(self, real_command, has_reply, genre):
+        self._write(self._flatten(real_command), "socket")
+        data = self._read(genre, method='socket')
+        if genre == ProtocolCode.SET_SSID_PWD:
+            return None
+        res = self._process_received(data, genre)
+        if res is None:
+            return None
+        if res is not None and isinstance(res, list) and len(res) == 1 and genre in [ProtocolCode.SET_BASIC_OUTPUT]:
+            return res[0]
+        if genre in [
+            ProtocolCode.ROBOT_VERSION,
+            ProtocolCode.IS_POWER_ON,
+            ProtocolCode.IS_CONTROLLER_CONNECTED,
+            ProtocolCode.IS_PAUSED,
+            ProtocolCode.IS_IN_POSITION,
+            ProtocolCode.IS_MOVING,
+            ProtocolCode.IS_SERVO_ENABLE,
+            ProtocolCode.IS_ALL_SERVO_ENABLE,
+            ProtocolCode.GET_SERVO_DATA,
+            ProtocolCode.GET_DIGITAL_INPUT,
+            ProtocolCode.GET_GRIPPER_VALUE,
+            ProtocolCode.IS_GRIPPER_MOVING,
+            ProtocolCode.GET_SPEED,
+            ProtocolCode.GET_ENCODER,
+            ProtocolCode.GET_BASIC_INPUT,
+            ProtocolCode.GET_TOF_DISTANCE,
+            ProtocolCode.GET_GPIO_IN,
+            ProtocolCode.GET_COMMUNICATE_MODE,
+            ProtocolCode.SET_COMMUNICATE_MODE,
+            ProtocolCode.SetHTSGripperTorque,
+            ProtocolCode.GetHTSGripperTorque,
+            ProtocolCode.GetGripperProtectCurrent,
+            ProtocolCode.InitGripper,
+            ProtocolCode.SET_FOUR_PIECES_ZERO
+        ]:
+            return self._process_single(res)
+        elif genre in [ProtocolCode.GET_ANGLES]:
+            return [self._int2angle(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_COORDS]:
+            if res:
+                r = []
+                for idx in range(3):
+                    r.append(self._int2coord(res[idx]))
+                if len(res) > 3:
+                    r.append(self._int2angle(res[3]))
+                return r
+            else:
+                return res
+        elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
+            return [self._int2coord(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
+            return self._int2coord(res[0])
+        elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION,
+                       ProtocolCode.GET_ATOM_VERSION]:
+            return self._int2coord(self._process_single(res))
+        elif genre == ProtocolCode.GET_ANGLES_COORDS:
+            r = []
+            for index in range(len(res)):
+                if index < 4:
+                    r.append(self._int2angle(res[index]))
+                elif index < 7:
+                    r.append(self._int2coord(res[index]))
+                else:
+                    r.append(self._int2angle(res[index]))
+            return r
+        else:
+            return res
 
     # Overall Status
     def set_free_mode(self, flag):
@@ -604,3 +614,6 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
 
     def close(self):
         self.sock.close()
+
+    def go_home(self):
+        self.send_angles([0, 0, 0], 20)

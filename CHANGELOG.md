@@ -1,5 +1,32 @@
 # ChangeLog for pymycobot
 
+## v3.9.9 (2025-06-19)
+
+- release v3.9.9
+- Optimizing AGV protocols.
+- Added stop motion interface for 280 grippers.
+- Update M750 limit information.
+
+## v3.9.8 (2025-06-05)
+
+- release v3.9.8
+- Fix bugs
+
+## v3.9.7 (2025-4-14)
+
+- release v3.9.7
+- Fix Pro630 pico version bugs
+
+## v3.9.6 (2025-4-11)
+
+- release v3.9.6
+- update mercury new limit value
+
+## v3.9.5 (2025-4-11)
+
+- release v3.9.5
+- update mercury new limit value
+
 ## v3.9.4 (2025-4-10)
 
 - release v3.9.4

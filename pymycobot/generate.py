@@ -147,7 +147,7 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
 
-    def send_angle(self, id, degree, speed):
+    def send_angle(self, id, degree, speed, _async=False):
         """Send one angle of joint to robot arm.
 
         Args:
@@ -156,9 +156,9 @@ class CommandGenerator(DataProcessor):
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=degree, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True, _async=_async)
 
-    def send_angles(self, angles, speed):
+    def send_angles(self, angles, speed, _async=False):
         """Send the angles of all joints to robot arm.
 
         Args:
@@ -167,7 +167,7 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
         angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True, _async=_async)
 
     def get_coords(self):
         """Get the coords from robot arm, coordinate system based on base.
@@ -179,7 +179,7 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
 
-    def send_coord(self, id, coord, speed):
+    def send_coord(self, id, coord, speed, _async=False):
         """Send one coord to robot arm. 
 
         Args:
@@ -189,9 +189,9 @@ class CommandGenerator(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, coord=coord, speed=speed)
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed, has_reply=True, _async=_async)
 
-    def send_coords(self, coords, speed, mode=None):
+    def send_coords(self, coords, speed, mode=None, _async=False):
         """Send all coords to robot arm.
 
         Args:
@@ -206,9 +206,9 @@ class CommandGenerator(DataProcessor):
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
         if mode is not None:
-            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode)
+            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, mode, _async=_async)
         else:
-            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True)
+            return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
 
     def is_in_position(self, data, id=0):
         """Judge whether in the position.
@@ -248,7 +248,7 @@ class CommandGenerator(DataProcessor):
         return self._mesg(ProtocolCode.IS_MOVING, has_reply=True)
 
     # JOG mode and operation
-    def jog_angle(self, joint_id, direction, speed):
+    def jog_angle(self, joint_id, direction, speed, _async=False):
         """Jog control angle.
 
         Args:
@@ -257,9 +257,9 @@ class CommandGenerator(DataProcessor):
             speed: int (0 - 100)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, direction=direction)
-        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed)
+        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, _async=_async)
 
-    def jog_coord(self, coord_id, direction, speed):
+    def jog_coord(self, coord_id, direction, speed, _async=False):
         """Jog control coord.
 
         Args:
@@ -268,9 +268,9 @@ class CommandGenerator(DataProcessor):
             speed: int (1 - 100)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, direction=direction)
-        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
+        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, _async=_async)
 
-    def jog_increment(self, joint_id, increment, speed):
+    def jog_increment(self, joint_id, increment, speed, _async=False):
         """step mode
 
         Args:
@@ -279,7 +279,7 @@ class CommandGenerator(DataProcessor):
             speed: int (0 - 100)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, _async=_async)
 
     def pause(self):
         """Pause movement"""
@@ -413,10 +413,10 @@ class CommandGenerator(DataProcessor):
             mode: 0 - indicates that value is one byte(default), 1 - 1 represents a value of two bytes.
         """
         if mode is None:
-            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address=data_id, value=value)
+            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address_id=data_id, value=value)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, value)
         else:
-            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address=data_id, value=value,
+            self.calibration_parameters(class_name=self.__class__.__name__, servo_data_id=servo_id, address_id=data_id, value=value,
                                         mode=mode)
             return self._mesg(ProtocolCode.SET_SERVO_DATA, servo_id, data_id, [value], mode)
 

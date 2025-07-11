@@ -28,9 +28,12 @@ from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.elephantrobot import ElephantRobot
 from pymycobot.mercury import Mercury
 from pymycobot.myagv import MyAgv
+from pymycobot.myagvpro import MyAGVPro
+from pymycobot.myagvpro_socket import MyAGVProSocket
+from pymycobot.myagvpro_bluetooth import MyAGVProBluetooth
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
-from pymycobot.mycobotpro630 import Phoenix
+# from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.mercurysocket import MercurySocket
 from pymycobot.myarmm import MyArmM
 from pymycobot.myarmc import MyArmC
@@ -42,6 +45,11 @@ from pymycobot.myarmm_control import MyArmMControl
 from pymycobot.mercurychassis_api import ChassisControl
 from pymycobot.conveyor_api import ConveyorAPI
 from pymycobot.ultraArmP340 import ultraArmP340
+from pymycobot.exoskeleton import Exoskeleton
+from pymycobot.exoskeletonsocket import ExoskeletonSocket
+from pymycobot.mybuddyemoticon import MyBuddyEmoticon
+
+
 __all__ = [
     "MyPalletizer260",
     "MechArm270",
@@ -65,12 +73,15 @@ __all__ = [
     "ElephantRobot",
     "Mercury",
     "MyAgv",
+    "MyAGVPro",
+    "MyAGVProSocket",
+    "MyAGVProBluetooth",
     "MechArmSocket",
     "MyArmSocket",
     "MercurySocket",
     "MyArmM",
     "MyArmC",
-    "Phoenix",
+    # "Phoenix",
     "Pro630",
     "Pro630Client",
     "Pro400",
@@ -82,14 +93,13 @@ __all__ = [
     "ConveyorAPI",
     "MyCobot280RDKX5",
     "MyCobot280RDKX5Socket",
-    "ultraArmP340"
+    "ultraArmP340",
+    "Exoskeleton",
+    "ExoskeletonSocket",
+    "MyBuddyEmoticon"
 ]
 
-if sys.platform == "linux":
-    from pymycobot.mybuddyemoticon import MyBuddyEmoticon
-    __all__.append("MyBuddyEmoticon")
-
-__version__ = "3.9.4" 
+__version__ = "3.9.9b0"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

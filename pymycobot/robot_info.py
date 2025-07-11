@@ -1,4 +1,4 @@
- # coding=utf-8
+# coding=utf-8
 
 class Robot320Info(object):
     error_info = {
@@ -20,42 +20,44 @@ class Robot320Info(object):
                     255: "未知错误"
                 },
             "servo_error":
-            {
-                0: "伺服电机欠压/过压，查看电压，如果为0，需要修改舵机参数；如果大于实际，可能散热片损坏",
-                1: "伺服电机磁编码异常",
-                2: "伺服电机过温",
-                3: "伺服电机过流",
-                5: "伺服电机过载",
-            }
+                {
+                    0: "伺服电机欠压/过压，查看电压，如果为0，需要修改舵机参数；如果大于实际，可能散热片损坏",
+                    1: "伺服电机磁编码异常",
+                    2: "伺服电机过温",
+                    3: "伺服电机过流",
+                    5: "伺服电机过载",
+                }
         },
         "en_US": {
             "robot_error":
-            {
-                0: "Communication exception, please check the line, servo motor firmware version, power supply, firmware burning, baud rate, etc.",
-                1: "Servo motor model error, need to replace the motor",
-                2: "Servo motor firmware version is too low, need to use FD upgrade",
-                3: "Servo motor p value exception, default 32, this exception will be automatically restored",
-                4: "Servo motor D value exception, default 8, this exception will be automatically restored",
-                5: "Servo motor I value exception, default 0, this exception will be automatically restored",
-                6: "Servo motor clockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
-                7: "Servo motor counterclockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
-                8: "Servo motor phase exception, this exception will be automatically restored",
-                9: "Servo motor return delay exception, default 0, this exception will be automatically restored",
-                10: "Servo motor minimum starting force exception, default 0, this exception will be automatically restored",
-                11: "Servo motor exception, when the servo is abnormal, the robot cannot move, please query the servo feedback interface get_servo_status, view the specific error",
-                255: "Unknown error"
-            },
+                {
+                    0: "Communication exception, please check the line, servo motor firmware version, power supply, firmware burning, baud rate, etc.",
+                    1: "Servo motor model error, need to replace the motor",
+                    2: "Servo motor firmware version is too low, need to use FD upgrade",
+                    3: "Servo motor p value exception, default 32, this exception will be automatically restored",
+                    4: "Servo motor D value exception, default 8, this exception will be automatically restored",
+                    5: "Servo motor I value exception, default 0, this exception will be automatically restored",
+                    6: "Servo motor clockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
+                    7: "Servo motor counterclockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
+                    8: "Servo motor phase exception, this exception will be automatically restored",
+                    9: "Servo motor return delay exception, default 0, this exception will be automatically restored",
+                    10: "Servo motor minimum starting force exception, default 0, this exception will be automatically restored",
+                    11: "Servo motor exception, when the servo is abnormal, the robot cannot move, please query the servo feedback interface get_servo_status, view the specific error",
+                    255: "Unknown error"
+                },
             "servo_error":
-            {
-                0: "Servo motor under-voltage/over-voltage, check the voltage, if it is 0, you need to modify the servo parameters; if it is greater than the actual, it may be damaged",
-                1: "Servo motor magnetic encoder exception",
-                2: "Servo motor over-temperature",
-                3: "Servo motor over-current",
-                5: "Servo motor over-load",
-            }
+                {
+                    0: "Servo motor under-voltage/over-voltage, check the voltage, if it is 0, you need to modify the servo parameters; if it is greater than the actual, it may be damaged",
+                    1: "Servo motor magnetic encoder exception",
+                    2: "Servo motor over-temperature",
+                    3: "Servo motor over-current",
+                    5: "Servo motor over-load",
+                }
         }
 
     }
+
+
 # coding=utf-8
 
 def _interpret_status_code(language, status_code):
@@ -222,31 +224,32 @@ def _interpret_status_code(language, status_code):
             255: "Error: Unknown error code: "
         }
     }
-    return status_messages[language].get(status_code, status_messages[language].get(255)+str(status_code))
+    return status_messages[language].get(status_code, status_messages[language].get(255) + str(status_code))
+
 
 class RobotLimit:
     robot_limit = {
-        "Mercury":{
-            "joint_id":[1,2,3,4,5,6,7,11,12,13],
-            "angles_min":[-165, -50, -165, -165, -165, -20, -180, -60, -138, -115],
-            "angles_max":[165, 120, 165, 5, 165, 265, 180, 0, 175, 115],
-            "coords_min":[-459, -459, -300, -180, -180, -180],
-            "coords_max":[459, 459, 542, 180, 180, 180],
-            "left_coords_min":[-351.11, -272.12, -262.91, -180, -180, -180],
-            "left_coords_max":[566.92, 645.91, 655.13, 180, 180, 180],
-            "right_coords_min":[-351.11, -645.91, -262.91, -180, -180, -180],
-            "right_coords_max":[566.92, 272.12, 655.13, 180, 180, 180]
+        "Mercury": {
+            "joint_id": [1, 2, 3, 4, 5, 6, 7, 11, 12, 13],
+            "angles_min": [-165, -50, -165, -165, -165, -75, -165, -55, -70, -160],
+            "angles_max": [165, 120, 165, 1, 165, 255, 165, 0, 245, 160],
+            "coords_min": [-459, -459, -300, -180, -180, -180],
+            "coords_max": [459, 459, 542, 180, 180, 180],
+            "left_coords_min": [-351.11, -272.12, -262.91, -180, -180, -180],
+            "left_coords_max": [566.92, 645.91, 655.13, 180, 180, 180],
+            "right_coords_min": [-351.11, -645.91, -262.91, -180, -180, -180],
+            "right_coords_max": [566.92, 272.12, 655.13, 180, 180, 180]
         },
-        "MercurySocket":{
-            "joint_id":[1,2,3,4,5,6,7,11,12,13],
-            "angles_min":[-165, -50, -165, -165, -165, -20, -180, -60, -138, -115],
-            "angles_max":[165, 120, 165, 5, 165, 265, 180, 0, 175, 115],
-            "coords_min":[-459, -459, -300, -180, -180, -180],
-            "coords_max":[459, 459, 542, 180, 180, 180],
-            "left_coords_min":[-351.11, -272.12, -262.91, -180, -180, -180],
-            "left_coords_max":[566.92, 645.91, 655.13, 180, 180, 180],
-            "right_coords_min":[-351.11, -645.91, -262.91, -180, -180, -180],
-            "right_coords_max":[566.92, 272.12, 655.13, 180, 180, 180]
+        "MercurySocket": {
+            "joint_id": [1, 2, 3, 4, 5, 6, 7, 11, 12, 13],
+            "angles_min": [-165, -50, -165, -165, -165, -75, -165, -55, -70, -160],
+            "angles_max": [165, 120, 165, 1, 165, 255, 165, 0, 245, 160],
+            "coords_min": [-459, -459, -300, -180, -180, -180],
+            "coords_max": [459, 459, 542, 180, 180, 180],
+            "left_coords_min": [-351.11, -272.12, -262.91, -180, -180, -180],
+            "left_coords_max": [566.92, 645.91, 655.13, 180, 180, 180],
+            "right_coords_min": [-351.11, -645.91, -262.91, -180, -180, -180],
+            "right_coords_max": [566.92, 272.12, 655.13, 180, 180, 180]
         },
         "MyCobot": {
             "id": [1, 2, 3, 4, 5, 6, 7],
@@ -269,12 +272,21 @@ class RobotLimit:
             "coords_min": [-350, -350, -70, -180, -180, -180],
             "coords_max": [350, 350, 523.9, 180, 180, 180]
         },
+        "MyCobot280RDK-X5": {
+            "joint_id": [1, 2, 3, 4, 5, 6],
+            "coord_id": [1, 2, 3, 4, 5, 6],
+            "servo_id": [1, 2, 3, 4, 5, 6, 7],
+            "angles_min": [-168, -135, -150, -145, -165, -180],
+            "angles_max": [168, 135, 150, 145, 165, 180],
+            "coords_min": [-281.45, -281.45, -70, -180, -180, -180],
+            "coords_max": [281.45, 281.45, 412.67, 180, 180, 180]
+        },
         "MyCobot280Socket": {
             "id": [1, 2, 3, 4, 5, 6],
             "angles_min": [-168, -135, -150, -145, -165, -180],
             "angles_max": [168, 135, 150, 145, 165, 180],
-            "coords_min": [-350, -350, -70, -180, -180, -180],
-            "coords_max": [350, 350, 523.9, 180, 180, 180]
+            "coords_min": [-281.45, -281.45, -70, -180, -180, -180],
+            "coords_max": [281.45, 281.45, 412.67, 180, 180, 180]
         },
         "MyCobot320": {
             "id": [1, 2, 3, 4, 5, 6],
@@ -327,10 +339,10 @@ class RobotLimit:
         "MyArmM": {
             "joint_id": [1, 2, 3, 4, 5, 6, 7],
             "servo_id": [1, 2, 3, 4, 5, 6, 7, 8],
-            "angles_min": [-165, -80, -100, -160, -90, -180, -118],
-            "angles_max": [165, 100, 80, 160, 120, 180, 2],
-            "encoders_min": [137, 1163, 1035, 1013, 248, 979, 220, 706],
-            "encoders_max": [4004, 2945, 3079, 3026, 3724, 2994, 3704, 2048]
+            "angles_min": [-165, -60, -90, -150, -91, -150, -118],
+            "angles_max": [165, 95, 75, 150, 88, 150, 2],
+            "encoders_min": [114, 1200, 1200, 1024, 286, 1013, 307, 706],
+            "encoders_max": [3981, 2991, 2991, 3002, 3788, 3048, 3788, 2068]
         },
         "MyArmMControl": {
             "joint_id": [1, 2, 3, 4, 5, 6],
@@ -399,5 +411,14 @@ class RobotLimit:
             "left_coords_max": [250, 260, 480, 180, 180, 180],
             "right_coords_min": [0, -260, 0, -180, -180, -180],
             "right_coords_max": [250, 40, 480, 180, 180, 180]
+        },
+        "Pro630": {
+            "joint_id": [1, 2, 3, 4, 5, 6],
+            "servo_id": [1, 2, 3, 4, 5, 6],
+            "coord_id": (1, 2, 3, 4, 5, 6),
+            "angles_min": [-180, -45, -165, -90, -180, -180],
+            "angles_max": [180, 225, 165, 270, 180, 180],
+            "coords_min": [-630, -630, -425, -180, -180, -180],
+            "coords_max": [630, 630, 835, 180, 180, 180]
         }
     }

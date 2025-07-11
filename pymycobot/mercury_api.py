@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import locale
-import numpy as np
 
 from pymycobot.error import restrict_serial_port
 from pymycobot.common import ProtocolCode, FingerGripper
@@ -12,6 +11,10 @@ from pymycobot.close_loop import CloseLoop
 class MercuryCommandGenerator(CloseLoop):
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError("Please install numpy")
         # 同步模式
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
@@ -125,7 +128,10 @@ class MercuryCommandGenerator(CloseLoop):
             else:
                 return valid_data[0]
         # print(data_len, valid_data)
-        if data_len in [6, 8, 12, 14, 16, 20, 24, 26, 60]:
+        if genre == ProtocolCode.TOOL_SERIAL_READ_DATA:
+            for i in range(data_len):
+                res.append(valid_data[i])
+        elif data_len in [6, 8, 12, 14, 16, 20, 24, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
                 if valid_data[0] == 1:
                     return 1

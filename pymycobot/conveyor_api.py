@@ -2,7 +2,18 @@ import logging
 import threading
 import time
 import struct
-from serial import Serial
+import serial
+
+
+def setup_serial_connect(port, baudrate, timeout=None):
+    serial_api = serial.Serial()
+    serial_api.port = port
+    serial_api.baudrate = baudrate
+    serial_api.timeout = timeout
+    serial_api.rts = False
+    serial_api.dtr = False
+    serial_api.open()
+    return serial_api
 
 
 class CommandGenre(object):
@@ -40,7 +51,7 @@ class Command(object):
         return self.__params[0] if self.__length == 1 else self.__params
 
     def __str__(self):
-        return " ".join(map(lambda bit: hex(bit).upper(), self.to_bytes()))
+        return ' '.join(f'{x:02x}' for x in self.to_bytes())
 
     def __bytes__(self):
         return self.to_bytes()
@@ -69,7 +80,6 @@ class Command(object):
                 bits_pack_list.extend(list(pair))
             else:
                 bits_pack_list.clear()
-        print(bits_pack_list)
         return bits_pack_list
 
     @classmethod
@@ -100,9 +110,7 @@ class SerialProtocol(object):
         self._comport = comport
         self._baudrate = baudrate
         self._timeout = timeout
-        self._serial_port = Serial(port=comport, baudrate=baudrate, timeout=timeout)
-        self._serial_port.rts = True
-        self._serial_port.dtr = True
+        self._serial_port = setup_serial_connect(port=comport, baudrate=baudrate, timeout=timeout)
 
     def open(self):
         if self._serial_port.is_open is False:

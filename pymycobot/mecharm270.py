@@ -124,11 +124,20 @@ class MechArm270(CommandGenerator):
         """
         real_command, has_reply, _async = super(
             MechArm270, self)._mesg(genre, *args, **kwargs)
-        if self.thread_lock:
-            with self.lock:
-                return self._res(real_command, has_reply, genre)
+        if _async:
+            if self.thread_lock:
+                with self.lock:
+                    self._write(self._flatten(real_command))
+            else:
+                self._write(self._flatten(real_command))
+            return None
         else:
-            return self._res(real_command, has_reply, genre)
+            if self.thread_lock:
+                with self.lock:
+                    result = self._res(real_command, has_reply, genre)
+            else:
+                result = self._res(real_command, has_reply, genre)
+            return result
 
     def _res(self, real_command, has_reply, genre):
         if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
@@ -187,9 +196,9 @@ class MechArm270(CommandGenerator):
             ProtocolCode.SET_FOUR_PIECES_ZERO
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS, ProtocolCode.GET_ANGLES_PLAN]:
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE]:
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE, ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -275,7 +284,7 @@ class MechArm270(CommandGenerator):
         angles = self._mesg(ProtocolCode.GET_ANGLES, has_reply=True)
         return [round(angle * (math.pi / 180), 3) for angle in angles]
 
-    def send_radians(self, radians, speed):
+    def send_radians(self, radians, speed, _async=False):
         """Send the radians of all joints to robot arm
 
         Args:
@@ -285,7 +294,7 @@ class MechArm270(CommandGenerator):
         calibration_parameters(len6=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
-        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed)
+        return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed, _async=_async)
 
     def sync_send_angles(self, degrees, speed, timeout=15):
         """Send the angle in synchronous state and return when the target point is reached
@@ -344,7 +353,7 @@ class MechArm270(CommandGenerator):
         self.gpio.output(pin, v)
 
     # JOG mode and operation
-    def jog_rpy(self, end_direction, direction, speed):
+    def jog_rpy(self, end_direction, direction, speed, _async=False):
         """Rotate the end around a fixed axis in the base coordinate system
 
         Args:
@@ -353,9 +362,9 @@ class MechArm270(CommandGenerator):
             speed (int): 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
-        return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
+        return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed, _async=_async)
 
-    def jog_increment_angle(self, joint_id, increment, speed):
+    def jog_increment_angle(self, joint_id, increment, speed, _async=False):
         """ angle step mode
 
         Args:
@@ -364,9 +373,9 @@ class MechArm270(CommandGenerator):
             speed: int (0 - 100)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, _async=_async)
 
-    def jog_increment_coord(self, id, increment, speed):
+    def jog_increment_coord(self, id, increment, speed, _async=False):
         """coord step mode
 
         Args:
@@ -376,7 +385,7 @@ class MechArm270(CommandGenerator):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, speed=speed)
         value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
-        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, id, [value], speed)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, id, [value], speed, _async=_async)
 
     def set_HTS_gripper_torque(self, torque):
         """Set new adaptive gripper torque
@@ -741,6 +750,33 @@ class MechArm270(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
 
+    def get_angles_plan(self):
+        """ Get the angle plan of all joints.
+
+        Return:
+            list: A float list of all angle.
+        """
+        return self._mesg(ProtocolCode.GET_ANGLES_PLAN, has_reply=True)
+
+    def get_coords_plan(self):
+        """Get the coords plan from robot arm, coordinate system based on base.
+
+        Return:
+            list : A float list of coord .[x, y, z, rx, ry, rz]
+        """
+        return self._mesg(ProtocolCode.GET_COORDS_PLAN, has_reply=True)
+
+    def get_modify_version(self):
+        """get modify version
+
+        Return: int
+        """
+        return self._mesg(ProtocolCode.MODIFY_VERSION, has_reply=True)
+
+    def clear_queue(self):
+        """Clear Queue Data"""
+        return self._mesg(ProtocolCode.CLEAR_COMMAND_QUEUE, has_reply=True)
+
     # Other
     def wait(self, t):
         time.sleep(t)
@@ -752,5 +788,5 @@ class MechArm270(CommandGenerator):
     def open(self):
         self._serial_port.open()
 
-    def go_home(self):
-        return self.send_angles([0, 0, 0, 0, 0, 0], 10)
+    def go_home(self, _async=False):
+        return self.send_angles([0, 0, 0, 0, 0, 0], 10, _async=_async)
