@@ -15,6 +15,7 @@ import time
 
 error_For = "Parameter out of range, correct parameter range:"
 error_Jion = "Joint out of range, correct joint range:"
+error_Angle = "Angle out of range, correct angle range:"
 
 COORDS_EPSILON = 0.50
 
@@ -732,7 +733,7 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Force_SetId(self, ID, value):
-        if value < 0 or value > 255:
+        if value < 1 or value > 254:
             return error_For + "1 - 254"
         command = "force_SetGripperId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
@@ -749,9 +750,9 @@ class ElephantRobot(object):
     
     def Force_SetAngle(self, ID, value):
         if value < 0 or value > 100:
-            return error_For + "10 - 100"
+            return error_For + "0 - 100"
         command = "force_SetAngle(" + str(ID) + "," + str(value) + ")\n"
-        print(command)
+        # print(command)
         return self.send_command(command)
 
     def Force_GetAngle(self, ID):
@@ -789,8 +790,8 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Force_SetSpeed(self, ID, value):
-        if value < 0 or value > 100:
-            return error_For + "0 - 100"
+        if value < 1 or value > 100:
+            return error_For + "1 - 100"
         command = "force_SetSpeed(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
@@ -838,7 +839,7 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def Hand_SetId(self, ID, value):
-        if value < 1 or value > 255:
+        if value < 1 or value > 254:
             return error_For + "1 - 254"
         command = "Hand_SetId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
@@ -856,20 +857,20 @@ class ElephantRobot(object):
     def Hand_SetJointAngle(self, ID, Jiont, value):
             if value < 0 or value > 100:
                 return error_For + "0 - 100"
-            if Jiont < 0 or Jiont > 6:
+            if Jiont < 1 or Jiont > 6:
                 return error_Jion + " 1 - 6"
             command = "Hand_SetJointAngle(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
             return self.send_command(command)
     
     def Hand_GetJointAngle(self, ID, Jiont):
-        if Jiont < 0 or Jiont > 6:
+        if Jiont < 1 or Jiont > 6:
             return error_Jion + " 1 - 6"
         command = "Hand_GetJointAngle(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
     
     def Hand_SetJointCalibrate(self, ID, Jiont):
-        if Jiont < 0 or Jiont > 6:
+        if Jiont < 1 or Jiont > 60:
             return error_Jion + " 1 - 6"
         command = "Hand_SetJointCalibrate(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
@@ -882,77 +883,79 @@ class ElephantRobot(object):
     def Hand_SetTorque(self, ID, Jiont, value):
         if value < 0 or value > 100:
                 return error_For + "0 - 100"
-        if Jiont < 0 or Jiont > 6:
+        if Jiont < 1 or Jiont > 6:
             return error_Jion + " 1 - 6"
         command = "Hand_SetTorque(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Hand_GetTorque(self, ID, Jiont):
-        if Jiont < 0 or Jiont > 6:
+        if Jiont < 1 or Jiont > 6:
             return error_Jion + " 1 - 6"
         command = "Hand_GetTorque(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
     def Hand_SetSpeed(self, ID, Jiont, value):
-        if value < 0 or value > 100:
-                return error_For + "0 - 100"
-        if Jiont < 0 or Jiont > 6:
+        if value < 1 or value > 100:
+                return error_For + "1 - 100"
+        if Jiont < 1 or Jiont > 6:
             return error_Jion + " 1 - 6"
         command = "Hand_SetSpeed(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
 
     def Hand_GetSpeed(self, ID, Jiont):
-        if Jiont < 0 or Jiont > 6:
+        if Jiont < 1 or Jiont > 6:
             return error_Jion + " 1 - 6"
         command = "Hand_GetSpeed(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetFullAngles(self, ID, Jiont, speed):
-        if value < 0 or value > 100:
-                return error_For + "0 - 100"
-        if len(Jiont) == 6:
-            if all(x < 0 or x > 6 for x in Jiont):
-                return error_Jion + " 1 - 6"
+    def Hand_SetFullAngles(self, ID, angles, speed):
+        if speed < 1 or speed > 100:
+                return error_For + "1 - 100"
+        if len(angles) == 6:
+            if any(x < 0 or x > 100 for x in angles):
+                return error_Angle + " 0 - 100"
             else:
-                command = "Hand_SetFullAngles(" + str(ID) + "," + str(Jiont[0]) + "," \
-                                        + str(Jiont[1]) + "," + str(Jiont[2]) + "," \
-                                        + str(Jiont[3]) + "," + str(Jiont[4]) + "," \
-                                        + str(Jiont[5])+ "," + str(speed) + ")\n"
+                command = "Hand_SetFullAngles(" + str(ID) + "," + str(angles[0]) + "," \
+                                        + str(angles[1]) + "," + str(angles[2]) + "," \
+                                        + str(angles[3]) + "," + str(angles[4]) + "," \
+                                        + str(angles[5])+ "," + str(speed) + ")\n"
                 return self.send_command(command)
         else:
-            return "Number of joints does not match"
-        
+            return "Number of angles does not match"
 
     
     def Hand_GetFullAngles(self, ID):
         command = "Hand_GetFullAngles(" + str(ID) + ")\n"
         return self.send_command(command)
-    
 
-    def Hand_SetCatch(self, ID, value, num=0):
-        if ID < 0 or ID > 4:
+    def Hand_SetCatch(self, ID, pose, value, num=0):
+        if pose < 0 or pose > 4:
                 return error_For + "0 - 4"
-        if ID == 4:
-            if value < 0 or value > 20:
-                return "The parameter range is: 0 - 20"
-            else:
-                if value < 0 or value > 5:
-                    return "The parameter range is: 0 - 5"
+        if pose == 4:
+            if value < 1 or value > 20:
+                return "The parameter range is: 1 - 20"
+        else:
+            if value < 0 or value > 5:
+                return "The parameter range is: 0 - 5"
         if num <= 0:
-            command = "Hand_SetCatch(" + str(ID) + "," + str(value) + ")\n"
+            command = "Hand_SetCatch(" + str(ID) + "," + str(pose) + "," + str(value) + ")\n"
         else :
-            command = "Hand_SetCatch(" + str(ID) + "," + str(value) +  "," + str(num) +")\n"
+            command = "Hand_SetCatch(" + str(ID) + "," + str(pose) + ","+ str(value) +  "," + str(num) +")\n"
+        return self.send_command(command)
+
+    def Hand_GetModel(self,ID):
+        command = "Hand_GetModel(" + str(ID) + ")\n"
         return self.send_command(command)
 
 
     #末端
-    def get_end_Firmware():             #主版本
+    def get_end_Firmware(self):             #主版本
         command = "GetFirmwareEnd()\n"
         return self.send_command(command)
-    def get_end_Modify():                #更新版本
+    def get_end_Modify(self):                #更新版本
         command = "GetModifyEnd()\n"
         return self.send_command(command)
-    def get_end_bt_status():                #获取按键状态
+    def get_end_bt_status(self):                #获取按键状态
         command = "SetEndBtStatus()\n"
         return self.send_command(command)
     def set_end_color(self, red, green, blue):
