@@ -63,6 +63,10 @@ class MyCobot320DataException(Exception):
 class MercuryRobotException(Exception):
     pass
 
+class MyCobot630ProDataException(Exception):
+    pass
+
+
 def check_boolean(b):
     if b != 0 and b != 1:
         raise MyCobotDataException("This parameter needs to be 0 or 1")

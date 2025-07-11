@@ -9,13 +9,13 @@ import hashlib
 import math
 from multiprocessing import Lock
 import logging
-
 import numpy as np
-
 from pymycobot.log import setup_logging
 from pymycobot.tool_coords import *
+from pymycobot.error import MyCobot630ProDataException
 import time
-# from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
+from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
+
 
 error_For = "Parameter out of range, correct parameter range:"
 error_Jion = "Joint out of range, correct joint range:"
@@ -112,18 +112,18 @@ class ElephantRobot(object):
         Returns:
             str: Response from the robot.
         """
-        # with mutex:
-        #     self.tcp_client.send(command.encode())
+        with mutex:
+            self.tcp_client.send(command.encode())
 
-        #     recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
-        #     res_str = str(recv_data)
-        #     if self.debug:
-        #         print("recv = " + res_str)
-        #     res_arr = res_str.split(":")
-        #     if len(res_arr) == 2:
-        #         return res_arr[1]
-        #     else:
-        #         return ""
+            recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
+            res_str = str(recv_data)
+            if self.debug:
+                print("recv = " + res_str)
+            res_arr = res_str.split(":")
+            if len(res_arr) == 2:
+                return res_arr[1]
+            else:
+                return ""
 
         with mutex:
             if not command.endswith('\n'):
@@ -291,32 +291,32 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return self.string_to_coords(res)
 
-    # def get_angle(self, joint: Joint) -> float:
-    #     """Retrieves the angle of a specific joint.
+    def get_angle(self, joint: Joint) -> float:
+        """Retrieves the angle of a specific joint.
 
-    #     Args:
-    #         joint (Joint): specific joint.
+        Args:
+            joint (Joint): specific joint.
 
-    #     Example:
-    #         >>> e.get_angle(Joint.J1)
-    #         >>> 1.234
-    #         >>> e.get_angle(Joint.J2)
-    #         >>> -92.345
-    #         >>> e.get_angle(Joint.J3)
-    #         >>> 3.456
-    #         >>> e.get_angle(Joint.J4)
-    #         >>> -94.567
-    #         >>> e.get_angle(Joint.J5)
-    #         >>> 5.678
-    #         >>> e.get_angle(Joint.J6)
-    #         >>> 6.789
+        Example:
+            >>> e.get_angle(Joint.J1)
+            >>> 1.234
+            >>> e.get_angle(Joint.J2)
+            >>> -92.345
+            >>> e.get_angle(Joint.J3)
+            >>> 3.456
+            >>> e.get_angle(Joint.J4)
+            >>> -94.567
+            >>> e.get_angle(Joint.J5)
+            >>> 5.678
+            >>> e.get_angle(Joint.J6)
+            >>> 6.789
 
-    #     Returns:
-    #         float: Angle of the specified joint.
-    #     """
-    #     command = "get_angle(" + str(joint) + ")\n"
-    #     res = self.send_command(command)
-    #     return self.string_to_double(res)
+        Returns:
+            float: Angle of the specified joint.
+        """
+        command = "get_angle(" + str(joint) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
 
     def get_coords(self):
         """Retrieves the current coordinates of the robot.
@@ -328,32 +328,32 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return self.string_to_coords(res)
 
-    # def get_coord(self, axis: Axis) -> float:
-    #     """Retrieves the value of a specific coordinate axis.
+    def get_coord(self, axis: Axis) -> float:
+        """Retrieves the value of a specific coordinate axis.
 
-    #     Args:
-    #         axis (Axis): specified Axis.
+        Args:
+            axis (Axis): specified Axis.
 
-    #     Example:
-    #         >>> e.get_coord(Axis.X)
-    #         >>> 0.0
-    #         >>> e.get_coord(Axis.Y)
-    #         >>> 140.0
-    #         >>> e.get_coord(Axis.Z)
-    #         >>> 835.0
-    #         >>> e.get_coord(Axis.RX)
-    #         >>> 90.0
-    #         >>> e.get_coord(Axis.RY)
-    #         >>> 0.0
-    #         >>> e.get_coord(Axis.RZ)
-    #         >>> 180.0
+        Example:
+            >>> e.get_coord(Axis.X)
+            >>> 0.0
+            >>> e.get_coord(Axis.Y)
+            >>> 140.0
+            >>> e.get_coord(Axis.Z)
+            >>> 835.0
+            >>> e.get_coord(Axis.RX)
+            >>> 90.0
+            >>> e.get_coord(Axis.RY)
+            >>> 0.0
+            >>> e.get_coord(Axis.RZ)
+            >>> 180.0
 
-    #     Returns:
-    #         float: Value of the specified axis.
-    #     """
-    #     command = "get_coord(" + str(axis) + ")\n"
-    #     res = self.send_command(command)
-    #     return self.string_to_double(res)
+        Returns:
+            float: Value of the specified axis.
+        """
+        command = "get_coord(" + str(axis) + ")\n"
+        res = self.send_command(command)
+        return self.string_to_double(res)
 
     def get_speed(self):
         """Retrieves the current speed of the robot.
@@ -632,19 +632,19 @@ class ElephantRobot(object):
         res = self.send_command(command)
         return res
 
-    # def get_joint_loss_pkg(self, joint_number: Joint) -> int:
-    #     """Retrieves the loss package count for a specific joint.
+    def get_joint_loss_pkg(self, joint_number: Joint) -> int:
+        """Retrieves the loss package count for a specific joint.
 
-    #     Args:
-    #         joint_number (Joint): The joint number for which the loss package
-    #                               value is requested.
+        Args:
+            joint_number (Joint): The joint number for which the loss package
+                                  value is requested.
 
-    #     Returns:
-    #         int: The loss package count for the specified joint.
-    #     """
-    #     command = "get_joint_loss_pkg(" + str(joint_number.value) + ")\n"
-    #     res = self.send_command(command)
-    #     return int(self.string_to_double(res))
+        Returns:
+            int: The loss package count for the specified joint.
+        """
+        command = "get_joint_loss_pkg(" + str(joint_number.value) + ")\n"
+        res = self.send_command(command)
+        return int(self.string_to_double(res))
 
     # TODO: rename to set_coords()
     def write_coords(self, coords, speed):
@@ -1162,7 +1162,7 @@ class ElephantRobot(object):
     
     def Force_SetId(self, ID, value):
         if value < 1 or value > 254:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Force_SetId value must be 1 ~ 254, but received {}".format(value))
         command = "force_SetGripperId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
@@ -1173,14 +1173,14 @@ class ElephantRobot(object):
 
     def Force_SetEnabled(self, ID, value):
         if value < 0 or value > 1:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Force_SetEnabled value must be 0 ~ 1, but received {}".format(value))
         command = "force_SetGripperEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Force_SetAngle(self, ID, value):
         if value < 0 or value > 100:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Force_SetAngle value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetAngle(" + str(ID) + "," + str(value) + ")\n"
         # print(command)
@@ -1200,7 +1200,7 @@ class ElephantRobot(object):
     
     def Force_SetTorque(self, ID, value):
         if value < 0 or value > 100:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Force_SetTorque value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetGripperTorque(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
@@ -1211,21 +1211,21 @@ class ElephantRobot(object):
     
     def Force_SetOpen(self, ID, value):
         if value < 0 or value > 100:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Force_SetOpen value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetOpen(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Force_SetClose(self, ID, value):
         if value < 0 or value > 100:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Force_SetClose value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetClose(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Force_SetSpeed(self, ID, value):
         if value < 1 or value > 100:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Force_SetSpeed value must be 1 ~ 100, but received {}".format(value))
         command = "force_SetSpeed(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
@@ -1244,7 +1244,7 @@ class ElephantRobot(object):
     
     def Force_SetAbsAngle(self, ID, value):
         if value < 0 or value > 100:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The SetAbsAngle  value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetAbsAngle(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
@@ -1276,7 +1276,7 @@ class ElephantRobot(object):
     
     def Hand_SetId(self, ID, value):
         if value < 1 or value > 254:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Hand  value must be 1 ~ 254, but received {}".format(value))
         command = "Hand_SetId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
@@ -1287,24 +1287,24 @@ class ElephantRobot(object):
     
     def Hand_SetEnabled(self, ID, value):
         if value < 0 or value > 1:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The SetEnabled  value must be 0 ~ 1, but received {}".format(value))
         command = "Hand_SetEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Hand_SetJointAngle(self, ID, Jiont, value):
             if value < 0 or value > 100:
-                raise ValueError(
+                raise MyCobot630ProDataException(
             "The Angle value must be 0 ~ 100, but received {}".format(value))
             if Jiont < 1 or Jiont > 6:
-                raise ValueError(
+                raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
             command = "Hand_SetJointAngle(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
             return self.send_command(command)
     
     def Hand_GetJointAngle(self, ID, Jiont):
         if Jiont < 1 or Jiont > 6:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The gripper Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetJointAngle(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
@@ -1312,7 +1312,7 @@ class ElephantRobot(object):
     
     def Hand_SetJointCalibrate(self, ID, Jiont):
         if Jiont < 1 or Jiont > 6:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_SetJointCalibrate(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
@@ -1324,45 +1324,45 @@ class ElephantRobot(object):
     
     def Hand_SetTorque(self, ID, Jiont, value):
         if value < 0 or value > 100:
-                raise ValueError(
+                raise MyCobot630ProDataException(
             "The hand torque value must be 0 ~ 100, but received {}".format(value))
         if Jiont < 1 or Jiont > 6:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_SetTorque(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
     
     def Hand_GetTorque(self, ID, Jiont):
         if Jiont < 1 or Jiont > 6:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetTorque(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
     def Hand_SetSpeed(self, ID, Jiont, value):
         if value < 1 or value > 100:
-                raise ValueError(
+                raise MyCobot630ProDataException(
             "The Hand speed value must be 1 ~ 100, but received {}".format(value))
         if Jiont < 1 or Jiont > 6:
-             raise ValueError(
+             raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_SetSpeed(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
 
     def Hand_GetSpeed(self, ID, Jiont):
         if Jiont < 1 or Jiont > 6:
-             raise ValueError(
+             raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetSpeed(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
     def Hand_SetFullAngles(self, ID, angles, speed):
         if speed < 1 or speed > 100:
-                 raise ValueError(
+                 raise MyCobot630ProDataException(
             "The Hand speed value must be 1 ~ 100, but received {}".format(speed))
         if len(angles) == 6:
             if any(x < 0 or x > 100 for x in angles):
-                 raise ValueError(
+                 raise MyCobot630ProDataException(
             "The FullAngles value must be 0 ~ 100, but received {}".format(angles))
             else:
                 command = "Hand_SetFullAngles(" + str(ID) + "," + str(angles[0]) + "," \
@@ -1371,7 +1371,7 @@ class ElephantRobot(object):
                                         + str(angles[5])+ "," + str(speed) + ")\n"
                 return self.send_command(command)
         else:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "Enter the number of angles must be 6, but received {}".format(len(angles)))
 
     
@@ -1381,15 +1381,15 @@ class ElephantRobot(object):
 
     def Hand_SetCatch(self, ID, pose, value, num=0):
         if pose < 0 or pose > 4:
-                raise ValueError(
+                raise MyCobot630ProDataException(
             "The Hand pose value must be 0 ~ 4, but received {}".format(pose))
         if pose == 4:
             if value < 1 or value > 20:
-                raise ValueError(
+                raise MyCobot630ProDataException(
             "The pose is 4 so value must be 1 ~ 20, but received {}".format(value))
         else:
             if value < 0 or value > 5:
-                raise ValueError(
+                raise MyCobot630ProDataException(
             "The pose is less than 4 value must be 0 ~ 5, but received {}".format(value))
         if num <= 0:
             command = "Hand_SetCatch(" + str(ID) + "," + str(pose) + "," + str(value) + ")\n"
@@ -1414,10 +1414,10 @@ class ElephantRobot(object):
         return self.send_command(command)
     def set_end_color(self, red, green, blue):
         if red < 0 or green < 0 or blue < 0:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The input RGB parameter should be: 0~255, but received {},{},{}".format(red,green,blue))
         if red > 255 or green > 255 or blue > 255:
-            raise ValueError(
+            raise MyCobot630ProDataException(
             "The input RGB parameter should be: 0~255, but received {},{},{}".format(red,green,blue))
 
         command = "SetLedColor(" + str(red) + "," + str(green) + "," + str(blue) + ")\n"
@@ -1438,10 +1438,10 @@ if __name__ == "__main__":
     # ep.Force_SetAngle(14,0)
     # print(ep.Force_SetAngle(14,20))
     # angles = [100,100,100,100,100,100,100]
-    time.sleep(2)
+    # time.sleep(2)
     # try:
-    print(ep.set_end_color(255,256,255))  # 有可能触发 raise
-    # except ValueError as e:
+    # print(ep.set_end_color(255,256,255))  # 有可能触发 raise
+    # except MyCobot630ProDataException as e:
         # print("捕获到异常：", e)
     # print(ep.Force_SetId(14,255))
     # print(ep.get_coords())
