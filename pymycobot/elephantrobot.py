@@ -746,7 +746,7 @@ class ElephantRobot(object):
         Returns:
             int: State of the pin (0 or 1).
         """
-        command = "get_digital_in(" + str(pin_number) + ")\n"
+        command = "get_digital_in(" + str(int(pin_number)) + ")\n"
         res = self.send_command(command)
         return self.string_to_int(res)
 
@@ -759,7 +759,7 @@ class ElephantRobot(object):
         Returns:
             int: State of the pin (0 or 1).
         """
-        command = "get_digital_out(" + str(pin_number) + ")\n"
+        command = "get_digital_out(" + str(int(pin_number)) + ")\n"
         print(command)
         res = self.send_command(command)
         return self.string_to_int(res)
@@ -771,7 +771,13 @@ class ElephantRobot(object):
             pin_number (int): Pin number (0-63).
             pin_signal (int): Signal to set (0 or 1).
         """
-        command = "set_digital_out(" + str(pin_number) + "," + str(pin_signal) + ")\n"
+        command = (
+            "set_digital_out("
+            + str(int(pin_number))
+            + ","
+            + str(int(pin_signal))
+            + ")\n"
+        )
         self.send_command(command)
 
     def get_analog_in(self, pin_number):
@@ -783,7 +789,7 @@ class ElephantRobot(object):
         Returns:
             float: pin value
         """
-        command = "get_analog_in(" + str(pin_number) + ")\n"
+        command = "get_analog_in(" + str(int(pin_number)) + ")\n"
         res = self.send_command(command)
         return self.string_to_double(res)
 
@@ -796,7 +802,7 @@ class ElephantRobot(object):
         Returns:
             float: pin value
         """
-        command = "get_analog_out(" + str(pin_number) + ")\n"
+        command = "get_analog_out(" + str(int(pin_number)) + ")\n"
         res = self.send_command(command)
         return self.string_to_double(res)
 
@@ -807,7 +813,9 @@ class ElephantRobot(object):
             pin_number (int): pin number (0~63).
             pin_value (float): pin value
         """
-        command = "set_analog_out(" + str(pin_number) + "," + str(pin_value) + ")\n"
+        command = (
+            "set_analog_out(" + str(int(pin_number)) + "," + str(int(pin_value)) + ")\n"
+        )
         self.send_command(command)
 
     def get_joint_current(self, joint_number):
@@ -918,7 +926,7 @@ class ElephantRobot(object):
             enable (bool, optional): enable (True) or disable (False) manual
                                      brake control. Defaults to True.
         """
-        self.set_digital_out(DO.BRAKE_MANUAL_MODE_ENABLE, enable)
+        self.set_digital_out(DO.BRAKE_MANUAL_MODE_ENABLE.value, enable)
         time.sleep(0.05)
         for joint in Joint:
             self.release_joint_brake(joint, False)
@@ -930,7 +938,7 @@ class ElephantRobot(object):
             joint (Joint): joint Joint.J1 ~ Joint.J6
             release (bool): True to release, False to enable brake. Defaults to True.
         """
-        self.set_digital_out(DO(joint.value + DO.J1_BRAKE_RELEASE.value), release)
+        self.set_digital_out(DO(joint.value + DO.J1_BRAKE_RELEASE.value).value, release)
 
     def is_collision_detected(self):
         """Checks if collision is detected.
@@ -938,7 +946,7 @@ class ElephantRobot(object):
         Returns:
             bool: True if collision is detected, False otherwise.
         """
-        return self.get_digital_in(DI.COLLISION_DETECTED) == 1
+        return self.get_digital_in(DI.COLLISION_DETECTED.value) == 1
 
     def set_gripper_state(self, state, speed):
         """Sets gripper state.
