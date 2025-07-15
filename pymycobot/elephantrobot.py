@@ -112,18 +112,18 @@ class ElephantRobot(object):
         Returns:
             str: Response from the robot.
         """
-        with mutex:
-            self.tcp_client.send(command.encode())
+        # with mutex:
+        #     self.tcp_client.send(command.encode())
 
-            recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
-            res_str = str(recv_data)
-            if self.debug:
-                print("recv = " + res_str)
-            res_arr = res_str.split(":")
-            if len(res_arr) == 2:
-                return res_arr[1]
-            else:
-                return ""
+        #     recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
+        #     res_str = str(recv_data)
+        #     if self.debug:
+        #         print("recv = " + res_str)
+        #     res_arr = res_str.split(":")
+        #     if len(res_arr) == 2:
+        #         return res_arr[1]
+        #     else:
+        #         return ""
 
         with mutex:
             if not command.endswith('\n'):
