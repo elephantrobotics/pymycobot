@@ -52,9 +52,6 @@ class Pro630Api(CloseLoop):
 
         self.calibration_parameters = calibration_parameters
         self.language = get_local_language()
-        self.lock = threading.Lock()
-        self.lock_out = threading.Lock()
-
         self.read_threading = threading.Thread(target=self.read_thread, args=(method, ))
         self.read_threading.daemon = True
         self.read_threading.start()

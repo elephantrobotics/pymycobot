@@ -1,4 +1,5 @@
 # coding=utf-8
+import threading
 import time
 import struct
 from datetime import datetime
@@ -23,6 +24,8 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         self.sync_mode = True
         self.all_debug_data = []
         self.all_read_data = b""
+        self.lock_out = threading.Lock()
+        self.lock = threading.Lock()
 
     def _send_command(self, genre, real_command):
         self.write_command.append(genre)
