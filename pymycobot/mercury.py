@@ -24,8 +24,6 @@ class Mercury(MercuryCommandGenerator):
         self._serial_port.timeout = timeout
         self._serial_port.rts = False
         self._serial_port.open()
-        self.lock = threading.Lock()
-        self.lock_out = threading.Lock()
         self.read_threading = threading.Thread(target=self.read_thread)
         self.read_threading.daemon = True
         self.read_threading.start()
