@@ -152,28 +152,6 @@ class ElephantRobot(object):
                 return res_arr[1]
             else:
                 return ""
-
-        with mutex:
-            if not command.endswith('\n'):
-                command += '\n'
-
-            self.tcp_client.send(command.encode())
-
-            self.tcp_client.settimeout(10.0)  # 设置 2 秒超时
-            try:
-                recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
-            except socket.timeout:
-                print("等待服务器回应超时")
-                return ""
-
-            res_str = str(recv_data)
-            if self.debug:
-                print("recv = " + res_str)
-            res_arr = res_str.split(":")
-            if len(res_arr) == 2:
-                return res_arr[1]
-            else:
-                return ""
     def string_to_coords(self, data):
         """Converts a string representation of coordinates to a list.
 
