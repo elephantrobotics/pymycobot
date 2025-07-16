@@ -110,18 +110,6 @@ class ElephantRobot(object):
         Returns:
             str: Response from the robot.
         """
-        # with mutex:
-        #     self.tcp_client.send(command.encode())
-
-        #     recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
-        #     res_str = str(recv_data)
-        #     if self.debug:
-        #         print("recv = " + res_str)
-        #     res_arr = res_str.split(":")
-        #     if len(res_arr) == 2:
-        #         return res_arr[1]
-        #     else:
-        #         return ""
 
         with mutex:
             if not command.endswith('\n'):
@@ -133,7 +121,7 @@ class ElephantRobot(object):
             try:
                 recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
             except socket.timeout:
-                print("等待服务器回应超时")
+                print("Waiting for server response timeout")
                 return ""
 
             res_str = str(recv_data)
@@ -1159,32 +1147,38 @@ class ElephantRobot(object):
         self.write_coords(flange_coords, speed)
     #力控#
     def force_get_firmware(self, ID):
-        """
-        获取力控主版本号
+        """Obtain the main version number of the power control system
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return information
         """
         command = "force_GetFirmware(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_get_modified(self, ID):
-        """
-        获取力控更新版本号
+        """Obtain the updated version number of Power Control
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return information
         """
         command = "force_GetModified(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_set_id(self, ID, value):
-        """
-        设置力控ID
+        """Set force control ID
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): ID值(1 ~ 254)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): ID value (1~254).
+        
+        Returns:
+            str: return message
         """
         if value < 1 or value > 254:
             raise MyCobot630ProDataException(
@@ -1193,22 +1187,26 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def force_get_id(self, ID):
-        """
-        获取力控机器ID
+        """Obtain the ID of the force control machine
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+         Returns:
+            str: return ID value
         """
         command = "force_GetGripperId(" + str(ID) + ")\n"
         return self.send_command(command)
 
     def force_set_enabled(self, ID, value):
-        """
-        设置力控使能
+        """Set force control enable
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 使能值(0 or 1)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Enable value (0 or 1).
+
+        Returns:
+            str: return message
         """
         if value < 0 or value > 1:
             raise MyCobot630ProDataException(
@@ -1217,12 +1215,14 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def force_set_angle(self, ID, value):
-        """
-        设置力控角度
+        """Set force control angle
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 角度值(0 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return message
         """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
@@ -1232,42 +1232,49 @@ class ElephantRobot(object):
         return self.send_command(command)
 
     def force_get_angle(self, ID):
-        """
-        获取力控角度
+        """Obtain force control angle
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return angle value
         """
         command = "force_GetGripperAngle(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_set_calibrate(self, ID):
-        """
-        初始化力控
+        """Initialize force control
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
         """
         command = "force_SetGripperCalibrate(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_get_gripper(self, ID):
-        """
-        获取力控运动状态
+        """Obtain the motion status of force control
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return status value
         """
         command = "force_GetGripper(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_set_torque(self, ID, value):
-        """
-        设置力控扭矩值
+        """Set the torque value for force control
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 扭矩值(0 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Torque value (0~100).
+        Returns:
+            str: return message
         """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
@@ -1276,22 +1283,26 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def force_get_torque(self, ID):
-        """
-        获取力控扭矩
+        """Obtain force control torque
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return torque value
         """
         command = "force_GetGripperTorque(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_set_open(self, ID, value):
-        """
-        设置力控IO张开角度
+        """Set the opening angle of the force control IO
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 角度值(0 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return message
         """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
@@ -1300,12 +1311,14 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def force_set_close(self, ID, value):
-        """
-        设置力控IO闭合角度
+        """Set the closing angle of the force control IO
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 角度值(0 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return angle value
         """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
@@ -1314,12 +1327,14 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def force_set_speed(self, ID, value):
-        """
-        设置力控运动速度
+        """Set force control motion speed
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 速度值(1 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Speed value (1~100).
+
+        Returns:
+            str: return message
         """
         if value < 1 or value > 100:
             raise MyCobot630ProDataException(
@@ -1328,43 +1343,51 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def force_get_speed(self, ID):
-        """
-        获取力控运动速度
+        """Obtain force controlled motion speed
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return speed value
         """
         command = "force_GetSpeed(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_get_open(self, ID):
-        """
-        获取力控IO张开角度
+        """Obtain the opening angle of the force control IO
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 角度值(0 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return angle value
         """
         command = "force_GetOpen(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_get_close(self, ID):
-        """
-        获取力控IO闭合角度
+        """ Obtain the closing angle of the force control IO
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return angle value
         """
         command = "force_GetClose(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_set_absangle(self, ID, value):
-        """
-        设置力控绝对角度
+        """Set the absolute angle of force control
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 角度值(0 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return message
         """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
@@ -1373,74 +1396,85 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def force_pause(self, ID):
-        """
-        暂停绝对指令队列
+        """Pause absolute instruction queue
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+           ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
         """
         command = "force_Pause(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_resume(self, ID):
-        """
-        开启绝对指令队列
+        """Open absolute command queue
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
         """
         
         command = "force_Resume(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def force_stop(self, ID):
-        """
-        设置绝对指令停止
+        """Set absolute command to stop
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
         """
         command = "force_Stop(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def froce_get_queuecount(self, ID):
-        """
-        获取力控绝对指令队列数
+        """Obtain the number of absolute command queues for force control
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
         """
         command = "froce_GetQueueCount(" + str(ID) + ")\n"
         return self.send_command(command)
     
     #三指#
     def hand_get_firmware(self, ID):
-        """
-        获取三指主版本号
+        """Obtain the main version number of the three fingers
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return major version value
         """
         command = "Hand_GetFirmware(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def hand_get_modified(self, ID):
-        """
-        获取三指更新版本号
+        """Obtain the updated version number of the three fingers
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return minor version
         """
         command = "Hand_GetModified(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def hand_set_id(self, ID, value):
-        """
-        设置三指机器ID
+        """Set three finger machine ID
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 速度值(1 ~ 254)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): hand id value (1~254).
+        
+        Returns:
+            str: return message
         """
         if value < 1 or value > 254:
             raise MyCobot630ProDataException(
@@ -1449,22 +1483,26 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def hand_get_id(self, ID):
-        """
-        获取三指机器ID
+        """Obtain the three finger machine ID
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return id value
         """
         command = "Hand_GetId(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def hand_set_enabled(self, ID, value):
-        """
-        夹爪使能
+        """Claw enable
 
-        参数:
-            ID (int): 机械手 ID。
-            value (int): 使能值(0 or 1)。
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Enable value (0 or 1).
+        
+        Returns:
+            str: return message
         """
         if value < 0 or value > 1:
             raise MyCobot630ProDataException(
@@ -1473,13 +1511,15 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def hand_set_joint_angle(self, ID, Jiont, value):
-            """
-            设置但关节角度。
+            """Set the angle of a single joint.
 
-            参数:
-                ID (int): 机械手 ID。
-                joint (int): 关节编号(1 ~ 6)。
-                value (int): 角度值(0 ~ 100)。
+            Args:
+                ID (int): Robot arm ID.
+                Joint (int): Joint number (1~6).
+                Value (int): Angle value (0~100).
+            
+            Returns:
+                str: return message
             """
             if value < 0 or value > 100:
                 raise MyCobot630ProDataException(
@@ -1491,12 +1531,14 @@ class ElephantRobot(object):
             return self.send_command(command)
     
     def hand_get_joint_angle(self, ID, Jiont):
-        """
-        获取但关节角度。
+        """Obtain the angle of a single joint.
 
-        参数:
-            ID (int): 机械手 ID。
-            joint (int): 关节编号(1 ~ 6)。
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return Single joint angle value
         """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
@@ -1506,12 +1548,14 @@ class ElephantRobot(object):
     
     
     def hand_set_joint_calibrate(self, ID, Jiont):
-        """
-        初始化关节
+        """Initialize joints
 
-        参数:
-            ID (int): 机械手 ID。
-            joint (int): 关节编号(1 ~ 6)。
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return message
         """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
@@ -1521,23 +1565,27 @@ class ElephantRobot(object):
     
 
     def hand_get_state(self, ID):
-        """
-        获取三指运动状态。
+        """Obtain the motion status of the three fingers.
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return Numerical value of motion state
         """
         command = "Hand_GetHand(" + str(ID) + ")\n"
         return self.send_command(command)
     
     def hand_set_torque(self, ID, Jiont, value):
-        """
-        设置三子关节扭矩。
+        """Set the torque of the three finger joint.
 
-        参数:
-            ID (int): 机械手 ID。
-            joint (int): 关节编号(1 ~ 6)。
-            value (int): 速度值(0 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+            Value (int): Torque value (0~100).
+        
+        Returns:
+            str: return message
         """
         if value < 0 or value > 100:
                 raise MyCobot630ProDataException(
@@ -1549,12 +1597,14 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def hand_get_torque(self, ID, Jiont):
-        """
-        获取三指关节扭矩。
+        """Obtain the torque of the three finger joint.
 
-        参数:
-            ID (int): 机械手 ID。
-            joint (int): 关节编号(1 ~ 6)。
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return Single Joint torque value
         """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
@@ -1564,13 +1614,15 @@ class ElephantRobot(object):
     
     #设置三指运动速度
     def hand_set_speed(self, ID, Jiont, value):
-        """
-        设置三指关节速度。
+        """Set the speed of the three finger joint.
 
-        参数:
-            ID (int): 机械手 ID。
-            joint (int): 关节编号(1 ~ 6)。
-            value (int): 速度值(1 ~ 100)。
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+            Value (int): Speed value (1~100).
+        
+        Returns:
+            str: return message
         """
         if value < 1 or value > 100:
                 raise MyCobot630ProDataException(
@@ -1583,12 +1635,14 @@ class ElephantRobot(object):
 
     #获取三指运动速度
     def hand_get_speed(self, ID, Jiont):
-        """
-        获取三指关节速度。
+        """Obtain the velocity of the three finger joint.
 
-        参数:
-            ID (int): 机械手 ID。
-            joint (int): 关节编号(1 ~ 6)。
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return Single Joint speed value
         """
         if Jiont < 1 or Jiont > 6:
              raise MyCobot630ProDataException(
@@ -1597,14 +1651,15 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def hand_set_fullangles(self, ID, angles, speed):
-        """
-        设置三指全关节角度。
+        """Set the angle of the three finger joint.
 
-        参数:
-            ID (int): 机械手 ID。
-            angles (list of int): 包含6个角度数值的列表, 每个数值范围必须(0 ~ 100)。
-            value (int): 速度值(1 ~ 100)。
-
+        Args:
+            ID (int): Robot arm ID.
+            Angles (list of int): A list containing 6 angle values, each value range must be (0~100).
+            Value (int): Speed value (1~100).
+        
+        Returns:
+            str: return message
         """
         if speed < 1 or speed > 100:
                  raise MyCobot630ProDataException(
@@ -1624,25 +1679,29 @@ class ElephantRobot(object):
             "Enter the number of angles must be 6, but received {}".format(len(angles)))
 
     def hand_get_fullangles(self, ID):
-        """
-        获取三指全关节角度。
+        """Obtain the total joint angle of three fingers.
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return All Joint angle value
 。
         """
         command = "Hand_GetFullAngles(" + str(ID) + ")\n"
         return self.send_command(command)
 
     def hand_set_catch(self, ID, pose, value, num=0):   
-        """
-        三指手势控制。
+        """Three finger gesture control.
 
-        参数:
-            ID (int): 机械手 ID。
-            pose (int): 手势类型(0 ~ 4)。
-            value (int): 阈值(0 ~ 5), 当pose为4, value为(0~20)。
-            num (int): 不传入值时默认为所有手运动, 传入值时只运动pose类型的关节。
+        Args:
+            ID (int): Robot arm ID.
+            Pose (int): gesture type (0~4).
+            Value (int): threshold (0~5), when pose is 4, value is (0~20).
+            Num (int): defaults to all hand movements when no value is passed in, and only moves pose type joints when a value is passed in.
+
+        Returns:
+            str: return message
         """
         if pose < 0 or pose > 4:
                 raise MyCobot630ProDataException(
@@ -1662,11 +1721,13 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     def hand_get_model(self,ID):    
-        """
-        获取三指机器类型, 如左手0, 或者右手1。
+        """Obtain the type of three finger machine, such as left-hand 0 or right-hand 1.
 
-        参数:
-            ID (int): 机械手 ID。
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return finger machine type
         """
         command = "Hand_GetModel(" + str(ID) + ")\n"
         return self.send_command(command)
@@ -1674,34 +1735,42 @@ class ElephantRobot(object):
 
     #末端
     def get_end_firmware(self):             #主版本
-        """
-        获取末端主版本号。
+        """Obtain the final major version number.
+
+        Returns:
+            str: return Atom major version number
 
         """
         command = "GetFirmwareEnd()\n"
         return self.send_command(command)
     def get_end_modify(self):                #更新版本
-        """
-        获取末端更新版本号。
+        """Obtain the end update version number.
+
+        Returns:
+            str: return Atom update version number
 
         """
         command = "GetModifyEnd()\n"
         return self.send_command(command)
     def get_end_bt_status(self):                #获取按键状态
-        """
-        获取末端按键状态。
+        """Get the status of the end button.
+
+        Returns:
+            str: return message
 
         """
         command = "SetEndBtStatus()\n"
         return self.send_command(command)
     def set_end_color(self, red, green, blue):
-        """
-        获取末端颜色。
+        """Obtain the end color.
 
-        参数:
+        Args:
             red (int): (0 ~ 255)。
             green (int): (0 ~ 255)。
             blue (int): (0 ~ 255)。
+        
+        Returns:
+            str: return message
         """
         if red < 0 or green < 0 or blue < 0:
             raise MyCobot630ProDataException(
