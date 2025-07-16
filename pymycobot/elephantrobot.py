@@ -1611,7 +1611,7 @@ class ElephantRobot(object):
         command = "Hand_GetTorque(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
-    #设置三指运动速度
+   
     def hand_set_speed(self, ID, Jiont, value):
         """Set the speed of the three finger joint.
 
@@ -1632,7 +1632,7 @@ class ElephantRobot(object):
         command = "Hand_SetSpeed(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
 
-    #获取三指运动速度
+ 
     def hand_get_speed(self, ID, Jiont):
         """Obtain the velocity of the three finger joint.
 
@@ -1733,7 +1733,7 @@ class ElephantRobot(object):
 
 
     #末端
-    def get_end_firmware(self):             #主版本
+    def get_end_firmware(self):             
         """Obtain the final major version number.
 
         Returns:
@@ -1742,7 +1742,7 @@ class ElephantRobot(object):
         """
         command = "GetFirmwareEnd()\n"
         return self.send_command(command)
-    def get_end_modify(self):                #更新版本
+    def get_end_modify(self):                
         """Obtain the end update version number.
 
         Returns:
@@ -1751,7 +1751,7 @@ class ElephantRobot(object):
         """
         command = "GetModifyEnd()\n"
         return self.send_command(command)
-    def get_end_bt_status(self):                #获取按键状态
+    def get_end_bt_status(self):                
         """Get the status of the end button.
 
         Returns:
