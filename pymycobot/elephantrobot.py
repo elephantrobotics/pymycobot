@@ -89,7 +89,6 @@ class ElephantRobot(object):
         """
         try:
             self.tcp_client.connect(self.ADDR)
-            # print("尝试连接到:", self.ADDR)
             self.is_client_started = True
             return True
         except Exception as e:
