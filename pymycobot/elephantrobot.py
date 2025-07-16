@@ -19,14 +19,6 @@ import time
 from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
 
 
-error_For = "Parameter out of range, correct parameter range:"
-error_Jion = "Joint out of range, correct joint range:"
-error_Angle = "Angle out of range, correct angle range:"
-
-error_For = "Parameter out of range, correct parameter range:"
-error_Jion = "Joint out of range, correct joint range:"
-error_Angle = "Angle out of range, correct angle range:"
-
 COORDS_EPSILON = 0.50
 
 
@@ -137,7 +129,7 @@ class ElephantRobot(object):
 
             self.tcp_client.send(command.encode())
 
-            self.tcp_client.settimeout(10.0)  # 设置 2 秒超时
+            self.tcp_client.settimeout(10.0)  # 设置 10 秒超时
             try:
                 recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
             except socket.timeout:
@@ -1166,33 +1158,72 @@ class ElephantRobot(object):
         flange_coords = toolToflange(tool_coords, self.tool_matrix)
         self.write_coords(flange_coords, speed)
     #力控#
-    def Force_GetFirmware(self, ID):
+    def force_get_firmware(self, ID):
+        """
+        获取力控主版本号
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetFirmware(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetModified(self, ID):
+    def force_get_modified(self, ID):
+        """
+        获取力控更新版本号
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetModified(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetId(self, ID, value):
+    def force_set_id(self, ID, value):
+        """
+        设置力控ID
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): ID值(1 ~ 254)。
+        """
         if value < 1 or value > 254:
             raise MyCobot630ProDataException(
             "The Force_SetId value must be 1 ~ 254, but received {}".format(value))
         command = "force_SetGripperId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_GetId(self, ID):
+    def force_get_id(self, ID):
+        """
+        获取力控机器ID
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetGripperId(" + str(ID) + ")\n"
         return self.send_command(command)
 
-    def Force_SetEnabled(self, ID, value):
+    def force_set_enabled(self, ID, value):
+        """
+        设置力控使能
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 使能值(0 or 1)。
+        """
         if value < 0 or value > 1:
             raise MyCobot630ProDataException(
             "The Force_SetEnabled value must be 0 ~ 1, but received {}".format(value))
         command = "force_SetGripperEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_SetAngle(self, ID, value):
+    def force_set_angle(self, ID, value):
+        """
+        设置力控角度
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 角度值(0 ~ 100)。
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetAngle value must be 0 ~ 100, but received {}".format(value))
@@ -1200,113 +1231,256 @@ class ElephantRobot(object):
         # print(command)
         return self.send_command(command)
 
-    def Force_GetAngle(self, ID):
+    def force_get_angle(self, ID):
+        """
+        获取力控角度
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetGripperAngle(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetCalibrate(self, ID):
+    def force_set_calibrate(self, ID):
+        """
+        初始化力控
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_SetGripperCalibrate(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetGripper(self, ID):
+    def force_get_gripper(self, ID):
+        """
+        获取力控运动状态
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetGripper(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetTorque(self, ID, value):
+    def force_set_torque(self, ID, value):
+        """
+        设置力控扭矩值
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 扭矩值(0 ~ 100)。
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetTorque value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetGripperTorque(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_GetTorque(self, ID):
+    def force_get_torque(self, ID):
+        """
+        获取力控扭矩
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetGripperTorque(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetOpen(self, ID, value):
+    def force_set_open(self, ID, value):
+        """
+        设置力控IO张开角度
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 角度值(0 ~ 100)。
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetOpen value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetOpen(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_SetClose(self, ID, value):
+    def force_set_close(self, ID, value):
+        """
+        设置力控IO闭合角度
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 角度值(0 ~ 100)。
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetClose value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetClose(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_SetSpeed(self, ID, value):
+    def force_set_speed(self, ID, value):
+        """
+        设置力控运动速度
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 速度值(1 ~ 100)。
+        """
         if value < 1 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetSpeed value must be 1 ~ 100, but received {}".format(value))
         command = "force_SetSpeed(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_GetSpeed(self, ID):
+    def force_get_speed(self, ID):
+        """
+        获取力控运动速度
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetSpeed(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetOpen(self, ID):
+    def force_get_open(self, ID):
+        """
+        获取力控IO张开角度
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 角度值(0 ~ 100)。
+        """
         command = "force_GetOpen(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetClose(self, ID):
+    def force_get_close(self, ID):
+        """
+        获取力控IO闭合角度
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_GetClose(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetAbsAngle(self, ID, value):
+    def force_set_absangle(self, ID, value):
+        """
+        设置力控绝对角度
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 角度值(0 ~ 100)。
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The SetAbsAngle  value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetAbsAngle(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_Pause(self, ID):
+    def force_pause(self, ID):
+        """
+        暂停绝对指令队列
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_Pause(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_Resume(self, ID):
+    def force_resume(self, ID):
+        """
+        开启绝对指令队列
+
+        参数:
+            ID (int): 机械手 ID。
+        """
+        
         command = "force_Resume(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_Stop(self, ID):
+    def force_stop(self, ID):
+        """
+        设置绝对指令停止
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "force_Stop(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Froce_GetQueueCount(self, ID):
+    def froce_get_queuecount(self, ID):
+        """
+        获取力控绝对指令队列数
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "froce_GetQueueCount(" + str(ID) + ")\n"
         return self.send_command(command)
     
     #三指#
-    def Hand_GetFirmware(self, ID):
+    def hand_get_firmware(self, ID):
+        """
+        获取三指主版本号
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "Hand_GetFirmware(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_GetModified(self, ID):
+    def hand_get_modified(self, ID):
+        """
+        获取三指更新版本号
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "Hand_GetModified(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetId(self, ID, value):
+    def hand_set_id(self, ID, value):
+        """
+        设置三指机器ID
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 速度值(1 ~ 254)。
+        """
         if value < 1 or value > 254:
             raise MyCobot630ProDataException(
             "The Hand  value must be 1 ~ 254, but received {}".format(value))
         command = "Hand_SetId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Hand_GetId(self, ID):
+    def hand_get_id(self, ID):
+        """
+        获取三指机器ID
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "Hand_GetId(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetEnabled(self, ID, value):
+    def hand_set_enabled(self, ID, value):
+        """
+        夹爪使能
+
+        参数:
+            ID (int): 机械手 ID。
+            value (int): 使能值(0 or 1)。
+        """
         if value < 0 or value > 1:
             raise MyCobot630ProDataException(
             "The SetEnabled  value must be 0 ~ 1, but received {}".format(value))
         command = "Hand_SetEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetJointAngle(self, ID, Jiont, value):
+    def hand_set_joint_angle(self, ID, Jiont, value):
+            """
+            设置但关节角度。
+
+            参数:
+                ID (int): 机械手 ID。
+                joint (int): 关节编号(1 ~ 6)。
+                value (int): 角度值(0 ~ 100)。
+            """
             if value < 0 or value > 100:
                 raise MyCobot630ProDataException(
             "The Angle value must be 0 ~ 100, but received {}".format(value))
@@ -1316,7 +1490,14 @@ class ElephantRobot(object):
             command = "Hand_SetJointAngle(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
             return self.send_command(command)
     
-    def Hand_GetJointAngle(self, ID, Jiont):
+    def hand_get_joint_angle(self, ID, Jiont):
+        """
+        获取但关节角度。
+
+        参数:
+            ID (int): 机械手 ID。
+            joint (int): 关节编号(1 ~ 6)。
+        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The gripper Jiont value must be 1 ~ 6, but received {}".format(Jiont))
@@ -1324,7 +1505,14 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     
-    def Hand_SetJointCalibrate(self, ID, Jiont):
+    def hand_set_joint_calibrate(self, ID, Jiont):
+        """
+        初始化关节
+
+        参数:
+            ID (int): 机械手 ID。
+            joint (int): 关节编号(1 ~ 6)。
+        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
@@ -1332,11 +1520,25 @@ class ElephantRobot(object):
         return self.send_command(command)
     
 
-    def Hand_GetHand(self, ID):
+    def hand_get_state(self, ID):
+        """
+        获取三指运动状态。
+
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "Hand_GetHand(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetTorque(self, ID, Jiont, value):
+    def hand_set_torque(self, ID, Jiont, value):
+        """
+        设置三子关节扭矩。
+
+        参数:
+            ID (int): 机械手 ID。
+            joint (int): 关节编号(1 ~ 6)。
+            value (int): 速度值(0 ~ 100)。
+        """
         if value < 0 or value > 100:
                 raise MyCobot630ProDataException(
             "The hand torque value must be 0 ~ 100, but received {}".format(value))
@@ -1346,14 +1548,30 @@ class ElephantRobot(object):
         command = "Hand_SetTorque(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Hand_GetTorque(self, ID, Jiont):
+    def hand_get_torque(self, ID, Jiont):
+        """
+        获取三指关节扭矩。
+
+        参数:
+            ID (int): 机械手 ID。
+            joint (int): 关节编号(1 ~ 6)。
+        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetTorque(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetSpeed(self, ID, Jiont, value):
+    #设置三指运动速度
+    def hand_set_speed(self, ID, Jiont, value):
+        """
+        设置三指关节速度。
+
+        参数:
+            ID (int): 机械手 ID。
+            joint (int): 关节编号(1 ~ 6)。
+            value (int): 速度值(1 ~ 100)。
+        """
         if value < 1 or value > 100:
                 raise MyCobot630ProDataException(
             "The Hand speed value must be 1 ~ 100, but received {}".format(value))
@@ -1363,14 +1581,31 @@ class ElephantRobot(object):
         command = "Hand_SetSpeed(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
 
-    def Hand_GetSpeed(self, ID, Jiont):
+    #获取三指运动速度
+    def hand_get_speed(self, ID, Jiont):
+        """
+        获取三指关节速度。
+
+        参数:
+            ID (int): 机械手 ID。
+            joint (int): 关节编号(1 ~ 6)。
+        """
         if Jiont < 1 or Jiont > 6:
              raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetSpeed(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetFullAngles(self, ID, angles, speed):
+    def hand_set_fullangles(self, ID, angles, speed):
+        """
+        设置三指全关节角度。
+
+        参数:
+            ID (int): 机械手 ID。
+            angles (list of int): 包含6个角度数值的列表, 每个数值范围必须(0 ~ 100)。
+            value (int): 速度值(1 ~ 100)。
+
+        """
         if speed < 1 or speed > 100:
                  raise MyCobot630ProDataException(
             "The Hand speed value must be 1 ~ 100, but received {}".format(speed))
@@ -1388,12 +1623,27 @@ class ElephantRobot(object):
             raise MyCobot630ProDataException(
             "Enter the number of angles must be 6, but received {}".format(len(angles)))
 
-    
-    def Hand_GetFullAngles(self, ID):
+    def hand_get_fullangles(self, ID):
+        """
+        获取三指全关节角度。
+
+        参数:
+            ID (int): 机械手 ID。
+。
+        """
         command = "Hand_GetFullAngles(" + str(ID) + ")\n"
         return self.send_command(command)
 
-    def Hand_SetCatch(self, ID, pose, value, num=0):
+    def hand_set_catch(self, ID, pose, value, num=0):   
+        """
+        三指手势控制。
+
+        参数:
+            ID (int): 机械手 ID。
+            pose (int): 手势类型(0 ~ 4)。
+            value (int): 阈值(0 ~ 5), 当pose为4, value为(0~20)。
+            num (int): 不传入值时默认为所有手运动, 传入值时只运动pose类型的关节。
+        """
         if pose < 0 or pose > 4:
                 raise MyCobot630ProDataException(
             "The Hand pose value must be 0 ~ 4, but received {}".format(pose))
@@ -1410,23 +1660,49 @@ class ElephantRobot(object):
         else :
             command = "Hand_SetCatch(" + str(ID) + "," + str(pose) + ","+ str(value) +  "," + str(num) +")\n"
         return self.send_command(command)
+    
+    def hand_get_model(self,ID):    
+        """
+        获取三指机器类型, 如左手0, 或者右手1。
 
-    def Hand_GetModel(self,ID):
+        参数:
+            ID (int): 机械手 ID。
+        """
         command = "Hand_GetModel(" + str(ID) + ")\n"
         return self.send_command(command)
 
 
     #末端
-    def get_end_Firmware(self):             #主版本
+    def get_end_firmware(self):             #主版本
+        """
+        获取末端主版本号。
+
+        """
         command = "GetFirmwareEnd()\n"
         return self.send_command(command)
-    def get_end_Modify(self):                #更新版本
+    def get_end_modify(self):                #更新版本
+        """
+        获取末端更新版本号。
+
+        """
         command = "GetModifyEnd()\n"
         return self.send_command(command)
     def get_end_bt_status(self):                #获取按键状态
+        """
+        获取末端按键状态。
+
+        """
         command = "SetEndBtStatus()\n"
         return self.send_command(command)
     def set_end_color(self, red, green, blue):
+        """
+        获取末端颜色。
+
+        参数:
+            red (int): (0 ~ 255)。
+            green (int): (0 ~ 255)。
+            blue (int): (0 ~ 255)。
+        """
         if red < 0 or green < 0 or blue < 0:
             raise MyCobot630ProDataException(
             "The input RGB parameter should be: 0~255, but received {},{},{}".format(red,green,blue))
@@ -1449,7 +1725,7 @@ if __name__ == "__main__":
     # print("发送指令")
     # Jiont = [100,100,100,100,100,100]
     # time.sleep(2)
-    # ep.Force_SetAngle(14,0)
+    # ep.force_get_angle(14,0)
     # print(ep.Force_SetAngle(14,20))
     # angles = [100,100,100,100,100,100,100]
     # time.sleep(2)
