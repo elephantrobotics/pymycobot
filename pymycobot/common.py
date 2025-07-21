@@ -473,8 +473,7 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
-    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest",
-                       "Pro450Client"]
+    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client"]
 
     def __init__(self, debug=False):
         """
@@ -505,8 +504,7 @@ class DataProcessor(object):
 
         elif genre in [76, 77]:
             command_data = [command_data[0]] + self._encode_int16(command_data[1] * 10)
-        elif genre == 115 and self.__class__.__name__ not in self.crc_robot_class and self.__class__.__name__ not in [
-            'MyArmC', 'MyArmM']:
+        elif genre == 115 and self.__class__.__name__ not in self.crc_robot_class and self.__class__.__name__ not in ['MyArmC', 'MyArmM']:
             command_data = [command_data[1], command_data[3]]
         LEN = len(command_data) + 2
 
@@ -614,8 +612,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SET_DYNAMIC_PARAMETERS] and index in [0,
-                                                                                                                1] and _class in self.crc_robot_class:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SET_DYNAMIC_PARAMETERS] and index in [0,1] and _class in self.crc_robot_class:
                     for data in args[index]:
                         byte_value = int(data).to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -750,13 +747,9 @@ class DataProcessor(object):
                             if data_bin[data_bin_len - 1 - j] != 0:
                                 error_list.append(j)
                                 if locale_lang == "zh_CN":
-                                    print("错误: 关节{} - {}".format(i + 1,
-                                                                     robot_320_info[locale_lang][error_key].get(j,
-                                                                                                                255)))
+                                    print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
                                 else:
-                                    print("Error: Joint{} - {}".format(i + 1,
-                                                                       robot_320_info[locale_lang][error_key].get(j,
-                                                                                                                  255)))
+                                    print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
                         res[i] = error_list
         elif data_len == 2:
             if genre in [
