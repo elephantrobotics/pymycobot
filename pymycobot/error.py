@@ -655,7 +655,7 @@ def calibration_parameters(**kwargs):
                         % value
                     )
             elif parameter == 'flag':
-                check_0_or_1(parameter, value, [0, 1, 254], value_type, MyCobot320DataException, int)
+                check_0_or_1(parameter, value, [0, 1], value_type, MyCobot320DataException, int)
             elif parameter == 'gripper_type':
                 check_0_or_1(parameter, value, [1, 3, 4], value_type, MyCobot320DataException, int)
             elif parameter == '_type_1':
@@ -911,7 +911,12 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MyCobot320DataException, int)
 
             elif parameter == 'rank_mode':
-                check_0_or_1(parameter, value, [0, 1, 2, 3, 4, 5], value_type, MyCobot320DataException, int)
+                pinch_pose_val = kwargs.get("pinch_pose", None)
+                if pinch_pose_val == 4:
+                    valid_range = list(range(1, 21))  # [1 ~ 20]
+                else:
+                    valid_range = list(range(0, 6))  # [0 ~ 5]
+                check_0_or_1(parameter, value, valid_range, value_type, MyCobot320DataException, int)
 
             elif parameter == 'idle_flag':
                 check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MyCobot320DataException, int)

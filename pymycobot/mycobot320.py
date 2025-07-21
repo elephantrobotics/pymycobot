@@ -170,6 +170,7 @@ class MyCobot320(CommandGenerator):
                 self._write(self._flatten(real_command))
                 data = self._read(genre, real_command=real_command)
                 res = self._process_received(data, genre)
+
         if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
                                                                                          ProtocolCode.GET_JOINT_MIN_ANGLE,
                                                                                          ProtocolCode.GET_JOINT_MAX_ANGLE,
@@ -205,6 +206,8 @@ class MyCobot320(CommandGenerator):
             ProtocolCode.SET_TOQUE_GRIPPER,
         ]:
             return self._process_single(res)
+        elif genre == ProtocolCode.GET_ROBOT_STATUS:
+            return self._parse_high_low_bytes(res)
         elif genre in [ProtocolCode.GET_TOQUE_GRIPPER]:
             if res[-1] == 255 and res[-2] == 255:
                 self._write(self._flatten(real_command))
@@ -788,7 +791,7 @@ class MyCobot320(CommandGenerator):
         return self._mesg(ProtocolCode.SET_VISION_MODE, flag)
 
     # myHand  Gripper Control
-    def get_hand_firmware_major_version(self, gripper_id):
+    def get_hand_firmware_major_version(self, gripper_id=14):
         """Read the firmware major version number
 
         Args:
@@ -797,7 +800,7 @@ class MyCobot320(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_MAJOR_FIRMWARE_VERSION])
 
-    def get_hand_firmware_minor_version(self, gripper_id):
+    def get_hand_firmware_minor_version(self, gripper_id=14):
         """Read the firmware minor version number
 
         Args:
@@ -925,7 +928,7 @@ class MyCobot320(CommandGenerator):
         return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_CALIBRATION],
                           [joint_id], [0])
 
-    def get_hand_gripper_status(self, gripper_id):
+    def get_hand_gripper_status(self, gripper_id=14):
         """ Get the clamping status of the gripper
 
         Args:
@@ -980,22 +983,6 @@ class MyCobot320(CommandGenerator):
                                     gripper_joint_id=joint_id)
         return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_DEFAULT_SPEED],
                           [joint_id])
-
-    def set_hand_gripper_pinch_action(self, gripper_id, pinch_mode):
-        """ Set the pinching action of the gripper
-
-        Args:
-            gripper_id (int): 1 ~ 254
-            pinch_mode (int):
-                0 - Index finger and thumb pinch
-                1 - Middle finger and thumb pinch
-                2 - Three-finger grip
-                3 - Two-finger grip
-
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id, pinch_mode=pinch_mode)
-        return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION],
-                          [pinch_mode])
 
     def set_hand_gripper_p(self, gripper_id, joint_id, value):
         """ Set the P value of the single joint of the gripper
@@ -1177,35 +1164,6 @@ class MyCobot320(CommandGenerator):
         return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_COUNTERCLOCKWISE],
                           [joint_id])
 
-    def get_hand_single_pressure_sensor(self, gripper_id, finger_id):
-        """ Get the counterclockwise runnable error of the single joint of the gripper
-
-       Args:
-           gripper_id (int): 1 ~ 254
-           finger_id (int): 1 ~ 5
-
-       Return:
-           int: 0 ~ 4096
-
-       """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
-                                    gripper_finger_id=finger_id)
-        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_SINGLE_PRESSURE_SENSOR],
-                          [finger_id])
-
-    def get_hand_all_pressure_sensor(self, gripper_id):
-        """ Get the counterclockwise runnable error of the single joint of the gripper
-
-        Args:
-           gripper_id (int): 1 ~ 254
-
-        Return:
-            int: 0 ~ 4096
-
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_SINGLE_PRESSURE_SENSOR])
-
     def get_reboot_count(self):
         """Read reboot count
 
@@ -1214,7 +1172,7 @@ class MyCobot320(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_REBOOT_COUNT, has_reply=True)
 
-    def set_hand_gripper_pinch_action_speed_consort(self, gripper_id, pinch_pose, rank_mode, idle_flag=None):
+    def set_hand_gripper_pinch_action(self, gripper_id, pinch_pose, rank_mode, idle_flag=False):
         """ Setting the gripper pinching action-speed coordination
 
         Args:
@@ -1224,18 +1182,19 @@ class MyCobot320(CommandGenerator):
                 1: Index finger and thumb pinch together
                 2: Middle finger and thumb pinch together
                 3: Index finger and middle finger pinch together
-                4: Three fingers together
+                4: Three fingers together - rank_mode (int): 1 ~ 20
             rank_mode (int): 0 ~ 5
                 The degree of closure,the higher the level, the more closed
             idle_flag (int): default None, 0 ~ 4
                 Idle flag. By default, there is no such byte. When this byte is 1, the idle finger can be freely manipulated.
 
         """
-        if idle_flag is None:
+        if not idle_flag:
             self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
                                         pinch_pose=pinch_pose, rank_mode=rank_mode)
             return self._mesg(ProtocolCode.SET_TOQUE_GRIPPER, gripper_id,
                               [MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT], pinch_pose, rank_mode)
+
         else:
             self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
                                         pinch_pose=pinch_pose, rank_mode=rank_mode, idle_flag=idle_flag)
@@ -1287,6 +1246,17 @@ class MyCobot320(CommandGenerator):
             list : A float list of coord .[x, y, z, rx, ry, rz]
         """
         return self._mesg(ProtocolCode.GET_COORDS_PLAN, has_reply=True)
+
+    def get_hand_gripper_type(self, gripper_id=14):
+        """Get the machine model
+
+        Return: int
+            0 - left hand
+            1 - right hand
+        """
+
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_ROBOT_MODEL])
 
     # Other
     def wait(self, t):
