@@ -818,8 +818,8 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException("The range of 'value' in {} is 0 ~ 254, but the received value is {}".format(parameter, value))
             elif parameter in ["gripper_p", "gripper_d"]:
                 check_value_type(parameter, value_type, MyCobot320DataException, int)
-                if value < 0 or value > 150:
-                    raise MyCobot320DataException("The range of 'value' in {} is 0 ~ 150, but the received value is {}".format(parameter, value))
+                if value < 0 or value > 254:
+                    raise MyCobot320DataException("The range of 'value' in {} is 0 ~ 254, but the received value is {}".format(parameter, value))
             elif parameter == 'pinch_pose':
                 check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MyCobot320DataException, int)
 
