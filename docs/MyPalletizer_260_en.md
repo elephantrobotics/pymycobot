@@ -223,14 +223,6 @@ mc.send_angle(1, 40, 20)
   - `direction(int)`: To control the direction of movement of the robotic arm, input `0` as negative value movement and input `1` as positive value movement
   - `speed`: 1 ~ 100
 
-#### `jog_coord(coord_id, direction, speed)`
-
-- **function:** jog control coord.
-- **Parameters:**
-  - `coord_id`: (`int`) Coordinate range of the robotic arm: 1~4
-  - `direction`: (`int`) To control the direction of machine arm movement, `0` - negative value movement, `1` - positive value movement
-  - `speed`: 1 ~ 100
-
 #### `jog_absolute(joint_id, angle, speed)`
 
 - **function:** Jog absolute angle

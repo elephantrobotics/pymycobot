@@ -222,14 +222,6 @@ mc.send_angle(1, 40, 20)
   - `direction(int)`：控制机械臂运动的方向，输入`0`为负值运动，输入`1`为正值运动
   - `speed`：1~100
 
-#### `jog_coord(coord_id, direction, speed)`
-
-- **功能：** 点动控制坐标
-- **参数：**
-  - `coord_id`: (`int`) 机械臂坐标范围：1~4
-  - `direction`: (`int`) 控制机臂运动方向，`0` - 负值运动，`1` - 正值运动
-  - `speed`: 1 ~ 100
-
 #### `jog_absolute(joint_id, angle, speed)`
 
 - **函数：** 关节绝对控制角度
