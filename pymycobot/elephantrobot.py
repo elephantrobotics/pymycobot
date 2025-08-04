@@ -19,14 +19,6 @@ import time
 from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
 
 
-error_For = "Parameter out of range, correct parameter range:"
-error_Jion = "Joint out of range, correct joint range:"
-error_Angle = "Angle out of range, correct angle range:"
-
-error_For = "Parameter out of range, correct parameter range:"
-error_Jion = "Joint out of range, correct joint range:"
-error_Angle = "Angle out of range, correct angle range:"
-
 COORDS_EPSILON = 0.50
 
 
@@ -97,7 +89,6 @@ class ElephantRobot(object):
         """
         try:
             self.tcp_client.connect(self.ADDR)
-            # print("尝试连接到:", self.ADDR)
             self.is_client_started = True
             return True
         except Exception as e:
@@ -118,18 +109,6 @@ class ElephantRobot(object):
         Returns:
             str: Response from the robot.
         """
-        # with mutex:
-        #     self.tcp_client.send(command.encode())
-
-        #     recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
-        #     res_str = str(recv_data)
-        #     if self.debug:
-        #         print("recv = " + res_str)
-        #     res_arr = res_str.split(":")
-        #     if len(res_arr) == 2:
-        #         return res_arr[1]
-        #     else:
-        #         return ""
 
         with mutex:
             if not command.endswith('\n'):
@@ -137,11 +116,11 @@ class ElephantRobot(object):
 
             self.tcp_client.send(command.encode())
 
-            self.tcp_client.settimeout(10.0)  # 设置 2 秒超时
+            self.tcp_client.settimeout(10.0)  # Set a 10 second timeout
             try:
                 recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
             except socket.timeout:
-                print("等待服务器回应超时")
+                print("Waiting for server response timeout")
                 return ""
 
             res_str = str(recv_data)
@@ -1166,33 +1145,84 @@ class ElephantRobot(object):
         flange_coords = toolToflange(tool_coords, self.tool_matrix)
         self.write_coords(flange_coords, speed)
     #力控#
-    def Force_GetFirmware(self, ID):
+    def force_get_firmware(self, ID):
+        """Obtain the main version number of the power control system
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return information
+        """
         command = "force_GetFirmware(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetModified(self, ID):
+    def force_get_modified(self, ID):
+        """Obtain the updated version number of Power Control
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return information
+        """
         command = "force_GetModified(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetId(self, ID, value):
+    def force_set_id(self, ID, value):
+        """Set force control ID
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): ID value (1~254).
+        
+        Returns:
+            str: return message
+        """
         if value < 1 or value > 254:
             raise MyCobot630ProDataException(
             "The Force_SetId value must be 1 ~ 254, but received {}".format(value))
         command = "force_SetGripperId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_GetId(self, ID):
+    def force_get_id(self, ID):
+        """Obtain the ID of the force control machine
+
+        Args:
+            ID (int): Robot arm ID.
+        
+         Returns:
+            str: return ID value
+        """
         command = "force_GetGripperId(" + str(ID) + ")\n"
         return self.send_command(command)
 
-    def Force_SetEnabled(self, ID, value):
+    def force_set_enabled(self, ID, value):
+        """Set force control enable
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Enable value (0 or 1).
+
+        Returns:
+            str: return message
+        """
         if value < 0 or value > 1:
             raise MyCobot630ProDataException(
             "The Force_SetEnabled value must be 0 ~ 1, but received {}".format(value))
         command = "force_SetGripperEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_SetAngle(self, ID, value):
+    def force_set_angle(self, ID, value):
+        """Set force control angle
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return message
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetAngle value must be 0 ~ 100, but received {}".format(value))
@@ -1200,113 +1230,296 @@ class ElephantRobot(object):
         # print(command)
         return self.send_command(command)
 
-    def Force_GetAngle(self, ID):
+    def force_get_angle(self, ID):
+        """Obtain force control angle
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return angle value
+        """
         command = "force_GetGripperAngle(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetCalibrate(self, ID):
+    def force_set_calibrate(self, ID):
+        """Initialize force control
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
+        """
         command = "force_SetGripperCalibrate(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetGripper(self, ID):
+    def force_get_gripper(self, ID):
+        """Obtain the motion status of force control
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return status value
+        """
         command = "force_GetGripper(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetTorque(self, ID, value):
+    def force_set_torque(self, ID, value):
+        """Set the torque value for force control
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Torque value (0~100).
+        Returns:
+            str: return message
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetTorque value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetGripperTorque(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_GetTorque(self, ID):
+    def force_get_torque(self, ID):
+        """Obtain force control torque
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return torque value
+        """
         command = "force_GetGripperTorque(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetOpen(self, ID, value):
+    def force_set_open(self, ID, value):
+        """Set the opening angle of the force control IO
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return message
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetOpen value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetOpen(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_SetClose(self, ID, value):
+    def force_set_close(self, ID, value):
+        """Set the closing angle of the force control IO
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return angle value
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetClose value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetClose(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_SetSpeed(self, ID, value):
+    def force_set_speed(self, ID, value):
+        """Set force control motion speed
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Speed value (1~100).
+
+        Returns:
+            str: return message
+        """
         if value < 1 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetSpeed value must be 1 ~ 100, but received {}".format(value))
         command = "force_SetSpeed(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_GetSpeed(self, ID):
+    def force_get_speed(self, ID):
+        """Obtain force controlled motion speed
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return speed value
+        """
         command = "force_GetSpeed(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetOpen(self, ID):
+    def force_get_open(self, ID):
+        """Obtain the opening angle of the force control IO
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return angle value
+        """
         command = "force_GetOpen(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_GetClose(self, ID):
+    def force_get_close(self, ID):
+        """ Obtain the closing angle of the force control IO
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return angle value
+        """
         command = "force_GetClose(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_SetAbsAngle(self, ID, value):
+    def force_set_absangle(self, ID, value):
+        """Set the absolute angle of force control
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Angle value (0~100).
+        
+        Returns:
+            str: return message
+        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The SetAbsAngle  value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetAbsAngle(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Force_Pause(self, ID):
+    def force_pause(self, ID):
+        """Pause absolute instruction queue
+
+        Args:
+           ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
+        """
         command = "force_Pause(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_Resume(self, ID):
+    def force_resume(self, ID):
+        """Open absolute command queue
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
+        """
+        
         command = "force_Resume(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Force_Stop(self, ID):
+    def force_stop(self, ID):
+        """Set absolute command to stop
+
+        Args:
+            ID (int): Robot arm ID.
+        """
         command = "force_Stop(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Froce_GetQueueCount(self, ID):
+    def froce_get_queuecount(self, ID):
+        """Obtain the number of absolute command queues for force control
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return message
+        """
         command = "froce_GetQueueCount(" + str(ID) + ")\n"
         return self.send_command(command)
     
     #三指#
-    def Hand_GetFirmware(self, ID):
+    def hand_get_firmware(self, ID):
+        """Obtain the main version number of the three fingers
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return major version value
+        """
         command = "Hand_GetFirmware(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_GetModified(self, ID):
+    def hand_get_modified(self, ID):
+        """Obtain the updated version number of the three fingers
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return minor version
+        """
         command = "Hand_GetModified(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetId(self, ID, value):
+    def hand_set_id(self, ID, value):
+        """Set three finger machine ID
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): hand id value (1~254).
+        
+        Returns:
+            str: return message
+        """
         if value < 1 or value > 254:
             raise MyCobot630ProDataException(
             "The Hand  value must be 1 ~ 254, but received {}".format(value))
         command = "Hand_SetId(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Hand_GetId(self, ID):
+    def hand_get_id(self, ID):
+        """Obtain the three finger machine ID
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return id value
+        """
         command = "Hand_GetId(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetEnabled(self, ID, value):
+    def hand_set_enabled(self, ID, value):
+        """Claw enable
+
+        Args:
+            ID (int): Robot arm ID.
+            Value (int): Enable value (0 or 1).
+        
+        Returns:
+            str: return message
+        """
         if value < 0 or value > 1:
             raise MyCobot630ProDataException(
             "The SetEnabled  value must be 0 ~ 1, but received {}".format(value))
         command = "Hand_SetEnabled(" + str(ID) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetJointAngle(self, ID, Jiont, value):
+    def hand_set_joint_angle(self, ID, Jiont, value):
+            """Set the angle of a single joint.
+
+            Args:
+                ID (int): Robot arm ID.
+                Joint (int): Joint number (1~6).
+                Value (int): Angle value (0~100).
+            
+            Returns:
+                str: return message
+            """
             if value < 0 or value > 100:
                 raise MyCobot630ProDataException(
             "The Angle value must be 0 ~ 100, but received {}".format(value))
@@ -1316,7 +1529,16 @@ class ElephantRobot(object):
             command = "Hand_SetJointAngle(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
             return self.send_command(command)
     
-    def Hand_GetJointAngle(self, ID, Jiont):
+    def hand_get_joint_angle(self, ID, Jiont):
+        """Obtain the angle of a single joint.
+
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return Single joint angle value
+        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The gripper Jiont value must be 1 ~ 6, but received {}".format(Jiont))
@@ -1324,7 +1546,16 @@ class ElephantRobot(object):
         return self.send_command(command)
     
     
-    def Hand_SetJointCalibrate(self, ID, Jiont):
+    def hand_set_joint_calibrate(self, ID, Jiont):
+        """Initialize joints
+
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return message
+        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
@@ -1332,11 +1563,29 @@ class ElephantRobot(object):
         return self.send_command(command)
     
 
-    def Hand_GetHand(self, ID):
+    def hand_get_state(self, ID):
+        """Obtain the motion status of the three fingers.
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return Numerical value of motion state
+        """
         command = "Hand_GetHand(" + str(ID) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetTorque(self, ID, Jiont, value):
+    def hand_set_torque(self, ID, Jiont, value):
+        """Set the torque of the three finger joint.
+
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+            Value (int): Torque value (0~100).
+        
+        Returns:
+            str: return message
+        """
         if value < 0 or value > 100:
                 raise MyCobot630ProDataException(
             "The hand torque value must be 0 ~ 100, but received {}".format(value))
@@ -1346,14 +1595,34 @@ class ElephantRobot(object):
         command = "Hand_SetTorque(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
     
-    def Hand_GetTorque(self, ID, Jiont):
+    def hand_get_torque(self, ID, Jiont):
+        """Obtain the torque of the three finger joint.
+
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return Single Joint torque value
+        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetTorque(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetSpeed(self, ID, Jiont, value):
+   
+    def hand_set_speed(self, ID, Jiont, value):
+        """Set the speed of the three finger joint.
+
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+            Value (int): Speed value (1~100).
+        
+        Returns:
+            str: return message
+        """
         if value < 1 or value > 100:
                 raise MyCobot630ProDataException(
             "The Hand speed value must be 1 ~ 100, but received {}".format(value))
@@ -1363,14 +1632,34 @@ class ElephantRobot(object):
         command = "Hand_SetSpeed(" + str(ID) + "," + str(Jiont) + "," + str(value) + ")\n"
         return self.send_command(command)
 
-    def Hand_GetSpeed(self, ID, Jiont):
+ 
+    def hand_get_speed(self, ID, Jiont):
+        """Obtain the velocity of the three finger joint.
+
+        Args:
+            ID (int): Robot arm ID.
+            Joint (int): Joint number (1~6).
+        
+        Returns:
+            str: return Single Joint speed value
+        """
         if Jiont < 1 or Jiont > 6:
              raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetSpeed(" + str(ID) + "," + str(Jiont) + ")\n"
         return self.send_command(command)
     
-    def Hand_SetFullAngles(self, ID, angles, speed):
+    def hand_set_fullangles(self, ID, angles, speed):
+        """Set the angle of the three finger joint.
+
+        Args:
+            ID (int): Robot arm ID.
+            Angles (list of int): A list containing 6 angle values, each value range must be (0~100).
+            Value (int): Speed value (1~100).
+        
+        Returns:
+            str: return message
+        """
         if speed < 1 or speed > 100:
                  raise MyCobot630ProDataException(
             "The Hand speed value must be 1 ~ 100, but received {}".format(speed))
@@ -1388,12 +1677,31 @@ class ElephantRobot(object):
             raise MyCobot630ProDataException(
             "Enter the number of angles must be 6, but received {}".format(len(angles)))
 
-    
-    def Hand_GetFullAngles(self, ID):
+    def hand_get_fullangles(self, ID):
+        """Obtain the total joint angle of three fingers.
+
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return All Joint angle value
+。
+        """
         command = "Hand_GetFullAngles(" + str(ID) + ")\n"
         return self.send_command(command)
 
-    def Hand_SetCatch(self, ID, pose, value, num=0):
+    def hand_set_catch(self, ID, pose, value, num=0):   
+        """Three finger gesture control.
+
+        Args:
+            ID (int): Robot arm ID.
+            Pose (int): gesture type (0~4).
+            Value (int): threshold (0~5), when pose is 4, value is (0~20).
+            Num (int): defaults to all hand movements when no value is passed in, and only moves pose type joints when a value is passed in.
+
+        Returns:
+            str: return message
+        """
         if pose < 0 or pose > 4:
                 raise MyCobot630ProDataException(
             "The Hand pose value must be 0 ~ 4, but received {}".format(pose))
@@ -1410,23 +1718,59 @@ class ElephantRobot(object):
         else :
             command = "Hand_SetCatch(" + str(ID) + "," + str(pose) + ","+ str(value) +  "," + str(num) +")\n"
         return self.send_command(command)
+    
+    def hand_get_model(self,ID):    
+        """Obtain the type of three finger machine, such as left-hand 0 or right-hand 1.
 
-    def Hand_GetModel(self,ID):
+        Args:
+            ID (int): Robot arm ID.
+        
+        Returns:
+            str: return finger machine type
+        """
         command = "Hand_GetModel(" + str(ID) + ")\n"
         return self.send_command(command)
 
 
     #末端
-    def get_end_Firmware(self):             #主版本
+    def get_end_firmware(self):             
+        """Obtain the final major version number.
+
+        Returns:
+            str: return Atom major version number
+
+        """
         command = "GetFirmwareEnd()\n"
         return self.send_command(command)
-    def get_end_Modify(self):                #更新版本
+    def get_end_modify(self):                
+        """Obtain the end update version number.
+
+        Returns:
+            str: return Atom update version number
+
+        """
         command = "GetModifyEnd()\n"
         return self.send_command(command)
-    def get_end_bt_status(self):                #获取按键状态
+    def get_end_bt_status(self):                
+        """Get the status of the end button.
+
+        Returns:
+            str: return message
+
+        """
         command = "SetEndBtStatus()\n"
         return self.send_command(command)
     def set_end_color(self, red, green, blue):
+        """Obtain the end color.
+
+        Args:
+            red (int): (0 ~ 255)。
+            green (int): (0 ~ 255)。
+            blue (int): (0 ~ 255)。
+        
+        Returns:
+            str: return message
+        """
         if red < 0 or green < 0 or blue < 0:
             raise MyCobot630ProDataException(
             "The input RGB parameter should be: 0~255, but received {},{},{}".format(red,green,blue))
@@ -1445,67 +1789,59 @@ if __name__ == "__main__":
     if resp != True:
         print(resp)
         sys.exit(1)
-    # print(ep.wait(5))
-    # print("发送指令")
-    # Jiont = [100,100,100,100,100,100]
-    # time.sleep(2)
-    # ep.Force_SetAngle(14,0)
-    # print(ep.Force_SetAngle(14,20))
-    # angles = [100,100,100,100,100,100,100]
-    # time.sleep(2)
-    # try:
-    # print(ep.set_end_color(255,256,255))  # 有可能触发 raise
-    # except MyCobot630ProDataException as e:
-        # print("捕获到异常：", e)
-    # print(ep.Force_SetId(14,255))
-    # print(ep.get_coords())
-    # print(ep.get_speed())
-    # # print(ep._power_on())
-    # # print(ep._power_off())
-    # print(ep.check_running())
-    # print(ep.state_check())
-    # print(ep.program_open("a.tax"))
-    # print(ep.program_run(0))
-    # print(ep.read_next_error())
-    # print(ep.write_coords([1, 2, 3, 4, 5, 6], 110))
-    # print(ep.write_coord(1, 100, 200))
-    # print(ep.write_angles([10, 20, 30, 40, 50, 60], 110))
-    # print(ep.write_angle(3, 180, 200))
-    # print(ep.set_speed(377))
-    # print(ep.set_carte_torque_limit("x", 55))
-    # print(ep.set_upside_down(False))
-    # print(ep.set_payload(100))
-    # print(ep._state_on())
-    # print(ep._state_off())
-    # print(ep.task_stop())
-    # print(ep.jog_angle("j2", 1, 300))
-    # print(ep.jog_coord("rY", 0, 200))
-    # print(ep.get_digital_in(3))
-    # print(ep.get_digital_out(3))
-    # print(ep.set_digital_out(3, 1))
-    # print(ep.get_digital_out(3))
-    # print(ep.set_analog_out(1, 3.5))
-    # print(ep.get_acceleration())
-    # print(ep.set_acceleration(55))
-    # print(ep.command_wait_done())
-    # print(ep.get_variable("f"))
-    # print(ep.assign_variable("ss", '"eee"'))
-    # print(ep.get_joint_current(1))
+    print(ep.wait(5))
+    time.sleep(2)
+    ep.force_get_angle(14,0)
+    print(ep.Force_SetAngle(14,20))
+    print(ep.Force_SetId(14,255))
+    print(ep.get_coords())
+    print(ep.get_speed())
+    print(ep._power_on())
+    print(ep._power_off())
+    print(ep.check_running())
+    print(ep.state_check())
+    print(ep.program_open("a.tax"))
+    print(ep.program_run(0))
+    print(ep.read_next_error())
+    print(ep.write_coords([1, 2, 3, 4, 5, 6], 110))
+    print(ep.write_coord(1, 100, 200))
+    print(ep.write_angles([10, 20, 30, 40, 50, 60], 110))
+    print(ep.write_angle(3, 180, 200))
+    print(ep.set_speed(377))
+    print(ep.set_carte_torque_limit("x", 55))
+    print(ep.set_upside_down(False))
+    print(ep.set_payload(100))
+    print(ep._state_on())
+    print(ep._state_off())
+    print(ep.task_stop())
+    print(ep.jog_angle("j2", 1, 300))
+    print(ep.jog_coord("rY", 0, 200))
+    print(ep.get_digital_in(3))
+    print(ep.get_digital_out(3))
+    print(ep.set_digital_out(3, 1))
+    print(ep.get_digital_out(3))
+    print(ep.set_analog_out(1, 3.5))
+    print(ep.get_acceleration())
+    print(ep.set_acceleration(55))
+    print(ep.command_wait_done())
+    print(ep.get_variable("f"))
+    print(ep.assign_variable("ss", '"eee"'))
+    print(ep.get_joint_current(1))
 
-    # print(ep.set_gripper_mode(1))
-    # print(ep.wait(2))
-    # print(ep.set_gripper_mode(0))
+    print(ep.set_gripper_mode(1))
+    print(ep.wait(2))
+    print(ep.set_gripper_mode(0))
 
-    # print(ep.set_gripper_value(100, 20))
-    # print(ep.wait(2))
-    # print(ep.set_gripper_value(50, 20))
-    # print(ep.wait(2))
-    # print(ep.set_gripper_value(0, 20))
-    # print(ep.wait(2))
+    print(ep.set_gripper_value(100, 20))
+    print(ep.wait(2))
+    print(ep.set_gripper_value(50, 20))
+    print(ep.wait(2))
+    print(ep.set_gripper_value(0, 20))
+    print(ep.wait(2))
 
-    # print(ep.set_gripper_enabled(1))
-    # print(ep.wait(2))
-    # print(ep.set_gripper_enabled(0))
+    print(ep.set_gripper_enabled(1))
+    print(ep.wait(2))
+    print(ep.set_gripper_enabled(0))
 
     ep.stop_client()
 

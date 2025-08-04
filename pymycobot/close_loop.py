@@ -241,26 +241,38 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                             for i in data:
                                 datas += hex(ord(i))
                             data = datas
+                        elif isinstance(data, bytes):
+                            hex_string = ''.join(f'{b:02X}' for b in data)
+                            # print(hex_string)
                     except:
                         data = b""
                     if data != b"":
-                        pattern = re.compile(rb'###(.*?)###', re.DOTALL)
-                        matches = pattern.findall(data)
-                        for match in matches:
-                            if self.check_python_version() == 2:
-                                command_log = ""
-                                for d in match:
-                                    command_log += hex(ord(d))[2:] + " "
-                                self.log.debug(
-                                    "_read : {}".format(command_log))
-                                # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-                            else:
-                                command_log = ""
-                                for d in match:
-                                    command_log += hex(d)[2:] + " "
-                                self.log.debug(
-                                    "_read : {}".format(command_log))
-                            res = self._process_received(match)
+                        if isinstance(data, str):
+                            pattern = re.compile(rb'###(.*?)###', re.DOTALL)
+                            matches = pattern.findall(data)
+                            for match in matches:
+                                if self.check_python_version() == 2:
+                                    command_log = ""
+                                    for d in match:
+                                        command_log += hex(ord(d))[2:] + " "
+                                    self.log.debug(
+                                        "_read : {}".format(command_log))
+                                    # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
+                                else:
+                                    command_log = ""
+                                    for d in match:
+                                        command_log += hex(d)[2:] + " "
+                                    self.log.debug(
+                                        "_read : {}".format(command_log))
+                                res = self._process_received(match)
+                                if res != []:
+                                    with self.lock:
+                                        self.read_command.append(
+                                            [res, time.time()])
+                        elif isinstance(data, bytes):
+                            command_log = " ".join("{:02X}".format(b) for b in data)
+                            self.log.debug("_read : {}".format(command_log))
+                            res = self._process_received(data)
                             if res != []:
                                 with self.lock:
                                     self.read_command.append(

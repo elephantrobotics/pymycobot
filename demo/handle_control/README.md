@@ -40,14 +40,14 @@ The corresponding functions of the handle buttons are as follows:
 
 - **1**: RX direction coordinate value increases
 - **2**: RX direction coordinate value decreases
-- **3**: RY direction coordinate value decreases
-- **4**: RY direction coordinate value increases
+- **3**: RY direction coordinate value increases
+- **4**: RY direction coordinate value decreases
 - **5**: X direction coordinate value increases
 - **6**: X direction coordinate value decreases
 - **7**: Y direction coordinate value decreases
 - **8**: Y direction coordinate value increases
-- **9**: Z direction coordinate value increases
-- **10**: Z direction coordinate value decreases
+- **9**: Z direction coordinate value decreases
+- **10**: Z direction coordinate value increases
 - **11**: RZ direction coordinate value decreases
 - **12**: RZ direction coordinate value increases
 
@@ -103,14 +103,14 @@ python3 myCobot280_handle_control.py
 
 - **1**: RX方向坐标值增加
 - **2**: RX方向坐标值减小
-- **3**: RY方向坐标值减小
-- **4**: RY方向坐标值增大
+- **3**: RY方向坐标值增大
+- **4**: RY方向坐标值减小
 - **5**: X方向坐标值增加
 - **6**: X方向坐标值减小
 - **7**: Y方向坐标值减小
 - **8**: Y方向坐标值增加
-- **9**: Z方向坐标值增加
-- **10**: Z方向坐标值减小
+- **9**: Z方向坐标值减小
+- **10**: Z方向坐标值增大
 - **11**: RZ方向坐标值减小
 - **12**: RZ方向坐标值增加
 
