@@ -1,14 +1,15 @@
 # coding=utf-8
 
+import time
 import threading
-import serial
+import socket
 
 from pymycobot.close_loop import CloseLoop
 from pymycobot.common import ProtocolCode
 
 
-class Pro400(CloseLoop):
-    def __init__(self, port="/dev/ttyAMA1", baudrate="115200", timeout=0.1, debug=False, save_serial_log=False):
+class Pro450Client(CloseLoop):
+    def __init__(self, ip, netport=9000, debug=False):
         """
         Args:
             port     : port string
@@ -16,24 +17,30 @@ class Pro400(CloseLoop):
             timeout  : default 0.1
             debug    : whether show debug info
         """
-        super(Pro400, self).__init__(debug)
-        self.save_serial_log = save_serial_log
-        self._serial_port = serial.Serial()
-        self._serial_port.port = port
-        self._serial_port.baudrate = baudrate
-        self._serial_port.timeout = timeout
-        self._serial_port.rts = False
-        self._serial_port.open()
-        self.read_threading = threading.Thread(target=self.read_thread)
+        super(Pro450Client, self).__init__(debug)
+        self.SERVER_IP = ip
+        self.SERVER_PORT = netport
+        self.sock = self.connect_socket()
+        self.lock = threading.Lock()
+        self.is_stop = False
+        # time.sleep(2)
+        self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True
         self.read_threading.start()
+
+    def connect_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((self.SERVER_IP, self.SERVER_PORT))
+        return sock
         
     def _mesg(self, genre, *args, **kwargs):
-        read_data = super(Pro400, self)._mesg(genre, *args, **kwargs)
+        read_data = super(Pro450Client, self)._mesg(genre, *args, **kwargs)
         if read_data is None:
             return None
         elif read_data == 1:
             return 1
+        elif read_data == -2:
+            return -1
         valid_data, data_len = read_data
         res = []
         if data_len in [8, 12, 14, 16, 26, 60]:
@@ -110,11 +117,11 @@ class Pro400(CloseLoop):
                     one = valid_data[i : i + 2]
                     res.append(self._decode_int16(one))
                     i+=2
-        elif data_len == 56:
-            for i in range(0, data_len, 8):
+        # elif data_len == 56:
+        #     for i in range(0, data_len, 8):
                 
-                byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                res.append(byte_value)
+        #         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+        #         res.append(byte_value)
         elif data_len == 6:
             for i in valid_data:
                 res.append(i)
@@ -173,7 +180,7 @@ class Pro400(CloseLoop):
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
-            return [self._int3angle(angle) for angle in res]
+            return [self._int2angle(angle) for angle in res]
         elif genre in [
             ProtocolCode.GET_COORDS,
             ProtocolCode.MERCURY_GET_BASE_COORDS,
@@ -248,64 +255,11 @@ class Pro400(CloseLoop):
             return res
 
     def open(self):
-        self._serial_port.open()
+        self.sock = self.connect_socket()
         
     def close(self):
-        self._serial_port.close()
-    
-    # def power_on_only(self):
-        # import RPi.GPIO as GPIO
-        # GPIO.output(self.power_control_2, GPIO.HIGH)
+        self.sock.close()
         
-    # def set_basic_output(self, pin_no, pin_signal):
-    #     """Set basic output.IO low-level output high-level, high-level output high resistance state
-
-    #     Args:
-    #         pin_no: pin port number. range 1 ~ 6
-    #         pin_signal: 0 / 1
-    #     """
-    #     import RPi.GPIO as GPIO
-    #     if pin_no == 1:
-    #         pin_no = 17
-    #     elif pin_no == 2:
-    #         pin_no = 27
-    #     elif pin_no == 3:
-    #         pin_no = 22
-    #     elif pin_no == 4:
-    #         pin_no = 5
-    #     elif pin_no == 5:
-    #         pin_no = 6
-    #     elif pin_no == 6:
-    #         pin_no = 19
-    #     GPIO.setup(pin_no, GPIO.OUT)
-    #     GPIO.output(pin_no, pin_signal)
-        
-    # def get_basic_input(self, pin_no):
-    #     """Get basic input.
-
-    #     Args:
-    #         pin_no: pin port number. range 1 ~ 6
-            
-    #     Return:
-    #         1 - high
-    #         0 - low
-    #     """
-    #     import RPi.GPIO as GPIO
-    #     if pin_no == 1: 
-    #         pin_no = 26
-    #     elif pin_no == 2:
-    #         pin_no = 21
-    #     elif pin_no == 3:
-    #         pin_no = 20 #23
-    #     elif pin_no == 4:
-    #         pin_no = 16
-    #     elif pin_no == 5:
-    #         pin_no = 24
-    #     elif pin_no == 6:
-    #         pin_no = 23
-    #     GPIO.setup(pin_no, GPIO.IN)
-    #     return GPIO.input(pin_no)
-    
     def set_pos_switch(self, mode):
         """Set position switch mode.
 
@@ -315,6 +269,7 @@ class Pro400(CloseLoop):
         if mode == 0:
             return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, asyn_mode=True)
         return self._mesg(ProtocolCode.SET_POS_SWITCH, mode,asyn_mode=False)
+        
     
     def get_pos_switch(self):
         """Get position switch mode.
