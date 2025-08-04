@@ -82,7 +82,7 @@ class ChassisControl:
 
             elif flag == "ultrasonic":
                 receive_data = self._extract_frame(receive_all_data, ProtocolCode.ultrasound_header,
-                                                   ProtocolCode.ultrasound_footer, expected_lengths)
+                                                   ProtocolCode.ultrasound_footer, 19)
                 # print(receive_data, len(receive_data))
                 if receive_data:
                     self._debug(receive_data)
