@@ -79,7 +79,7 @@ class ChassisControl:
                     transition_16 = 0
                     transition_16 |= receive_data[20] << 8
                     transition_16 |= receive_data[21]
-                    return_data = round(transition_16 / 1000 + (transition_16 % 1000) * 0.001, 3)
+                    return_data = round(transition_16 / 1000, 3)
 
                     return return_data
 
