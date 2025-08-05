@@ -120,7 +120,7 @@ class Pro450Client(CloseLoop):
                 
         #         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
         #         res.append(byte_value)
-        elif data_len == 6:
+        elif data_len == 6 or data_len == 32:
             for i in valid_data:
                 res.append(i)
         else:
