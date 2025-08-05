@@ -9,12 +9,11 @@ from pymycobot.common import ProtocolCode
 
 
 class Pro450Client(CloseLoop):
-    def __init__(self, ip, netport=9000, debug=False):
+    def __init__(self, ip, netport=4500, debug=False):
         """
         Args:
-            port     : port string
-            baudrate : baud rate string, default '115200'
-            timeout  : default 0.1
+            ip     : Server IP address
+            netport : Socket port number, default is 4500
             debug    : whether show debug info
         """
         super(Pro450Client, self).__init__(debug)
@@ -23,7 +22,6 @@ class Pro450Client(CloseLoop):
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
         self.is_stop = False
-        # time.sleep(2)
         self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True
         self.read_threading.start()
@@ -278,3 +276,46 @@ class Pro450Client(CloseLoop):
             1 - switch on, 0 - switch off
         """
         return self._mesg(ProtocolCode.GET_POS_SWITCH, has_reply=True)
+
+    def set_motor_enabled(self, joint_id, state):
+        """Set the robot torque state.
+
+        Args:
+            joint_id: joint id 1-6, 254-all joints
+            state: 1 - enable, 0 - disable
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, flag=state)
+        return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
+
+    def set_over_time(self, timeout=1000):
+        """
+        Set the timeout (unit: ms)
+        Default is 1000ms (1 second)
+
+        Args:
+            timeout (int): Timeout period, in ms, range 0~65535
+        """
+        if not isinstance(timeout, int) or not (0 <= timeout <= 65535):
+            raise ValueError("Timeout must be an integer between 0 and 65535 milliseconds.")
+
+        high_byte = (timeout >> 8) & 0xFF
+        low_byte = timeout & 0xFF
+
+        return self._mesg(ProtocolCode.SET_OVER_TIME, high_byte, low_byte)
+
+    def flash_tool_firmware(self):
+        """Burn terminal firmware
+
+        """
+        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE)
+
+    def get_comm_error_counts(self, joint_id):
+        """Read the number of communication exceptions
+
+        Args:
+            joint_id (int): joint ID
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id)
