@@ -305,7 +305,7 @@ class Pro450Client(CloseLoop):
         return self._mesg(ProtocolCode.SET_OVER_TIME, high_byte, low_byte)
 
     def flash_tool_firmware(self):
-        """Burn terminal firmware
+        """Burn tool firmware
 
         """
         return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE)
@@ -319,3 +319,23 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id)
+
+    def set_break(self, joint_id, value):
+        """Set break point
+
+        Args:
+            joint_id: int. joint id 1 - 6
+            value: int. 0 - disable, 1 - enable
+
+        Return:
+            0 : failed
+            1 : success
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, value=value)
+        return self._mesg(ProtocolCode.SET_BREAK, joint_id, value)
+
+    def get_tool_modify_version(self):
+        """Read end correction version number
+        """
+        return self._mesg(ProtocolCode.GET_TOOL_MODIFY_VERSION)
