@@ -630,7 +630,7 @@ class MyCobot320(CommandGenerator):
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle])
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, gripper_angle)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_ANGLE, gripper_angle, gripper_id)
 
     def get_pro_gripper_angle(self, gripper_id=14):
         """ Setting the angle of the force-controlled gripper
@@ -639,7 +639,7 @@ class MyCobot320(CommandGenerator):
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_ANGLE, gripper_id)
 
     def set_pro_gripper_open(self, gripper_id=14):
         """ Open force-controlled gripper
@@ -649,7 +649,7 @@ class MyCobot320(CommandGenerator):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper_angle(gripper_id, 100)
+        return self.set_pro_gripper_angle(100, gripper_id)
 
     def set_pro_gripper_close(self, gripper_id=14):
         """ close force-controlled gripper
@@ -659,7 +659,7 @@ class MyCobot320(CommandGenerator):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper_angle(gripper_id, 0)
+        return self.set_pro_gripper_angle(0, gripper_id)
 
     def set_pro_gripper_calibration(self, gripper_id=14):
         """ Setting the gripper jaw zero position
@@ -669,7 +669,7 @@ class MyCobot320(CommandGenerator):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_CALIBRATION, 0)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_CALIBRATION, 0, gripper_id)
 
     def get_pro_gripper_status(self, gripper_id):
         """ Get the clamping status of the gripper
@@ -684,7 +684,7 @@ class MyCobot320(CommandGenerator):
             3 - After clamping detected, the object fell
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_STATUS)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_STATUS, gripper_id)
 
     def set_pro_gripper_torque(self, torque_value, gripper_id=14):
         """ Setting gripper torque
@@ -698,7 +698,7 @@ class MyCobot320(CommandGenerator):
             1: Set successful
         """
         self.calibration_parameters(class_name=self.__class__.__name__, torque_value=[gripper_id, torque_value])
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_TORQUE, torque_value)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_TORQUE, torque_value, gripper_id)
 
     def get_pro_gripper_torque(self, gripper_id=14):
         """ Setting gripper torque
@@ -710,7 +710,7 @@ class MyCobot320(CommandGenerator):
             torque_value (int): 100 ~ 300
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_TORQUE)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_TORQUE, gripper_id)
 
     def set_pro_gripper_speed(self, speed, gripper_id=14):
         """ Set the gripper speed
@@ -720,7 +720,7 @@ class MyCobot320(CommandGenerator):
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_speed=[gripper_id, speed])
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_SPEED, speed)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_SPEED, speed, gripper_id)
 
     def get_pro_gripper_speed(self, gripper_id=14):
         """ Get the gripper speed
@@ -732,7 +732,7 @@ class MyCobot320(CommandGenerator):
             speed (int): 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_SPEED)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_SPEED, gripper_id)
 
     def set_pro_gripper_abs_angle(self, gripper_angle, gripper_id=14):
         """ Set the gripper absolute angle
@@ -742,7 +742,7 @@ class MyCobot320(CommandGenerator):
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=[gripper_id, gripper_angle])
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ABS_ANGLE, gripper_angle)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_ABS_ANGLE, gripper_angle, gripper_id)
 
     def set_pro_gripper_pause(self, gripper_id=14):
         """ Pause movement
@@ -751,7 +751,7 @@ class MyCobot320(CommandGenerator):
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_PAUSE, 0)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_PAUSE, 0, gripper_id)
 
     def set_pro_gripper_resume(self, gripper_id=14):
         """ Resume movement
@@ -760,7 +760,7 @@ class MyCobot320(CommandGenerator):
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_RESUME, 0)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_RESUME, 0, gripper_id)
 
     def set_pro_gripper_stop(self, gripper_id=14):
         """ Stop movement
@@ -769,7 +769,7 @@ class MyCobot320(CommandGenerator):
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_STOP, 0)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_STOP, 0, gripper_id)
 
     def get_atom_version(self):
         """Get atom firmware version.
