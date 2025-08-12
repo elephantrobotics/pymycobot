@@ -186,19 +186,19 @@ class ConveyorAPI(SerialProtocol):
                 return result / 10
             return result
 
-    def set_motor_direction(self, direction, motor_model=MotorModel.STEPPER_MOTOR_57):
+    def set_motor_direction(self, direction):
         """Modify the direction of movement of the conveyor belt"""
         if direction not in (0, 1):
             raise ValueError("direction must be 0 or 1")
-        self._merge(CommandGenre.SET_SERVO_DIRECTION, motor_model, direction)
+        self._merge(CommandGenre.SET_SERVO_DIRECTION, self._motor_model, direction)
 
-    def get_motor_direction(self, motor_model=MotorModel.STEPPER_MOTOR_57):
+    def get_motor_direction(self):
         """Get the direction of movement of the conveyor belt"""
-        return self._merge(CommandGenre.GET_SERVO_DIRECTION, motor_model, has_reply=True)
+        return self._merge(CommandGenre.GET_SERVO_DIRECTION, self._motor_model, has_reply=True)
 
-    def get_motor_speed(self, motor_model=MotorModel.STEPPER_MOTOR_57):
+    def get_motor_speed(self):
         """Get the speed of the conveyor belt"""
-        return self._merge(CommandGenre.GET_SERVO_SPEED, motor_model, has_reply=True)
+        return self._merge(CommandGenre.GET_SERVO_SPEED, self._motor_model, has_reply=True)
 
     def set_speed(self, speed):
         """modify the speed of the conveyor belt"""
@@ -212,6 +212,6 @@ class ConveyorAPI(SerialProtocol):
             raise ValueError("state must be 0 or 1")
         return self._merge(CommandGenre.SET_SERVO_SPEED, self._motor_model, state, 0)
 
-    def read_firmware_version(self, motor_model=MotorModel.STEPPER_MOTOR_57):
+    def read_firmware_version(self):
         """Get the firmware version of the conveyor belt"""
-        return self._merge(CommandGenre.READ_FIRMWARE_VERSION, motor_model, has_reply=True)
+        return self._merge(CommandGenre.READ_FIRMWARE_VERSION, self._motor_model, has_reply=True)
