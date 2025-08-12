@@ -59,7 +59,7 @@ class Command(object):
     @classmethod
     def packing(cls, genre: int, addr: int, *params):
         check_code = cls.check_digit(genre, params)
-        return cls(genre=genre, address=addr, check_digit=(check_code, ), params=(*params,))
+        return cls(genre=genre, address=addr, check_digit=(check_code,), params=(*params,))
 
     @classmethod
     def parsing(cls, buffer: bytes):
@@ -69,7 +69,8 @@ class Command(object):
         if buffer[0] != cls.HEADER or buffer[1] != cls.HEADER:
             return None
         length = buffer[3]
-        return cls(genre=buffer[-2], address=buffer[2], length=length, params=(*buffer[4:4+length], ), check_digit=buffer[4+length:4+length+1])
+        return cls(genre=buffer[-2], address=buffer[2], length=length, params=(*buffer[4:4 + length],),
+                   check_digit=buffer[4 + length:4 + length + 1])
 
     @classmethod
     def unpack_args(cls, *parameters):
@@ -136,10 +137,10 @@ class ConveyorAPI(SerialProtocol):
         STEPPER_MOTOR_42 = 0x30
         STEPPER_MOTOR_57 = 0x31
 
-    def __init__(self, comport, baudrate="115200", timeout=0.1, debug=False):
+    def __init__(self, comport, baudrate="115200", timeout=0.1, debug=False, motor_model=MotorModel.STEPPER_MOTOR_57):
         super().__init__(comport, baudrate, timeout)
         self._debug = debug
-        self.open()
+        self._motor_model = motor_model
         self._mutex = threading.Lock()
         self._log = logging.getLogger("conveyor_api")
         self._log.setLevel(logging.DEBUG if debug else logging.INFO)
@@ -199,22 +200,18 @@ class ConveyorAPI(SerialProtocol):
         """Get the speed of the conveyor belt"""
         return self._merge(CommandGenre.GET_SERVO_SPEED, motor_model, has_reply=True)
 
-    def set_motor_speed(self, status, speed: int, motor_model=MotorModel.STEPPER_MOTOR_57):
-        """Modify the speed of the conveyor belt"""
-        if status not in (0, 1):
-            raise ValueError("status must be 0 or 1")
+    def set_speed(self, speed):
+        """modify the speed of the conveyor belt"""
+        if not 1 <= speed <= 100:
+            raise ValueError("speed must be in range [1, 100]")
+        return self._merge(CommandGenre.SET_SERVO_SPEED, self._motor_model, 1, speed)
 
-        if not 0 <= speed <= 100:
-            raise ValueError("speed must be in range [0, 100]")
-        return self._merge(CommandGenre.SET_SERVO_SPEED, motor_model, status, speed)
-
-    # def write_motor_angle(self, carry, angle: int, speed,  motor_model=MotorModel.STEPPER_MOTOR_57):
-    #     return self._merge(CommandGenre.WRITE_SERVO_ANGLE, motor_model, carry, angle, speed)
-    #
-    # def write_motor_step(self, carry, step: int, speed, direction, motor_model=MotorModel.STEPPER_MOTOR_57):
-    #     return self._merge(CommandGenre.WRITE_SERVO_STEP, motor_model, carry, step, speed, direction)
+    def set_motor_state(self, state):
+        """Modify the state of the conveyor belt"""
+        if state not in (0, 1):
+            raise ValueError("state must be 0 or 1")
+        return self._merge(CommandGenre.SET_SERVO_SPEED, self._motor_model, state, 0)
 
     def read_firmware_version(self, motor_model=MotorModel.STEPPER_MOTOR_57):
         """Get the firmware version of the conveyor belt"""
         return self._merge(CommandGenre.READ_FIRMWARE_VERSION, motor_model, has_reply=True)
-
