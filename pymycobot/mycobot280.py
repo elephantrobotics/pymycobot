@@ -846,7 +846,7 @@ class MyCobot280(CommandGenerator):
             pin_no: pin port number.
             pin_signal: 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no_basic=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_angles_plan(self):

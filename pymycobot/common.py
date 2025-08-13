@@ -694,14 +694,14 @@ class DataProcessor(object):
             elif arm == 12:
                 data_pos = header_i + 5
         valid_data = data[data_pos: data_pos + data_len]
-
         # process valid data
         res = []
-        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS,
-                     ProtocolCode.GO_ZERO]:
+        # if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
+        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS]:
             for i in valid_data:
                 res.append(i)
             return res
+
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             ignor_t = (
                 ProtocolCode.GET_SERVO_CURRENTS,
@@ -742,19 +742,31 @@ class DataProcessor(object):
                 locale_lang = locale.getdefaultlocale()[0]
                 if locale_lang not in ["zh_CN", "en_US"]:
                     locale_lang = "en_US"
+                # for i in range(len(res)):
+                #     if res[i] != 0:
+                #         data_bin = bin(res[i])[2:]
+                #         error_list = []
+                #         data_bin_len = len(data_bin)
+                #         for j in range(data_bin_len):
+                #             if data_bin[data_bin_len - 1 - j] != 0:
+                #                 error_list.append(j)
+                #                 if locale_lang == "zh_CN":
+                #                     print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                #                 else:
+                #                     print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                #         res[i] = error_list
                 for i in range(len(res)):
-                    if res[i] != 0:
-                        data_bin = bin(res[i])[2:]
-                        error_list = []
-                        data_bin_len = len(data_bin)
-                        for j in range(data_bin_len):
-                            if data_bin[data_bin_len - 1 - j] != 0:
-                                error_list.append(j)
+                    val = res[i]
+                    error_list = []
+                    if val != 0:
+                        for bit in range(16):
+                            if (val >> bit) & 1:
+                                error_list.append(bit)
                                 if locale_lang == "zh_CN":
-                                    print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                                    print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(bit, "未知错误")))
                                 else:
-                                    print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
-                        res[i] = error_list
+                                    print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(bit, "Unknown error")))
+                    res[i] = error_list if error_list else 0
         elif data_len == 2:
             if genre in [
                 ProtocolCode.GET_PLAN_SPEED,

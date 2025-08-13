@@ -147,35 +147,41 @@ class MyCobot320(CommandGenerator):
             return self._res(real_command, has_reply, genre)
 
     def _res(self, real_command, has_reply, genre):
-        if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
+        if genre in [ProtocolCode.SET_SSID_PWD, ProtocolCode.GET_SSID_PWD]:
             self._write(self._flatten(real_command))
             data = self._read(genre)
         else:
             try_count = 0
+            expected_genre = genre
+            data = None
             while try_count < 3:
+                self._serial_port.reset_input_buffer()
                 self._write(self._flatten(real_command))
                 data = self._read(genre, real_command=real_command)
-                if data is not None and data != b'':
-                    break
-                try_count += 1
+
+                if not data or len(data) < 4:
+                    try_count += 1
+                    continue
+                if data[3] != expected_genre:
+                    try_count += 1
+                    continue
+                break
             else:
                 return -1
         if genre == ProtocolCode.SET_SSID_PWD:
             return 1
         res = self._process_received(data, genre)
         if res is None:
-            return None
+            return -1
         if genre == ProtocolCode.SET_TOQUE_GRIPPER:
             if res == [0]:
                 self._write(self._flatten(real_command))
                 data = self._read(genre, real_command=real_command)
                 res = self._process_received(data, genre)
-
-        if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
-                                                                                         ProtocolCode.GET_JOINT_MIN_ANGLE,
-                                                                                         ProtocolCode.GET_JOINT_MAX_ANGLE,
-                                                                                         ProtocolCode.SOFTWARE_VERSION,
-                                                                                         ProtocolCode.GET_ATOM_VERSION]:
+        if genre==ProtocolCode.GET_SERVO_DATA:
+            if res == [255]:
+                return -1
+        if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,ProtocolCode.GET_JOINT_MIN_ANGLE, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
             return res[0]
         if genre in [
             ProtocolCode.IS_POWER_ON,
@@ -206,8 +212,6 @@ class MyCobot320(CommandGenerator):
             ProtocolCode.SET_TOQUE_GRIPPER,
         ]:
             return self._process_single(res)
-        elif genre == ProtocolCode.GET_ROBOT_STATUS:
-            return self._parse_high_low_bytes(res)
         elif genre in [ProtocolCode.GET_TOQUE_GRIPPER]:
             if res[-1] == 255 and res[-2] == 255:
                 self._write(self._flatten(real_command))
@@ -352,7 +356,7 @@ class MyCobot320(CommandGenerator):
             direction (int): 1 - forward rotation, 0 - reverse rotation
             speed (int): 1 ~ 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
 
     def jog_increment_angle(self, joint_id, increment, speed):
@@ -363,7 +367,7 @@ class MyCobot320(CommandGenerator):
             increment: Angle increment value
             speed: int (0 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, increment_angle=increment, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
     def jog_increment_coord(self, id, increment, speed):
@@ -374,7 +378,7 @@ class MyCobot320(CommandGenerator):
             increment: Coord increment value
             speed: int (1 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, increment_coord=increment, speed=speed)
         value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, id, [value], speed)
 
@@ -671,7 +675,7 @@ class MyCobot320(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self.set_pro_gripper(ProGripper.SET_GRIPPER_CALIBRATION, 0, gripper_id)
 
-    def get_pro_gripper_status(self, gripper_id):
+    def get_pro_gripper_status(self, gripper_id=14):
         """ Get the clamping status of the gripper
 
         Args:
