@@ -78,6 +78,22 @@ print(mc.get_angles())
 
 - **Return value:** `bool`: True if the robot is initialized for calibration, False otherwise
 
+#### `get_fresh_mode()`
+
+- **function:** Query sports mode
+
+- **Return value:** 
+  - `0`: Interpolation mode
+  - `1`: Refresh mode
+
+#### `set_fresh_mode()`
+
+- **function:** Set command refresh mode
+  
+- **Parameters:**
+  - `1`: Always execute the latest command first.
+  - `0`: Execute instructions sequentially in the form of a queue.
+
 ### 3.Robot abnormal control
 
 #### `get_robot_status()`
@@ -627,3 +643,215 @@ print(mc.get_angles())
 
 - **function:** Burn tool firmware
 <!-- - **Return value:** 0-Normal 1-Robot triggered collision detection -->
+
+### 10. Pro force-controlled gripper
+
+#### `get_pro_gripper_firmware_version( gripper_id=14)`
+
+- **Function**: Read the major and minor versions of the Pro Force Control Gripper firmware.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default is 14, value range is 1 to 254.
+
+- **Return value**: (`float`) Version number, x.x
+
+#### `get_pro_gripper_firmware_modified_version(gripper_id=14)`
+
+- **Function**: Read the modified version of the Pro Force Control Gripper firmware.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default is 14, value range is 1 to 254.
+
+- **Return value**: (int) Correction version number
+
+#### `set_pro_gripper_id(target_id, gripper_id=14)`
+
+- **Function**: Set the force-controlled gripper ID.
+- **Parameter**:
+  - `target_id` (int): Range: 1 to 254.
+  - `gripper_id` (int): Gripper ID, default: 14, range: 1 to 254.
+- **Return value**:
+  - 0 - Failure
+  - 1 - Success
+
+#### `get_pro_gripper_id(gripper_id=14)`
+
+- **Function**: Read the force-controlled gripper ID.
+- **Parameter**:
+  - `gripper_id` (int): Gripper ID, default: 14, range: 1 to 254.
+- **Return value**: `int` Range: 1 to 254.
+
+#### `set_pro_gripper_angle(gripper_angle，gripper_id=14)`
+
+- **Function**: Set the force-controlled gripper angle.
+- **Parameter**:
+  - `gripper_angle` (`int`): Gripper angle, value range 0 ~ 100.
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
+
+#### `get_pro_gripper_angle(gripper_id=14)`
+
+- **Function**: Read the angle of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**: `int` 0 ~ 100
+
+#### `set_pro_gripper_open(gripper_id=14)`
+
+- **Function**: Open the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
+
+#### `set_pro_gripper_close(gripper_id=14)`
+
+- **Function**: Close the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
+
+#### `set_pro_gripper_calibration(gripper_id=14)`
+
+- **Function**: Set the zero position of the force-controlled gripper. (The zero position needs to be set first when using it for the first time)
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
+
+#### `get_pro_gripper_status(gripper_id=14)`
+
+- **Function**: Read the gripping status of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value:**
+  - `0` - Moving.
+  - `1` - Stopped moving, no object was detected.
+  - `2` - Stopped moving, object was detected.
+  - `3` - After the object was detected, it fell.
+
+#### `set_pro_gripper_enabled(state, gripper_id=14)`
+
+- **Function**: Sets the force-controlled gripper enable state.
+- **Parameter**:
+  - `state` (`bool`): 0 or 1, 0 - disable, 1 - enable
+  - `gripper_id` (`int`): Gripper ID, default 14, range 1 to 254.
+- **Return Value**:
+  - 0 - Failure
+  - 1 - Success
+
+#### `set_pro_gripper_torque(torque_value，gripper_id=14)`
+
+- **Function**: Set the torque of the force-controlled gripper.
+- **Parameter**:
+  - `torque_value` (`int`): Torque value, value range 0 ~ 100.
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
+
+#### `get_pro_gripper_torque(gripper_id=14)`
+
+- **Function**: Read the torque of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value:** (`int`) 0 ~ 100
+
+#### `set_pro_gripper_speed(speed，gripper_id=14)`
+
+- **Function**: Set the force-controlled gripper speed.
+- **Parameter**:
+  - `speed` (int): Gripper movement speed, value range 1 ~ 100.
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
+
+#### `get_pro_gripper_speed(speed，gripper_id=14)`
+
+- **Function**: Read the speed of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**: Gripper default movement speed, range 1 ~ 100.
+
+#### `set_pro_gripper_abs_angle(gripper_angle，gripper_id=14)`
+
+- **Function**: Set the absolute angle of the force-controlled gripper.
+- **Parameter**:
+  - `gripper_angle` (`int`): Gripper angle, value range 0 ~ 100.
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+- **Return value**:
+  - 0 - Failed
+  - 1 - Success
+
+#### `set_pro_gripper_io_open_angle(gripper_angle, gripper_id=14)`
+
+- **Function**: Sets the force-controlled gripper I/O opening angle.
+- **Parameter**:
+  - `gripper_angle` (`int`): Gripper angle, value range 0 to 100.
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 to 254.
+- **Return Value**:
+  - 0 - Failure
+  - 1 - Success
+
+#### `get_pro_gripper_io_open_angle(gripper_id=14)`
+
+- **Function**: Reads the force-controlled gripper I/O opening angle.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 to 254.
+- **Return value**: `int` 0 to 100
+
+#### `set_pro_gripper_io_close_angle(gripper_angle, gripper_id=14)`
+
+- **Function**: Sets the force-controlled gripper IO closing angle.
+- **Parameter**:
+  - `gripper_angle` (`int`): Gripper angle, value range 0 to 100.
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 to 254.
+- **Return value**:
+  - 0 - Failure
+  - 1 - Success
+
+#### `get_pro_gripper_io_close_angle(gripper_id=14)`
+
+- **Function**: Read the force-controlled gripper IO closing angle.
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 to 254.
+- **Return value**: `int` 0 to 100
+
+#### `set_pro_gripper_mini_pressure(pressure_value, gripper_id=14)`
+
+- **Function**: Set the minimum actuation force of the force-controlled gripper
+- **Parameter**:
+  - `pressure_value` (`int`): Actuation force value, range 0 to 254.
+  - `gripper_id` (`int`): Gripper ID, default 14, range 1 to 254.
+- **Return value**:
+  - 0 - Failure
+  - 1 - Success
+
+#### `get_pro_gripper_mini_pressure(gripper_id=14)`
+
+- **Function**: Read the minimum actuation force of the force-controlled gripper
+- **Parameter**:
+  - `gripper_id` (`int`): Gripper ID, default 14, range 1 to 254.
+- **Return value**: (`int`) Starting force value, range 0 to 254.
+
+#### `set_pro_gripper_protection_current(current_value, gripper_id=14)`
+
+- **Function**: Set the gripping current of the force-controlled gripper
+- **Parameter**:
+  - `current_value` (`int`): Gripping current value, range 100 to 300.
+  - `gripper_id` (`int`) Gripper ID, default 14, range 1 to 254.
+- **Return value**:
+  - 0 - Failure
+  - 1 - Success
+
+#### `get_pro_gripper_protection_current(gripper_id=14)`
+
+- **Function**: Read the gripping current of the force-controlled gripper
+- **Parameter**:
+  - `gripper_id` (`int`) Gripper ID, default 14, range 1 to 254.
+- **Return value**: (`int`) Clamping current value, range 100 ~ 300.

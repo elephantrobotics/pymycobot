@@ -5,7 +5,7 @@ import threading
 import socket
 
 from pymycobot.close_loop import CloseLoop
-from pymycobot.common import ProtocolCode
+from pymycobot.common import ProtocolCode,ProGripper
 
 
 class Pro450Client(CloseLoop):
@@ -72,15 +72,16 @@ class Pro450Client(CloseLoop):
                 res.append(valid_data[i])
         elif data_len == 7:
             error_list = [i for i in valid_data]
-            for i in error_list:
-                if i in range(16,23):
-                    res.append(1)
-                elif i in range(23,29):
-                    res.append(2)
-                elif i in range(32,112):
-                    res.append(3)
-                else:
-                    res.append(i)
+            return error_list
+            # for i in error_list:
+            #     if i in range(16,23):
+            #         res.append(1)
+            #     elif i in range(23,29):
+            #         res.append(2)
+            #     elif i in range(32,112):
+            #         res.append(3)
+            #     else:
+            #         res.append(i)
         elif data_len == 24:
             res = self.bytes4_to_int(valid_data)
         elif data_len == 40:
@@ -252,6 +253,75 @@ class Pro450Client(CloseLoop):
         else:
             return res
 
+    def _modbus_crc(self, data: bytes) -> bytes:
+        crc = 0xFFFF
+        for byte in data:
+            crc ^= byte
+            for _ in range(8):
+                if crc & 0x0001:
+                    crc >>= 1
+                    crc ^= 0xA001
+                else:
+                    crc >>= 1
+        return crc.to_bytes(2, byteorder='little')
+
+    def _send_modbus_command(self, gripper_id, func_code, reg_addr, value_high=None, value_low=None, expect_len=7):
+        """
+        General Modbus command sending method
+
+        Args:
+            gripper_id: Device ID
+            func_code: Function code (0x03 = read, 0x06 = write)
+            reg_addr: Register address
+            value_high: High byte of the write data (can be None for read operations)
+            value_low: Low byte of the write data (can be None for read operations)
+            expect_len: Expected return data length
+        """
+        cmd = [gripper_id, func_code, (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
+        if func_code == 0x06:
+            cmd.extend([value_high, value_low])
+        else:
+            cmd.extend([0x00, 0x00])
+
+        cmd.extend(self._modbus_crc(cmd))
+        self.tool_serial_write_data(cmd)
+        time.sleep(0.05)
+
+        recv = []
+        for _ in range(3):
+            recv = self.tool_serial_read_data(expect_len)
+            if recv:
+                break
+        if not recv:
+            return cmd, -1
+        return cmd, recv
+
+    def _check_gripper_id(self, gripper_id):
+        if not (1 <= gripper_id <= 254):
+            raise ValueError("The range of 'gripper_id' is 1 ~ 254, but the received value is {}".format(gripper_id))
+
+    def _write_and_check(self, gripper_id, reg_addr, value):
+        """Write register and verify return"""
+        self._check_gripper_id(gripper_id)
+        high, low = (value >> 8) & 0xFF, value & 0xFF
+        cmd, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
+        if isinstance(recv, (list, bytearray)) and len(recv) >= 6 and recv[1] == 0x06:
+            if recv[4] == 0x00 and recv[5] == 0x01:
+                return 1
+            elif recv[4] == 0x00 and recv[5] == 0x00:
+                return 0
+            else:
+                return -1
+        return -1
+
+    def _read_register(self, gripper_id, reg_addr):
+        """Reads a register and returns an integer value"""
+        self._check_gripper_id(gripper_id)
+        _, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
+        if isinstance(recv, (list, bytearray)) and len(recv) >= 5 and recv[1] == 0x03:
+            return (recv[3] << 8) | recv[4]
+        return -1
+
     def open(self):
         self.sock = self.connect_socket()
         
@@ -339,3 +409,318 @@ class Pro450Client(CloseLoop):
         """Read end correction version number
         """
         return self._mesg(ProtocolCode.GET_TOOL_MODIFY_VERSION)
+
+    def get_pro_gripper_firmware_version(self, gripper_id=14):
+        """ Read the firmware major and minor version numbers
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            version number (float): x.x
+        """
+        val = self._read_register(gripper_id, ProGripper.MODBUS_GET_FIRMWARE_VERSION)
+        return val / 10.0 if val >= 0 else -1
+
+    def get_pro_gripper_firmware_modified_version(self, gripper_id=14):
+        """ Read the firmware revision number
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            version number (int)
+        """
+        val = self._read_register(gripper_id, ProGripper.MODBUS_GET_FIRMWARE_MODIFY_VERSION)
+        return val if val >= 0 else -1
+
+    def set_pro_gripper_id(self, target_id, gripper_id=14):
+        """ Set the gripper ID
+
+        Args:
+            target_id (int): Target ID, 1 ~ 254
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (1 <= target_id <= 254):
+            raise ValueError("The range of 'target_id' is 1 ~ 254, but the received value is {}".format(target_id))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ID, target_id)
+
+    def get_pro_gripper_id(self, gripper_id=14):
+        """ Read the gripper ID
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            gripper_id (int): 1 ~ 254
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_ID)
+
+    def set_pro_gripper_angle(self, gripper_angle, gripper_id=14):
+        """ Set the gripper angle
+
+        Args:
+            gripper_angle (int): 0 ~ 100
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (0 <= gripper_angle <= 100):
+            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ANGLE, gripper_angle)
+
+    def get_pro_gripper_angle(self, gripper_id=14):
+        """ Get the gripper angle
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            gripper_angle (int): 0 ~ 100
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_ANGLE)
+
+    def set_pro_gripper_open(self, gripper_id=14):
+        """ Open the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        return self.set_pro_gripper_angle(100, gripper_id)
+    def set_pro_gripper_close(self, gripper_id=14):
+        """ Close the gripper
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        return self.set_pro_gripper_angle(0, gripper_id)
+
+    def set_pro_gripper_calibration(self, gripper_id=14):
+        """ Set the gripper zero position
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_CALIBRATION, 0)
+
+    def get_pro_gripper_status(self, gripper_id=14):
+        """ Get the gripper status
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            0 - Moving
+            1 - Stopped moving, no clamping detected
+            2 - Stopped moving, clamping detected
+            3 - After clamping detected, the object fell
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_STATUS)
+
+    def set_pro_gripper_enabled(self, state, gripper_id=14):
+        """ Set the gripper enable state
+
+        Args:
+            state (bool): 0 or 1, 0 - Disable 1 - Enable
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if state not in [0, 1]:
+            raise ValueError("The range of 'state' is 0 or 1, but the received value is {}".format(state))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ENABLED, state)
+
+    def set_pro_gripper_torque(self, gripper_torque, gripper_id=14):
+        """ Set the gripper torque
+
+        Args:
+            gripper_torque (int): 0 ~ 100
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (0 <= gripper_torque <= 100):
+            raise ValueError("The range of 'gripper_torque' is 0 ~ 100, but the received value is {}".format(gripper_torque))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_TORQUE, gripper_torque)
+
+    def get_pro_gripper_torque(self, gripper_id=14):
+        """ Set the gripper torque
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            gripper_torque (int): 0 ~ 100
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_TORQUE)
+
+    def set_pro_gripper_speed(self, speed, gripper_id=14):
+        """ Set the gripper torque
+
+        Args:
+            speed (int): 1 ~ 100
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (1 <= speed <= 100):
+            raise ValueError("The range of 'speed' is 1~ 100, but the received value is {}".format(speed))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_SPEED, speed)
+
+    def get_pro_gripper_speed(self, gripper_id=14):
+        """ Get the gripper speed
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Return:
+            speed (int): 1 ~ 100
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_SPEED)
+
+    def set_pro_gripper_abs_angle(self, gripper_angle, gripper_id=14):
+        """ Set the gripper absolute angle
+
+        Args:
+            gripper_angle (int): 0 ~ 100
+            gripper_id (int): 1 ~ 254, defaults to 14
+        """
+        if not (0 <= gripper_angle <= 100):
+            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ABS_ANGLE, gripper_angle)
+
+    def set_pro_gripper_io_open_angle(self, gripper_angle, gripper_id=14):
+        """ Set the gripper IO open angle
+
+        Args:
+            gripper_angle (int): 0 ~ 100
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (0 <= gripper_angle <= 100):
+            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_OPEN_ANGLE, gripper_angle)
+
+    def get_pro_gripper_io_open_angle(self, gripper_id=14):
+        """ Get the gripper IO open angle
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            angle (int): 0 ~ 100
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_IO_OPEN_ANGLE)
+
+    def set_pro_gripper_io_close_angle(self, gripper_angle, gripper_id=14):
+        """ Set the gripper IO close angle
+
+        Args:
+            gripper_angle (int): 0 ~ 100
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (0 <= gripper_angle <= 100):
+            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_CLOSE_ANGLE, gripper_angle)
+
+    def get_pro_gripper_io_close_angle(self, gripper_id=14):
+        """ Get the gripper IO close angle
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            angle (int): 0 ~ 100
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_IO_CLOSE_ANGLE)
+
+    def set_pro_gripper_mini_pressure(self, pressure_value, gripper_id=14):
+        """ Set the gripper mini pressure
+
+        Args:
+            pressure_value (int): 0 ~ 254
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (0 <= pressure_value <= 254):
+            raise ValueError("The range of 'pressure_value' is 0 ~ 254, but the received value is {}".format(pressure_value))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MINI_PRESSURE, pressure_value)
+
+    def get_pro_gripper_mini_pressure(self, gripper_id=14):
+        """ Get the gripper mini pressure
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            mini pressure (int): 0 ~ 254
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_MINI_PRESSURE)
+
+    def set_pro_gripper_protection_current(self, current_value, gripper_id=14):
+        """ Set the gripper protection current
+
+        Args:
+            current_value (int): 100 ~ 300
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        if not (100 <= current_value <= 300):
+            raise ValueError("The range of 'current_value' is 100 ~ 300, but the received value is {}".format(current_value))
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_PROTECTION_CURRENT, current_value)
+
+    def get_pro_gripper_protection_current(self, gripper_id=14):
+        """ Get the gripper protection current
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            current_value (int): 100 ~ 300
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_PROTECTION_CURRENT)
+
+    def set_fresh_mode(self, mode):
+        """Set command refresh mode
+
+        Args:
+            mode: int.
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue.
+        """
+        if mode not in [0, 1]:
+            raise ValueError("The range of 'mode' is 0 or 1, but the received value is {}".format(mode))
+        return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
+
+    def get_fresh_mode(self):
+        """Query sports mode
+
+        Returns:
+            0 - interpolation mode, 1 - refresh mode
+        """
+        return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)

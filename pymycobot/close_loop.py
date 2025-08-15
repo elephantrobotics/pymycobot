@@ -100,12 +100,16 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             wait_time = 0.3
             if real_command[3] == FingerGripper.SET_HAND_GRIPPER_CALIBRATION:
                 wait_time = 10
+        if genre == ProtocolCode.SET_FRESH_MODE and self.__class__.__name__ == 'Pro450Client':
+            wait_time = 3
 
         need_break = False
         data = None
         timeout = 0.5
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
+        elif self.__class__.__name__ == "Pro450Client":
+            timeout = 3
         interval_time = time.time()
         is_moving = 0
         check_is_moving_t = 1
@@ -193,7 +197,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                         return -2
             time.sleep(0.001)
         else:
-            # print("ERROR: ---超时---"
+            # print("ERROR: ---超时---")
             pass
         if data is None:
             # print("未拿到数据")

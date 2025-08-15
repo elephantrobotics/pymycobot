@@ -639,8 +639,11 @@ class MyCobot320(CommandGenerator):
     def get_pro_gripper_angle(self, gripper_id=14):
         """ Setting the angle of the force-controlled gripper
 
-        Return:
+        Args:
             gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            gripper_angle (int): 0 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self.get_pro_gripper(ProGripper.GET_GRIPPER_ANGLE, gripper_id)
