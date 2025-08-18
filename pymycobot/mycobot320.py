@@ -495,14 +495,14 @@ class MyCobot320(CommandGenerator):
         """
         return self._mesg(ProtocolCode.GET_SERVO_TEMPS, has_reply=True)
 
-    def get_servo_last_pdi(self, id):
-        """Obtain the pdi of a single steering gear before modification
-
-        Args:
-            id: 1 - 6
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, servo_id_pdi=id)
-        return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, id, has_reply=True)
+    # def get_servo_last_pdi(self, id):
+    #     """Obtain the pdi of a single steering gear before modification
+    #
+    #     Args:
+    #         id: 1 - 6
+    #     """
+    #     self.calibration_parameters(class_name=self.__class__.__name__, servo_id_pdi=id)
+    #     return self._mesg(ProtocolCode.GET_SERVO_LASTPDI, id, has_reply=True)
 
     def set_void_compensate(self, mode):
         """Set void compensation mode

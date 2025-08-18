@@ -729,7 +729,7 @@ class DataProcessor(object):
                 ProtocolCode.GET_SERVO_CURRENTS,
                 ProtocolCode.GET_SERVO_TEMPS,
                 ProtocolCode.GET_SERVO_VOLTAGES,
-                ProtocolCode.GET_SERVO_STATUS,
+                # ProtocolCode.GET_SERVO_STATUS,
                 ProtocolCode.IS_ALL_SERVO_ENABLE
             )
             if data_len == 8 and (
@@ -749,7 +749,6 @@ class DataProcessor(object):
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
-
             if genre in [ProtocolCode.GET_SERVO_STATUS]:
                 res.clear()
                 for i in valid_data:
@@ -825,6 +824,29 @@ class DataProcessor(object):
                     res.append(3)
                 else:
                     res.append(i)
+            error_key = None
+            if genre == ProtocolCode.READ_NEXT_ERROR:
+                error_key = "read_next_error"
+            if error_key is not None:
+                robot_320_info = Robot320Info.error_info
+                locale_lang = locale.getdefaultlocale()[0]
+                if locale_lang not in ["zh_CN", "en_US"]:
+                    locale_lang = "en_US"
+                for i in range(len(res)):
+                    val = res[i]
+                    error_list = []
+                    if val != 0:
+                        for bit in range(8):
+                            if (val >> bit) & 1:
+                                error_list.append(bit)
+                                if locale_lang == "zh_CN":
+                                    print("错误: 关节{} - {}".format(i + 1,
+                                                                     robot_320_info[locale_lang][error_key].get(bit, "未知错误")))
+                                else:
+                                    print("Error: Joint{} - {}".format(i + 1,
+                                                                       robot_320_info[locale_lang][error_key].get(bit, "Unknown error")))
+                    res[i] = error_list if error_list else 0
+
         elif data_len == 28:
             if genre == ProtocolCode.GET_QUICK_INFO:
                 for header_i in range(0, len(valid_data) - 2, 2):

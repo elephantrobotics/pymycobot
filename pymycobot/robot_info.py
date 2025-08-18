@@ -29,6 +29,17 @@ class Robot320Info(object):
                     2: "伺服电机过温",
                     3: "伺服电机过流",
                     5: "伺服电机过载",
+                },
+            "read_next_error":
+                {
+                    0: "急停被按下",
+                    1: "通信有问题",
+                    2: "通信不稳定",
+                    3: "电压过/欠压",
+                    4: "磁编码异常",
+                    5: "温度过热",
+                    6: "电流过流",
+                    7: "负载过载",
                 }
         },
         "en_US": {
@@ -58,6 +69,17 @@ class Robot320Info(object):
                     2: "Servo motor over-temperature",
                     3: "Servo motor over-current",
                     5: "Servo motor over-load",
+                },
+            "read_next_error":
+                {
+                    0: "Emergency stop pressed",
+                    1: "Communication problem",
+                    2: "Communication unstable",
+                    3: "Overvoltage/undervoltage",
+                    4: "Magnetic encoding abnormality",
+                    5: "Overtemperature",
+                    6: "Overcurrent",
+                    7: "Load overload",
                 }
         }
 
