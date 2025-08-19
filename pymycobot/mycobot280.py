@@ -162,7 +162,7 @@ class MyCobot280(CommandGenerator):
             return 1
         res = self._process_received(data, genre)
         if res is None:
-            return None
+            return -1
         if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,
                                                                                          ProtocolCode.GET_JOINT_MIN_ANGLE,
                                                                                          ProtocolCode.GET_JOINT_MAX_ANGLE,
