@@ -31,7 +31,7 @@ print(mc.get_angles())
 
 - **function：** Detection robot model
 
-- **Return value：** Definition Rule: Actual machine model. For example, the MyCobot Pro model is 4503
+- **Return value：** Definition Rule: Actual machine model. For example, the MyCobot Pro 450 model is 4503
 
 #### `get_atom_version()`
 
@@ -132,14 +132,14 @@ print(mc.get_angles())
 - **Parameters:**
   - `id`: Joint id(`genre.Angle`), range int 1-6
   - `degree`: degree value(`float`)
-    <!-- | Joint Id | range |
+    | Joint Id | range |
     | ---- | ---- |
-    | 1 | -178 ~ 178 |
-    | 2 | -74 ~ 130 |
-    | 3 | -178 ~ 178 |
-    | 4 | -180 ~ 10 |
-    | 5 | -178 ~ 178 |
-    | 6 | -20 ~ 273 | -->
+    | 1 | -165 ~ 165 |
+    | 2 | -120 ~ 120 |
+    | 3 | -158 ~ 158 |
+    | 4 | -165 ~ 165 |
+    | 5 | -165 ~ 165 |
+    | 6 | -175 ~ 175 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100
 
@@ -161,14 +161,14 @@ print(mc.get_angles())
 - **Parameters:**
   - `id`:send one coord to robot arm, 1-6 corresponds to [x, y, z, rx, ry, rz]
   - `coord`: coord value(`float`)
-    <!-- | Coord Id | range |
+    | Coord Id | range |
     | ---- | ---- |
-    | 1 | -466 ~ 466 |
-    | 2 | -466 ~ 466 |
-    | 3 | -240 ~ 531 |
-    | 4 | -180 ~ 180 |
-    | 5 | -180 ~ 180 |
-    | 6 | -180 ~ 180 | -->
+    | x | -466 ~ 466 |
+    | y | -466 ~ 466 |
+    | z | -230 ~ 614 |
+    | rx | -180 ~ 180 |
+    | ry | -180 ~ 180 |
+    | rz | -180 ~ 180 |
   - `speed`: (`int`) 1-100
 
 #### `send_coords(coords, speed, mode)`
@@ -383,16 +383,18 @@ print(mc.get_angles())
 
 #### `set_digital_output(pin_no, pin_signal)`
 
-- **function:** set IO statue
+- **Function:** Set terminal IO status
 - **Parameters**
-  - `pin_no` (int): Pin number
-  - `pin_signal` (int): 0 / 1
+  - `pin_no` (int): Pin number, range 1 to 2
+  - `pin_signal` (int): 0 / 1, 0 - low level, 1 - high level
+- **Return Value:**
+  - `1`: Completed
 
 #### `get_digital_input(pin_no)`
 
-- **function:** read IO statue
-- **Parameters**: `pin_no` (int)
-- **Return value**: signal
+- **Function:** Get terminal IO status
+- **Parameters**: `pin_no` (int), range 1 to 2
+- **Return Value**: `int` 0 / 1, 0 - low level, 1 - high level
 
 <!-- ### 9. Robotic arm end gripper control
 
@@ -567,25 +569,25 @@ print(mc.get_angles())
 - Parameters：
   `transpoint(list)`：Arc passing through point coordinates
   `endpoint (list)`：Arc endpoint coordinates
-  ` speed(int)`： 1 ~ 100
+  ` speed(int)`： 1 ~ 100 -->
 
-### 14. Set bottom IO input/output status
+### 9. Bottom IO control
 
-#### `set_basic_output(pin_no, pin_signal)`
+#### `set_base_io_output(pin_no, pin_signal)`
 
 - **function**：Set Base IO Output
 - **Parameters**：
-  - `pin_no` (`int`) Pin port number, range 1 ~ 6
+  - `pin_no` (`int`) Pin port number, range 1 ~ 12
   - `pin_signal` (`int`): 0 - low. 1 - high
 
-#### `get_basic_input(pin_no)`
+#### `get_base_io_output(pin_no)`
 
-- **function:** Read base IO input, range 1 ~ 6
+- **function:** Read base IO input
 - **Parameters:**
-  - `pin_no` (`int`) pin number
-- **Return value:** 0 - low. 1 - high -->
+  - `pin_no` (`int`) pin number, range 1 ~ 12
+- **Return value:** 0 - low. 1 - high
 
-### 9. Set up 485 communication at the end of the robotic arm
+### 10. Set up 485 communication at the end of the robotic arm
 
 <!-- #### `tool_serial_restore()`
 
@@ -644,7 +646,7 @@ print(mc.get_angles())
 - **function:** Burn tool firmware
 <!-- - **Return value:** 0-Normal 1-Robot triggered collision detection -->
 
-### 10. Pro force-controlled gripper
+### 11. Pro force-controlled gripper
 
 #### `get_pro_gripper_firmware_version( gripper_id=14)`
 

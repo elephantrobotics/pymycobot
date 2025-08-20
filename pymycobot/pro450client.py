@@ -53,6 +53,9 @@ class Pro450Client(CloseLoop):
             elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_CURRENTS]:
                 for i in range(data_len):
                     res.append(valid_data[i])
+            elif data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+                res_list = [i for i in valid_data]
+                return res_list
             else:
                 for header_i in range(0, len(valid_data), 2):
                     one = valid_data[header_i : header_i + 2]
@@ -135,7 +138,7 @@ class Pro450Client(CloseLoop):
                     res.append(0xFF & data1 if data1 < 0 else data1)
             res.append(self._decode_int8(valid_data))
         if res == []:
-            return None
+            return -1
         
         if genre in [
             ProtocolCode.ROBOT_VERSION,
@@ -175,7 +178,8 @@ class Pro450Client(CloseLoop):
             ProtocolCode.GET_VR_MODE,
             ProtocolCode.GET_FILTER_LEN,
             ProtocolCode.IS_SERVO_ENABLE,
-            ProtocolCode.GET_POS_SWITCH
+            ProtocolCode.GET_POS_SWITCH,
+            ProtocolCode.GET_TOOL_MODIFY_VERSION
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -284,14 +288,13 @@ class Pro450Client(CloseLoop):
             cmd.extend([0x00, 0x00])
 
         cmd.extend(self._modbus_crc(cmd))
-        self.tool_serial_write_data(cmd)
-        time.sleep(0.05)
-
-        recv = []
-        for _ in range(3):
-            recv = self.tool_serial_read_data(expect_len)
-            if recv:
-                break
+        recv = self.tool_serial_write_data(cmd)
+        # time.sleep(0.05)
+        # recv = []
+        # for _ in range(3):
+        #     recv = self.tool_serial_read_data(expect_len)
+        #     if recv:
+        #         break
         if not recv:
             return cmd, -1
         return cmd, recv
@@ -327,25 +330,6 @@ class Pro450Client(CloseLoop):
         
     def close(self):
         self.sock.close()
-        
-    def set_pos_switch(self, mode):
-        """Set position switch mode.
-
-        Args:
-            mode: 0 - switch off, 1 - switch on
-        """
-        if mode == 0:
-            return self._mesg(ProtocolCode.SET_POS_SWITCH, mode, asyn_mode=True)
-        return self._mesg(ProtocolCode.SET_POS_SWITCH, mode,asyn_mode=False)
-        
-    
-    def get_pos_switch(self):
-        """Get position switch mode.
-
-        Return:
-            1 - switch on, 0 - switch off
-        """
-        return self._mesg(ProtocolCode.GET_POS_SWITCH, has_reply=True)
 
     def set_motor_enabled(self, joint_id, state):
         """Set the robot torque state.
@@ -355,7 +339,7 @@ class Pro450Client(CloseLoop):
             state: 1 - enable, 0 - disable
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, flag=state)
+            class_name=self.__class__.__name__, set_motor_enabled=joint_id, state=state)
         return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
 
     def set_over_time(self, timeout=1000):
@@ -384,7 +368,7 @@ class Pro450Client(CloseLoop):
         """Read the number of communication exceptions
 
         Args:
-            joint_id (int): joint ID
+            joint_id (int): joint ID, 1 ~ 6
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id)
@@ -580,7 +564,7 @@ class Pro450Client(CloseLoop):
             1 - success, 0 - failed
         """
         if not (1 <= speed <= 100):
-            raise ValueError("The range of 'speed' is 1~ 100, but the received value is {}".format(speed))
+            raise ValueError("The range of 'speed' is 1 ~ 100, but the received value is {}".format(speed))
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_SPEED, speed)
 
     def get_pro_gripper_speed(self, gripper_id=14):
@@ -724,3 +708,157 @@ class Pro450Client(CloseLoop):
             0 - interpolation mode, 1 - refresh mode
         """
         return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
+
+    def set_base_io_output(self, pin_no, pin_signal):
+        """Set the base output IO status
+
+        Args:
+            pin_no: pin port number. range 1 ~ 12
+            pin_signal: 0 - low. 1 - high.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no_base=pin_no, pin_signal=pin_signal)
+        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
+
+    def get_base_io_input(self, pin_no):
+        """Get the input IO status of the base
+
+        Args:
+            pin_no: (int) pin port number. range 1 ~ 12
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no_base=pin_no)
+        return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
+
+    def servo_restore(self, joint_id):
+        """Abnormal recovery of joints
+
+        Args:
+            joint_id (int): Joint ID.
+                arm : 1 ~ 6
+                All joints: 254
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, servo_restore=joint_id
+        )
+        return self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+
+    def send_angles(self, angles, speed, _async=False):
+        """Send the angles of all joints to robot arm.
+
+        Args:
+            angles: a list of angle values(List[float]). len 6.
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, angles=angles, speed=speed)
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True, _async=_async)
+
+    def send_angle(self, joint_id, angle, speed, _async=False):
+        """Send one angle of joint to robot arm.
+
+        Args:
+            joint_id : Joint id(genre.Angle)， int 1-6.
+            angle : angle value(float).
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
+        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True,
+                          _async=_async)
+
+    def send_coord(self, coord_id, coord, speed, _async=False):
+        """Send one coord to robot arm.
+
+        Args:
+            coord_id (int): coord id, range 1 ~ 6
+            coord (float): coord value.
+                The coord range of `X` is -466 ~ 466.
+                The coord range of `Y` is -466 ~ 466.
+                The coord range of `Z` is -230 ~ 614.
+                The coord range of `RX` is -180 ~ 180.
+                The coord range of `RY` is -180 ~ 180.
+                The coord range of `RZ` is -180 ~ 180.
+            speed (int): 1 ~ 100
+        """
+
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+        value = self._coord2int(
+            coord) if coord_id <= 3 else self._angle2int(coord)
+        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
+
+    def send_coords(self, coords, speed, _async=False):
+        """Send all coords to robot arm.
+
+        Args:
+            coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
+                The coord range of `X` is -466 ~ 466.
+                The coord range of `Y` is -466 ~ 466.
+                The coord range of `Z` is -230 ~ 614.
+                The coord range of `RX` is -180 ~ 180.
+                The coord range of `RY` is -180 ~ 180.
+                The coord range of `RZ` is -180 ~ 180.
+            speed : (int) 1 ~ 100
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords, speed=speed)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
+
+    def get_joint_min_angle(self, joint_id):
+        """Gets the minimum movement angle of the specified joint
+
+        Args:
+            joint_id: Joint id 1 - 6
+
+        Return:
+            angle value(float)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id)
+
+    def get_joint_max_angle(self, joint_id):
+        """Gets the maximum movement angle of the specified joint
+
+        Args:
+            joint_id: Joint id 1 - 6
+
+        Return:
+            angle value(float)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id)
+
+    def set_joint_max_angle(self, joint_id, degree):
+        """Set the maximum angle of the joint (must not exceed the maximum angle specified for the joint)
+
+        Args:
+            joint_id (int): Joint id 1 - 6
+            degree: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -120 ~ 120. The angle range of joint 3 is -158 ~ 158. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -165 ~ 165. The angle range of joint 6 is -175 ~ 175.
+
+        Return:
+            1 - success
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
+
+    def set_joint_min_angle(self, joint_id, degree):
+        """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
+
+        Args:
+            joint_id (int): Joint id 1 - 6.
+            degree: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -120 ~ 120. The angle range of joint 3 is -158 ~ 158. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -165 ~ 165. The angle range of joint 6 is -175 ~ 175.
+
+        Return:
+            1 - success
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)

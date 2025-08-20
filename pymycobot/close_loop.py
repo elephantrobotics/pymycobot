@@ -210,6 +210,13 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             data_len -= 1
             if self.__class__.__name__ == "Pro630Client":
                 data_len += 1
+            elif self.__class__.__name__ == "Pro450Client":
+                data_len += 1
+                data_pos -= 1
+        elif genre == ProtocolCode.GET_DIGITAL_INPUT:
+            if self.__class__.__name__ == "Pro450Client":
+                data_len -= 1
+                data_pos = 5
         else:
             data_pos = 4
         if is_get_return:

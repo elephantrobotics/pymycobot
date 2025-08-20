@@ -101,7 +101,7 @@ __all__ = [
     "Pro450Client",
 ]
 
-__version__ = "4.0.0b2"
+__version__ = "4.0.0b3"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

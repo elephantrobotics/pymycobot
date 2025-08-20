@@ -126,14 +126,14 @@ print(mc.get_angles())
 - **参数：**
   - `id`：关节 id（`genre.Angle`），范围 int 1-6
   - `degree`：度数值（`float`）
-      <!-- | 关节 Id | 范围 |
+      | 关节 Id | 范围 |
       | ---- | ---- |
       | 1 | -165 ~ 165 |
-      | 2 | -90 ~ 90 |
-      | 3 | -180 ~ 65 |
+      | 2 | -120 ~ 120 |
+      | 3 | -158 ~ 158 |
       | 4 | -165 ~ 165 |
-      | 5 | -115 ~ 115 |
-      | 6 | -175 ~ 175 | -->
+      | 5 | -165 ~ 165 |
+      | 6 | -175 ~ 175 |
 
     - `speed`：机械臂运动速度及范围 1~100
 
@@ -155,14 +155,14 @@ print(mc.get_angles())
 - **参数：**
   - `id`：向机械臂发送一个坐标，1-6 对应 [x, y, z, rx, ry, rz]
   - `coord`：坐标值（`float`）
-      <!-- | 坐标 ID | 范围 |
+      | 坐标 ID | 范围 |
       | ---- | ---- |
-      | x | -272 ~ 272 |
-      | y | -272 ~ 272 |
-      | z | -36 ~ 408.9 |
+      | x | -466 ~ 466 |
+      | y | -466 ~ 466 |
+      | z | -230 ~ 614 |
       | rx | -180 ~ 180 |
       | ry | -180 ~ 180 |
-      | rz | -180 ~ 180 | -->
+      | rz | -180 ~ 180 |
   - `speed`：（`int`）1-100
 
 #### `send_coords(coords, speed)`
@@ -372,23 +372,22 @@ print(mc.get_angles())
 - **功能**：获取所有关节的运动状态
 - **返回值**： 值为 0 表示没有错误
 
-### 8. Robotic arm end IO control
-
+### 8. 末端 IO 控制
 
 #### `set_digital_output(pin_no, pin_signal)`
 
-- **功能:** 设置IO状态
+- **功能:** 设置末端IO状态
 - **参数**
-  - `pin_no` (int): 引脚号
-  - `pin_signal` (int): 0 / 1, 输入0表示设置为运行状态，输入1表示停止状态
+  - `pin_no` (int): 引脚号，范围 1 ~ 2
+  - `pin_signal` (int): 0 / 1, 0 - 低电平，1 - 高电平
 - **返回值:**
   - `1`: 完成
 
 #### `get_digital_input(pin_no)`
 
-- **功能:** 获取IO状态
-- **参数**: `pin_no` (int)
-- **返回值**: 当返回的值为0表示在工作状态运行，1表示停止状态
+- **功能:** 获取末端IO状态
+- **参数**: `pin_no` (int)，范围 1 ~ 2
+- **返回值**: `int` 0 / 1, 0 - 低电平，1 - 高电平
 
 <!-- ### 9. Robotic arm end gripper control
 
@@ -563,25 +562,25 @@ print(mc.get_angles())
 - 参数：
   `transpoint(list)`：Arc passing through point coordinates
   `endpoint (list)`：Arc endpoint coordinates
-  ` speed(int)`： 1 ~ 100
+  ` speed(int)`： 1 ~ 100-->
 
-### 14. Set bottom IO input/output status
+### 9. 底部 IO 控制
 
-#### `set_basic_output(pin_no, pin_signal)`
+#### `set_base_io_output(pin_no, pin_signal)`
 
-- **功能**：Set Base IO Output
+- **功能**：设置底部IO输出状态
 - **参数**：
-  - `pin_no` (`int`) Pin port number, range 1 ~ 6
-  - `pin_signal` (`int`): 0 - low. 1 - high
+  - `pin_no` (`int`) 引脚号，范围 1 ~ 12
+  - `pin_signal` (`int`): 0 - 低电平. 1 - 高电平
 
-#### `get_basic_input(pin_no)`
+#### `get_base_io_output(pin_no)`
 
-- **功能：** Read base IO input, range 1 ~ 6
+- **功能：** 获取底部IO输入状态
 - **参数:**
-  - `pin_no` (`int`) pin number
-- **返回值:** 0 - low. 1 - high -->
+  - `pin_no` (`int`) 引脚号，范围 1 ~ 12
+- **返回值:** 0 - 低电平. 1 - 高电平 
 
-### 9. 设置末端485通信
+### 10. 设置末端485通信
 
 <!-- #### `tool_serial_restore()`
 
@@ -640,7 +639,7 @@ print(mc.get_angles())
 - **功能：** 烧录末端固件
 <!-- - **返回值:** 0-Normal 1-Robot triggered collision detection -->
 
-### 10. Pro 力控夹爪
+### 11. Pro 力控夹爪
 
 #### `get_pro_gripper_firmware_version( gripper_id=14)`
 
