@@ -22,6 +22,7 @@ class Pro450Client(CloseLoop):
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
         self.is_stop = False
+        self.sync_mode = False
         self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True
         self.read_threading.start()
