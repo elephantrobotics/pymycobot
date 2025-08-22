@@ -918,7 +918,7 @@ class MyCobot280Socket(CommandGenerator):
 
     def gripper_stop(self):
         """Stop gripper"""
-        return self.set_gripper_value(0, 0)
+        return self.set_gripper_value(0, 0, gripper_type=1, is_torque=1)
 
     # Other
     def wait(self, t):
