@@ -232,31 +232,21 @@ class Pro450Client(CloseLoop):
         elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.GET_POS_OVER]:
                 return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
-            if len(res) == 23:
-                i = 9
-                for i in range(9, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
-            else:
-                for i in range(10, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
+            if len(res) == 32:
+                parsed = res[:8]
+                for start in (8, 20):
+                    for i in range(start, start + 12, 2):
+                        val = (res[i] << 8) | res[i + 1]
+                        parsed.append(self._val_to_bits_list(val))
+
+                return parsed
         else:
             return res
+
+    def _val_to_bits_list(self, val):
+        if val == 0:
+            return 0
+        return [bit for bit in range(16) if (val >> bit) & 1]
 
     def _modbus_crc(self, data: bytes) -> bytes:
         crc = 0xFFFF
