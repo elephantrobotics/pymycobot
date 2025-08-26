@@ -1,8 +1,447 @@
 # ChangeLog for pymycobot
 
+## v4.0.0 (2025-07-15)
+
+- release v4.0.0
+- Fix bugs
+
+## v3.9.9 (2025-06-19)
+
+- release v3.9.9
+- Optimizing AGV protocols.
+- Added stop motion interface for 280 grippers.
+- Update M750 limit information.
+
+## v3.9.8 (2025-06-05)
+
+- release v3.9.8
+- Fix bugs
+
+## v3.9.7 (2025-4-14)
+
+- release v3.9.7
+- Fix Pro630 pico version bugs
+
+## v3.9.6 (2025-4-11)
+
+- release v3.9.6
+- update mercury new limit value
+
+## v3.9.5 (2025-4-11)
+
+- release v3.9.5
+- update mercury new limit value
+
+## v3.9.4 (2025-4-10)
+
+- release v3.9.4
+- Suction pump interface optimization
+- Fix bugs
+
+## v3.9.3 (2025-4-1)
+
+- release v3.9.3
+- Fix Pro630 class bugs
+
+## v3.9.2 (2025-3-28)
+
+- release v3.9.2
+- Fix bugs
+
+## v3.9.1 (2025-3-4)
+
+- release v3.9.1
+- Fix bugs
+
+## v3.9.0 (2025-2-27)
+
+- release v3.9.0
+- Fix bugs
+
+## v3.6.9 (2024-12-26)
+
+- release v3.6.9
+- The set_basic_output interface adds IO 5 to open the suction pump solenoid valve and automatically close it after 0.5S
+- Fix bugs
+
+## v3.6.7 (2024-11-15)
+
+- release v3.6.7
+- Fixed the issue of incorrect naming of 320 electric gripper
+
+## v3.6.5 (2024-10-25)
+
+- release v3.6.5
+- Added 280 set_encoders_drag interface
+
+## v3.6.4 (2024-10-22)
+
+- release v3.6.4
+- Fix set_encoder function BUG
+
+## v3.6.3 (2024-10-17)
+
+- release v3.6.3
+- Fix bug and add new function
+
+## v3.6.2 (2024-10-11)
+
+- release v3.6.2
+- 630 adds partial control interface for force control gripper 
+
+## v3.6.1 (2024-10-09)
+
+- release v3.6.1
+- Update 320 limit date
+
+## v3.6.0 (2024-10-8)
+
+- release v3.6.0
+- Refactoring by robot type
+
+## v3.5.3 (2024-9-24)
+
+- release v3.5.3
+- Fix(mycobotpro630): Remove clear_encoder_error() calls
+
+## v3.5.2 (2024-9-13)
+
+- release v3.5.2
+- add mycobot class  init delay 1.5S
+
+## v3.5.1 (2024-9-12)
+
+- release v3.5.1
+- fix bug
+
+## v3.5.0 (2024-9-9)
+
+- release v3.5.0
+- Added 320 abnormal status acquisition interface
+
+## v3.4.9 (2024-7-18)
+
+- release v3.4.9
+- fix A1 bug
+
+## v3.4.8 (2024-7-11)
+
+- release v3.4.7
+- fix 280 get VOLTAGES error
+
+## v3.4.7 (2024-6-28)
+
+- release v3.4.7
+- Mycobot 280 stop interface adds return (applicable to Atom v7.0 and later versions)
+
+## v3.4.6 (2024-4-23)
+
+- release v3.4.6
+- 1. Fix the issue of Mercury API: drag_teach_clean not being able to be used
+- 2. Unified naming convention for Mercury drag teaching API
+- 3. Clean up excess files
+
+## v3.4.5 (2024-4-9)
+
+- release v3.4.5
+- Add python-can
+
+## v3.4.4 (2024-3-26)
+
+- release v3.4.4
+- Mercury API Pause and Stop Interface Add Slow Stop Parameters
+
+## v3.4.3 (2024-3-18)
+
+- release v3.4.3
+- Fix bug
+
+## v3.4.2 (2024-3-13)
+
+- release v3.4.2
+- Add Mercury new interface
+
+## v3.4.1 (2024-3-11)
+
+- release v3.4.1
+- Optimize sockets
+
+## v3.4.0 (2024-3-1)
+
+- Updated Mercury X1 base control interface; A
+- Added 630 API
+- Updated Mercury motion range limits
+
+## v3.3.9 (2024-2-2)
+
+- release v3.3.9
+- fix bug
+
+## v3.3.7 (2024-1-26)
+
+- release v3.3.7
+- fix bug
+
+## v3.3.6 (2024-1-12)
+
+- release v3.3.6
+- fix bug
+
+## v3.3.5 (2023-12-29)
+
+- release v3.3.5
+- fix bug
+
+## v3.3.4 (2023-12-21)
+
+- release v3.3.4
+- fix bug
+
+## v3.3.3 (2023-12-15)
+
+- release v3.3.3
+- fix bug
+
+## v3.3.2 (2023-12-5)
+
+- release v3.3.2
+- fix bug
+
+## v3.3.1 (2023-12-4)
+
+- release v3.3.1
+- fix bug
+
+## v3.3.0 (2023-11-9)
+
+- release v3.3.0
+- fix bug
+
+## v3.2.9 (2023-11-9)
+
+- release v3.2.9
+- fix bug
+
+## v3.2.8 (2023-11-9)
+
+- release v3.2.8
+- fix bug
+
+## v3.2.7 (2023-11-7)
+
+- release v3.2.7
+- fix bug
+
+## v3.2.6 (2023-11-3)
+
+- release v3.2.6
+- fix bug
+
+## v3.2.5 (2023-11-3)
+
+- release v3.2.5
+- ultraArm angle limit update
+
+## v3.2.4 (2023-11-1)
+
+- release v3.2.4
+- ultraArm add sync function
+
+## v3.2.3 (2023-10-20)
+
+- release v3.2.3
+- Optimize myagv interface get_battery_info
+
+## v3.2.2 (2023-10-17)
+
+- release v3.2.2
+- Add threading lock
+
+## v3.2.0 (2023-10-09)
+
+- release v3.2.0
+- Fix bug
+
+## v3.1.9 (2023-09-19)
+
+- release v3.1.9
+- Fix bug
+
+## v3.1.8 (2023-09-04)
+
+- release v3.1.8
+- Add myAGV interface.
+- Increase interface robustness.
+
+## v3.1.7 (2023-8-8)
+
+- release v3.1.7
+- Fix myArm interface error
+
+## v3.1.6 (2023-6-19)
+
+- release v3.1.6
+- Update synchronization control interface
+
+## v3.1.5 (2023-07-06)
+
+- release v3.1.5
+- Add mycobot interface：get_basic_version(),set_transponder_mode()
+
+## v3.1.4 (2023-07-05)
+
+- release v3.1.4
+- Update set_gservo_round() function.
+- Add pro 600 interface
+
+## v3.1.3 (2023-06-29)
+
+- release v3.1.3
+- Add open/close serial function
+
+## v3.1.2 (2023-06-15)
+
+- release v3.1.2
+- Fix set_joint_min(),set_joint_max() interface issue
+
+## v3.1.1 (2023-06-14)
+
+- release v3.1.1
+- Add new interface: set_gservo_round()
+
+## v3.1.0 (2023-06-09)
+
+- release v3.1.0
+- Fix get_joint_min_angle() and get_joint_max_angle() interface bug.
+- Remove the connect function in mycobotsocket
+- update demo/Server.py file
+- Add new interface: get_error_information(),clear_error_information()
+
+## v3.0.9 (2023-04-27)
+
+- release v3.0.9
+- Fix UltraArm interface set_gpio_state error issue
+
+## v3.0.8 (2023-04-14)
+
+- release v3.0.8
+- Fix Mybuddy GPIO control bug
+
+## v3.0.7 (2023-03-06)
+
+- release v3.0.7
+- update ultraArm API
+
+## v3.0.6 (2023-01-29)
+
+- release v3.0.6
+- Modify the value range of ultraArm speed (100 mm/s -> 200 mm/s).
+
+## v3.0.5 (2023-01-17)
+
+- release v3.0.5
+- Fixed the issue of coords and angles issued by the ultraArm.
+
+## v3.0.4 (2023-01-11)
+
+- release v3.0.4
+- Fix some bug
+
+## v3.0.3 (2023-01-10)
+
+- release v3.0.3
+- Fix MyArm interface problems:
+  - set_solution_angles()
+- Fix ultraArm interface problems:
+  - set_jog_coord()
+  - set_gpio_state()
+  - set_coord()
+
+## v3.0.2 (2022-12-20)
+
+- release v3.0.2
+- Fix MyBuddy interface problems:
+  - Add get_fresh_mode()
+  - remove get_servo_current()
+  - get_servo_voltages()、get_servo_status()、get_servo_temps()
+
+## v3.0.1 (2022-12-9)
+
+- release v3.0.1
+- Fix MyBuddy interface problems: get_base_coords()
+- Add mybuddy serial port to read logs
+
+## v3.0.0 (2022-12-9)
+
+- release v3.0.0
+- Fix MyBuddy interface problems: get_base_coords()、set_gripper_state()
+- Add 7-axis myArm interface
+
+## v2.9.9 (2022-11-29)
+
+- release 2.9.9
+- add 320 interface:
+  - set_gripper_mode(mode)
+  - get_gripper_mode()
+  - get_servo_last_pdi(id)
+
+## v2.9.8 (2022-11-22)
+
+- release v2.9.8
+- Renaming mira to ultraArm
+- Fix variable name conflicts
+
+## v2.9.7 (2022-11-14)
+
+- release v2.9.7
+- Add MechArm class: Separate mecharm from mycobot
+- Fix known bug
+
+## v2.9.6 (2022-9-13)
+
+- release v2.9.6
+- Fix MyBuddySocket get_radians()、send_radians() BUG
+
+## v2.9.5 (2022-9-13)
+
+- release v2.9.5
+- Add MyBuddy serial open(),is_open() function
+- Add MyBuddy example
+
+## v2.9.4 (2022-9-8)
+
+- release v2.9.4
+- fix read_next_error() bug
+- fix set_ssid_pwd() bug
+
+## v2.9.3 (2022-8-31)
+
+- release v2.9.3
+- fix jog_increment() bug
+- Fixed an incorrect description of the set_fresh_mode interface
+
+## v2.9.2 (2022-8-8)
+
+- release v2.9.2
+- fix bug jog_increment()
+
+## v2.9.1 (2022-8-1)
+
+- release v2.9.1
+- fix MyBuddy read data bug.
+
+## v2.9.0 (2022-8-1)
+
+- release v2.9.0
+
+## v2.8.1 (2022-7-1)
+
+- release v2.8.1
+- Fix MyBuddy send_angles() function BUG
+
 ## v2.8.0 (2022-6-28)
 
-- release v2.7.7
+- release v2.8.0
 - Added the ability to obtain and set the wifi account password through the serial port
 - Fix mypalletizer class BUG
 - Initial release of mybuddy interface
@@ -110,10 +549,10 @@
 ## v2.5.1 (2021-06-10)
 
 - improved parameter checking.
-- new class `MycobotCommandGenerator` that generate binary real command.
+- new class `CommandGenerator` that generate binary real command.
 - can import needed class from `pymycobot`, like:
   ```python
-  from pymycobot import Mycobot, Angle, Coord, MycobotCommandGenerator
+  from pymycobot import Mycobot, Angle, Coord, CommandGenerator
   ```
 
 ---

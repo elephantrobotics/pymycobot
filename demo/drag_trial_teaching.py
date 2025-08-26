@@ -8,30 +8,82 @@ import json
 import serial
 import serial.tools.list_ports
 
-from pymycobot.mycobot import MyCobot
-
+from pymycobot.mycobot280 import MyCobot280
+from pymycobot.mycobot320 import MyCobot320
+from pymycobot.mecharm270 import MechArm270
+from pymycobot.myarm import MyArm
+from pymycobot.mypalletizer260 import MyPalletizer260
 
 port: str
-mc: MyCobot
+mc: MyCobot280
 sp: int = 80
 
 
 def setup():
-    print("")
     global port, mc
+
+    print("")
+
+    print("1 - MyCobot280")
+    print("2 - MyCobot320")
+    print("3 - MechArm270")
+    print("4 - MyArm300")
+    print("5 - MyPalletizer260")
+    _in = input("Please input 1 - 5 to choose:")
+    robot_model = None
+    if _in == "1":
+        robot_model = MyCobot280
+        print("MyCobot280\n")
+        print("Please enter the model type:")
+        print("1. Pi")
+        print("2. Jetson Nano")
+        print("3. RISCV")
+        print("Default is Pi")
+        model_type = input()
+
+        if model_type == "2":
+            port = "/dev/ttyTHS1"
+        elif model_type == "3":
+            port = "/dev/ttyAMA0"
+        else:
+            pass
+    elif _in == "2":
+        robot_model = MyCobot320
+        print("MyCobot320\n")
+
+    elif _in == "3":
+        robot_model = MechArm270
+        print("MechArm270\n")
+
+    elif _in == "4":
+        robot_model = MyArm
+        print("MyArm300\n")
+
+    elif _in == '5':
+        robot_model = MyPalletizer260
+        print('MyPalletizer260\n')
+
+    else:
+        print("Please choose from 1 - 5.")
+        print("Exiting...")
+        exit()
+
     plist = list(serial.tools.list_ports.comports())
     idx = 1
     for port in plist:
         print("{} : {}".format(idx, port))
         idx += 1
 
-    _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
-    port = str(plist[int(_in) - 1]).split(" - ")[0].strip()
+    if not plist:
+        pass
+    else:
+        _in = input("\nPlease input 1 - {} to choice:".format(idx - 1))
+        port = str(plist[int(_in) - 1]).split(" - ")[0].strip()
     print(port)
     print("")
 
-    baud = 115200
-    _baud = input("Please input baud(default:115200):")
+    baud = 1000000
+    _baud = input("Please input baud(default:1000000):")
     try:
         baud = int(_baud)
     except Exception:
@@ -40,11 +92,11 @@ def setup():
     print("")
 
     DEBUG = False
-    f = input("Wether DEBUG mode[Y/n]:")
+    f = input("Wether DEBUG mode[Y/n](default:n):")
     if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
-    # mc = MyCobot(port, debug=True)
-    mc = MyCobot(port, baud, debug=DEBUG)
+    mc = robot_model(port, baud, debug=DEBUG)
+    mc.power_on()
 
 
 class Raw(object):
@@ -80,26 +132,48 @@ class TeachingTest(Helper):
         self.record_list = []
         self.record_t = None
         self.play_t = None
+        self.path = os.path.dirname(os.path.abspath(__file__)) + "/record.txt"
 
     def record(self):
         self.record_list = []
         self.recording = True
 
-        def _record():
-            start_t = time.time()
+        # self.mc.set_fresh_mode(0)
+        if isinstance(self.mc, MyCobot320):
+            self.mc.release_all_servos(1)
+        else:
+            self.mc.release_all_servos()
 
+        def _record():
             while self.recording:
-                angles = self.mc.get_encoders()
-                if angles:
-                    self.record_list.append(angles)
-                    time.sleep(0.1)
-                    print("\r {}".format(time.time() - start_t), end="")
+                start_t = time.time()
+                if isinstance(self.mc, (MyArm, MyPalletizer260)):
+                    angles = self.mc.get_encoders()
+                    interval_time = time.time() - start_t
+                    if angles:
+                        record = [angles, interval_time]
+                        self.record_list.append(record)
+                        print("\r {}".format(time.time() - start_t), end="")
+                else:
+                    angles = self.mc.get_encoders()
+                    speeds = self.mc.get_servo_speeds()
+                    interval_time = time.time() - start_t
+                    if angles and speeds:
+                        record = [angles, speeds, interval_time]
+                        self.record_list.append(record)
+                        print("\r {}".format(time.time() - start_t), end="")
 
         self.echo("Start recording.")
         self.record_t = threading.Thread(target=_record, daemon=True)
         self.record_t.start()
 
     def stop_record(self):
+
+        if isinstance(self.mc, MyArm):
+            self.mc.power_on()
+        else:
+            self.mc.focus_all_servos()
+
         if self.recording:
             self.recording = False
             self.record_t.join()
@@ -107,23 +181,28 @@ class TeachingTest(Helper):
 
     def play(self):
         self.echo("Start play")
-        for angles in self.record_list:
-            # print(angles)
-            self.mc.set_encoders(angles, 80)
-            time.sleep(0.1)
+        if isinstance(self.mc, (MyArm, MyPalletizer260)):
+            for record in self.record_list:
+                encoders, interval_time = record
+                self.mc.set_encoders(encoders, 100)
+                time.sleep(interval_time)
+        else:
+            i = 0
+            for record in self.record_list:
+                encoders, speeds, interval_time = record
+                self.mc.set_encoders_drag(encoders, speeds)
+                if i == 0:
+                    time.sleep(3)
+                i += 1
+                time.sleep(interval_time)
         self.echo("Finish play")
 
     def loop_play(self):
         self.playing = True
 
         def _loop():
-            len_ = len(self.record_list)
-            i = 0
             while self.playing:
-                idx_ = i % len_
-                i += 1
-                self.mc.set_encoders(self.record_list[idx_], 80)
-                time.sleep(0.1)
+                self.play()
 
         self.echo("Start loop play.")
         self.play_t = threading.Thread(target=_loop, daemon=True)
@@ -139,14 +218,12 @@ class TeachingTest(Helper):
         if not self.record_list:
             self.echo("No data should save.")
             return
-
-        with open(os.path.dirname(__file__) + "/record.txt", "w") as f:
+        with open(self.path, "w") as f:
             json.dump(self.record_list, f, indent=2)
-            self.echo("save dir:  {}".format(os.path.dirname(__file__)))
+            self.echo("save dir:  {}\n".format(self.path))
 
     def load_from_local(self):
-
-        with open(os.path.dirname(__file__) + "/record.txt", "r") as f:
+        with open(self.path, "r") as f:
             try:
                 data = json.load(f)
                 self.record_list = data
@@ -182,7 +259,10 @@ class TeachingTest(Helper):
                 elif key == "c":  # stop recorder
                     self.stop_record()
                 elif key == "p":  # play
-                    self.play()
+                    if not self.playing:
+                        self.play()
+                    else:
+                        print("Already playing. Please wait till current play stop or stop loop play.")
                 elif key == "P":  # loop play
                     if not self.playing:
                         self.loop_play()
@@ -193,7 +273,10 @@ class TeachingTest(Helper):
                 elif key == "l":  # load from local
                     self.load_from_local()
                 elif key == "f":  # free move
-                    self.mc.release_all_servos()
+                    if isinstance(self.mc, MyCobot320):
+                        self.mc.release_all_servos(1)
+                    else:
+                        self.mc.release_all_servos()
                     self.echo("Released")
                 else:
                     print(key)

@@ -1,0 +1,2 @@
+PySide6==6.7.0
+pymycobot==3.4.6b1

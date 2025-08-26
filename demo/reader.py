@@ -1,8 +1,13 @@
-from pymycobot.mycobot import MyCobot
+from pymycobot import MyCobot280, MyCobot320
 from port_setup import setup
 
-mc: MyCobot
+# 280
+mc: MyCobot280
 sp: int = 80
+
+# 320
+# mc: MyCobot320
+# sp: int = 80
 
 
 def setup():

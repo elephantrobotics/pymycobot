@@ -1,7 +1,7 @@
 import serial
 import serial.tools.list_ports
 
-from pymycobot.mycobot import MyCobot
+from pymycobot.mycobot280 import MyCobot280
 
 
 
@@ -33,6 +33,6 @@ def setup():
     if f in ["y", "Y", "yes", "Yes"]:
         DEBUG = True
     # mc = MyCobot(port, debug=True)
-    mc = MyCobot(port, baud, debug=DEBUG)
+    mc = MyCobot280(port, baud, debug=DEBUG)
     return mc
 

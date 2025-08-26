@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # coding:utf-8
 import socket
 import serial
@@ -6,8 +6,33 @@ import time
 import logging
 import logging.handlers
 import re
+import fcntl
+import struct
+import traceback
 import RPi.GPIO as GPIO
 
+"""
+Instructions for use:
+
+Please update pymycobot to the latest version before use.
+
+`pip install pymycobot --upgrade`
+
+Please change the parameters passed in the last line of the Server.py file, MycobotServer, based on your model.
+
+
+The default model is the 280PI.
+
+    The default parameters are: 
+
+        serial_num: /dev/ttyAMA0
+
+        baud: 1000000
+
+
+"""
+
+has_return = [0x01,0x02,0x03,0x04,0x09,0x12, 0x14, 0x15, 0x17,0x1B, 0x20,0x23, 0x27, 0x2A,0x2B,0x2D,0x2E, 0x3B,0x3D, 0x40,0x42,0x43,0x44,0x4A, 0x4B,0x50,0x51,0x53,0x62,0x65,0x69,0x90,0x91,0x92,0xC0, 0xC3,0x82,0x84,0x86,0x88,0x8A,0xD0,0xD1,0xD5,0xE1,0xE2,0xE3,0xE4,0xE5,0XE6, 0xB0]
 
 def get_logger(name):
     logger = logging.getLogger(name)
@@ -17,60 +42,66 @@ def get_logger(name):
     #DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
 
     formatter = logging.Formatter(LOG_FORMAT)
-    # console = logging.StreamHandler()
-    # console.setFormatter(formatter)
+    console = logging.StreamHandler()
+    console.setFormatter(formatter)
 
     save = logging.handlers.RotatingFileHandler(
-        "/home/ubuntu/mycobot_server.log", maxBytes=10485760, backupCount=1)
+        "server.log", maxBytes=10485760, backupCount=1)
     save.setFormatter(formatter)
 
     logger.addHandler(save)
-    # logger.addHandler(console)
+    logger.addHandler(console)
     return logger
 
 
 class MycobotServer(object):
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, serial_num = "/dev/ttyAMA0", baud = 1000000):
+        """Server class
+        
+        Args:
+            host: server ip address.
+            port: server port.
+            serial_num: serial number of the robot.The default is /dev/ttyAMA0.
+            baud: baud rate of the serial port.The default is 1000000.
+
+        """
         try:
             GPIO.setwarnings(False)
         except:
             pass
         self.logger = get_logger("AS")
         self.mc = None
+        self.serial_num = serial_num
+        self.baud = baud
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind((host, port))
-        print "Binding succeeded!"
+        print("Binding succeeded!")
         self.s.listen(1)
+        self.mc = serial.Serial(self.serial_num, self.baud, timeout=0.1)
         self.connect()
 
     def connect(self):
         while True:
             try:
-                print "waiting connect!------------------"
+                print("waiting connect!------------------")
                 conn, addr = self.s.accept()
-                port_baud = []
                 while True:
                     try:
-                        print "waiting data--------"
+                        print("waiting data--------")
                         data = conn.recv(1024)
-                        command = data.decode('utf-8')
-                        if data.decode('utf-8') == "":
+                        command = []
+                        for v in data:
+                            command.append(v)
+                        if command == []:
                             print("close disconnect!")
                             break
-                        res = b'1'
-                        command = command.replace(" ", "")
-                        if len(port_baud) < 3:
-
-                            port_baud.append(command)
-                            if len(port_baud) == 3:
-                                self.mc = serial.Serial(
-                                    port_baud[0], port_baud[1], timeout=float(port_baud[1]))
-                                port_baud.append(1)
+                        if self.mc.isOpen() == False:
+                            self.mc.open()
                         else:
-                            self.logger.info(command)
-                            command = self.re_data_2(command)
-                            if command[3] == 170:
+                            self.logger.info("get command: {}".format([hex(v) for v in command]))
+                            #command = self.re_data_2(command)
+                            if command[3] == 170: 
                                 if command[4] == 0:
                                     GPIO.setmode(GPIO.BCM)
                                 else:
@@ -88,28 +119,62 @@ class MycobotServer(object):
                                 res = bytes(GPIO.input(command[4]))
 
                             self.write(command)
-                            res = self.read()
-                            if res == None:
-                                res = b'1'
-                        conn.sendall(res)
+                            if command[3] in has_return:
+                                res = self.read(command)
+                                self.logger.info("return datas: {}".format([hex(v) for v in res]))
+                                
+                                conn.sendall(res)
                     except Exception as e:
-                        self.logger.error(str(e))
-                        conn.sendall(str.encode("ERROR:"+str(e)))
+                        self.logger.error(traceback.format_exc())
+                        conn.sendall(str.encode(traceback.format_exc()))
                         break
             except Exception as e:
-                self.logger.error(str(e))
+                self.logger.error(traceback.format_exc())
                 conn.close()
+                self.mc.close()
 
     def write(self, command):
         self.mc.write(command)
         self.mc.flush()
-        time.sleep(0.05)
 
-    def read(self):
-        data = None
-        if self.mc.inWaiting() > 0:
-            data = self.mc.read(self.mc.inWaiting())
-        return data
+    def read(self,command):
+        datas = b""
+        data_len = -1
+        k = 0
+        pre = 0
+        t = time.time()
+        wait_time = 0.1
+        while True and time.time() - t < wait_time:
+            data = self.mc.read()
+            k += 1
+            if data_len == 1 and data == b"\xfa":
+                datas += data
+                if [i for i in datas] == command:
+                    datas = b''
+                    data_len = -1
+                    k = 0
+                    pre = 0
+                    continue
+                break
+            elif len(datas) == 2:
+                data_len = struct.unpack("b", data)[0]
+                datas += data
+            elif len(datas) > 2 and data_len > 0:
+                datas += data
+                data_len -= 1
+            elif data == b"\xfe":
+                if datas == b"":
+                    datas += data
+                    pre = k
+                else:
+                    if k - 1 == pre:
+                        datas += data
+                    else:
+                        datas = b"\xfe"
+                        pre = k
+        else:
+            datas = b''
+        return datas
 
     def re_data_2(self, command):
         r2 = re.compile(r'[[](.*?)[]]')
@@ -120,6 +185,9 @@ class MycobotServer(object):
 
 
 if __name__ == "__main__":
-    HOST = socket.gethostbyname(socket.gethostname())
+    ifname = "wlan0"
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', bytes(ifname,encoding="utf8")))[20:24])
     PORT = 9000
-    MycobotServer(HOST, PORT)
+    print("ip: {} port: {}".format(HOST, PORT))
+    MycobotServer(HOST, PORT, "/dev/ttyAMA0", 1000000)

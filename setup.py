@@ -75,6 +75,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url=pymycobot.__git_url__,
     packages=setuptools.find_packages(),
+    include_package_data=True,  # Include non-Python files, like JSON files
+    package_data={"pymycobot": ["*.json"]},  # Specify the JSON file(s) to include
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.5",
@@ -82,6 +84,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],

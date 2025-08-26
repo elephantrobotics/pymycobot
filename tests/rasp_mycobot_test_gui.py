@@ -188,7 +188,7 @@ class MycobotTest(object):
         for idx, command in enumerate(ping_commands, start=1):
             self.mycobot._write(command)
             time.sleep(0.1)
-            if not self.mycobot._read():
+            if not self.mycobot._read(1):
                 res.append(idx)
             time.sleep(0.1)
 
@@ -213,7 +213,7 @@ class MycobotTest(object):
 
         self.mycobot.set_servo_calibration(self.calibration_num)
         time.sleep(0.1)
-        self.mycobot.send_angle(self.calibration_num, 0, 0)
+        self.mycobot.send_angle(self.calibration_num, 0, 20)
         time.sleep(0.1)
         self.write_log_to_Text("校准电机 %s 结束." % self.calibration_num)
 
@@ -428,7 +428,7 @@ class MycobotTest(object):
         for i in range(6):
             for j in range(3):
                 angles[i] = test_angle[j]
-                self.mycobot.send_angles(angles, 0)
+                self.mycobot.send_angles(angles, 20)
                 time.sleep(0.7)
         self.write_log_to_Text("测试校准结束.")
 
