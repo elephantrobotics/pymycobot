@@ -365,7 +365,7 @@ mc.send_angle(1, 40, 20)
 - **function:** Angle step, single joint angle increment control
 - **Parameters**:
   - `joint_id`: 1-6
-  - `increment`: Incremental movement based on the current position angle
+  - `increment`: Incremental movement based on the current position angle, The increment range is twice the limit of each joint, refer to [send_angle()](#send_angleid-degree-speed)
   - `speed`: 1 ~ 100
 - **Return value:**
   - `1`: completed
@@ -375,7 +375,7 @@ mc.send_angle(1, 40, 20)
 - **function:** Coord step, single coord increment control
 - **Parameters**:
   - `id`: axis 1-6
-  - `increment`: Incremental movement based on the current position coord
+  - `increment`: Incremental movement based on the current position coord, The increment range is twice the limit of each axis, refer to [send_coord()](#send_coordid-coord-speed)
   - `speed`: 1 ~ 100
 - **Return value:**
   - `1`: completed

@@ -363,7 +363,7 @@ mc.send_angle(1, 40, 20)
 - **功能**：角度步进，单关节角度增量控制
 - **参数**：
   - `joint_id`：1-6
-  - `increment`：基于当前位置角度的增量移动
+  - `increment`：基于当前位置角度的增量移动，增量范围为各关节限位的2倍, 参考 [send_angle()](#send_angleid-degree-speed)
   - `speed`：1~100
 - **返回值:**
   - `1`: 完成
@@ -373,7 +373,7 @@ mc.send_angle(1, 40, 20)
 - **功能**：坐标步进，单坐标增量控制
 - **参数**：
   - `id`：坐标 id 1-6
-  - `increment`：基于当前位置坐标的增量移动
+  - `increment`：基于当前位置坐标的增量移动，增量范围为各坐标轴限位的2倍, 参考 [send_coord()](#send_coordid-coord-speed)
   - `speed`：1~100
 - **返回值**：
 - `1`：完成
