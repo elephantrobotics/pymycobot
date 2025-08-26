@@ -44,6 +44,30 @@ class MyBuddyCommandGenerator(CommandGenerator):
         return real_command, has_reply
 
     # System status
+    def get_error_information(self, ids=0):
+        """Obtaining robot error information
+
+        Args:
+            ids: int,robot id, 0 - ALL
+
+        Return:
+            0: No error message.
+            1 ~ 6: The corresponding joint exceeds the limit position.
+            16 ~ 19: Collision protection.
+            32: Kinematics inverse solution has no solution.
+            33 ~ 34: Linear motion has no adjacent solution.
+        """
+        return self._mesg(ProtocolCode.GET_ERROR_INFO, ids, has_reply=True)
+
+    def clear_error_information(self, ids=0):
+        """Clear robot error message
+
+        Args:
+            ids: int,robot id, 0 - ALL
+        """
+
+        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, ids, has_reply=True)
+
     def get_system_version(self):
         """Get cobot version
         """
