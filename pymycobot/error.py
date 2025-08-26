@@ -858,16 +858,20 @@ def calibration_parameters(**kwargs):
             elif parameter == 'increment_angle':
                 id = kwargs.get('id', None)
                 index = robot_limit[class_name]['id'][id - 1] - 1
-                increment_min = robot_limit[class_name]["angles_min"][index] * 2
-                increment_max = robot_limit[class_name]["angles_max"][index] * 2
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
                 if value < increment_min or value > increment_max:
                     raise MyCobot320DataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
 
             elif parameter == 'increment_coord':
                 id = kwargs.get('id', None)
                 index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
-                increment_min = robot_limit[class_name]["coords_min"][index] * 2
-                increment_max = robot_limit[class_name]["coords_max"][index] * 2
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
                 if value < increment_min or value > increment_max:
                     raise MyCobot320DataException(
                         "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))

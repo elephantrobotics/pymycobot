@@ -365,7 +365,7 @@ mc.send_angle(1, 40, 20)
 - **function:** Angle step, single joint angle increment control
 - **Parameters**:
   - `joint_id`: 1-6
-  - `increment`: Incremental movement based on the current position angle, The increment range is twice the limit of each joint, refer to [send_angle()](#send_angleid-degree-speed)
+  - `increment`: Incremental movement based on the current position angle, The increment range is the positive and negative span of the joint motion angle range. For example, if the limit of J1 is [-168°, +168°], the input range is [-336°, +336°], refer to [send_angle()](#send_angleid-degree-speed)
   - `speed`: 1 ~ 100
 - **Return value:**
   - `1`: completed
@@ -375,7 +375,7 @@ mc.send_angle(1, 40, 20)
 - **function:** Coord step, single coord increment control
 - **Parameters**:
   - `id`: axis 1-6
-  - `increment`: Incremental movement based on the current position coord, The increment range is twice the limit of each axis, refer to [send_coord()](#send_coordid-coord-speed)
+  - `increment`: Incremental movement based on the current position coord, The range is the span of the physical movement of the corresponding coordinate axis. For example, if the X-axis range is [-350 mm, +350 mm] and the span is 700 mm, the input increment range is [-700 mm, +700 mm], refer to [send_coord()](#send_coordid-coord-speed)
   - `speed`: 1 ~ 100
 - **Return value:**
   - `1`: completed
