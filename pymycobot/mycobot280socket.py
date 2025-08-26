@@ -154,7 +154,7 @@ class MyCobot280Socket(CommandGenerator):
             return 1
         res = self._process_received(data, genre)
         if res is None:
-            return None
+            return -1
         elif res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
             ProtocolCode.GET_BASIC_VERSION,
             ProtocolCode.GET_JOINT_MIN_ANGLE,
@@ -877,7 +877,7 @@ class MyCobot280Socket(CommandGenerator):
             pin_no: pin port number.
             pin_signal: 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no_basic=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_angles_plan(self):
@@ -918,7 +918,7 @@ class MyCobot280Socket(CommandGenerator):
 
     def gripper_stop(self):
         """Stop gripper"""
-        return self.set_gripper_value(0, 0)
+        return self.set_gripper_value(0, 0, gripper_type=1, is_torque=1)
 
     # Other
     def wait(self, t):

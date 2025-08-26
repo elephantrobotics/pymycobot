@@ -30,6 +30,28 @@ class ProGripper(object):
     SET_GRIPPER_STOP = 39
     SET_GRIPPER_ANGLES = 45
 
+    MODBUS_GET_FIRMWARE_VERSION = 0x01
+    MODBUS_GET_FIRMWARE_MODIFY_VERSION = 0x02
+    MODBUS_SET_ID = 0x03
+    MODBUS_GET_ID = 0x04
+    MODBUS_SET_ANGLE = 0x0B
+    MODBUS_GET_ANGLE = 0x0C
+    MODBUS_SET_CALIBRATION = 0x0D
+    MODBUS_GET_STATUS = 0x0E
+    MODBUS_SET_ENABLED = 0x0A
+    MODBUS_SET_TORQUE = 0x1B
+    MODBUS_GET_TORQUE = 0x1C
+    MODBUS_SET_SPEED = 0x20
+    MODBUS_GET_SPEED = 0x21
+    MODBUS_SET_ABS_ANGLE = 0x24
+    MODBUS_SET_IO_OPEN_ANGLE = 0x1E
+    MODBUS_GET_IO_OPEN_ANGLE = 0x22
+    MODBUS_SET_IO_CLOSE_ANGLE = 0x1F
+    MODBUS_GET_IO_CLOSE_ANGLE = 0x23
+    MODBUS_SET_MINI_PRESSURE = 0x19
+    MODBUS_GET_MINI_PRESSURE = 0x1A
+    MODBUS_SET_PROTECTION_CURRENT = 0x2B
+    MODBUS_GET_PROTECTION_CURRENT = 0x2C
 
 class MyHandGripper(object):
     GET_HAND_MAJOR_FIRMWARE_VERSION = 1
@@ -114,12 +136,14 @@ class ProtocolCode(object):
     SET_ROBOT_ID = 0x04
     CLEAR_COMMAND_QUEUE = 0x05
     CHECK_ASYNC_OR_SYNC = 0x06
+    GET_TOOL_MODIFY_VERSION = 0x06
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
 
     CLEAR_ZERO_POS = 0x0A
     SET_MONITOR_STATE = 0x0A
+    SET_OVER_TIME = 0x0A
     SET_SERVO_CW = 0x0B
     GET_MONITOR_STATE = 0x0B
     GET_SERVO_CW = 0x0C
@@ -145,6 +169,7 @@ class ProtocolCode(object):
     POWER_OFF = 0x11
     IS_POWER_ON = 0x12
     RELEASE_ALL_SERVOS = 0x13
+    SET_MOTOR_ENABLED = 0x13
     IS_CONTROLLER_CONNECTED = 0x14
     READ_NEXT_ERROR = 0x15
     SET_FRESH_MODE = 0x16
@@ -242,6 +267,7 @@ class ProtocolCode(object):
     GET_DIGITAL_INPUTS = 0X5F
     SET_PWM_MODE = 0x63
     SET_PWM_OUTPUT = 0x64
+    FLASH_TOOL_FIRMWARE = 0x64
     GET_GRIPPER_VALUE = 0x65
     SET_GRIPPER_STATE = 0x66
     SET_GRIPPER_VALUE = 0x67
@@ -690,20 +716,20 @@ class DataProcessor(object):
             elif arm == 12:
                 data_pos = header_i + 5
         valid_data = data[data_pos: data_pos + data_len]
-
         # process valid data
         res = []
-        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS,
-                     ProtocolCode.GO_ZERO]:
+        # if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
+        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS]:
             for i in valid_data:
                 res.append(i)
             return res
+
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             ignor_t = (
                 ProtocolCode.GET_SERVO_CURRENTS,
                 ProtocolCode.GET_SERVO_TEMPS,
                 ProtocolCode.GET_SERVO_VOLTAGES,
-                ProtocolCode.GET_SERVO_STATUS,
+                # ProtocolCode.GET_SERVO_STATUS,
                 ProtocolCode.IS_ALL_SERVO_ENABLE
             )
             if data_len == 8 and (
@@ -723,7 +749,6 @@ class DataProcessor(object):
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
-
             if genre in [ProtocolCode.GET_SERVO_STATUS]:
                 res.clear()
                 for i in valid_data:
@@ -738,19 +763,31 @@ class DataProcessor(object):
                 locale_lang = locale.getdefaultlocale()[0]
                 if locale_lang not in ["zh_CN", "en_US"]:
                     locale_lang = "en_US"
+                # for i in range(len(res)):
+                #     if res[i] != 0:
+                #         data_bin = bin(res[i])[2:]
+                #         error_list = []
+                #         data_bin_len = len(data_bin)
+                #         for j in range(data_bin_len):
+                #             if data_bin[data_bin_len - 1 - j] != 0:
+                #                 error_list.append(j)
+                #                 if locale_lang == "zh_CN":
+                #                     print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                #                 else:
+                #                     print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                #         res[i] = error_list
                 for i in range(len(res)):
-                    if res[i] != 0:
-                        data_bin = bin(res[i])[2:]
-                        error_list = []
-                        data_bin_len = len(data_bin)
-                        for j in range(data_bin_len):
-                            if data_bin[data_bin_len - 1 - j] != 0:
-                                error_list.append(j)
+                    val = res[i]
+                    error_list = []
+                    if val != 0:
+                        for bit in range(16):
+                            if (val >> bit) & 1:
+                                error_list.append(bit)
                                 if locale_lang == "zh_CN":
-                                    print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                                    print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(bit, "未知错误")))
                                 else:
-                                    print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
-                        res[i] = error_list
+                                    print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(bit, "Unknown error")))
+                    res[i] = error_list if error_list else 0
         elif data_len == 2:
             if genre in [
                 ProtocolCode.GET_PLAN_SPEED,
@@ -787,6 +824,29 @@ class DataProcessor(object):
                     res.append(3)
                 else:
                     res.append(i)
+            error_key = None
+            if genre == ProtocolCode.READ_NEXT_ERROR:
+                error_key = "read_next_error"
+            if error_key is not None:
+                robot_320_info = Robot320Info.error_info
+                locale_lang = locale.getdefaultlocale()[0]
+                if locale_lang not in ["zh_CN", "en_US"]:
+                    locale_lang = "en_US"
+                for i in range(len(res)):
+                    val = res[i]
+                    error_list = []
+                    if val != 0:
+                        for bit in range(8):
+                            if (val >> bit) & 1:
+                                error_list.append(bit)
+                                if locale_lang == "zh_CN":
+                                    print("错误: 关节{} - {}".format(i + 1,
+                                                                     robot_320_info[locale_lang][error_key].get(bit, "未知错误")))
+                                else:
+                                    print("Error: Joint{} - {}".format(i + 1,
+                                                                       robot_320_info[locale_lang][error_key].get(bit, "Unknown error")))
+                    res[i] = error_list if error_list else 0
+
         elif data_len == 28:
             if genre == ProtocolCode.GET_QUICK_INFO:
                 for header_i in range(0, len(valid_data) - 2, 2):

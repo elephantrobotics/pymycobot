@@ -985,8 +985,8 @@ from pymycobot import utils
 
 - **Function**: Set the torque of the force-controlled gripper.
 - **Parameter**:
-  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
   - `torque_value` (`int`): Torque value, value range 100 ~ 300.
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
 - **Return value**:
   - 0 - Failed
   - 1 - Success
