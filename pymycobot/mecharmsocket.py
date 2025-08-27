@@ -150,7 +150,7 @@ class MechArmSocket(CommandGenerator):
             return 1
         res = self._process_received(data, genre)
         if res is None:
-            return None
+            return -1
         if genre in [ProtocolCode.SET_BASIC_OUTPUT]:
             return 1
         elif res is not None and isinstance(res, list) and len(res) == 1 and genre not in [

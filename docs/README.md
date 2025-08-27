@@ -24,6 +24,8 @@ We support Python2, Python3.5 or later.
 
 [MyBuddyEmoticon API说明](./mybuddy_emoticon_zh.md) | [MyBuddyEmoticon API Description](./mybuddy_emoticon_en.md)
 
+[MyCobot Pro450 API说明](./MyCobot_Pro450_cn.md) | [MyCobot Pro450 API Description](./MyCobot_Pro450_en.md)
+
 <details>
 <summary>Catalogue:</summary>
 

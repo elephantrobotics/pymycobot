@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.8.3
+    hooks:
+      - id: commitizen
+        name: commit checking
+        stages: [commit-msg]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.12.10
+    hooks:
+      # Run the linter.
+      - id: ruff-check
+        types_or: [ python, pyi ]
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [ python, pyi ]
+  
+  # - repo: local
+  #   hooks:
+  #     - id: pylint
+  #       name: Python Code style checking
+  #       entry: pylint
+  #       language: system
+  #       files: \.py$
+  #       args: ["--rcfile=.pylintrc"]

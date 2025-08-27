@@ -254,9 +254,9 @@ class CommandGenerator(DataProcessor):
         Args:
             joint_id: int 1-6.
             direction: 0 - decrease, 1 - increase
-            speed: int (0 - 100)
+            speed: int (1 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, direction=direction)
+        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, _async=_async)
 
     def jog_coord(self, coord_id, direction, speed, _async=False):
@@ -267,7 +267,7 @@ class CommandGenerator(DataProcessor):
             direction: 0 - decrease, 1 - increase
             speed: int (1 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, direction=direction)
+        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, _async=_async)
 
     def jog_increment(self, joint_id, increment, speed, _async=False):
@@ -333,6 +333,7 @@ class CommandGenerator(DataProcessor):
             encoders: A encoder list. len 6.
             sp: speed 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, encoders=encoders, speed=sp)
         return self._mesg(ProtocolCode.SET_ENCODERS, encoders, sp)
 
     def get_encoders(self):
@@ -514,12 +515,13 @@ class CommandGenerator(DataProcessor):
             pin_no     (int):
             pin_signal (int): 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
     def get_digital_input(self, pin_no):
         """singal value"""
         # TODO pin_no范围未知
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no=pin_no)
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
     def set_gripper_state(self, flag, speed, _type_1=None):
@@ -571,7 +573,7 @@ class CommandGenerator(DataProcessor):
             pin_no: pin port number.
             pin_signal: 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no_basic=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_basic_input(self, pin_no):
@@ -580,6 +582,7 @@ class CommandGenerator(DataProcessor):
         Args:
             pin_no: (int) pin port number.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, pin_no_basic=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no, has_reply=True)
 
     def set_ssid_pwd(self, account, password):
