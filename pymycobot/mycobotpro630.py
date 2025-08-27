@@ -10,7 +10,6 @@ import logging
 import os
 import sys
 
-
 from pymycobot.log import setup_logging
 from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
 

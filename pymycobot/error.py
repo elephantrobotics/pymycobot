@@ -856,15 +856,25 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MyCobot320DataException, int)
 
             elif parameter == 'increment_angle':
-                increment_min = -360
-                increment_max = 360
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
                 if value < increment_min or value > increment_max:
-                    raise MyCobot320DataException("The range of  angle increment is {} ~ {}, but the received is {}".format(increment_min, increment_max, value))
+                    raise MyCobot320DataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
             elif parameter == 'increment_coord':
-                increment_min = -1000
-                increment_max = 1000
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
                 if value < increment_min or value > increment_max:
-                    raise MyCobot320DataException("The range of coord increment is {} ~ {}, but the received is {}".format(increment_min, increment_max, value))
+                    raise MyCobot320DataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MyCobot320DataException)
     elif class_name in ["MechArm"]:
