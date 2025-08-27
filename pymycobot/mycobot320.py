@@ -181,7 +181,12 @@ class MyCobot320(CommandGenerator):
         if genre==ProtocolCode.GET_SERVO_DATA:
             if res == [255]:
                 return -1
-        if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [ProtocolCode.GET_BASIC_VERSION,ProtocolCode.GET_JOINT_MIN_ANGLE, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+        if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
+            ProtocolCode.GET_BASIC_VERSION,
+            ProtocolCode.GET_JOINT_MIN_ANGLE,
+            ProtocolCode.GET_JOINT_MAX_ANGLE,
+            ProtocolCode.SOFTWARE_VERSION,
+            ProtocolCode.GET_ATOM_VERSION]:
             return res[0]
         if genre in [
             ProtocolCode.IS_POWER_ON,
