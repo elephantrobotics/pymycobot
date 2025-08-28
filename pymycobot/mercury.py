@@ -45,5 +45,3 @@ class Mercury(MercuryCommandGenerator):
         
     def close(self):
         self._serial_port.close()
-
-Mercury.go_home()
