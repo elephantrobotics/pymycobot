@@ -53,6 +53,7 @@ class ProtocolCode(enum.Enum):
     GET_BLUETOOTH_ADDRESS = 0x53
 
     SET_HANDLE_CONTROL_STATE = 0x3D
+    GET_HANDLE_CONTROL_STATE = 0x3F
 
     def equal(self, other):
         if isinstance(other, ProtocolCode):
@@ -835,6 +836,15 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         if state not in (0, 1):
             raise ValueError("state must be 0 or 1")
         return self._merge(ProtocolCode.SET_HANDLE_CONTROL_STATE, state)
+
+    def get_handle_control_state(self):
+        """Get the handle control switch status
+
+        Returns:
+            int: 0: Disable, 1: Enable
+        """
+        return self._merge(ProtocolCode.GET_HANDLE_CONTROL_STATE)
+
 
 class MyAGVPro(MyAGVProCommandApi):
 
