@@ -1008,7 +1008,7 @@ from pymycobot import utils
   - 0 - Failed
   - 1 - Success
 
-#### `get_pro_gripper_default_speed(speed，gripper_id=14)`
+#### `get_pro_gripper_speed(speed，gripper_id=14)`
 
 - **Function**: Read the default speed of the force-controlled gripper.
 - **Parameter**:

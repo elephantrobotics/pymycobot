@@ -989,7 +989,7 @@ from pymycobot import utils
   - 0 - 失败
   - 1 - 成功
 
-#### `get_pro_gripper_default_speed(speed, gripper_id=14)`
+#### `get_pro_gripper_speed(speed, gripper_id=14)`
 
 - **功能**：读取力控夹爪默认速度。
 - **参数**：
