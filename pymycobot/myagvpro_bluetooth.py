@@ -462,6 +462,26 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         return await self._merge(ProtocolCode.GET_BLUETOOTH_ADDRESS)
 
+    async def set_handle_control_state(self, state):
+        """Set the handle control switch status
+        Args:
+            state(int): 0: Disable, 1: Enable
+
+        Returns:
+            int: 1: Success, 0: Failed
+        """
+        if state not in (0, 1):
+            raise ValueError("state must be 0 or 1")
+        return await self._merge(ProtocolCode.SET_HANDLE_CONTROL_STATE, state)
+
+    async def get_handle_control_state(self):
+        """Get the handle control switch status
+
+        Returns:
+            int: 0: Disable, 1: Enable
+        """
+        return await self._merge(ProtocolCode.GET_HANDLE_CONTROL_STATE)
+
 
 class MyAGVProBluetooth(MyAGVProCommandApi):
     def __init__(self, address, service_uuid, char_uuid, debug=False, save_serial_log=False):
