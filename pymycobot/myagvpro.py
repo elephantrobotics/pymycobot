@@ -292,16 +292,25 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             for index, data in enumerate(reply_data):
                 if index < 3:
                     respond.append(round(data / 100, 2))
+
                 elif index in (3, 4):
                     if data == 0:
                         rank = data
                     else:
                         rank = Utils.get_bits(data)
                     respond.append(rank)
+
                 elif index == 5:
                     respond.append(round(data / 10, 1))
+
                 elif index == 6:
                     respond.append(data)
+
+                elif index > 7 and index % 2 == 0:
+                    piece = reply_data[index - 1:index + 1]
+                    int16 = Utils.decode_int16(piece)
+                    respond.append(round(int16 / 100, 2))
+
             return respond
 
         if ProtocolCode.GET_MOTOR_ENABLE_STATUS.equal(genre):
