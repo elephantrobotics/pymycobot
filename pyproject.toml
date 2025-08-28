@@ -1,0 +1,19 @@
+[tool.ruff]
+# Set the maximum line length to 79.
+line-length = 79
+# 自动修复的规则
+fix = true
+
+[tool.ruff.lint]
+select = [
+    "N",
+    "UP",  # pyupgrade
+    "D",   # pydocstyle
+    "PLR",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pylint]
+

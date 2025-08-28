@@ -102,7 +102,7 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
             return None
         res = self._process_received(data, genre)
         if res is None:
-            return None
+            return -1
         if res is not None and isinstance(res, list) and len(res) == 1 and genre in [ProtocolCode.SET_BASIC_OUTPUT]:
             return res[0]
         if genre in [

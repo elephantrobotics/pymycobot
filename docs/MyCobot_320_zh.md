@@ -911,8 +911,8 @@ from pymycobot import utils
 
 - **功能**：设置力控夹爪角度。
 - **参数**：
-  - `gripper_id` (`int`): 夹爪ID，默认14，取值范围1 ~ 254。
   - `gripper_angle` (`int`): 夹爪角度，取值范围 0 ~ 100。
+  - `gripper_id` (`int`): 夹爪ID，默认14，取值范围1 ~ 254。
 - **返回值**：
   - 0 - 失败
   - 1 - 成功
