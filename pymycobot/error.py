@@ -777,10 +777,13 @@ def calibration_parameters(**kwargs):
                     raise MyCobot320DataException("The range of 'address' in {} is 1 ~ 44, but the received value is {}".format(parameter, address))
                 if address in invalid_addresses:
                     raise MyCobot320DataException("'address' in {} cannot be one of the following values: {}, but the received value is {}".format(parameter, invalid_addresses, address))
-                # 根据 address 来处理 value
-                if address in [3, 43]:
+                # Process value according to address
+                if address in [3]:
                     if data < 1 or data > 254:
                         raise MyCobot320DataException("Error in parameter '{}': The range of 'value' for address={} is 1 ~ 254, but the received value is {}".format(parameter, address, data))
+                elif address in [43]:
+                    if data < 100 or data > 300:
+                        raise MyCobot320DataException("Error in parameter '{}': The range of 'value' for address={} is 100 ~ 300, but the received value is {}".format(parameter, address, data))
                 elif address == 10:
                     if data not in [0, 1]:
                         raise MyCobot320DataException("Error in parameter '{}': Value for address={} must be 0 or 1, but the received value is {}".format(parameter, address, data))
