@@ -86,7 +86,7 @@ class MyCobot320Socket(CommandGenerator):
             set_pro_gripper_torque()
             get_pro_gripper_torque()
             set_pro_gripper_speed()
-            get_pro_gripper_default_speed()
+            get_pro_gripper_speed()
             set_pro_gripper_abs_angle()
             set_pro_gripper_pause()
             set_pro_gripper_resume()
