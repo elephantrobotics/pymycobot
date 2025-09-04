@@ -105,11 +105,16 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
         need_break = False
         data = None
-        timeout = 0.5
+
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
         elif self.__class__.__name__ == "Pro450Client":
             timeout = 3
+        elif self.__class__.__name__ == "MercuryArmsSocket":
+            timeout = 1
+        else:
+            timeout = 0.5
+
         interval_time = time.time()
         is_moving = 0
         check_is_moving_t = 1
