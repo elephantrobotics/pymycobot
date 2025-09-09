@@ -1595,7 +1595,8 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [1, 2], value_type, MyCobotPro450DataException, int)
             elif parameter == ['pin_signal', 'value', 'state']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobotPro450DataException, int)
-
+            elif parameter == ['log_state']:
+                check_0_or_1(parameter, value, [0, 1, 2, 3, 4, 5, 6, 7], value_type, MyCobotPro450DataException, int)
             elif parameter == 'joint_id':
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MyCobotPro450DataException)
