@@ -853,3 +853,41 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
+
+    def set_debug_state(self, log_state):
+        """
+        Set the debug log mode of the robot.
+
+        Args:
+            log_state (int): Debug state as bitmask (0~7)
+                0: No debug logs
+                1: Only common debug log (_debug.log)
+                2: Only motion-related log (_move.log)
+                3: Common + motion-related logs (_debug.log+_move.log)
+                4: Motor read/control frequency log (_clock_rate_debug.log)
+                5: Common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log)
+                6: Motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log)
+                7: All logs
+
+        Returns:
+            int: 1-success, 0-failure, -1-error
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, log_state=log_state)
+        return self._mesg(ProtocolCode.SET_DEBUG_LOG_MODE, log_state)
+
+    def get_debug_state(self):
+        """
+        Get the current debug log mode of the robot.
+
+        Returns:
+            int: Current debug state (0-7), or -1 if failed
+                0: No debug logs
+                1: Only common debug log (_debug.log)
+                2: Only motion-related log (_move.log)
+                3: Common + motion-related logs (_debug.log+_move.log)
+                4: Motor read/control frequency log (_clock_rate_debug.log)
+                5: Common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log)
+                6: Motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log)
+                7: All logs
+        """
+        return self._mesg(ProtocolCode.GET_DEBUG_LOG_MODE)

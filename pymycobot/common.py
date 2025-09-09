@@ -297,6 +297,10 @@ class ProtocolCode(object):
     GET_FILTER_LEN = 0x7E
     SET_FILTER_LEN = 0x7F
 
+    # Set Debug Log for Pro450
+    SET_DEBUG_LOG_MODE = 0x68
+    GET_DEBUG_LOG_MODE = 0x69
+
     # Basic
     SET_BASIC_OUTPUT = 0xA0
     GET_BASIC_INPUT = 0xA1
