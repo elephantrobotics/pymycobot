@@ -1058,66 +1058,6 @@ class ElephantRobot(object):
         command = "set_ele_gripper_close()\n"
         return self.send_command(command)
 
-    def force_gripper_set_angle(self, angle):
-        """Sets angle of Force-Controlled gripper.
-
-        Args:
-            angle (int): angle, 0-100
-
-        Returns:
-            str: return message
-        """
-        command = "force_gripper_set_angle(" + str(angle) + ")\n"
-        return self.send_command(command)
-
-    def force_gripper_get_angle(self):
-        """Returns current angle of force-controlled gripper.
-
-        Returns:
-            str: return message
-        """
-        command = "force_gripper_get_angle()\n"
-        return self.send_command(command)
-
-    def force_gripper_full_open(self):
-        """Fully opens force-controlled gripper.
-
-        Returns:
-            str: return message
-        """
-        command = "force_gripper_full_open()\n"
-        return self.send_command(command)
-
-    def force_gripper_full_close(self):
-        """Fully closes force-controlled gripper.
-
-        Returns:
-            str: return message
-        """
-        command = "force_gripper_full_close()\n"
-        return self.send_command(command)
-
-    def force_gripper_set_torque(self, torque):
-        """Sets torque of force-controlled gripper.
-
-        Args:
-            torque (int): torque, 0-100 (mapped to 100-300)
-
-        Returns:
-            str: return message
-        """
-        command = "force_gripper_set_torque(" + str(torque) + ")\n"
-        return self.send_command(command)
-
-    def force_gripper_get_torque(self):
-        """Returns current torque of force-controlled gripper.
-
-        Returns:
-            str: return message
-        """
-        command = "force_gripper_get_torque()\n"
-        return self.send_command(command)
-
     def set_tool_reference(self, tool_reference):
         """Set tool coordinate system.
 
