@@ -501,6 +501,14 @@ class ProtocolCode(object):
     GET_SYSTEM_VERSION = "G6"
     GET_MODIFY_VERSION = "G7"
 
+    # ultraArm P1
+    SET_ANGLES_COORDS = 'G1'
+    GET_CURRENT_ANGLES_COORDS_INFO = '?'
+    SET_UNLOCK = '*2'
+    SET_REBOOT = '*5'
+    SET_JOINT_DISABLE = '*7'
+    SET_JOINT_ENABLE = '*8'
+
 
 class DataProcessor(object):
     crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client"]
