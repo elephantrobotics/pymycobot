@@ -22,12 +22,12 @@ class UltraArmP1:
 
     """
 
-    def __init__(self, port, baud_rate=115200, timeout=0.1, debug=False):
+    def __init__(self, port, baudrate=115200, timeout=0.1, debug=False):
         """Initialize the ultraArmP1 robot communication.
 
         Args:
             port (str): Serial port name (e.g., 'COM3' or '/dev/ttyUSB0').
-            baud_rate (int, optional): Communication baud rate. Defaults to 115200.
+            baudrate (int, optional): Communication baud rate. Defaults to 115200.
             timeout (float, optional): Serial read timeout in seconds. Defaults to 0.1.
             debug (bool, optional): Whether to print debug information. Defaults to False.
         """
@@ -35,7 +35,7 @@ class UltraArmP1:
 
         self._serial_port = serial.Serial()
         self._serial_port.port = port
-        self._serial_port.baud_rate = baud_rate
+        self._serial_port.baudrate = baudrate
         self._serial_port.timeout = timeout
         self._serial_port.rts = True
         self._serial_port.dtr = True
