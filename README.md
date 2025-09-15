@@ -4,7 +4,7 @@
 ![Python 3](https://img.shields.io/badge/Python-v3%5E-green?logo=python)
 [![pypi_version](https://img.shields.io/pypi/v/pymycobot?label=pypi)](https://pypi.org/project/pigit)
 
-This is a python API for serial communication with mycobot and controlling it.
+This is a python API for serial communication with robot and controlling it.
 
 [![home](./f3-min2.jpg)](https://www.elephantrobotics.com/en/myCobot-en/)
 
@@ -35,6 +35,7 @@ pip install pymycobot==1.0.7 --user
 ### Source code
 
 ```bash
+# The latest code branch is the develop branch. You can choose to install it if necessary.
 git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
 cd <your-path>/pymycobot
 # Install
