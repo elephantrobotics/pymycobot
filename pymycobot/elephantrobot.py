@@ -128,11 +128,9 @@ class ElephantRobot(object):
             self.tcp_client.send(command.encode())
 
             self.tcp_client.settimeout(10.0)  # Set a 10 second timeout
-            self.tcp_client.settimeout(10.0)  # Set a 10 second timeout
             try:
                 recv_data = self.tcp_client.recv(self.BUFFSIZE).decode()
             except socket.timeout:
-                print("Waiting for server response timeout")
                 print("Waiting for server response timeout")
                 return ""
 
