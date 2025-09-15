@@ -217,7 +217,7 @@ mc.send_angle(1, 40, 20)
     | 2 | -135 ~ 135 |
     | 3 | -150 ~ 150 |
     | 4 | -145 ~ 145 |
-    | 5 | -165 ~ 165 |
+    | 5 | -155 ~ 160 |
     | 6 | -180 ~ 180 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100

@@ -62,37 +62,37 @@ class ChassisControl:
         :param flag: Data type parameter variable
         :return:
         """
-        return_data = ''
-        expected_lengths = 26
+        expected_lengths_map = {
+            "voltage": 26,
+            "ultrasonic": 19,
+            "version": 26
+        }
+        expected_lengths = expected_lengths_map.get(flag, None)
         for _ in range(3):
             receive_all_data = self._read()
             receive_all_data = [byte for byte in receive_all_data]
             if flag == "voltage":
-                receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer,
-                                                   expected_lengths)
+                receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer, expected_lengths)
                 # print(receive_data, len(receive_data))
                 if receive_data:
                     self._debug(receive_data)
                     transition_16 = 0
                     transition_16 |= receive_data[20] << 8
                     transition_16 |= receive_data[21]
-                    return_data = round(transition_16 / 1000 + (transition_16 % 1000) * 0.001, 3)
+                    return_data = round(transition_16 / 1000, 3)
 
                     return return_data
 
             elif flag == "ultrasonic":
-                receive_data = self._extract_frame(receive_all_data, ProtocolCode.ultrasound_header,
-                                                   ProtocolCode.ultrasound_footer, expected_lengths)
+                receive_data = self._extract_frame(receive_all_data, ProtocolCode.ultrasound_header, ProtocolCode.ultrasound_footer, expected_lengths)
                 # print(receive_data, len(receive_data))
                 if receive_data:
                     self._debug(receive_data)
-                    return_data = [receive_data[1] * 256 + receive_data[2], receive_data[3] * 256 + receive_data[4],
-                                   receive_data[5] * 256 + receive_data[6]]
+                    return_data = [receive_data[1] * 256 + receive_data[2], receive_data[3] * 256 + receive_data[4], receive_data[5] * 256 + receive_data[6]]
                     return return_data
 
             elif flag == "version":
-                receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer,
-                                                   expected_lengths)
+                receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer, expected_lengths)
                 # print(receive_data, len(receive_data))
                 if receive_data:
                     self._debug(receive_data)
