@@ -86,7 +86,7 @@ class MyCobot320Socket(CommandGenerator):
             set_pro_gripper_torque()
             get_pro_gripper_torque()
             set_pro_gripper_speed()
-            get_pro_gripper_default_speed()
+            get_pro_gripper_speed()
             set_pro_gripper_abs_angle()
             set_pro_gripper_pause()
             set_pro_gripper_resume()
@@ -367,10 +367,13 @@ class MyCobot320Socket(CommandGenerator):
         Args:
             joint_id: int 1-6.
             increment: Angle increment value
-            speed: int (0 - 100)
+            speed: int (1 - 100)
         """
+
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, increment_angle=increment, speed=speed)
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
+        scaled_increment = self._angle2int(increment)
+        scaled_increment = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed)
 
     def jog_increment_coord(self, id, increment, speed):
         """coord step mode
@@ -381,7 +384,11 @@ class MyCobot320Socket(CommandGenerator):
             speed: int (1 - 100)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, increment_coord=increment, speed=speed)
-        value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
+        if id <= 3:
+            value = self._coord2int(increment)
+        else:
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, id, [value], speed)
 
     # Basic for raspberry pi.

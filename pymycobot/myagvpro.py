@@ -52,6 +52,9 @@ class ProtocolCode(enum.Enum):
     GET_BLUETOOTH_UUID = 0x52
     GET_BLUETOOTH_ADDRESS = 0x53
 
+    SET_HANDLE_CONTROL_STATE = 0x3D
+    GET_HANDLE_CONTROL_STATE = 0x3F
+
     def equal(self, other):
         if isinstance(other, ProtocolCode):
             return self.value == other.value
@@ -292,16 +295,25 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             for index, data in enumerate(reply_data):
                 if index < 3:
                     respond.append(round(data / 100, 2))
+
                 elif index in (3, 4):
                     if data == 0:
                         rank = data
                     else:
                         rank = Utils.get_bits(data)
                     respond.append(rank)
+
                 elif index == 5:
                     respond.append(round(data / 10, 1))
+
                 elif index == 6:
                     respond.append(data)
+
+                elif index > 7 and index % 2 == 0:
+                    piece = reply_data[index - 1:index + 1]
+                    int16 = Utils.decode_int16(piece)
+                    respond.append(round(int16 / 100, 2))
+
             return respond
 
         if ProtocolCode.GET_MOTOR_ENABLE_STATUS.equal(genre):
@@ -812,6 +824,26 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
 
         return self._merge(ProtocolCode.GET_BLUETOOTH_ADDRESS)
+
+    def set_handle_control_state(self, state):
+        """Set the handle control switch status
+        Args:
+            state(int): 0: Disable, 1: Enable
+
+        Returns:
+            int: 1: Success, 0: Failed
+        """
+        if state not in (0, 1):
+            raise ValueError("state must be 0 or 1")
+        return self._merge(ProtocolCode.SET_HANDLE_CONTROL_STATE, state)
+
+    def get_handle_control_state(self):
+        """Get the handle control switch status
+
+        Returns:
+            int: 0: Disable, 1: Enable
+        """
+        return self._merge(ProtocolCode.GET_HANDLE_CONTROL_STATE)
 
 
 class MyAGVPro(MyAGVProCommandApi):

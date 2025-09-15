@@ -35,6 +35,7 @@ def setup_serial_connect(port, baudrate, timeout=None):
     serial_api.baudrate = baudrate
     serial_api.timeout = timeout
     serial_api.rts = False
+    serial_api.dtr = False
     serial_api.open()
     return serial_api
 

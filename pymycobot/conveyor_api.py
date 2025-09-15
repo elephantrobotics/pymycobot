@@ -10,9 +10,9 @@ def setup_serial_connect(port, baudrate, timeout=None):
     serial_api.port = port
     serial_api.baudrate = baudrate
     serial_api.timeout = timeout
-    serial_api.rts = False
-    serial_api.dtr = False
     serial_api.open()
+    serial_api.rts = False
+    serial_api.dtr = True
     return serial_api
 
 
@@ -139,6 +139,7 @@ class ConveyorAPI(SerialProtocol):
 
     def __init__(self, comport, baudrate="115200", timeout=0.1, debug=False, motor_model=MotorModel.STEPPER_MOTOR_57):
         super().__init__(comport, baudrate, timeout)
+        time.sleep(2)   # If the Arduino mega 2560 is reset, you need to wait for the reset to complete
         self._debug = debug
         self._motor_model = motor_model
         self._mutex = threading.Lock()
@@ -176,7 +177,7 @@ class ConveyorAPI(SerialProtocol):
             if not has_reply:
                 return
 
-            reply_command = self._wait_for_reply(timeout=0.07)  # WaitForAReply
+            reply_command = self._wait_for_reply(timeout=0.2)  # WaitForAReply
             self._log.debug(f"read  < {reply_command}")
             if not reply_command:
                 return None
@@ -190,7 +191,7 @@ class ConveyorAPI(SerialProtocol):
         """Modify the direction of movement of the conveyor belt"""
         if direction not in (0, 1):
             raise ValueError("direction must be 0 or 1")
-        self._merge(CommandGenre.SET_SERVO_DIRECTION, self._motor_model, direction)
+        return self._merge(CommandGenre.SET_SERVO_DIRECTION, self._motor_model, direction, has_reply=True)
 
     def get_motor_direction(self):
         """Get the direction of movement of the conveyor belt"""
@@ -200,17 +201,15 @@ class ConveyorAPI(SerialProtocol):
         """Get the speed of the conveyor belt"""
         return self._merge(CommandGenre.GET_SERVO_SPEED, self._motor_model, has_reply=True)
 
-    def set_speed(self, speed):
+    def set_motor_speed(self, speed):
         """modify the speed of the conveyor belt"""
         if not 1 <= speed <= 100:
             raise ValueError("speed must be in range [1, 100]")
-        return self._merge(CommandGenre.SET_SERVO_SPEED, self._motor_model, 1, speed)
+        return self._merge(CommandGenre.SET_SERVO_SPEED, self._motor_model, 1, speed, has_reply=True)
 
-    def set_motor_state(self, state):
-        """Modify the state of the conveyor belt"""
-        if state not in (0, 1):
-            raise ValueError("state must be 0 or 1")
-        return self._merge(CommandGenre.SET_SERVO_SPEED, self._motor_model, state, 0)
+    def stop(self):
+        """stop the conveyor belt"""
+        return self._merge(CommandGenre.SET_SERVO_SPEED, self._motor_model, 0, 0, has_reply=True)
 
     def read_firmware_version(self):
         """Get the firmware version of the conveyor belt"""

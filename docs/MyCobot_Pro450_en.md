@@ -94,6 +94,40 @@ print(mc.get_angles())
   - `1`: Always execute the latest command first.
   - `0`: Execute instructions sequentially in the form of a queue.
 
+#### `get_debug_state()`
+
+- **Function:** Get the current robot's debug logging mode.
+
+- **Return value:** `int`: Current debug logging state.
+  - `0`: No debug logs
+  - `1`: General debug log only (_debug.log)
+  - `2`: Motion-related log only (_move.log)
+  - `3`: General and motion-related logs (_debug.log + _move.log)
+  - `4`: Motor read/control frequency log only (_clock_rate_debug.log)
+  - `5`: General and motor frequency logs (_debug.log + _clock_rate_debug.log)
+  - `6`: Motion and motor frequency logs (_move.log + _clock_rate_debug.log)
+  - `7`: All logs
+
+#### `set_debug_state(log_state)`
+
+- **Function:** Set the debug logging mode for the current robot.
+
+- **Parameters:**
+  - `log_state`: `int`, debug log state (0 to 7)
+    - `0`: Do not log any debug logs
+    - `1`: General debug log only (_debug.log)
+    - `2`: Motion-related log only (_move.log)
+    - `3`: General and motion-related logs (_debug.log + _move.log)
+    - `4`: Motor read/control frequency log only (_clock_rate_debug.log)
+    - `5`: General and motor frequency logs (_debug.log + _clock_rate_debug.log)
+    - `6`: Motion and motor frequency logs (_move.log + _clock_rate_debug.log)
+    - `7`: Log all logs
+
+- **Return value**: `int`
+  - 1 - Success
+  - 0 - Failure
+  - 1 - Error
+
 ### 3.Robot abnormal control
 
 #### `get_robot_status()`

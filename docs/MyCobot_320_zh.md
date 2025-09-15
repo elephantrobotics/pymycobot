@@ -363,7 +363,7 @@ mc.send_angle(1, 40, 20)
 - **功能**：角度步进，单关节角度增量控制
 - **参数**：
   - `joint_id`：1-6
-  - `increment`：基于当前位置角度的增量移动
+  - `increment`：基于当前位置角度的增量移动，增量范围为该关节运动角度区间的正负跨度。例如 J1 的限位 [-168°, +168°]，则可输入范围为 [-336°, +336°], 参考 [send_angle()](#send_angleid-degree-speed)
   - `speed`：1~100
 - **返回值:**
   - `1`: 完成
@@ -373,7 +373,7 @@ mc.send_angle(1, 40, 20)
 - **功能**：坐标步进，单坐标增量控制
 - **参数**：
   - `id`：坐标 id 1-6
-  - `increment`：基于当前位置坐标的增量移动
+  - `increment`：基于当前位置坐标的增量移动，范围为对应坐标轴的物理运动区间跨度,例如 X 轴范围为 [-350 mm, +350 mm]，跨度 700 mm，则可输入的增量范围为 [-700 mm, +700 mm]， 参考 [send_coord()](#send_coordid-coord-speed)
   - `speed`：1~100
 - **返回值**：
 - `1`：完成
@@ -989,7 +989,7 @@ from pymycobot import utils
   - 0 - 失败
   - 1 - 成功
 
-#### `get_pro_gripper_default_speed(speed, gripper_id=14)`
+#### `get_pro_gripper_speed(speed, gripper_id=14)`
 
 - **功能**：读取力控夹爪默认速度。
 - **参数**：

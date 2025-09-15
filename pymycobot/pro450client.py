@@ -232,31 +232,21 @@ class Pro450Client(CloseLoop):
         elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.GET_POS_OVER]:
                 return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
-            if len(res) == 23:
-                i = 9
-                for i in range(9, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
-            else:
-                for i in range(10, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
+            if len(res) == 32:
+                parsed = res[:8]
+                for start in (8, 20):
+                    for i in range(start, start + 12, 2):
+                        val = (res[i] << 8) | res[i + 1]
+                        parsed.append(self._val_to_bits_list(val))
+
+                return parsed
         else:
             return res
+
+    def _val_to_bits_list(self, val):
+        if val == 0:
+            return 0
+        return [bit for bit in range(16) if (val >> bit) & 1]
 
     def _modbus_crc(self, data: bytes) -> bytes:
         crc = 0xFFFF
@@ -863,3 +853,41 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
+
+    def set_debug_state(self, log_state):
+        """
+        Set the debug log mode of the robot.
+
+        Args:
+            log_state (int): Debug state as bitmask (0~7)
+                0: No debug logs
+                1: Only common debug log (_debug.log)
+                2: Only motion-related log (_move.log)
+                3: Common + motion-related logs (_debug.log+_move.log)
+                4: Motor read/control frequency log (_clock_rate_debug.log)
+                5: Common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log)
+                6: Motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log)
+                7: All logs
+
+        Returns:
+            int: 1-success, 0-failure, -1-error
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, log_state=log_state)
+        return self._mesg(ProtocolCode.SET_DEBUG_LOG_MODE, log_state)
+
+    def get_debug_state(self):
+        """
+        Get the current debug log mode of the robot.
+
+        Returns:
+            int: Current debug state (0-7), or -1 if failed
+                0: No debug logs
+                1: Only common debug log (_debug.log)
+                2: Only motion-related log (_move.log)
+                3: Common + motion-related logs (_debug.log+_move.log)
+                4: Motor read/control frequency log (_clock_rate_debug.log)
+                5: Common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log)
+                6: Motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log)
+                7: All logs
+        """
+        return self._mesg(ProtocolCode.GET_DEBUG_LOG_MODE)
