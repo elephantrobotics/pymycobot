@@ -30,6 +30,28 @@ class ProGripper(object):
     SET_GRIPPER_STOP = 39
     SET_GRIPPER_ANGLES = 45
 
+    MODBUS_GET_FIRMWARE_VERSION = 0x01
+    MODBUS_GET_FIRMWARE_MODIFY_VERSION = 0x02
+    MODBUS_SET_ID = 0x03
+    MODBUS_GET_ID = 0x04
+    MODBUS_SET_ANGLE = 0x0B
+    MODBUS_GET_ANGLE = 0x0C
+    MODBUS_SET_CALIBRATION = 0x0D
+    MODBUS_GET_STATUS = 0x0E
+    MODBUS_SET_ENABLED = 0x0A
+    MODBUS_SET_TORQUE = 0x1B
+    MODBUS_GET_TORQUE = 0x1C
+    MODBUS_SET_SPEED = 0x20
+    MODBUS_GET_SPEED = 0x21
+    MODBUS_SET_ABS_ANGLE = 0x24
+    MODBUS_SET_IO_OPEN_ANGLE = 0x1E
+    MODBUS_GET_IO_OPEN_ANGLE = 0x22
+    MODBUS_SET_IO_CLOSE_ANGLE = 0x1F
+    MODBUS_GET_IO_CLOSE_ANGLE = 0x23
+    MODBUS_SET_MINI_PRESSURE = 0x19
+    MODBUS_GET_MINI_PRESSURE = 0x1A
+    MODBUS_SET_PROTECTION_CURRENT = 0x2B
+    MODBUS_GET_PROTECTION_CURRENT = 0x2C
 
 class MyHandGripper(object):
     GET_HAND_MAJOR_FIRMWARE_VERSION = 1
@@ -61,8 +83,9 @@ class MyHandGripper(object):
     GET_HAND_SINGLE_PRESSURE_SENSOR = 0x2E
     GET_HAND_ALL_PRESSURE_SENSOR = 0x2F
     GET_HAND_ALL_ANGLES = 0x32
-    SET_HAND_GRIPPER_PINCH_ACTION = 0x33
+    # SET_HAND_GRIPPER_PINCH_ACTION = 0x33
     SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT = 0x34
+    GET_HAND_GRIPPER_ROBOT_MODEL = 0x35
 
 
 class FingerGripper(object):
@@ -113,12 +136,14 @@ class ProtocolCode(object):
     SET_ROBOT_ID = 0x04
     CLEAR_COMMAND_QUEUE = 0x05
     CHECK_ASYNC_OR_SYNC = 0x06
+    GET_TOOL_MODIFY_VERSION = 0x06
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
-    
+
     CLEAR_ZERO_POS = 0x0A
     SET_MONITOR_STATE = 0x0A
+    SET_OVER_TIME = 0x0A
     SET_SERVO_CW = 0x0B
     GET_MONITOR_STATE = 0x0B
     GET_SERVO_CW = 0x0C
@@ -144,6 +169,7 @@ class ProtocolCode(object):
     POWER_OFF = 0x11
     IS_POWER_ON = 0x12
     RELEASE_ALL_SERVOS = 0x13
+    SET_MOTOR_ENABLED = 0x13
     IS_CONTROLLER_CONNECTED = 0x14
     READ_NEXT_ERROR = 0x15
     SET_FRESH_MODE = 0x16
@@ -188,14 +214,14 @@ class ProtocolCode(object):
     JOG_COORD = 0x32
     JOG_INCREMENT = 0x33
     JOG_INCREMENT_COORD = 0x34
-    
+
     JOG_STOP = 0x34
     JOG_INCREMENT_COORD = 0x34
 
     COBOTX_GET_SOLUTION_ANGLES = 0x35
     COBOTX_SET_SOLUTION_ANGLES = 0x36
     JOG_BASE_INCREMENT_COORD = 0x37
-    
+
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
     SET_ENCODERS = 0x3C
@@ -241,6 +267,7 @@ class ProtocolCode(object):
     GET_DIGITAL_INPUTS = 0X5F
     SET_PWM_MODE = 0x63
     SET_PWM_OUTPUT = 0x64
+    FLASH_TOOL_FIRMWARE = 0x64
     GET_GRIPPER_VALUE = 0x65
     SET_GRIPPER_STATE = 0x66
     SET_GRIPPER_VALUE = 0x67
@@ -334,7 +361,7 @@ class ProtocolCode(object):
     CLEAR_ENCODERS_ERROR = 0xEA
     GET_DOWN_ENCODERS = 0x96
     WRITE_MOVE_C_R = 0x99
-    
+
     GET_MOTORS_RUN_ERR = 0x9C
 
     # planning speed
@@ -370,10 +397,10 @@ class ProtocolCode(object):
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
     JOG_RPY = 0xF5
-    
+
     GET_MONITOR_MODE = 0xFB
     SET_MONITOR_MODE = 0xFC
-    
+
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
     MERCURY_DRAG_TECH_PAUSE = 0x72
@@ -437,7 +464,6 @@ class ProtocolCode(object):
     GET_ANGLES_PLAN = 0xF6
     GET_COORDS_PLAN = 0xF7
 
-
     # ultraArm
     END = "\r"
     COORDS_SET = "G0"
@@ -473,7 +499,8 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
-    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest"]
+    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client"]
+
     def __init__(self, debug=False):
         """
         Args:
@@ -484,7 +511,7 @@ class DataProcessor(object):
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
         self.calibration_parameters = calibration_parameters
-        
+
     def _mesg(self, genre, *args, **kwargs):
         """
         Args:
@@ -506,7 +533,7 @@ class DataProcessor(object):
         elif genre == 115 and self.__class__.__name__ not in self.crc_robot_class and self.__class__.__name__ not in ['MyArmC', 'MyArmM']:
             command_data = [command_data[1], command_data[3]]
         LEN = len(command_data) + 2
-        
+
         command = [
             ProtocolCode.HEADER,
             ProtocolCode.HEADER,
@@ -557,13 +584,13 @@ class DataProcessor(object):
 
     def _int2angle(self, _int):
         return round(_int / 100.0, 3)
-    
+
     def _int3angle(self, _int):
         return round(_int / 1000, 3)
 
     def _int2coord(self, _int):
         return round(_int / 10.0, 2)
-    
+
     @classmethod
     def crc_check(cls, command):
         crc = 0xffff
@@ -611,7 +638,7 @@ class DataProcessor(object):
         processed_args = []
         for index in range(len(args)):
             if isinstance(args[index], list):
-                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SET_DYNAMIC_PARAMETERS] and index in [0, 1] and _class in self.crc_robot_class:
+                if genre in [ProtocolCode.SET_ENCODERS_DRAG, ProtocolCode.SET_DYNAMIC_PARAMETERS] and index in [0,1] and _class in self.crc_robot_class:
                     for data in args[index]:
                         byte_value = int(data).to_bytes(4, byteorder='big', signed=True)
                         res = []
@@ -688,21 +715,21 @@ class DataProcessor(object):
                 data_pos = header_i + 4
             elif arm == 12:
                 data_pos = header_i + 5
-        valid_data = data[data_pos : data_pos + data_len]
-
+        valid_data = data[data_pos: data_pos + data_len]
         # process valid data
         res = []
-        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS,
-                     ProtocolCode.GO_ZERO]:
+        # if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS, ProtocolCode.GO_ZERO]:
+        if genre in [ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_TEMPS]:
             for i in valid_data:
                 res.append(i)
             return res
+
         if data_len in [6, 8, 12, 14, 16, 24, 26, 60]:
             ignor_t = (
                 ProtocolCode.GET_SERVO_CURRENTS,
                 ProtocolCode.GET_SERVO_TEMPS,
                 ProtocolCode.GET_SERVO_VOLTAGES,
-                ProtocolCode.GET_SERVO_STATUS,
+                # ProtocolCode.GET_SERVO_STATUS,
                 ProtocolCode.IS_ALL_SERVO_ENABLE
             )
             if data_len == 8 and (
@@ -722,7 +749,6 @@ class DataProcessor(object):
             for header_i in range(0, len(valid_data), 2):
                 one = valid_data[header_i: header_i + 2]
                 res.append(self._decode_int16(one))
-
             if genre in [ProtocolCode.GET_SERVO_STATUS]:
                 res.clear()
                 for i in valid_data:
@@ -737,22 +763,31 @@ class DataProcessor(object):
                 locale_lang = locale.getdefaultlocale()[0]
                 if locale_lang not in ["zh_CN", "en_US"]:
                     locale_lang = "en_US"
+                # for i in range(len(res)):
+                #     if res[i] != 0:
+                #         data_bin = bin(res[i])[2:]
+                #         error_list = []
+                #         data_bin_len = len(data_bin)
+                #         for j in range(data_bin_len):
+                #             if data_bin[data_bin_len - 1 - j] != 0:
+                #                 error_list.append(j)
+                #                 if locale_lang == "zh_CN":
+                #                     print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                #                 else:
+                #                     print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(j, 255)))
+                #         res[i] = error_list
                 for i in range(len(res)):
-                    if res[i] != 0:
-                        data_bin = bin(res[i])[2:]
-                        error_list = []
-                        data_bin_len = len(data_bin)
-                        for j in range(data_bin_len):
-                            if data_bin[data_bin_len - 1 - j] != 0:
-                                error_list.append(j)
+                    val = res[i]
+                    error_list = []
+                    if val != 0:
+                        for bit in range(16):
+                            if (val >> bit) & 1:
+                                error_list.append(bit)
                                 if locale_lang == "zh_CN":
-                                    print("错误: 关节{} - {}".format(i + 1,
-                                                                 robot_320_info[locale_lang][error_key].get(j, 255)))
+                                    print("错误: 关节{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(bit, "未知错误")))
                                 else:
-                                    print("Error: Joint{} - {}".format(i + 1,
-                                                                       robot_320_info[locale_lang][error_key].get(j,
-                                                                                                                  255)))
-                        res[i] = error_list
+                                    print("Error: Joint{} - {}".format(i + 1, robot_320_info[locale_lang][error_key].get(bit, "Unknown error")))
+                    res[i] = error_list if error_list else 0
         elif data_len == 2:
             if genre in [
                 ProtocolCode.GET_PLAN_SPEED,
@@ -789,17 +824,40 @@ class DataProcessor(object):
                     res.append(3)
                 else:
                     res.append(i)
+            error_key = None
+            if genre == ProtocolCode.READ_NEXT_ERROR:
+                error_key = "read_next_error"
+            if error_key is not None:
+                robot_320_info = Robot320Info.error_info
+                locale_lang = locale.getdefaultlocale()[0]
+                if locale_lang not in ["zh_CN", "en_US"]:
+                    locale_lang = "en_US"
+                for i in range(len(res)):
+                    val = res[i]
+                    error_list = []
+                    if val != 0:
+                        for bit in range(8):
+                            if (val >> bit) & 1:
+                                error_list.append(bit)
+                                if locale_lang == "zh_CN":
+                                    print("错误: 关节{} - {}".format(i + 1,
+                                                                     robot_320_info[locale_lang][error_key].get(bit, "未知错误")))
+                                else:
+                                    print("Error: Joint{} - {}".format(i + 1,
+                                                                       robot_320_info[locale_lang][error_key].get(bit, "Unknown error")))
+                    res[i] = error_list if error_list else 0
+
         elif data_len == 28:
             if genre == ProtocolCode.GET_QUICK_INFO:
-                for header_i in range(0, len(valid_data)-2, 2):
-                    one = valid_data[header_i : header_i + 2]
+                for header_i in range(0, len(valid_data) - 2, 2):
+                    one = valid_data[header_i: header_i + 2]
                     res.append(self._decode_int16(one))
                 res.append(valid_data[-2])
                 res.append(valid_data[-1])
             else:
                 for i in range(0, data_len, 4):
-                    byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
-                    res.append(byte_value) 
+                    byte_value = int.from_bytes(valid_data[i:i + 4], byteorder='big', signed=True)
+                    res.append(byte_value)
         elif data_len == 40:
             i = 0
             while i < data_len:
@@ -826,6 +884,7 @@ class DataProcessor(object):
         elif data_len == 32:
             def byte2int(bvs):
                 return list(map(lambda _i: self._decode_int16(bvs[_i:_i + 2]), range(0, 16, 2)))
+
             return [byte2int(valid_data[0:16]), byte2int(valid_data[16:32])]
 
         elif data_len == 48:
@@ -833,16 +892,16 @@ class DataProcessor(object):
                 i = 0
                 while i < data_len:
                     if i < 28:
-                        byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
+                        byte_value = int.from_bytes(valid_data[i:i + 4], byteorder='big', signed=True)
                         res.append(byte_value)
-                        i+=4
+                        i += 4
                     elif i < 40:
-                        one = valid_data[i : i + 2]
+                        one = valid_data[i: i + 2]
                         res.append(self._decode_int16(one))
-                        i+=2
+                        i += 2
                     else:
                         res.append(valid_data[i])
-                        i+=1
+                        i += 1
         elif data_len == 38:
             i = 0
             res = []
@@ -875,18 +934,38 @@ class DataProcessor(object):
     def _process_single(self, data):
         return data[0] if data else -1
 
+    def _parse_high_low_bytes(self, data):
+        if not data or len(data) % 2 != 0:
+            return []
+
+        result = []
+        for i in range(0, len(data), 2):
+            high = data[i]
+            low = data[i + 1]
+            value = (high << 8) | low
+            result.append(value)
+        return result
+
     def _process_high_low_bytes(self, data):
         if not data:
             return -1
 
         if len(data) < 2:
             return -1
-
-        # Get the last two bits, low and high
-        low_byte = data[-1]
-        high_byte = data[-2]
-        combined_value = (high_byte << 8) | low_byte
-        return combined_value
+        if 3 < len(data) - 2:
+            result = []
+            for i in range(3, len(data) - 1, 2):
+                combined_value = (data[i] << 8) | data[i + 1]
+                result.append(combined_value)
+            return result
+        else:
+            # Get the last two bits, low and high
+            low_byte = data[-1]
+            high_byte = data[-2]
+            combined_value = (high_byte << 8) | low_byte
+            if len(data) > 2 and data[2] in [MyHandGripper.GET_HAND_MAJOR_FIRMWARE_VERSION]:
+                combined_value = combined_value / 10
+            return combined_value
 
     def _parse_bytes_to_int(self, data):
         """将多个字节组合为一个整数（大端）"""
@@ -910,6 +989,7 @@ class DataProcessor(object):
             return 3
         else:
             return -1
+
 
 def write(self, command, method=None):
     if len(command) > 3 and command[3] == 176 and len(command) > 5:
@@ -1010,18 +1090,26 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
         wait_time = 0.4
     if real_command:
         if genre == ProtocolCode.SET_TOQUE_GRIPPER:
-            if len(real_command) == 12:
-                if real_command[6] == 13:
-                    wait_time = 10
+            if real_command[6] in [MyHandGripper.SET_HAND_GRIPPER_CALIBRATION, MyHandGripper.SET_HAND_GRIPPER_ANGLES,
+                                   MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT,
+                                   ProGripper.SET_GRIPPER_CALIBRATION, ProGripper.SET_GRIPPER_ABS_ANGLE]:
+                wait_time = 10
             else:
-                if real_command[6] == 13:
-                    wait_time = 3
+                wait_time = 0.2
+        elif genre == ProtocolCode.GET_TOQUE_GRIPPER:
+            wait_time = 0.2
+
     data = b""
     if method is not None:
         if real_command:
             if genre == ProtocolCode.SET_TOQUE_GRIPPER:
-                if real_command[6] == 13:
-                    wait_time = 3
+                if real_command[6] in [MyHandGripper.SET_HAND_GRIPPER_CALIBRATION,
+                                       MyHandGripper.SET_HAND_GRIPPER_ANGLES,
+                                       MyHandGripper.SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT,
+                                       ProGripper.SET_GRIPPER_CALIBRATION, ProGripper.SET_GRIPPER_ABS_ANGLE]:
+                    wait_time = 10
+                else:
+                    wait_time = 0.3
         if genre == 177:
             while True:
                 data = self.sock.recv(1024)
@@ -1077,10 +1165,10 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                 datas += data
                 if [i for i in datas] == command:
                     if genre in (
-                        ProtocolCode.GET_ATOM_PRESS_STATUS,
-                        ProtocolCode.GET_SERVO_MOTOR_COUNTER_CLOCKWISE,
-                        ProtocolCode.GET_SERVO_MOTOR_CLOCKWISE,
-                        ProtocolCode.GET_SERVO_P,
+                            ProtocolCode.GET_ATOM_PRESS_STATUS,
+                            ProtocolCode.GET_SERVO_MOTOR_COUNTER_CLOCKWISE,
+                            ProtocolCode.GET_SERVO_MOTOR_CLOCKWISE,
+                            ProtocolCode.GET_SERVO_P,
                     ) and _class in ["MyArmM", "MyArmC", "MyArmAPI"]:
                         break
                     datas = b''

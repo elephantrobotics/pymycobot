@@ -41,6 +41,7 @@ from pymycobot.pro630 import Pro630
 from pymycobot.pro630client import Pro630Client
 from pymycobot.pro400 import Pro400
 from pymycobot.pro400client import Pro400Client
+from pymycobot.pro450client import Pro450Client
 from pymycobot.myarmm_control import MyArmMControl
 from pymycobot.mercurychassis_api import ChassisControl
 from pymycobot.conveyor_api import ConveyorAPI
@@ -96,10 +97,11 @@ __all__ = [
     "ultraArmP340",
     "Exoskeleton",
     "ExoskeletonSocket",
-    "MyBuddyEmoticon"
+    "MyBuddyEmoticon",
+    "Pro450Client",
 ]
 
-__version__ = "4.0.0"
+__version__ = "4.0.1b0"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

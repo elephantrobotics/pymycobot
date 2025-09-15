@@ -86,7 +86,7 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
         real_command, has_reply, _async = super(
             MyPalletizerSocket, self)._mesg(genre, *args, **kwargs)
         # [254,...,255]
-        if _async:
+        if not has_reply:
             with self.lock:
                 self._write(self._flatten(real_command), "socket")
             return None
@@ -102,7 +102,7 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
             return None
         res = self._process_received(data, genre)
         if res is None:
-            return None
+            return -1
         if res is not None and isinstance(res, list) and len(res) == 1 and genre in [ProtocolCode.SET_BASIC_OUTPUT]:
             return res[0]
         if genre in [
@@ -213,7 +213,7 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, angle=degree, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_ANGLE, id, [self._angle2int(degree)], speed)
 
     def send_angles(self, angles, speed):
         """Send the angles of all joints to robot arm.
@@ -224,7 +224,7 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
         angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed)
 
     def get_coords(self):
         """Get the coords from robot arm, coordinate system based on base.
@@ -244,7 +244,7 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=id, coord=coord, speed=speed)
         value = self._coord2int(coord) if id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_COORD, id, [value], speed)
 
     def send_coords(self, coords, speed):
         """Send all coords to robot arm.
@@ -259,7 +259,7 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
             coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True)
+        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed)
 
     def is_in_position(self, data, id=0):
         """Judge whether in the position.
@@ -317,17 +317,6 @@ class MyPalletizerSocket(CommandGenerator, sms_sts):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, direction=direction)
         return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed)
-
-    def jog_coord(self, coord_id, direction, speed):
-        """Jog control coord.
-
-        Args:
-            coord_id: int 1-4.
-            direction: 0 - decrease, 1 - increase
-            speed: int (1 - 100)
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, direction=direction)
-        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed)
 
     def jog_absolute(self, joint_id, angle, speed):
         """Jog absolute angle

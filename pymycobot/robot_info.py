@@ -8,15 +8,18 @@ class Robot320Info(object):
                     0: "通信异常，请检查线路、舵机固件版本是否正常、电源是否插上、固件是否烧录正确，波特率是否正确等",
                     1: "伺服电机型号错误，需要更换电机",
                     2: "伺服电机固件版本较低，需要使用FD升级",
-                    3: "伺服电机p值异常，默认32，此异常会自动恢复",
-                    4: "伺服电机D值异常，默认8，此异常会自动恢复",
-                    5: "伺服电机I值异常，默认0，此异常会自动恢复",
-                    6: "伺服电机顺时针不灵敏区参数异常，默认3，此异常会自动恢复",
-                    7: "伺服电机逆时针不灵敏区参数异常，默认3，此异常会自动恢复",
-                    8: "伺服电机相位异常，此异常会自动恢复",
-                    9: "伺服电机返回延时异常，默认0，此异常会自动恢复",
-                    10: "伺服电机最小启动力异常，默认0，此异常会自动恢复",
-                    11: "伺服电机异常，当舵机异常时，无法控制机器运动，请查询舵机反馈接口get_servo_status，查看具体报错",
+                    3: "伺服电机p值异常，默认32，开机正常会自动恢复",
+                    4: "伺服电机D值异常，默认8，开机正常会自动恢复",
+                    5: "伺服电机I值异常，默认0，开机正常会自动恢复",
+                    6: "伺服电机顺时针不灵敏区参数异常，默认3，开机正常会自动恢复",
+                    7: "伺服电机逆时针不灵敏区参数异常，默认3，开机正常会自动恢复",
+                    8: "伺服电机相位异常，开机正常会自动恢复",
+                    9: "伺服电机返回延时异常，默认0，开机正常会自动恢复",
+                    10: "伺服电机最小启动力异常，默认0，开机正常会自动恢复",
+                    11: "开启过温过压保护，默认44，开机正常会自动恢复",
+                    12: "开启舵机LED报警，默认47，开机正常会自动恢复",
+                    13: "正常值见开机自检参数，开机正常会自动恢复",
+                    14: "伺服电机异常，无法控制机器运动，请查询 get_servo_status",
                     255: "未知错误"
                 },
             "servo_error":
@@ -26,23 +29,37 @@ class Robot320Info(object):
                     2: "伺服电机过温",
                     3: "伺服电机过流",
                     5: "伺服电机过载",
+                },
+            "read_next_error":
+                {
+                    0: "急停被按下",
+                    1: "通信有问题",
+                    2: "通信不稳定",
+                    3: "电压过/欠压",
+                    4: "磁编码异常",
+                    5: "温度过热",
+                    6: "电流过流",
+                    7: "负载过载",
                 }
         },
         "en_US": {
             "robot_error":
                 {
-                    0: "Communication exception, please check the line, servo motor firmware version, power supply, firmware burning, baud rate, etc.",
-                    1: "Servo motor model error, need to replace the motor",
-                    2: "Servo motor firmware version is too low, need to use FD upgrade",
-                    3: "Servo motor p value exception, default 32, this exception will be automatically restored",
-                    4: "Servo motor D value exception, default 8, this exception will be automatically restored",
-                    5: "Servo motor I value exception, default 0, this exception will be automatically restored",
-                    6: "Servo motor clockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
-                    7: "Servo motor counterclockwise insensitive zone parameter exception, default 3, this exception will be automatically restored",
-                    8: "Servo motor phase exception, this exception will be automatically restored",
-                    9: "Servo motor return delay exception, default 0, this exception will be automatically restored",
-                    10: "Servo motor minimum starting force exception, default 0, this exception will be automatically restored",
-                    11: "Servo motor exception, when the servo is abnormal, the robot cannot move, please query the servo feedback interface get_servo_status, view the specific error",
+                    0: "Communication abnormality. Please check the wiring, servo firmware version, power supply, firmware download, baud rate, etc.",
+                    1: "Servo motor model error. Replace the motor.",
+                    2: "Servo motor firmware version is low. FD upgrade required.",
+                    3: "Servo motor p value abnormal. Default value: 32. Automatically recovers upon power-up.",
+                    4: "Servo motor D value abnormal. Default value: 8. Automatically recovers upon power-up.",
+                    5: "Servo motor I value abnormal. Default value: 0. Automatically recovers upon power-up.",
+                    6: "Servo motor clockwise dead zone parameter abnormal. Default value: 3. Automatically recovers upon power-up.",
+                    7: "Servo motor counterclockwise dead zone parameter abnormal. Default value: 3. Automatically recovers upon power-up.",
+                    8: "Servo motor phase abnormal. Automatically recovers upon power-up.",
+                    9: "Servo motor return delay abnormal. Default value: 0. Automatically recovers upon power-up.",
+                    10: "Servo motor minimum starting force abnormal. Default value: 0. Automatically recovers upon power-up.",
+                    11: "Overtemperature and overvoltage protection is enabled, default is 44, and it will automatically recover if the power is turned on normally.",
+                    12: "Servo LED alarm is enabled, default is 47, and it will automatically recover if the power is turned on normally.",
+                    13: "See the power-on self-test parameters for normal values. It will automatically recover if the power is turned on normally.",
+                    14: "Servo motor abnormality, unable to control machine movement, please query get_servo_status.",
                     255: "Unknown error"
                 },
             "servo_error":
@@ -52,6 +69,17 @@ class Robot320Info(object):
                     2: "Servo motor over-temperature",
                     3: "Servo motor over-current",
                     5: "Servo motor over-load",
+                },
+            "read_next_error":
+                {
+                    0: "Emergency stop pressed",
+                    1: "Communication problem",
+                    2: "Communication unstable",
+                    3: "Overvoltage/undervoltage",
+                    4: "Magnetic encoding abnormality",
+                    5: "Overtemperature",
+                    6: "Overcurrent",
+                    7: "Load overload",
                 }
         }
 
@@ -267,8 +295,8 @@ class RobotLimit:
         },
         "MyCobot280": {
             "id": [1, 2, 3, 4, 5, 6],
-            "angles_min": [-168, -135, -150, -145, -165, -180],
-            "angles_max": [168, 135, 150, 145, 165, 180],
+            "angles_min": [-168, -140, -150, -150, -155, -180],
+            "angles_max": [168, 140, 150, 150, 160, 180],
             "coords_min": [-350, -350, -70, -180, -180, -180],
             "coords_max": [350, 350, 523.9, 180, 180, 180]
         },
@@ -276,20 +304,22 @@ class RobotLimit:
             "joint_id": [1, 2, 3, 4, 5, 6],
             "coord_id": [1, 2, 3, 4, 5, 6],
             "servo_id": [1, 2, 3, 4, 5, 6, 7],
-            "angles_min": [-168, -135, -150, -145, -165, -180],
-            "angles_max": [168, 135, 150, 145, 165, 180],
+            "angles_min": [-168, -135, -150, -145, -155, -180],
+            "angles_max": [168, 135, 150, 145, 160, 180],
             "coords_min": [-281.45, -281.45, -70, -180, -180, -180],
             "coords_max": [281.45, 281.45, 412.67, 180, 180, 180]
         },
         "MyCobot280Socket": {
             "id": [1, 2, 3, 4, 5, 6],
-            "angles_min": [-168, -135, -150, -145, -165, -180],
-            "angles_max": [168, 135, 150, 145, 165, 180],
+            "angles_min": [-168, -140, -150, -150, -155, -180],
+            "angles_max": [168, 140, 150, 150, 160, 180],
             "coords_min": [-281.45, -281.45, -70, -180, -180, -180],
             "coords_max": [281.45, 281.45, 412.67, 180, 180, 180]
         },
         "MyCobot320": {
             "id": [1, 2, 3, 4, 5, 6],
+            "coord_id": [1, 2, 3, 4, 5, 6],
+            "servo_id": [1, 2, 3, 4, 5, 6, 7],
             "angles_min": [-168, -135, -145, -148, -168, -180],
             "angles_max": [168, 135, 145, 148, 168, 180],
             "coords_min": [-350, -350, -41, -180, -180, -180],
@@ -297,6 +327,8 @@ class RobotLimit:
         },
         "MyCobot320Socket": {
             "id": [1, 2, 3, 4, 5, 6],
+            "coord_id": [1, 2, 3, 4, 5, 6],
+            "servo_id": [1, 2, 3, 4, 5, 6, 7],
             "angles_min": [-168, -135, -145, -148, -168, -180],
             "angles_max": [168, 135, 145, 148, 168, 180],
             "coords_min": [-350, -350, -41, -180, -180, -180],
@@ -420,5 +452,14 @@ class RobotLimit:
             "angles_max": [180, 225, 165, 270, 180, 180],
             "coords_min": [-630, -630, -425, -180, -180, -180],
             "coords_max": [630, 630, 835, 180, 180, 180]
+        },
+        "Pro450Client": {
+            "joint_id": [1, 2, 3, 4, 5, 6],
+            "servo_id": [1, 2, 3, 4, 5, 6],
+            "coord_id": (1, 2, 3, 4, 5, 6),
+            "angles_min": [-165, -120, -158, -165, -165, -175],
+            "angles_max": [165, 120, 158, 165, 165, 175],
+            "coords_min": [-466, -466, -230, -180, -180, -180],
+            "coords_max": [466, 466, 614, 180, 180, 180]
         }
     }
