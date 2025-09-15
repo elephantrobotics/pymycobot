@@ -1108,27 +1108,12 @@ class ElephantRobot(object):
         Returns:
             str: return information
         """
-    def force_get_firmware(self, ID):
-        """Obtain the main version number of the power control system
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return information
-        """
         command = "force_GetFirmware(" + str(ID) + ")\n"
+        value = int(self.send_command(command))
+        if value == 255:
+            return value
         return (int(self.send_command(command)))/10
     
-    def force_get_modified(self, ID):
-        """Obtain the updated version number of Power Control
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return information
-        """
     def force_get_modified(self, ID):
         """Obtain the updated version number of Power Control
 
@@ -1141,16 +1126,6 @@ class ElephantRobot(object):
         command = "force_GetModified(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def force_set_id(self, ID, value):
-        """Set force control ID
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): ID value (1~254).
-        
-        Returns:
-            str: return message
-        """
     def force_set_id(self, ID, value):
         """Set force control ID
 
@@ -1176,28 +1151,9 @@ class ElephantRobot(object):
          Returns:
             str: return ID value
         """
-    def force_get_id(self, ID):
-        """Obtain the ID of the force control machine
-
-        Args:
-            ID (int): Robot arm ID.
-        
-         Returns:
-            str: return ID value
-        """
         command = "force_GetGripperId(" + str(ID) + ")\n"
         return int(self.send_command(command))
 
-    def force_set_enabled(self, ID, value):
-        """Set force control enable
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Enable value (0 or 1).
-
-        Returns:
-            str: return message
-        """
     def force_set_enabled(self, ID, value):
         """Set force control enable
 
@@ -1224,16 +1180,6 @@ class ElephantRobot(object):
         Returns:
             str: return message
         """
-    def force_set_angle(self, ID, value):
-        """Set force control angle
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Angle value (0~100).
-        
-        Returns:
-            str: return message
-        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetAngle value must be 0 ~ 100, but received {}".format(value))
@@ -1241,15 +1187,6 @@ class ElephantRobot(object):
         # print(command)
         return int(self.send_command(command))
 
-    def force_get_angle(self, ID):
-        """Obtain force control angle
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return angle value
-        """
     def force_get_angle(self, ID):
         """Obtain force control angle
 
@@ -1271,15 +1208,6 @@ class ElephantRobot(object):
         Returns:
             str: return message
         """
-    def force_set_calibrate(self, ID):
-        """Initialize force control
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return message
-        """
         command = "force_SetGripperCalibrate(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
@@ -1292,27 +1220,9 @@ class ElephantRobot(object):
         Returns:
             str: return status value
         """
-    def force_get_gripper(self, ID):
-        """Obtain the motion status of force control
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return status value
-        """
         command = "force_GetGripper(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def force_set_torque(self, ID, value):
-        """Set the torque value for force control
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Torque value (0~100).
-        Returns:
-            str: return message
-        """
     def force_set_torque(self, ID, value):
         """Set the torque value for force control
 
@@ -1337,28 +1247,9 @@ class ElephantRobot(object):
         Returns:
             str: return torque value
         """
-    def force_get_torque(self, ID):
-        """Obtain force control torque
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return torque value
-        """
         command = "force_GetGripperTorque(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def force_set_open(self, ID, value):
-        """Set the opening angle of the force control IO
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Angle value (0~100).
-        
-        Returns:
-            str: return message
-        """
     def force_set_open(self, ID, value):
         """Set the opening angle of the force control IO
 
@@ -1385,32 +1276,12 @@ class ElephantRobot(object):
         Returns:
             str: return angle value
         """
-    def force_set_close(self, ID, value):
-        """Set the closing angle of the force control IO
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Angle value (0~100).
-        
-        Returns:
-            str: return angle value
-        """
         if value < 0 or value > 100:
             raise MyCobot630ProDataException(
             "The Force_SetClose value must be 0 ~ 100, but received {}".format(value))
         command = "force_SetClose(" + str(ID) + "," + str(value) + ")\n"
         return int(self.send_command(command))
     
-    def force_set_speed(self, ID, value):
-        """Set force control motion speed
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Speed value (1~100).
-
-        Returns:
-            str: return message
-        """
     def force_set_speed(self, ID, value):
         """Set force control motion speed
 
@@ -1436,28 +1307,9 @@ class ElephantRobot(object):
         Returns:
             str: return speed value
         """
-    def force_get_speed(self, ID):
-        """Obtain force controlled motion speed
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return speed value
-        """
         command = "force_GetSpeed(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def force_get_open(self, ID):
-        """Obtain the opening angle of the force control IO
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Angle value (0~100).
-        
-        Returns:
-            str: return angle value
-        """
     def force_get_open(self, ID):
         """Obtain the opening angle of the force control IO
 
@@ -1480,28 +1332,9 @@ class ElephantRobot(object):
         Returns:
             str: return angle value
         """
-    def force_get_close(self, ID):
-        """ Obtain the closing angle of the force control IO
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return angle value
-        """
         command = "force_GetClose(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def force_set_absangle(self, ID, value):
-        """Set the absolute angle of force control
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Angle value (0~100).
-        
-        Returns:
-            str: return message
-        """
     def force_set_absangle(self, ID, value):
         """Set the absolute angle of force control
 
@@ -1527,28 +1360,9 @@ class ElephantRobot(object):
         Returns:
             str: return message
         """
-    def force_pause(self, ID):
-        """Pause absolute instruction queue
-
-        Args:
-           ID (int): Robot arm ID.
-        
-        Returns:
-            str: return message
-        """
         command = "force_Pause(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def force_resume(self, ID):
-        """Open absolute command queue
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return message
-        """
-        
     def force_resume(self, ID):
         """Open absolute command queue
 
@@ -1568,12 +1382,6 @@ class ElephantRobot(object):
         Args:
             ID (int): Robot arm ID.
         """
-    def force_stop(self, ID):
-        """Set absolute command to stop
-
-        Args:
-            ID (int): Robot arm ID.
-        """
         command = "force_Stop(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
@@ -1586,16 +1394,7 @@ class ElephantRobot(object):
         Returns:
             str: return message
         """
-    def froce_get_queuecount(self, ID):
-        """Obtain the number of absolute command queues for force control
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return message
-        """
-        command = "froce_GetQueueCount(" + str(ID) + ")\n"
+        command = "froce_GetCount(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
     #三指#
@@ -1608,27 +1407,12 @@ class ElephantRobot(object):
         Returns:
             str: return major version value
         """
-    def hand_get_firmware(self, ID):
-        """Obtain the main version number of the three fingers
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return major version value
-        """
         command = "Hand_GetFirmware(" + str(ID) + ")\n"
+        value = int(self.send_command(command))
+        if value == 255:
+            return value
         return (int(self.send_command(command)))/10
     
-    def hand_get_modified(self, ID):
-        """Obtain the updated version number of the three fingers
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return minor version
-        """
     def hand_get_modified(self, ID):
         """Obtain the updated version number of the three fingers
 
@@ -1641,16 +1425,6 @@ class ElephantRobot(object):
         command = "Hand_GetModified(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def hand_set_id(self, ID, value):
-        """Set three finger machine ID
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): hand id value (1~254).
-        
-        Returns:
-            str: return message
-        """
     def hand_set_id(self, ID, value):
         """Set three finger machine ID
 
@@ -1676,28 +1450,9 @@ class ElephantRobot(object):
         Returns:
             str: return id value
         """
-    def hand_get_id(self, ID):
-        """Obtain the three finger machine ID
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return id value
-        """
         command = "Hand_GetId(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def hand_set_enabled(self, ID, value):
-        """Claw enable
-
-        Args:
-            ID (int): Robot arm ID.
-            Value (int): Enable value (0 or 1).
-        
-        Returns:
-            str: return message
-        """
     def hand_set_enabled(self, ID, value):
         """Claw enable
 
@@ -1714,17 +1469,6 @@ class ElephantRobot(object):
         command = "Hand_SetEnabled(" + str(ID) + "," + str(value) + ")\n"
         return int(self.send_command(command))
     
-    def hand_set_joint_angle(self, ID, Jiont, value):
-            """Set the angle of a single joint.
-
-            Args:
-                ID (int): Robot arm ID.
-                Joint (int): Joint number (1~6).
-                Value (int): Angle value (0~100).
-            
-            Returns:
-                str: return message
-            """
     def hand_set_joint_angle(self, ID, Jiont, value):
             """Set the angle of a single joint.
 
@@ -1755,16 +1499,6 @@ class ElephantRobot(object):
         Returns:
             str: return Single joint angle value
         """
-    def hand_get_joint_angle(self, ID, Jiont):
-        """Obtain the angle of a single joint.
-
-        Args:
-            ID (int): Robot arm ID.
-            Joint (int): Joint number (1~6).
-        
-        Returns:
-            str: return Single joint angle value
-        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The gripper Jiont value must be 1 ~ 6, but received {}".format(Jiont))
@@ -1772,16 +1506,6 @@ class ElephantRobot(object):
         return int(self.send_command(command))
     
     
-    def hand_set_joint_calibrate(self, ID, Jiont):
-        """Initialize joints
-
-        Args:
-            ID (int): Robot arm ID.
-            Joint (int): Joint number (1~6).
-        
-        Returns:
-            str: return message
-        """
     def hand_set_joint_calibrate(self, ID, Jiont):
         """Initialize joints
 
@@ -1808,29 +1532,9 @@ class ElephantRobot(object):
         Returns:
             str: return Numerical value of motion state
         """
-    def hand_get_state(self, ID):
-        """Obtain the motion status of the three fingers.
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return Numerical value of motion state
-        """
         command = "Hand_GetHand(" + str(ID) + ")\n"
         return int(self.send_command(command))
     
-    def hand_set_torque(self, ID, Jiont, value):
-        """Set the torque of the three finger joint.
-
-        Args:
-            ID (int): Robot arm ID.
-            Joint (int): Joint number (1~6).
-            Value (int): Torque value (0~100).
-        
-        Returns:
-            str: return message
-        """
     def hand_set_torque(self, ID, Jiont, value):
         """Set the torque of the three finger joint.
 
@@ -1861,34 +1565,12 @@ class ElephantRobot(object):
         Returns:
             str: return Single Joint torque value
         """
-    def hand_get_torque(self, ID, Jiont):
-        """Obtain the torque of the three finger joint.
-
-        Args:
-            ID (int): Robot arm ID.
-            Joint (int): Joint number (1~6).
-        
-        Returns:
-            str: return Single Joint torque value
-        """
         if Jiont < 1 or Jiont > 6:
             raise MyCobot630ProDataException(
             "The Hand Jiont value must be 1 ~ 6, but received {}".format(Jiont))
         command = "Hand_GetTorque(" + str(ID) + "," + str(Jiont) + ")\n"
         return int(self.send_command(command))
     
-   
-    def hand_set_speed(self, ID, Jiont, value):
-        """Set the speed of the three finger joint.
-
-        Args:
-            ID (int): Robot arm ID.
-            Joint (int): Joint number (1~6).
-            Value (int): Speed value (1~100).
-        
-        Returns:
-            str: return message
-        """
    
     def hand_set_speed(self, ID, Jiont, value):
         """Set the speed of the three finger joint.
@@ -1938,17 +1620,6 @@ class ElephantRobot(object):
         Returns:
             str: return message
         """
-    def hand_set_fullangles(self, ID, angles, speed):
-        """Set the angle of the three finger joint.
-
-        Args:
-            ID (int): Robot arm ID.
-            Angles (list of int): A list containing 6 angle values, each value range must be (0~100).
-            Value (int): Speed value (1~100).
-        
-        Returns:
-            str: return message
-        """
         if speed < 1 or speed > 100:
                  raise MyCobot630ProDataException(
             "The Hand speed value must be 1 ~ 100, but received {}".format(speed))
@@ -1976,32 +1647,10 @@ class ElephantRobot(object):
             str: return All Joint angle value
 。
         """
-    def hand_get_fullangles(self, ID):
-        """Obtain the total joint angle of three fingers.
-
-        Args:
-            ID (int): Robot arm ID.
-        
-        Returns:
-            str: return All Joint angle value
-。
-        """
         command = "Hand_GetFullAngles(" + str(ID) + ")\n"
         angle_list= parse_mixed_list_string(self.send_command(command))
         return angle_list
 
-    def hand_set_catch(self, ID, pose, value, num=0):   
-        """Three finger gesture control.
-
-        Args:
-            ID (int): Robot arm ID.
-            Pose (int): gesture type (0~4).
-            Value (int): threshold (0~5), when pose is 4, value is (0~20).
-            Num (int): defaults to all hand movements when no value is passed in, and only moves pose type joints when a value is passed in.
-
-        Returns:
-            str: return message
-        """
     def hand_set_catch(self, ID, pose, value, num=0):   
         """Three finger gesture control.
 
@@ -2041,7 +1690,7 @@ class ElephantRobot(object):
             str: return finger machine type
         """
         command = "Hand_GetModel(" + str(ID) + ")\n"
-        return self.send_command(command)
+        return int(self.send_command(command))
 
 
     #末端
@@ -2052,15 +1701,14 @@ class ElephantRobot(object):
             str: return Atom major version number
 
         """
-    def get_end_firmware(self):             
-        """Obtain the final major version number.
-
-        Returns:
-            str: return Atom major version number
-
-        """
         command = "GetFirmwareEnd()\n"
-        return (int(self.send_command(command)))/10
+        value = self.send_command(command)
+        if value == "25.5":
+            value = int((float(value)) * 10)
+            return value
+        value = float(value)
+        return value
+
     def get_end_modify(self):                
         """Obtain the end update version number.
 
@@ -2080,16 +1728,6 @@ class ElephantRobot(object):
         command = "SetEndBtStatus()\n"
         return int(self.send_command(command))
     def set_end_color(self, red, green, blue):
-        """Obtain the end color.
-
-        Args:
-            red (int): (0 ~ 255)。
-            green (int): (0 ~ 255)。
-            blue (int): (0 ~ 255)。
-        
-        Returns:
-            str: return message
-        """
         """Obtain the end color.
 
         Args:
