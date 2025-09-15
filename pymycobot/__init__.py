@@ -1,6 +1,6 @@
-# coding=utf-8
+"""pymycobot package initialization module."""
 
-from __future__ import absolute_import
+# ruff: noqa: F401
 import datetime
 import sys
 from pymycobot.mycobot280 import MyCobot280
@@ -33,6 +33,7 @@ from pymycobot.myagvpro_socket import MyAGVProSocket
 from pymycobot.myagvpro_bluetooth import MyAGVProBluetooth
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
+
 # from pymycobot.mycobotpro630 import Phoenix
 from pymycobot.mercurysocket import MercurySocket
 from pymycobot.myarmm import MyArmM
@@ -101,13 +102,11 @@ __all__ = [
     "Pro450Client",
 ]
 
-__version__ = "4.0.1b0"
+__version__ = "4.0.1"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
-__copyright__ = "CopyRight (c) 2020-{0} Shenzhen Elephantrobotics technology".format(
-    datetime.datetime.now().year
-)
+__copyright__ = f"CopyRight (c) 2020-{datetime.datetime.now().year} Shenzhen Elephantrobotics technology"
 
 # For raspberry mycobot 280.
 PI_PORT = "/dev/ttyAMA0"
