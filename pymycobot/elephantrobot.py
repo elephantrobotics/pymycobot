@@ -263,6 +263,16 @@ class ElephantRobot(object):
             bool: currently always returns True
         """
         return self.start_robot()
+    
+    def shutdown_robot(self):
+        """Shuts down robot.
+
+        Returns:
+            bool: currently always returns True
+        """
+        command = "shutdown_robot()\n"
+        res = self.send_command(command)
+        return True
 
     def get_angles(self):
         """Retrieves the current joint angles of the robot.
