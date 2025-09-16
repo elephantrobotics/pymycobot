@@ -44,25 +44,33 @@ class UltraArmP1:
         self.lock = threading.Lock()
         time.sleep(1)
 
-    def _respone(self, timeout=2):
-        """Read data from serial buffer and wait for 'ok' confirmation.
+    def _respone(self, timeout=90):
+        """Wait for device response from the serial buffer.
+
+        This method continuously reads data from the serial port until either:
+          - A specific keyword ("timx") is detected in the incoming data, or
+          - The timeout is reached.
+
+        Args:
+            timeout (float): Maximum time (in seconds) to wait for a valid response.
 
         Returns:
-            bool: True if 'ok' received, False if timeout
+            str: 'ok' if the keyword response ("timx") is detected.
+            bool: False if the timeout occurs without receiving a valid response.
         """
+
         import time
         start_time = time.time()
         received_data = b""
         while time.time() - start_time < timeout:
-            if self._serial_port.inWaiting() > 0:
-                received_data += self._serial_port.read(self._serial_port.inWaiting())
-            if b"ok" in received_data.lower():
+            received_data += self._serial_port.read(self._serial_port.inWaiting())
+            if b"timx" in received_data.lower() or b"tim4x" in received_data.lower():
                 return 'ok'
             time.sleep(0.02)
-
         # Timeout
         if self.debug:
             print("data (timeout):", received_data)
+
         return False
 
     def _request(self, flag=""):
