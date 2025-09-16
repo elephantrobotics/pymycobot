@@ -1,6 +1,5 @@
 # This is Python API for ElephantRobotics product
 
-![Python 2.7](https://img.shields.io/badge/Python-v2.7%5E-green?logo=python)
 ![Python 3](https://img.shields.io/badge/Python-v3%5E-green?logo=python)
 [![pypi_version](https://img.shields.io/pypi/v/pymycobot?label=pypi)](https://pypi.org/project/pigit)
 
@@ -39,7 +38,7 @@ pip install pymycobot==1.0.7 --user
 git clone https://github.com/elephantrobotics/pymycobot.git <your-path>
 cd <your-path>/pymycobot
 # Install
-[sudo] python2 setup.py install
+[sudo] python2 setup.py install # Will not support starting from v4.0.1
 # or
 [sudo] python3 setup.py install
 ```
