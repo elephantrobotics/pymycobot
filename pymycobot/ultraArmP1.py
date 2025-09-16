@@ -64,7 +64,10 @@ class UltraArmP1:
         received_data = b""
         while time.time() - start_time < timeout:
             received_data += self._serial_port.read(self._serial_port.inWaiting())
-            if b"timx" in received_data.lower() or b"tim4x" in received_data.lower():
+            # if b"end" in received_data.lower():
+            #     return 'ok'
+            end_count = received_data.lower().count(b"end")
+            if end_count >= 2:
                 return 'ok'
             time.sleep(0.02)
         # Timeout
