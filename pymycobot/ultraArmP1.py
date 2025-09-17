@@ -44,7 +44,7 @@ class UltraArmP1:
         self.lock = threading.Lock()
         time.sleep(1)
 
-    def _respone(self, timeout=90):
+    def _respone(self, timeout=90, _async=True):
         """Wait for device response from the serial buffer.
 
         This method continuously reads data from the serial port until either:
@@ -53,6 +53,7 @@ class UltraArmP1:
 
         Args:
             timeout (float): Maximum time (in seconds) to wait for a valid response.
+            _async (bool): Whether to wait for a response.
 
         Returns:
             str: 'ok' if the keyword response ("timx") is detected.
@@ -60,6 +61,8 @@ class UltraArmP1:
         """
 
         import time
+        if not _async:
+            return 1
         start_time = time.time()
         received_data = b""
         while time.time() - start_time < timeout:
@@ -210,12 +213,13 @@ class UltraArmP1:
             self._debug(command)
             return self._request("coord")
 
-    def set_coords(self, coords, speed):
+    def set_coords(self, coords, speed, _async=True):
         """Move the robot using Cartesian coordinate control.
 
         Args:
             coords (list[float]): Coordinates [X, Y, Z].
             speed (int): Movement speed (1~5700).
+            _async: (bool): Closed-loop switch
         """
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
@@ -232,15 +236,16 @@ class UltraArmP1:
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
-            return self._respone()
+            return self._respone(_async=_async)
 
-    def set_angle(self, joint_id, angle, speed):
+    def set_angle(self, joint_id, angle, speed, _async=True):
         """Set a single joint angle.
 
         Args:
             joint_id (int): Joint number (1~4).
             angle (float): Angle value.
             speed (int): Movement speed (1~5700).
+            _async: (bool): Closed-loop switch
         """
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
@@ -253,14 +258,15 @@ class UltraArmP1:
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
-            return self._respone()
+            return self._respone(_async=_async)
 
-    def set_angles(self, angles, speed):
+    def set_angles(self, angles, speed, _async=True):
         """Move robot using joint angle control.
 
         Args:
             angles (list[float]): Joint angles [J1, J2, J3, J4].
             speed (int): Movement speed (1~5700).
+            _async: (bool): Closed-loop switch
         """
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
@@ -279,7 +285,7 @@ class UltraArmP1:
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
-            return self._respone()
+            return self._respone(_async=_async)
 
     def close(self):
         """Close the serial port."""
