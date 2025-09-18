@@ -606,7 +606,7 @@ class ultraArmP340:
 
             begin, end = 0, len(X)
 
-            self.set_speed_mode(0)  # Constant speed mode
+            # self.set_speed_mode(0)  # Constant speed mode
 
             for i in range(begin, end):
                 command = X[i] + ProtocolCode.END
@@ -637,7 +637,7 @@ class ultraArmP340:
                             print("Retry receive...")
                 command = ""
 
-        self.set_speed_mode(2)  # Acceleration / deceleration mode
+        # self.set_speed_mode(2)  # Acceleration / deceleration mode
 
     def close(self):
         with self.lock:
