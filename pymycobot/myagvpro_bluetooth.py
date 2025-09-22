@@ -262,7 +262,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             int: 1: Success, 0: Failed
         """
         if motor_id not in (1, 2, 3, 4, 254):
-            raise ValueError("Motor ID must be 0 or 1")
+            raise ValueError("Motor id must be 0 or 1")
 
         if state not in (0, 1):
             raise ValueError("State must be 0 or 1")
