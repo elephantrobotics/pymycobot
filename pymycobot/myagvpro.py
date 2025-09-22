@@ -282,13 +282,15 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             return respond
 
         if ProtocolCode.GET_ROBOT_STATUS.equal(genre):
+            machine_states = [0] * 8
             machine_status = reply_data[0]
             if machine_status != 0:
-                machine_status = Utils.get_bits(machine_status)
+                for index in Utils.get_bits(machine_status):
+                    machine_states[index] = 1
 
             battery_voltage = round(reply_data[1] / 10, 2)
 
-            return machine_status, battery_voltage
+            return machine_states, battery_voltage
 
         if ProtocolCode.GET_AUTO_REPORT_MESSAGE.equal(genre):
             respond = []

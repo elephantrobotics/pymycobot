@@ -156,7 +156,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
+        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
 
     async def move_right_lateral(self, speed):
         """Pan the robot right
@@ -172,7 +172,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
+        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
 
     async def turn_left(self, speed):
         """Rotate to the left
