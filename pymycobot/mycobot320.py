@@ -181,6 +181,13 @@ class MyCobot320(CommandGenerator):
         if genre==ProtocolCode.GET_SERVO_DATA:
             if res == [255]:
                 return -1
+        if genre == ProtocolCode.GET_TOQUE_GRIPPER:
+            if res == [0]:
+                self._write(self._flatten(real_command))
+                data = self._read(genre)
+                res = self._process_received(data, genre)
+                if res == [0]:
+                    return -1
         if res is not None and isinstance(res, list) and len(res) == 1 and genre not in [
             ProtocolCode.GET_BASIC_VERSION,
             ProtocolCode.GET_JOINT_MIN_ANGLE,
@@ -222,6 +229,8 @@ class MyCobot320(CommandGenerator):
                 self._write(self._flatten(real_command))
                 data = self._read(genre)
                 res = self._process_received(data, genre)
+                if res[-1] == 255 and res[-2] == 255:
+                    return -1
             return self._process_high_low_bytes(res)
         elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_ANGLES_PLAN]:
             return [self._int2angle(angle) for angle in res]
