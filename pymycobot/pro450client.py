@@ -919,3 +919,14 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, rank_mode=rank_mode, rank_mode_value=value)
         return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
+
+    def set_max_acc(self, mode, max_acc):
+        """Set maximum acceleration
+
+        Args:
+            mode (int): 0 - angle acceleration. 1 - coord acceleration.
+            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 200°/s. Coordinate acceleration range is 1 ~ 400mm/s
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, mode=mode, max_acc=max_acc)
+        return self._mesg(ProtocolCode.SET_MAX_ACC, mode, [max_acc])

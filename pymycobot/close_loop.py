@@ -1261,7 +1261,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             1: _description_
         """
         self.calibration_parameters(
-            lass_name=self.__class__.__name__, mode=mode, max_speed=max_speed)
+            class_name=self.__class__.__name__, mode=mode, max_speed=max_speed)
         return self._mesg(ProtocolCode.SET_SPEED, mode, [max_speed])
 
     def set_max_acc(self, mode, max_acc):
