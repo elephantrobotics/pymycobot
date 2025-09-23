@@ -360,16 +360,15 @@ class ultraArmP340:
 
                 2 - Acceleration / deceleration mode
         """
-        # with self.lock:
         if mode is None:
             print("Please enter the correct value!")
             return
-
-        command = "M16 S" + str(mode) + ProtocolCode.END
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-        self._debug(command)
-        self._respone()
+        with self.lock:
+            command = "M16 S" + str(mode) + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
 
     def set_pwm(self, p=None):
         """PWM control.
@@ -594,7 +593,6 @@ class ultraArmP340:
 
     def play_gcode_file(self, filename=None):
         """Play the imported track file"""
-        # with self.lock:
         X = []
         try:
             with open(filename) as f:
@@ -609,34 +607,35 @@ class ultraArmP340:
 
         self.set_speed_mode(0)  # Constant speed mode
 
-        for i in range(begin, end):
-            command = X[i] + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            time.sleep(0.02)
+        with self.lock:
+            for i in range(begin, end):
+                command = X[i] + ProtocolCode.END
+                self._serial_port.write(command.encode())
+                self._serial_port.flush()
+                time.sleep(0.02)
 
-            self._debug(command)
+                self._debug(command)
 
-            queue_size = self._request("size")
-            if 0 <= queue_size <= 90:
-                try:
-                    if self.debug:
-                        print("queue_size1: %s \n" % queue_size)
-                except Exception as e:
-                    print(e)
-            else:
-                qs = 0
-                while True:
+                queue_size = self._request("size")
+                if 0 <= queue_size <= 90:
                     try:
-                        qs = self._get_queue_size()
                         if self.debug:
-                            print("queue_size2: %s \n" % qs)
-                        if qs <= 40:
-                            begin = i
-                            break
-                    except Exception:
-                        print("Retry receive...")
-            command = ""
+                            print("queue_size1: %s \n" % queue_size)
+                    except Exception as e:
+                        print(e)
+                else:
+                    qs = 0
+                    while True:
+                        try:
+                            qs = self._get_queue_size()
+                            if self.debug:
+                                print("queue_size2: %s \n" % qs)
+                            if qs <= 40:
+                                begin = i
+                                break
+                        except Exception:
+                            print("Retry receive...")
+                command = ""
 
         self.set_speed_mode(2)  # Acceleration / deceleration mode
 
