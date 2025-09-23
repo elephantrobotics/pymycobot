@@ -9,10 +9,10 @@ from pymycobot.common import ProtocolCode,ProGripper
 
 
 class Pro450Client(CloseLoop):
-    def __init__(self, ip, netport=4500, debug=False):
+    def __init__(self, ip='192.168.0.232', netport=4500, debug=False):
         """
         Args:
-            ip     : Server IP address
+            ip     : Server IP address, default '192.168.0.232'
             netport : Socket port number, default is 4500
             debug    : whether show debug info
         """
@@ -891,3 +891,31 @@ class Pro450Client(CloseLoop):
                 7: All logs
         """
         return self._mesg(ProtocolCode.GET_DEBUG_LOG_MODE)
+
+    def jog_angle(self, joint_id, direction, speed, _async=True):
+        """Jog control angle.
+
+        Args:
+            joint_id (int): Joint id 1 - 6.
+            direction (int): 0 - decrease, 1 - increase
+            speed (int): int range 1 - 100
+            _async (bool, optional): Whether to execute asynchronous control. Defaults to True.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
+        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, _async=_async, has_reply=True)
+
+    def set_fusion_parameters(self, rank_mode, value):
+        """Set speed fusion planning parameters
+        Args:
+            rank_mode: 0 ~ 4
+                0: Restore default parameters (only available in set mode)
+                1: Fusion joint velocity
+                2: Fusion joint acceleration
+                3: Fusion coordinate velocity
+                4: Fusion coordinate acceleration
+            value: 0 ~ 10000
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, rank_mode=rank_mode, rank_mode_value=value)
+        return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])

@@ -1593,14 +1593,17 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value_type, MyCobotPro450DataException, int)
             elif parameter == "pin_no":
                 check_0_or_1(parameter, value, [1, 2], value_type, MyCobotPro450DataException, int)
-            elif parameter == ['pin_signal', 'value', 'state']:
+            elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobotPro450DataException, int)
-            elif parameter == ['log_state']:
+            elif parameter == "move_type":
+                if value not in [0, 1, 2, 3, 4]:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter in ['log_state']:
                 check_0_or_1(parameter, value, [0, 1, 2, 3, 4, 5, 6, 7], value_type, MyCobotPro450DataException, int)
-            elif parameter == 'joint_id':
+            elif parameter in['joint_id', 'coord_id']:
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MyCobotPro450DataException)
-            elif parameter == ["servo_restore", "set_motor_enabled"]:
+            elif parameter in ["servo_restore", "set_motor_enabled"]:
                     if value not in [1, 2, 3, 4, 5, 6, 254]:
                         raise MyCobotPro450DataException(
                             "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
@@ -1627,6 +1630,22 @@ def calibration_parameters(**kwargs):
                 check_angles(value, robot_limit, class_name, MyCobotPro450DataException)
             elif parameter == 'coords':
                 check_coords(parameter, value, robot_limit, class_name, MyCobotPro450DataException)
+            elif parameter == "rank_mode":
+                if value < 0 or value > 4:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "get_rank_mode":
+                if value < 1 or value > 4:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "rank_mode_value":
+                if value < 0 or value > 10000:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
+            elif parameter == 'rank':
+                if value < 1 or value > 5:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == 'rank_value':
+                if not 1 <= value <= 100:
+                    raise MyCobotPro450DataException(
+                        "rank value not right, should be 1 ~ 100, the error speed is {}".format(value))
 
 def restrict_serial_port(func):
     """

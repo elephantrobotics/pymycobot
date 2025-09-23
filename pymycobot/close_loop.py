@@ -1008,6 +1008,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         Args:
             mode (int): 0 - open, 1 - close
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, vr_mode=mode)
         return self._mesg(ProtocolCode.SET_VR_MODE, mode)
 
     def get_model_direction(self):
@@ -1049,6 +1050,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 5 : Drag teaching sampling period
             value (int): Filter length, range is 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
 
     def clear_zero_pos(self):
@@ -1792,9 +1794,20 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_MOTORS_RUN_ERR)
 
     def get_fusion_parameters(self, rank_mode):
+        """Get speed fusion planning parameters
+        Args:
+            rank_mode: 1 ~ 4
+                1: Fusion joint velocity
+                2: Fusion joint acceleration
+                3: Fusion coordinate velocity
+                4: Fusion coordinate acceleration
+        Returns:
+            1: Fusion joint velocity
+            2: Fusion joint acceleration
+            3: Fusion coordinate velocity
+            4: Fusion coordinate acceleration
         """
-        rank_mode: 1 ~ 4
-        """
+        self.calibration_parameters(class_name=self.__class__.__name__, get_rank_mode=rank_mode)
         return self._mesg(ProtocolCode.GET_FUSION_PARAMETERS, rank_mode)
 
     def set_fusion_parameters(self, rank_mode, value):
