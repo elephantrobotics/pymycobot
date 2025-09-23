@@ -1170,6 +1170,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             0 - False\n
             -1 - Error
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         if mode == 1:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, coords=data)
@@ -1182,8 +1183,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             self.calibration_parameters(
                 class_name=self.__class__.__name__, angles=data)
             data_list = [self._angle2int(i) for i in data]
-        else:
-            raise Exception("mode is not right, please input 0 or 1")
 
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
 
