@@ -968,3 +968,35 @@ class Pro450Client(CloseLoop):
             scaled_increment = self._angle2int(increment)
             value = max(min(scaled_increment, 32767), -32768)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
+
+    def set_communication_mode(self, communication_mode, protocol_mode=None):
+        """Set communication mode
+        Args:
+            communication_mode (int):
+                0 - socket communication mode
+                1 - 485 communication mode
+            protocol_mode (int, optional):
+                0 - Custom protocol
+                1 - Modbus protocol
+                Default: None (means not specified)
+        """
+        if protocol_mode is not None:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, communication_mode=communication_mode, protocol_mode=protocol_mode)
+            return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, communication_mode, protocol_mode)
+        else:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, communication_mode=communication_mode)
+            return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, communication_mode)
+
+    def get_communication_mode(self):
+        """Get communication mode
+        Returns:
+            communication_mode (int):
+                0 - socket communication mode
+                1 - 485 communication mode
+            protocol_mode (int, optional):
+                0 - Custom protocol
+                1 - Modbus protocol
+        """
+        return self._mesg(ProtocolCode.GET_COMMUNICATION_MODE)

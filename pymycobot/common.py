@@ -468,6 +468,9 @@ class ProtocolCode(object):
     GET_ANGLES_PLAN = 0xF6
     GET_COORDS_PLAN = 0xF7
 
+    SET_COMMUNICATION_MODE = 0x6A
+    GET_COMMUNICATION_MODE = 0x6B
+
     # ultraArm
     END = "\r"
     COORDS_SET = "G0"
