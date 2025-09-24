@@ -470,6 +470,9 @@ class ProtocolCode(object):
 
     SET_COMMUNICATION_MODE = 0x6A
     GET_COMMUNICATION_MODE = 0x6B
+    SET_BASE_EXTERNAL_CONFIG = 0x65
+    GET_BASE_EXTERNAL_CONFIG = 0x67
+    SET_BASE_EXTERNAL_CONTROL = 0x66
 
     # ultraArm
     END = "\r"

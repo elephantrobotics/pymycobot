@@ -298,8 +298,8 @@ class Pro450Client(CloseLoop):
         return cmd, recv
 
     def _check_gripper_id(self, gripper_id):
-        if not (1 <= gripper_id <= 254):
-            raise ValueError("The range of 'gripper_id' is 1 ~ 254, but the received value is {}".format(gripper_id))
+
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
 
     def _write_and_check(self, gripper_id, reg_addr, value):
         """Write register and verify return"""
@@ -426,8 +426,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (1 <= target_id <= 254):
-            raise ValueError("The range of 'target_id' is 1 ~ 254, but the received value is {}".format(target_id))
+        self.calibration_parameters(class_name=self.__class__.__name__, target_id=target_id)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ID, target_id)
 
     def get_pro_gripper_id(self, gripper_id=14):
@@ -451,8 +450,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ANGLE, gripper_angle)
 
     def get_pro_gripper_angle(self, gripper_id=14):
@@ -476,6 +474,7 @@ class Pro450Client(CloseLoop):
             1 - success, 0 - failed
         """
         return self.set_pro_gripper_angle(100, gripper_id)
+
     def set_pro_gripper_close(self, gripper_id=14):
         """ Close the gripper
 
@@ -522,8 +521,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if state not in [0, 1]:
-            raise ValueError("The range of 'state' is 0 or 1, but the received value is {}".format(state))
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ENABLED, state)
 
     def set_pro_gripper_torque(self, gripper_torque, gripper_id=14):
@@ -536,8 +534,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_torque <= 100):
-            raise ValueError("The range of 'gripper_torque' is 0 ~ 100, but the received value is {}".format(gripper_torque))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_torque=gripper_torque)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_TORQUE, gripper_torque)
 
     def get_pro_gripper_torque(self, gripper_id=14):
@@ -561,8 +558,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (1 <= speed <= 100):
-            raise ValueError("The range of 'speed' is 1 ~ 100, but the received value is {}".format(speed))
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_SPEED, speed)
 
     def get_pro_gripper_speed(self, gripper_id=14):
@@ -583,8 +579,7 @@ class Pro450Client(CloseLoop):
             gripper_angle (int): 0 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ABS_ANGLE, gripper_angle)
 
     def set_pro_gripper_io_open_angle(self, gripper_angle, gripper_id=14):
@@ -597,8 +592,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_OPEN_ANGLE, gripper_angle)
 
     def get_pro_gripper_io_open_angle(self, gripper_id=14):
@@ -622,8 +616,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_CLOSE_ANGLE, gripper_angle)
 
     def get_pro_gripper_io_close_angle(self, gripper_id=14):
@@ -647,8 +640,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= pressure_value <= 254):
-            raise ValueError("The range of 'pressure_value' is 0 ~ 254, but the received value is {}".format(pressure_value))
+        self.calibration_parameters(class_name=self.__class__.__name__, pressure_value=pressure_value)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MINI_PRESSURE, pressure_value)
 
     def get_pro_gripper_mini_pressure(self, gripper_id=14):
@@ -672,8 +664,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (100 <= current_value <= 300):
-            raise ValueError("The range of 'current_value' is 100 ~ 300, but the received value is {}".format(current_value))
+        self.calibration_parameters(class_name=self.__class__.__name__, current_value=current_value)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_PROTECTION_CURRENT, current_value)
 
     def get_pro_gripper_protection_current(self, gripper_id=14):
@@ -737,6 +728,16 @@ class Pro450Client(CloseLoop):
             class_name=self.__class__.__name__, servo_restore=joint_id
         )
         return self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+
+    def get_angle(self, joint_id):
+        """Get single joint angle
+
+        Args:
+            joint_id (int): 1 ~ 6.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
 
     def send_angles(self, angles, speed, _async=False):
         """Send the angles of all joints to robot arm.
@@ -1000,3 +1001,35 @@ class Pro450Client(CloseLoop):
                 1 - Modbus protocol
         """
         return self._mesg(ProtocolCode.GET_COMMUNICATION_MODE)
+
+    def set_base_external_config(self, communicate_mode, baud_rate, timeout):
+        """Bottom external device configuration
+
+        Args:
+            communicate_mode (int): 1 - 485. 2 - can
+            baud_rate (int): Baud rate
+            timeout (int): Timeout
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, communicate_mode, baud_rate, timeout)
+
+    def get_base_external_config(self):
+        """Read the bottom external device configuration
+
+        Returns:
+            communicate_mode (int): 1 - 485. 2 - can
+            baud_rate (int): Baud rate
+            timeout (int): Timeout
+
+        """
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG)
+
+    def set_model_direction(self, joint_id, direction):
+        """Set the direction of the robot model
+
+        Args:
+            joint_id (int): joint ID, 1 ~ 6.
+            direction (int): 1 - forward, 0 - backward
+        """
+        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)

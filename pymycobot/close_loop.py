@@ -510,6 +510,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             endpoint (list): Arc end point coordinates
             speed (int): 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
         start = []
         end = []
         for index in range(6):
@@ -1747,9 +1748,16 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
 
     def set_identify_mode(self, mode):
+        """Set the kinetic parameter identification mode
+
+        Args:
+            mode (int): 0 - open. 1 - close
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_IDENTIFY_MODE, mode)
 
     def get_identify_mode(self):
+        """Obtaining kinetic parameter identification mode"""
         return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
 
     def write_move_c_r(self, coords, r, speed, rank=0):
@@ -1771,14 +1779,35 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.WRITE_MOVE_C_R, coord_list, [r * 100], speed, rank, has_reply=True)
 
     def fourier_trajectories(self, trajectory):
+        """Execute dynamic identification trajectory
+
+        Args:
+            trajectory (int): 0 ~ 4
+        """
         self.calibration_parameters(
             class_name=self.__class__.__name__, trajectory=trajectory)
         return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
 
     def get_dynamic_parameters(self, add):
+        """Setting the dynamics parameters
+
+        Args:
+            add (int): 0 ~ 62
+
+        Returns: data * 0.001
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, add=add)
         return self._mesg(ProtocolCode.GET_DYNAMIC_PARAMETERS, add)
 
     def set_dynamic_parameters(self, add, data):
+        """Setting the dynamics parameters
+
+        Args:
+            add (int): 0 ~ 62
+            data : data * 1000
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, add=add)
         return self._mesg(ProtocolCode.SET_DYNAMIC_PARAMETERS, add, [data * 1000])
 
     def identify_print(self):
