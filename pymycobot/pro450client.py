@@ -1033,3 +1033,14 @@ class Pro450Client(CloseLoop):
             direction (int): 1 - forward, 0 - backward
         """
         return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
+
+    def set_control_mode(self, mode=0):
+        """Set robot motion mode
+
+        Args:
+            mode (int): 0 - location mode, 1 - torque mode
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
