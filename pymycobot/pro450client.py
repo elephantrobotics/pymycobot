@@ -180,7 +180,10 @@ class Pro450Client(CloseLoop):
             ProtocolCode.GET_FILTER_LEN,
             ProtocolCode.IS_SERVO_ENABLE,
             ProtocolCode.GET_POS_SWITCH,
-            ProtocolCode.GET_TOOL_MODIFY_VERSION
+            ProtocolCode.GET_TOOL_MODIFY_VERSION,
+            ProtocolCode.GET_FUSION_PARAMETERS,
+            ProtocolCode.GET_MAX_ACC,
+            ProtocolCode.GET_ERROR_INFO
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -240,6 +243,10 @@ class Pro450Client(CloseLoop):
                         parsed.append(self._val_to_bits_list(val))
 
                 return parsed
+        elif genre == ProtocolCode.IS_INIT_CALIBRATION:
+            if res == [1] * 7:
+                return 1
+            return res
         else:
             return res
 
@@ -688,8 +695,7 @@ class Pro450Client(CloseLoop):
                 1 - Always execute the latest command first.
                 0 - Execute instructions sequentially in the form of a queue.
         """
-        if mode not in [0, 1]:
-            raise ValueError("The range of 'mode' is 0 or 1, but the received value is {}".format(mode))
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
 
     def get_fresh_mode(self):
@@ -930,3 +936,35 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, mode=mode, max_acc=max_acc)
         return self._mesg(ProtocolCode.SET_MAX_ACC, mode, [max_acc])
+
+    def jog_increment_angle(self, joint_id, increment, speed, _async=False):
+        """Single angle incremental motion control.
+
+        Args:
+            joint_id: Joint id 1 - 6.
+            increment: Angle increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, speed=speed)
+        scaled_increment = self._angle2int(increment)
+        scaled_increment = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, has_reply=True, _async=_async)
+
+    def jog_increment_coord(self, coord_id, increment, speed, _async=False):
+        """Single coordinate incremental motion control.
+        This interface is based on a single arm 1-axis coordinate system.
+
+        Args:
+            coord_id: axis id 1 - 6.
+            increment: Coord increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, increment_coord=increment, speed=speed)
+        if coord_id <= 3:
+            value = self._coord2int(increment)
+        else:
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)

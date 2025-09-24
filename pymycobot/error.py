@@ -1593,7 +1593,7 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value_type, MyCobotPro450DataException, int)
             elif parameter == "pin_no":
                 check_0_or_1(parameter, value, [1, 2], value_type, MyCobotPro450DataException, int)
-            elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode']:
+            elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobotPro450DataException, int)
             elif parameter == "move_type":
                 if value not in [0, 1, 2, 3, 4]:
@@ -1669,6 +1669,26 @@ def calibration_parameters(**kwargs):
             elif parameter == "axis":
                 if value not in [1,2,3]:
                     raise MyCobotPro450DataException("The parameter {} only supports 1, 2, 3, but received {}".format(parameter, value))
+            elif parameter == 'increment_angle':
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobotPro450DataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
+            elif parameter == 'increment_coord':
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobotPro450DataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
 
 def restrict_serial_port(func):
     """
