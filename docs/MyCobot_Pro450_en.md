@@ -548,7 +548,7 @@ print(mc.get_angles())
 - **Function**: Get torque compensation coefficients
 - **Return value**: A list of torque compensation coefficients for all joints
 
-#### `set_identify_mode(mode)`
+<!-- #### `set_identify_mode(mode)`
 
 - **Function**: Set dynamic parameter identification mode
 - **Parameter**: `int`
@@ -561,7 +561,7 @@ print(mc.get_angles())
 - **Function**: Get dynamic parameter identification mode
 - **Return value**:
   - `0`: Off
-  - `1`: On
+  - `1`: On -->
 
 #### `fourier_trajectories(trajectory)`
 
@@ -569,7 +569,7 @@ print(mc.get_angles())
 - **Parameter**:
   - `trajectory`: `int`, range 0-4
 
-#### `set_dynamic_parameters(add, data)`
+<!-- #### `set_dynamic_parameters(add, data)`
 
 - **Function**: Set dynamic parameters
 - **Parameter**:
@@ -581,7 +581,11 @@ print(mc.get_angles())
 - **Function**: Read dynamic parameters
 - **Parameter**:
   - `add`: (int), range 0 to 62
-- **Return value**: data * 0.001
+- **Return value**: data * 0.001 -->
+
+#### `parameter_identify()`
+
+- **Function**: Kinetic parameter identification
 
 ### 11. Circular Motion
 

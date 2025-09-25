@@ -548,7 +548,7 @@ print(mc.get_angles())
 - **功能**：获取力矩补偿系数
 - **返回值**：一个列表, 全关节力矩补偿系数
 
-#### `set_identify_mode(mode)`
+<!-- #### `set_identify_mode(mode)`
 
 - **功能**: 设置动力学参数辨识模式
 - **参数**： `int`
@@ -561,7 +561,7 @@ print(mc.get_angles())
 - **功能**：获取动力学参数辨识模式
 - **返回值**：
   - `0`: 关闭
-  - `1`: 打开
+  - `1`: 打开 -->
 
 #### `fourier_trajectories(trajectory)`
 
@@ -569,7 +569,7 @@ print(mc.get_angles())
 - **参数**： 
   - `trajectory`: `int`，范围 0 ~ 4
 
-#### `set_dynamic_parameters(add, data)`
+<!-- #### `set_dynamic_parameters(add, data)`
 
 - **功能**: 设置动力学参数
 - **参数**:
@@ -581,7 +581,11 @@ print(mc.get_angles())
 - **功能**: 读取动力学参数
 - **参数**：
   - `add`: (int), 范围 0 ~ 62
-- **返回值**：data * 0.001
+- **返回值**：data * 0.001 -->
+
+#### `parameter_identify()`
+
+- **功能**: 动力学参数辨识
 
 ### 11. 圆弧运动
 
