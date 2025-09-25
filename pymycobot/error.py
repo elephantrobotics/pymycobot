@@ -1736,6 +1736,32 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 100 or value > 300:
                     raise MyCobotPro450DataException("The parameter {} only supports 100 ~ 300, but received {}".format(parameter, value))
+            elif parameter == "can_id":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value not in [1,2,3,4]:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1, 2, 3, 4 but received {}".format(parameter, value))
+            elif parameter in ["can_data", "data_485"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, list)
+                if len(value) > 64:
+                    raise MyCobotPro450DataException(
+                        f"The parameter {parameter} list length exceeds 64, received {len(value)}")
+                for v in value:
+                    if not (0x00 <= v <= 0xFF):
+                        raise MyCobotPro450DataException(
+                            f"The parameter {parameter} value out of range (0x00~0xFF), received {hex(v)}")
+            elif parameter in ["tool_main_version"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, str)
+                if not re.fullmatch(r"\d+\.\d", str(value)):
+                    raise MyCobotPro450DataException(
+                        f"Invalid version format: '{value}', expected format like '1.1'")
+                if float(value) < 1.0:
+                    raise MyCobotPro450DataException(
+                        f"Version must be >= 1.0, but received '{value}'")
+            elif parameter in ["tool_modified_version"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 255:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
+
 
 def restrict_serial_port(func):
     """
