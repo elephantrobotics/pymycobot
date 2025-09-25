@@ -1,10 +1,13 @@
 # coding=utf-8
-
+import locale
 import time
 import threading
 import socket
 
+import numpy as np
+
 from pymycobot.close_loop import CloseLoop
+from pymycobot.robot_info import _interpret_status_code
 from pymycobot.common import ProtocolCode,ProGripper
 
 
@@ -26,6 +29,10 @@ class Pro450Client(CloseLoop):
         self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True
         self.read_threading.start()
+        self.language, _ = locale.getdefaultlocale()
+        if self.language not in ["zh_CN", "en_US"]:
+            self.language = "en_US"
+        self.max_joint, self.min_joint = 0, 0
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -65,7 +72,7 @@ class Pro450Client(CloseLoop):
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
             elif genre in [ProtocolCode.GET_ERROR_INFO]:
-                return [self._decode_int8(valid_data[1:])]
+                return self._decode_int8(valid_data[1:])
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
@@ -233,7 +240,7 @@ class Pro450Client(CloseLoop):
                             r.append(i)
             return r
         elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.GET_POS_OVER]:
-                return self._int2angle(res[0])
+            return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
             if len(res) == 32:
                 parsed = res[:8]
@@ -323,6 +330,83 @@ class Pro450Client(CloseLoop):
             return (recv[3] << 8) | recv[4]
         return -1
 
+    def _joint_limit_init(self):
+        max_joint = np.zeros(6)
+        min_joint = np.zeros(6)
+        for i in range(6):
+            max_joint[i] = self.get_joint_max_angle(i + 1)
+            min_joint[i] = self.get_joint_min_angle(i + 1)
+        return max_joint, min_joint
+
+    def _joint_limit_judge(self, angles):
+        offset = 3
+        try:
+            for i in range(6):
+                if self.min_joint[i] + offset < angles[i] < self.max_joint[i] - offset:
+                    pass
+                else:
+                    if self.language == "zh_CN":
+                        return f"当前角度为{angles[i]}, 角度范围为： {self.min_joint[i]} ~ {self.max_joint[i]}"
+                    return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
+        except TypeError:
+            return "joint limit error"
+        return "over limit error {}".format(angles)
+
+    def _Singularity(self, angles):
+        try:
+            # Joint 6: 0 and 180 degrees are singular points
+            singular_angles = [0, 180]
+            state = ""
+            offset = 5
+            for singular in singular_angles:
+                if singular - offset < angles[5] < singular + offset:
+                    if self.language == "zh_CN":
+                        return f"在关节 6 处检测到奇点：{angles[5]} 度"
+                    return f"Singularity detected at joint 6: {angles[5]} degrees"
+            return state
+        except:
+            return "Singularity error"
+
+    def _check_coords(self, new_coords, is_print=0):
+        try:
+            first_three = new_coords[:3]
+            first_three[2] -= 83.64
+            info = ""
+            # Calculate the Euclidean norm (magnitude)
+            magnitude = np.linalg.norm(first_three)
+            if is_print == 1:
+                if self.language == "zh_CN":
+                    info += f"当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
+                else:
+                    info += f"Arm span is {magnitude}, max is {self.arm_span}"
+
+            # if magnitude > self.arm_span - 10:
+            #     if self.language == "zh_CN":
+            #         info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
+            #     else:
+            #         info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
+            return info
+        except:
+            return "check coords error"
+
+    def _status_explain(self, status):
+        error_info = _interpret_status_code(self.language, status)
+        if error_info != "":
+            self.arm_span = 440
+        if 0x00 < status <= 0x07:
+            angles = self.get_angles()
+            if type(self.max_joint) == int and self.max_joint == 0:
+                self.max_joint, self.min_joint = self._joint_limit_init()
+            error_info += self._joint_limit_judge(angles)
+        elif status in [32, 33]:
+            error_coords = self.get_coords()
+            error_info += self._check_coords(error_coords, 1)
+        elif status == 36:
+            angles = self.get_angles()
+            error_info += self._Singularity(angles)
+
+        return error_info
+
     def open(self):
         self.sock = self.connect_socket()
         
@@ -356,11 +440,17 @@ class Pro450Client(CloseLoop):
 
         return self._mesg(ProtocolCode.SET_OVER_TIME, high_byte, low_byte)
 
-    def flash_tool_firmware(self):
+    def flash_tool_firmware(self, main_version, modified_version=0):
         """Burn tool firmware
 
+        Args:
+            main_version (str): Tool firmware version (format: 'x.y')
+            modified_version (int): Tool firmware modified version, 0~255, defaults to 0
+
         """
-        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE)
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_main_version=main_version, tool_modified_version=modified_version)
+        main_version = int(float(main_version) *10)
+        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, main_version, modified_version)
 
     def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions
@@ -1044,3 +1134,53 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
+
+    def base_external_can_control(self, can_id, can_data):
+        """Bottom external device can control
+
+        Args:
+            can_id (int): 1 - 4.
+            can_data (list): The maximum length is 64
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, can_id, can_data)
+
+    def base_external_485_control(self, data):
+        """Bottom external device 485 control
+
+        Args:
+            data (list): The maximum length is 64
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, data)
+
+    def get_error_information(self):
+        """Obtaining robot error information
+
+        Return:
+            0: No error message.
+            1 ~ 6: The corresponding joint exceeds the limit position.
+            32-36: Coordinate motion error.
+                32: No coordinate solution. Please check if the arm span is near the limit.
+                33: No adjacent solution for linear motion.
+                34: Velocity fusion error.
+                35: No adjacent solution for null space motion.
+                36: No solution for singular position. Please use joint control to leave the singular point.
+        """
+        return self._mesg(ProtocolCode.GET_ERROR_INFO)
+
+    def set_color(self, r=0, g=0, b=0):
+        """Set the light color on the top of the robot end.
+
+        Args:
+            r (int): 0 ~ 255
+            g (int): 0 ~ 255
+            b (int): 0 ~ 255
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, rgb=[r, g, b])
+        return self._mesg(ProtocolCode.SET_COLOR_PRO450, r, g, b)
+

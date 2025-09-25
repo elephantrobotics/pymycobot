@@ -473,6 +473,7 @@ class ProtocolCode(object):
     SET_BASE_EXTERNAL_CONFIG = 0x65
     GET_BASE_EXTERNAL_CONFIG = 0x67
     SET_BASE_EXTERNAL_CONTROL = 0x66
+    SET_COLOR_PRO450 = 0x0C
 
     # ultraArm
     END = "\r"
