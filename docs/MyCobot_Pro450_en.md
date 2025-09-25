@@ -873,7 +873,17 @@ print(mc.get_angles())
   - `rank_mode (int)`: 1 to 4
   - `value (int)`: 0 to 1000
 
-### 18. Pro force-controlled gripper
+### 18. Kinematics Algorithm Interface
+
+#### `solve_inv_kinematics(target_coords, current_angles)`
+
+- **Function**: Convert coordinates to angles.
+- **Parameters**
+  - `target_coords`: `list` A list of floating-point values ​​for all coordinates.
+  - `current_angles`: `list` A list of floating-point values ​​for all angles, indicating the current angles of the robot arm.
+- **Return Value**: `list` A list of floating-point values ​​for all angles.
+
+### 19. Pro force-controlled gripper
 
 #### `get_pro_gripper_firmware_version( gripper_id=14)`
 

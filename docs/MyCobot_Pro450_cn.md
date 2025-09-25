@@ -1048,7 +1048,17 @@ print(mc.get_angles())
   - `rank_mode (int)`: 1 ~ 4
   - `value (int)`: 0 ~ 1000
 
-### 18. Pro 力控夹爪
+### 18. 运动学算法接口
+
+#### `solve_inv_kinematics(target_coords, current_angles)`
+
+- **功能** : 将坐标转为角度。
+- **参数：**
+  - `target_coords`: `list` 所有坐标的浮点列表。
+  - `current_angles`: `list` 所有角度的浮点列表，机械臂当前角度
+- **返回值**: `list` 所有角度的浮点列表。
+
+### 19. Pro 力控夹爪
 
 #### `get_pro_gripper_firmware_version( gripper_id=14)`
 
