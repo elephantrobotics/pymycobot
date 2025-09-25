@@ -45,32 +45,29 @@ print(mc.get_angles())
 
 ### 2. 机器人整体运行状态
 
-<!-- #### `power_on()`
+#### `power_on()`
 
-- **功能：** atom open communication (default open)
-
-  - Attentions： After executing poweroff or pressing emergency stop, it takes 7 seconds to power on and restore power
-
+- **功能：** 启动机器人，上电
 - **返回值:**
-  - `1` - Power on completed.
-  - `0` - Power on failed
+  - `1` - 上电成功.
+  - `2` - 上电失败
+  - `0` - 未上电
 
 #### `power_off()`
 
-- **功能：** Power off of the robotic arm
+- **功能：** 关闭机器人，下电
 
 - **返回值:**
-  - `1` - Power on completed.
-  - `0` - Power on failed
+  - `1` - 成功接收指令.
 
 #### `is_power_on()`
 
-- **功能：** judge whether robot arms is powered on or not
+- **功能：** 判断机械臂是否上电
 
 - **返回值:**
-  - `1`: power on
-  - `0`: power off
-  - `-1`: error -->
+  - `1`: 上电成功
+  - `0`: 未上电
+  - `2`: 上电失败
 
 #### `is_init_calibration()`
 
@@ -180,9 +177,12 @@ print(mc.get_angles())
 - **返回值**：`int`
   - `0`：无错误信息
   - `1~6`：对应关节超出限位位置。
-  - `16~19`：碰撞保护。
-  - `32`：运动学逆解无解。
-  - `33~34`：直线运动无相邻解。
+  - `32~36`：坐标运动异常。
+    - `32`：坐标无解，请检查臂展是否临近限位
+    - `33`：直线运动无相邻解。
+    - `34`: 速度融合报错
+    - `35`：零空间运动无相邻解
+    - `36`：奇异位置无解，请使用关节控制离开奇异点
 
 #### `clear_error_information()`
 
@@ -843,12 +843,18 @@ print(mc.get_angles())
   - `baud_rate` (`int`): 波特率
   - `timeout`: 超时时间
 
-<!-- #### `set_base_external_control()`
+#### `base_external_can_control(can_id, can_data)`
 
-- **功能：** 获取底部IO输入状态
+- **功能：** 底部外部设备can控制
 - **参数:**
-  - `pin_no` (`int`) 引脚号，范围 1 ~ 12
-- **返回值:** 0 - 低电平. 1 - 高电平  -->
+  - `can_id` (`int`) 范围 1 ~ 4
+  - `can_data` (`list`) 列表内容为十六进制格式，最大长度是64。
+
+#### `base_external_485_control(data)`
+
+- **功能：** 底部外部设备485控制
+- **参数:**
+  - `data` (`list`) 列表内容为十六进制格式，最大长度是64。
 
 ### 15. 设置末端485通信
 
@@ -904,10 +910,12 @@ print(mc.get_angles())
 - **功能：** 设置超时时间(默认1s,超时时间内未读取数据缓冲区会清除)
 - **参数**： timeout (int): 超时时间，单位ms，范围0~65535
 
-#### `flash_tool_firmware()`
+#### `flash_tool_firmware(main_version, modified_version=0)`
 
 - **功能：** 烧录末端固件
-<!-- - **返回值:** 0-Normal 1-Robot triggered collision detection -->
+- **参数:**
+  - `main_version (str)`: 主次版本号，比如 `'1.1'`
+  - `modified_version (int)`: 更正版本号，范围 0 ~ 255，默认是 0 
 
 ### 16. 工具坐标系操作
 
@@ -1027,11 +1035,7 @@ print(mc.get_angles())
     - `2`：融合关节加速度
     - `3`：融合坐标速度
     - `4`：融合坐标加速度
-- **返回值:** 
-  - `1`：融合关节速度
-  - `2`：融合关节加速度
-  - `3`：融合坐标速度
-  - `4`：融合坐标加速度
+- **返回值:**  `int`, 0 ~ 1000
 
 #### `set_fusion_parameters(rank_mode, value)`
 

@@ -45,32 +45,29 @@ print(mc.get_angles())
 
 ### 2. Overall Status
 
-<!-- #### `power_on()`
+#### `power_on()`
 
-- **function:** atom open communication (default open)
-
-  - Attentions： After executing poweroff or pressing emergency stop, it takes 7 seconds to power on and restore power
-
+- **Function:** Starts the robot (power on)
 - **Return value:**
-  - `1` - Power on completed.
-  - `0` - Power on failed
+  - `1` - Power on successfully.
+  - `2` - Power on failed
+  - `0` - Power not on
 
 #### `power_off()`
 
-- **function:** Power off of the robotic arm
+- **Function:** Shuts down the robot (power off)
 
 - **Return value:**
-  - `1` - Power on completed.
-  - `0` - Power on failed
+  - `1` - Command received successfully.
 
 #### `is_power_on()`
 
-- **function:** judge whether robot arms is powered on or not
+- **Function:** Checks whether the robot is powered on
 
 - **Return value:**
-  - `1`: power on
-  - `0`: power off
-  - `-1`: error -->
+  - `1`: Power on successfully
+  - `0`: Power not on
+  - `2`: Power on failed
 
 #### `is_init_calibration()`
 
@@ -181,9 +178,12 @@ print(mc.get_angles())
 - **Return value**: `int`
   - `0`: No error information
   - `1-6`: The corresponding joint exceeds the limit position.
-  - `16-19`: Collision protection.
-  - `32`: No solution for the inverse kinematics solution.
-  - `33-34`: No adjacent solution for linear motion.
+  - `32-36`: Coordinate motion error.
+    - `32`: No coordinate solution. Please check if the arm span is near the limit.
+    - `33`: No adjacent solution for linear motion.
+    - `34`: Velocity fusion error.
+    - `35`: No adjacent solution for null space motion.
+    - `36`: No solution for singular position. Please use joint control to leave the singular point.
 
 #### `clear_error_information()`
 
@@ -668,6 +668,19 @@ print(mc.get_angles())
   - `baud_rate` (`int`): Baud rate
   - `timeout`: Timeout
 
+#### `base_external_can_control(can_id, can_data)`
+
+- **Function:** Controls CAN devices on the bottom
+- **Parameters:**
+  - `can_id` (`int`) Range: 1 to 4
+  - `can_data` (`list`) List contents are in hexadecimal format, with a maximum length of 64 characters.
+
+#### `base_external_485_control(data)`
+
+- **Function:** Controls 485 devices on the bottom
+- **Parameters:**
+  - `data` (`list`) List contents are in hexadecimal format, with a maximum length of 64 characters.
+
 ### 15. Set up 485 communication at the end of the robotic arm
 
 <!-- #### `tool_serial_restore()`
@@ -722,10 +735,12 @@ print(mc.get_angles())
 - **function:** Set the timeout (unit: ms), default is 1000ms (1 second)
 - **Parameters**： timeout (int): Timeout period, in ms, range 0~65535
 
-#### `flash_tool_firmware()`
+#### `flash_tool_firmware(main_version, modified_version=0)`
 
-- **function:** Burn tool firmware
-<!-- - **Return value:** 0-Normal 1-Robot triggered collision detection -->
+- **Function:** Flash the terminal firmware
+- **Parameters:**
+  - `main_version (str)`: Major and minor version numbers, e.g. `1.1`
+  - `modified_version (int)`: Modified version number, range 0 to 255, default is 0
 
 ### 16. Tool Coordinate System Operations
 
@@ -845,11 +860,7 @@ print(mc.get_angles())
     - `2`: Fusion joint acceleration
     - `3`: Fusion coordinate velocity
     - `4`: Fusion coordinate acceleration
-- **Return value:**
-  - `1`: Fusion joint velocity
-  - `2`: Fusion joint acceleration
-  - `3`: Fusion coordinate velocity
-  - `4`: Fusion coordinate acceleration
+- **Return value:** `(int)`: 0 to 1000
 
 #### `set_fusion_parameters(rank_mode, value)`
 
