@@ -1184,3 +1184,7 @@ class Pro450Client(CloseLoop):
             class_name=self.__class__.__name__, rgb=[r, g, b])
         return self._mesg(ProtocolCode.SET_COLOR_PRO450, r, g, b)
 
+    def parameter_identify(self):
+        """Kinetic parameter identification"""
+        return self._mesg(ProtocolCode.PARAMETER_IDENTIFY)
+

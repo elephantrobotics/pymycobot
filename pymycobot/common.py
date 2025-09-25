@@ -355,6 +355,7 @@ class ProtocolCode(object):
     FOURIER_TRAJECTORIES = 0xF8
     GET_DYNAMIC_PARAMETERS = 0x98
     SET_DYNAMIC_PARAMETERS = 0x97
+    PARAMETER_IDENTIFY = 0x97
     SOLVE_INV_KINEMATICS = 0x8D
 
     # Impact checking
