@@ -25,7 +25,7 @@ class Pro450Client(CloseLoop):
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
         self.is_stop = False
-        self.sync_mode = False
+        self.sync_mode = True
         self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True
         self.read_threading.start()
@@ -47,7 +47,12 @@ class Pro450Client(CloseLoop):
             return 1
         elif read_data == -2:
             return -1
-        valid_data, data_len = read_data
+        elif read_data == 0:
+            return read_data
+        if isinstance(read_data, tuple):
+            valid_data, data_len = read_data
+        else:
+            return -1
         res = []
         if data_len in [8, 12, 14, 16, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
@@ -212,6 +217,10 @@ class Pro450Client(CloseLoop):
                 return res
         elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
             return [self._int2coord(angle) for angle in res]
+        elif genre in [ProtocolCode.SOLVE_INV_KINEMATICS]:
+            if res == [-57295, -57295, -57295, -57295, -57295, -57295]:
+                return 'No solution for conversion'
+            return [self._int2angle(angle) for angle in res]
         elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
             return self._int2coord(self._process_single(res))
         elif genre in [
