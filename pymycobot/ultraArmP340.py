@@ -360,11 +360,11 @@ class ultraArmP340:
 
                 2 - Acceleration / deceleration mode
         """
+        if mode is None:
+            print("Please enter the correct value!")
+            return
         with self.lock:
-            if mode != None:
-                command = "M16 S" + str(mode) + ProtocolCode.END
-            else:
-                print("Please enter the correct value!")
+            command = "M16 S" + str(mode) + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
@@ -593,21 +593,21 @@ class ultraArmP340:
 
     def play_gcode_file(self, filename=None):
         """Play the imported track file"""
+        X = []
+        try:
+            with open(filename) as f:
+                lines = f.readlines()
+                for line in lines:
+                    line = line.strip("\n")
+                    X.append(line)
+        except Exception:
+            print("There is no such file!")
+
+        begin, end = 0, len(X)
+
+        self.set_speed_mode(0)  # Constant speed mode
+
         with self.lock:
-            X = []
-            try:
-                with open(filename) as f:
-                    lines = f.readlines()
-                    for line in lines:
-                        line = line.strip("\n")
-                        X.append(line)
-            except Exception:
-                print("There is no such file!")
-
-            begin, end = 0, len(X)
-
-            self.set_speed_mode(0)  # Constant speed mode
-
             for i in range(begin, end):
                 command = X[i] + ProtocolCode.END
                 self._serial_port.write(command.encode())
