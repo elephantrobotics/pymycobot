@@ -1650,6 +1650,8 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
     def solve_inv_kinematics(self, new_coords, old_angles):
         """_summary_
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=new_coords, angles=old_angles)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(new_coords[idx]))
