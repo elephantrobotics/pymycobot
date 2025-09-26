@@ -282,13 +282,15 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             return respond
 
         if ProtocolCode.GET_ROBOT_STATUS.equal(genre):
+            machine_states = [0] * 8
             machine_status = reply_data[0]
             if machine_status != 0:
-                machine_status = Utils.get_bits(machine_status)
+                for index in Utils.get_bits(machine_status):
+                    machine_states[index] = 1
 
             battery_voltage = round(reply_data[1] / 10, 2)
 
-            return machine_status, battery_voltage
+            return machine_states, battery_voltage
 
         if ProtocolCode.GET_AUTO_REPORT_MESSAGE.equal(genre):
             respond = []
@@ -514,7 +516,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
 
     def move_right_lateral(self, speed):
         """Pan the robot right
@@ -526,11 +528,11 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             int: 1: Success, 0: Failed
         """
         if not 0.01 <= speed <= 1.00:
-            raise ValueError("Speed must be between 0.00 and 1.00")
+            raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
 
     def turn_left(self, speed):
         """Rotate to the left
@@ -624,7 +626,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             int: 1: Success, 0: Failed
         """
         if motor_id not in (1, 2, 3, 4, 254):
-            raise ValueError("Motor ID must be 0 or 1")
+            raise ValueError("Motor id must be in (1, 2, 3, 4, 254)")
 
         if state not in (0, 1):
             raise ValueError("State must be 0 or 1")
