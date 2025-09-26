@@ -121,6 +121,21 @@ def check_coords(parameter_name, value, robot_limit, class_name, exception_class
                 "Has invalid coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
                     idx, min_coord[idx], max_coord[idx], coord))
 
+def check_world_tool_coords(parameter_name, value, exception_class):
+    if not isinstance(value, list):
+        raise exception_class("`{}` must be a list, but the received {}".format(parameter_name, type(value)))
+    if len(value) != 6:
+        raise exception_class(
+            "The length of `{}` must be 6, but the received length is {}".format(parameter_name, len(value)))
+
+    min_coord = [-1000, -1000, -1000, -180, -180, -180]
+    max_coord = [1000, 1000, 1000, 180, 180, 180]
+    for idx, coord in enumerate(value):
+        if not min_coord[idx] <= coord <= max_coord[idx]:
+            raise exception_class(
+                "Has invalid coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                    idx, min_coord[idx], max_coord[idx], coord))
+
 
 def check_angles(angle_value, robot_limit, class_name, exception_class):
     # Check if angle_value is a list
@@ -1711,8 +1726,8 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 250, but received {}".format(parameter, value))
             elif parameter == "trajectory":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if value not in [0,1,2,3,4]:
-                    raise MyCobotPro450DataException("The parameter {} only supports [0,1,2,3,4], but received {}".format(parameter, value))
+                if value not in [0,1]:
+                    raise MyCobotPro450DataException("The parameter {} only supports [0,1], but received {}".format(parameter, value))
             elif parameter == 'add':
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 0 or value > 62:
@@ -1761,6 +1776,8 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 0 or value > 255:
                     raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
+            elif parameter in ["tool_coords", "world_coords"]:
+                check_world_tool_coords(parameter, value, MyCobotPro450DataException)
 
 
 def restrict_serial_port(func):

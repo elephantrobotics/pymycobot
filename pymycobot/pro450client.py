@@ -195,7 +195,9 @@ class Pro450Client(CloseLoop):
             ProtocolCode.GET_TOOL_MODIFY_VERSION,
             ProtocolCode.GET_FUSION_PARAMETERS,
             ProtocolCode.GET_MAX_ACC,
-            ProtocolCode.GET_ERROR_INFO
+            ProtocolCode.GET_ERROR_INFO,
+            ProtocolCode.GET_COLLISION_MODE,
+            ProtocolCode.GET_IDENTIFY_MODE,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -459,7 +461,7 @@ class Pro450Client(CloseLoop):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, tool_main_version=main_version, tool_modified_version=modified_version)
         main_version = int(float(main_version) *10)
-        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, main_version, modified_version)
+        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
 
     def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions
@@ -1197,3 +1199,40 @@ class Pro450Client(CloseLoop):
         """Kinetic parameter identification"""
         return self._mesg(ProtocolCode.PARAMETER_IDENTIFY)
 
+    def fourier_trajectories(self, trajectory):
+        """Execute dynamic identification trajectory
+
+        Args:
+            trajectory (int): 0 ~ 1
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, trajectory=trajectory)
+        return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
+
+    def set_world_reference(self, coords):
+        """Set the world coordinate system
+
+        Args:
+            coords: a list of coords value(List[float]). [x(mm), y, z, rx(angle), ry, rz]
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, world_coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
+
+    def set_tool_reference(self, coords):
+        """Set tool coordinate system
+
+        Args:
+            coords: a list of coords value(List[float])
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, tool_coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_TOOL_REFERENCE, coord_list)

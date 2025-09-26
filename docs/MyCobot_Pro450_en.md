@@ -567,7 +567,7 @@ print(mc.get_angles())
 
 - **Function**: Execute dynamic identification trajectory
 - **Parameter**:
-  - `trajectory`: `int`, range 0-4
+  - `trajectory`: `int`, range 0-1
 
 <!-- #### `set_dynamic_parameters(add, data)`
 
@@ -636,7 +636,28 @@ print(mc.get_angles())
 - **Parameters**: `pin_no` (int), range 1 to 2
 - **Return Value**: `int` 0 / 1, 0 - low level, 1 - high level
 
-### 14. Bottom IO control
+### 14. End Light Panel Function
+
+<!-- #### `is_btn_clicked()`
+
+- **Function**: Get the status of the button at the end of the robot arm
+- **Return Value**:
+- 0: Not clicked
+- 1: Clicked -->
+
+#### `set_color(r, g, b)`
+
+- **Function**: Set the color of the end light of the robot arm
+
+- **Parameter**:
+
+  - `r (int)`: 0 to 255
+
+  - `g (int)`: 0 to 255
+
+  - `b (int)`: 0 to 255
+
+### 15. Bottom IO control
 
 #### `set_base_io_output(pin_no, pin_signal)`
 
@@ -685,7 +706,7 @@ print(mc.get_angles())
 - **Parameters:**
   - `data` (`list`) List contents are in hexadecimal format, with a maximum length of 64 characters.
 
-### 15. Set up 485 communication at the end of the robotic arm
+### 16. Set up 485 communication at the end of the robotic arm
 
 <!-- #### `tool_serial_restore()`
 
@@ -746,13 +767,22 @@ print(mc.get_angles())
   - `main_version (str)`: Major and minor version numbers, e.g. `1.1`
   - `modified_version (int)`: Modified version number, range 0 to 255, default is 0
 
-### 16. Tool Coordinate System Operations
+### 17. Tool Coordinate System Operations
 
 #### `set_tool_reference(coords)`
 
 - **Function:** Set the tool coordinate system
 - **Parameters**:
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+    | Coord Id | range |
+    | ---- | ---- |
+    | x | -1000 ~ 1000 |
+    | y | -1000 ~ 1000 |
+    | z | -1000 ~ 1000 |
+    | rx | -180 ~ 180 |
+    | ry | -180 ~ 180 |
+    | rz | -180 ~ 180 |
 
 #### `get_tool_reference(coords)`
 
@@ -764,6 +794,15 @@ print(mc.get_angles())
 - **Function:** Set the world coordinate system
 - **Parameters**:
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+    | Coord Id | range |
+    | ---- | ---- |
+    | x | -1000 ~ 1000 |
+    | y | -1000 ~ 1000 |
+    | z | -1000 ~ 1000 |
+    | rx | -180 ~ 180 |
+    | ry | -180 ~ 180 |
+    | rz | -180 ~ 180 |
 
 #### `get_world_reference()`
 
@@ -807,7 +846,7 @@ print(mc.get_angles())
   - `0` - Flange (default)
   - `1` - Tool
 
-### 17. Algorithm Parameters
+### 18. Algorithm Parameters
 
 #### `get_vr_mode()`
 
@@ -873,7 +912,7 @@ print(mc.get_angles())
   - `rank_mode (int)`: 1 to 4
   - `value (int)`: 0 to 1000
 
-### 18. Kinematics Algorithm Interface
+### 19. Kinematics Algorithm Interface
 
 #### `solve_inv_kinematics(target_coords, current_angles)`
 
@@ -883,7 +922,7 @@ print(mc.get_angles())
   - `current_angles`: `list` A list of floating-point values ​​for all angles, indicating the current angles of the robot arm.
 - **Return Value**: `list` A list of floating-point values ​​for all angles.
 
-### 19. Pro force-controlled gripper
+### 20. Pro force-controlled gripper
 
 #### `get_pro_gripper_firmware_version( gripper_id=14)`
 

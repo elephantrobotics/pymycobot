@@ -567,7 +567,7 @@ print(mc.get_angles())
 
 - **功能**: 执行动力学辨识轨迹
 - **参数**： 
-  - `trajectory`: `int`，范围 0 ~ 4
+  - `trajectory`: `int`，范围 0 ~ 1
 
 <!-- #### `set_dynamic_parameters(add, data)`
 
@@ -636,85 +636,18 @@ print(mc.get_angles())
 - **参数**: `pin_no` (int)，范围 1 ~ 2
 - **返回值**: `int` 0 / 1, 0 - 低电平，1 - 高电平
 
-<!-- ### 9. Robotic arm end gripper control
+### 14. 末端灯板功能
 
-#### `set_gripper_state(flag, speed, _type_1=None)`
-
-- **功能**: Adaptive gripper enable
-
-- **参数**:
-
-  - `flag (int) `: 0 - open 1 - close, 254 - release
-
-  - `speed (int)`: 1 ~ 100
-
-  - `_type_1 (int)`:
-
-    - `1` : Adaptive gripper (default state is 1)
-
-    - `2` : A nimble hand with 5 fingers
-
-    - `3` : Parallel gripper
-
-    - `4` : Flexible gripper
-
-#### `set_gripper_value(gripper_value, speed, gripper_type=None)`
-
-- **功能**: Set the gripper value
-
-- **参数**:
-
-  - `gripper_value (int) `: 0 ~ 100
-
-  - `speed (int)`: 1 ~ 100
-
-  - `gripper_type (int)`:
-
-    - `1` : Adaptive gripper (default state is 1)
-
-    - `2` : A nimble hand with 5 fingers
-
-    - `3` : Parallel gripper
-
-    - `4` : Flexible gripper
-
-#### `set_gripper_calibration()`
-
-- **功能**: Set the current position of the gripper to zero
-
-#### `set_gripper_enabled(value)`
-
-- **功能**: Adaptive gripper enable setting
-- **参数**:
-  - `value` 1: Enable 0: Release
-
-#### `set_gripper_mode(mode)`
-
-- **功能**: Set gripper mode
-- **参数**:
-  - `value` :
-    - 0: Transparent transmission mode
-    - 1: normal mode
-
-#### `get_gripper_mode()`
-
-- **功能**: Get gripper mode
-- **返回值**:
-  - 0: Transparent transmission mode
-  - 1: normal mode -->
-
-<!-- ### 10. Button 功能 at the end of the robot arm
-
-#### `is_btn_clicked()`
+<!-- #### `is_btn_clicked()`
 
 - **功能**: Get the status of the button at the end of the robot arm
 - **返回值**:
   - 0: no clicked
-  - 1: clicked
+  - 1: clicked -->
 
 #### `set_color(r, g, b)`
 
-- **功能**: Set the color of the end light of the robotic arm
+- **功能**: 设置机械臂末端灯光颜色
 
 - **参数**:
 
@@ -722,96 +655,9 @@ print(mc.get_angles())
 
   - `g (int)`: 0 ~ 255
 
-  - `b (int)`: 0 ~ 255 -->
+  - `b (int)`: 0 ~ 255
 
-<!-- ### 11. Drag Teaching
-
-#### `drag_teach_save()`
-
-- **功能：** Start recording and dragging teaching points.
-  - Note: In order to display the best sports effect, the recording time should not exceed 90 seconds
-
-#### `drag_teach_pause()`
-
-- **功能：** Pause sampling
-
-#### `drag_teach_execute()`
-
-- **功能：** Start dragging the teach-in point, executing it only once. -->
-
-<!-- ### 12. Cartesian space coordinate parameter setting
-
-#### `set_tool_reference(coords)`
-
-- **功能：** Set tool coordinate system.
-- **参数**：`coords`: (`list`) [x, y, z, rx, ry, rz].
-- **返回值:** NULL
-
-#### `get_tool_reference(coords)`
-
-- **功能：** Get tool coordinate system.
-- **返回值:** `oords`: (`list`) [x, y, z, rx, ry, rz]
-
-#### `set_world_reference(coords)`
-
-- **功能：** Set world coordinate system.
-- **参数**：`coords`: (`list`) [x, y, z, rx, ry, rz].
-- **返回值:** NULL
-
-#### `get_world_reference()`
-
-- **功能：** Get world coordinate system.
-- **返回值:** `list` [x, y, z, rx, ry, rz].
-
-#### `set_reference_frame(rftype)`
-
-- **功能：** Set base coordinate system.
-- **参数：**`rftype`: 0 - base 1 - tool.
-
-#### `get_reference_frame()`
-
-- **功能：** Set base coordinate system.
-- **返回值:**
-  - `0` - base
-  - `1` - tool.
-
-#### `set_movement_type(move_type)`
-
-- **功能：** Set movement type.
-- **参数**：
-  - `move_type`: 1 - movel, 0 - moveJ.
-
-#### `get_movement_type()`
-
-- **功能：** Get movement type.
-- **返回值:**
-  - `1` - movel
-  - `0` - moveJ
-
-#### `set_end_type(end)`
-
-- **功能：** Get end coordinate system
-- **参数:**
-  - `end (int)`: `0` - flange, `1` - tool
-
-#### `get_end_type()`
-
-- **功能：** Obtain the end coordinate system
-- **返回值:**
-  - `0` - flange
-  - `1` - tool
-
-### 13. Circular motion
-
-#### `write_move_c(transpoint, endpoint, speed)`
-
-- 功能：Arc trajectory motion
-- 参数：
-  `transpoint(list)`：Arc passing through point coordinates
-  `endpoint (list)`：Arc endpoint coordinates
-  ` speed(int)`： 1 ~ 100-->
-
-### 14. 底部 IO 控制
+### 15. 底部 IO 控制
 
 #### `set_base_io_output(pin_no, pin_signal)`
 
@@ -860,7 +706,7 @@ print(mc.get_angles())
 - **参数:**
   - `data` (`list`) 列表内容为十六进制格式，最大长度是64。
 
-### 15. 设置末端485通信
+### 16. 设置末端485通信
 
 <!-- #### `tool_serial_restore()`
 
@@ -921,13 +767,22 @@ print(mc.get_angles())
   - `main_version (str)`: 主次版本号，比如 `'1.1'`
   - `modified_version (int)`: 更正版本号，范围 0 ~ 255，默认是 0 
 
-### 16. 工具坐标系操作
+### 17. 工具坐标系操作
 
 #### `set_tool_reference(coords)`
 
 - **功能:** 设置工具坐标系
 - **参数**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+      | 坐标 ID | 范围 |
+      | ---- | ---- |
+      | x | -1000 ~ 1000 |
+      | y | -1000 ~ 1000 |
+      | z | -1000 ~ 1000 |
+      | rx | -180 ~ 180 |
+      | ry | -180 ~ 180 |
+      | rz | -180 ~ 180 |
 
 #### `get_tool_reference(coords)`
 
@@ -939,6 +794,15 @@ print(mc.get_angles())
 - **功能:** 设置世界坐标系
 - **参数**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+      | 坐标 ID | 范围 |
+      | ---- | ---- |
+      | x | -1000 ~ 1000 |
+      | y | -1000 ~ 1000 |
+      | z | -1000 ~ 1000 |
+      | rx | -180 ~ 180 |
+      | ry | -180 ~ 180 |
+      | rz | -180 ~ 180 |
 
 #### `get_world_reference()`
 
@@ -982,7 +846,7 @@ print(mc.get_angles())
   - `0` - 法兰（默认）
   - `1` - 工具
 
-### 17. 算法参数
+### 18. 算法参数
 
 #### `get_vr_mode()`
 
@@ -1048,7 +912,7 @@ print(mc.get_angles())
   - `rank_mode (int)`: 1 ~ 4
   - `value (int)`: 0 ~ 1000
 
-### 18. 运动学算法接口
+### 19. 运动学算法接口
 
 #### `solve_inv_kinematics(target_coords, current_angles)`
 
@@ -1058,7 +922,7 @@ print(mc.get_angles())
   - `current_angles`: `list` 所有角度的浮点列表，机械臂当前角度
 - **返回值**: `list` 所有角度的浮点列表。
 
-### 19. Pro 力控夹爪
+### 20. Pro 力控夹爪
 
 #### `get_pro_gripper_firmware_version( gripper_id=14)`
 
