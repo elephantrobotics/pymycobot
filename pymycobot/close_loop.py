@@ -1281,6 +1281,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         Args:
             mode (int): 0 - angle acceleration. 1 - coord acceleration.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.GET_MAX_ACC, mode)
 
     def get_joint_min_angle(self, joint_id):

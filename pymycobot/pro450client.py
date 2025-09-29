@@ -88,7 +88,10 @@ class Pro450Client(CloseLoop):
                 res.append(valid_data[i])
         elif data_len == 7:
             error_list = [i for i in valid_data]
-            return error_list
+            if genre == ProtocolCode.IS_INIT_CALIBRATION:
+                res = error_list
+            else:
+                return error_list
             # for i in error_list:
             #     if i in range(16,23):
             #         res.append(1)
@@ -338,7 +341,7 @@ class Pro450Client(CloseLoop):
         self._check_gripper_id(gripper_id)
         _, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
         if isinstance(recv, (list, bytearray)) and len(recv) >= 5 and recv[1] == 0x03:
-            return (recv[3] << 8) | recv[4]
+            return (recv[4] << 8) | recv[5]
         return -1
 
     def _joint_limit_init(self):
