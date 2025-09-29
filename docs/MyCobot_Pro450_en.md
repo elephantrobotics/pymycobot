@@ -12,6 +12,9 @@ from pymycobot import Pro450Client
 
 mc = Pro450Client('192.168.0.232', 4500)
 
+if mc.is_power_on() !=1:
+    mc.power_on()
+
 print(mc.get_angles())
 ```
 
