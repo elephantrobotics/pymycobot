@@ -1,5 +1,6 @@
 # coding=utf-8
 import functools
+import os
 import socket
 import traceback
 import re
@@ -67,6 +68,9 @@ class MyCobot630ProDataException(Exception):
     pass
 
 class MyCobotPro450DataException(Exception):
+    pass
+
+class ultraArmP340DataException(Exception):
     pass
 
 
@@ -1779,6 +1783,163 @@ def calibration_parameters(**kwargs):
             elif parameter in ["tool_coords", "world_coords"]:
                 check_world_tool_coords(parameter, value, MyCobotPro450DataException)
 
+    elif class_name in ["ultraArmP340"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter == "id":
+                check_0_or_1(parameter, value, [4, 7], value_type, ultraArmP340DataException, int)
+            elif parameter == "system_mode":
+                check_0_or_1(parameter, value, [1, 2], value_type, ultraArmP340DataException, int)
+            elif parameter == "speed_mode":
+                check_0_or_1(parameter, value, [0, 2], value_type, ultraArmP340DataException, int)
+            elif parameter in ['mode', 'state', 'direction']:
+                check_0_or_1(parameter, value, [0, 1], value_type, ultraArmP340DataException, int)
+            elif parameter == 'joint_id':
+                if value not in [1, 2, 3]:
+                    check_id(value, [1, 2, 3], ultraArmP340DataException)
+            elif parameter == 'axis_id':
+                if value not in [1, 2, 3]:
+                    raise ultraArmP340DataException(
+                        "The axis_id not right, should be in [1, 2, 3], but received {}.".format(value))
+            elif parameter == ["servo_restore", "set_motor_enabled"]:
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MyCobotPro450DataException(
+                        "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
+            elif parameter in ['angle']:
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                if value < min_angle[index] or value > max_angle[index]:
+                    raise ultraArmP340DataException(
+                        "angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            min_angle[index], max_angle[index],value))
+            elif parameter == 'coord':
+                coord_id = kwargs.get('coord_id', None)
+                coord_map = {"X": 0, "Y": 1, "Z": 2, "E": 3}
+                index = coord_map[coord_id]
+
+                min_val = robot_limit[class_name]["coords_min"][index]
+                max_val = robot_limit[class_name]["coords_max"][index]
+
+                if not (min_val <= value <= max_val):
+                    raise ultraArmP340DataException(
+                        f"Coordinate {coord_id} out of range: should be {min_val} ~ {max_val}, but received {value}")
+            elif parameter == 'coord_id':
+                check_value_type(parameter, value_type, ultraArmP340DataException, str)
+                if value not in ["X", "Y", "Z", "E"]:
+                    raise ultraArmP340DataException(
+                        f"coord_id must be 'X', 'Y', or 'Z' or 'E', but received {value}")
+            elif parameter == 'speed':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+
+                if not (0 <= value <= 200):
+                    raise ultraArmP340DataException(
+                        "Speed out of range, should be 0 ~ 200, but received {}".format(value))
+                if not 0 <= value <= 200:
+                    raise ultraArmP340DataException(
+                        "speed value not right, should be 0 ~ 200, the error speed is {}".format(value))
+            elif parameter == 'wait_time':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 65535:
+                    raise ultraArmP340DataException(
+                        "wait time value not right, should be 0 ~ 65535, the error time is {}".format(value))
+            elif parameter == 'p_value':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 255:
+                    raise ultraArmP340DataException(
+                        "pwm value not right, should be 0 ~ 255, the error p_value is {}".format(value))
+            elif parameter == 'gripper_value':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 100:
+                    raise ultraArmP340DataException(
+                        "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
+            elif parameter == 'gripper_speed':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 1500:
+                    raise ultraArmP340DataException(
+                        "gripper speed not right, should be 0 ~ 1500, the error gripper_speed is {}".format(value))
+            elif parameter == 'address':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 7 <= value <= 69:
+                    raise ultraArmP340DataException(
+                        "address not right, should be 7 ~ 69, the error address is {}".format(value))
+            elif parameter == 'get_address':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 69:
+                    raise ultraArmP340DataException(
+                        "get address not right, should be 0 ~ 69, the error address is {}".format(value))
+            elif parameter == 'system_value':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 4096:
+                    raise ultraArmP340DataException(
+                        "system value not right, should be 0 ~ 4096, the error system value is {}".format(value))
+            elif parameter == "angles":
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException("`angles` must be a list, but the received {}".format(type(value)))
+                if len(value) not in [3, 4]:
+                    raise ultraArmP340DataException(
+                        "The length of `angles` must be 3 or 4, but received length is {}".format(len(value)))
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                for idx, angle in enumerate(value):
+                    if not min_angle[idx] <= angle <= max_angle[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid angle value, error on index {0}. Received {3} but angle should be {1} ~ {2}.".format(
+                                idx, min_angle[idx], max_angle[idx], angle))
+            elif parameter == "radians":
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException("`angles` must be a list, but the received {}".format(type(value)))
+                if len(value) not in [3, 4]:
+                    raise ultraArmP340DataException(
+                        "The length of `radians` must be 3 or 4, but received length is {}".format(len(value)))
+                min_radian = [-2.6179, -0.3490, -0.0872, -3.1241]
+                max_radian = [2.9670, 1.5707, 1.9198, 3.1241]
+                for idx, radian in enumerate(value):
+                    if not min_radian[idx] <= radian <= max_radian[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid radian value, error on index {0}. Received {3} but radian should be {1} ~ {2}.".format(
+                                idx, min_radian[idx], max_radian[idx], radian))
+            elif parameter == 'pose_coords':
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException(
+                        "`{}` must be a list, but the received {}".format(parameter, type(value)))
+                if len(value) not in [3]:
+                    raise ultraArmP340DataException(
+                        "The length of `{}` must be 3, but the received length is {}".format(parameter, len(value)))
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                                idx, min_coord[idx], max_coord[idx], coord))
+            elif parameter == 'coords':
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException(
+                        "`{}` must be a list, but the received {}".format(parameter, type(value)))
+                if len(value) not in [3, 4]:
+                    raise ultraArmP340DataException(
+                        "The length of `{}` must be 3 or 4, but the received length is {}".format(parameter, len(value)))
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                                idx, min_coord[idx], max_coord[idx], coord))
+            elif parameter == 'filename':
+                if not isinstance(value, str):
+                    raise ultraArmP340DataException(
+                        "Parameter `filename` must be a string, but received {}".format(type(value)))
+
+                if not os.path.isfile(value):
+                    raise ultraArmP340DataException("The file '{}' does not exist".format(value))
+
+                if not value.lower().endswith((".gcode", ".ngc", ".nc")):
+                    raise ultraArmP340DataException(
+                        "Unsupported file format, please use .gcode, .ngc, or .nc, but received {}".format(value))
 
 def restrict_serial_port(func):
     """
