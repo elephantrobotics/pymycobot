@@ -42,7 +42,7 @@ class Pro450Client(CloseLoop):
     def _mesg(self, genre, *args, **kwargs):
         read_data = super(Pro450Client, self)._mesg(genre, *args, **kwargs)
         if read_data is None:
-            return None
+            return -1
         elif read_data == 1:
             return 1
         elif read_data == -2:
@@ -140,7 +140,7 @@ class Pro450Client(CloseLoop):
                 
         #         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
         #         res.append(byte_value)
-        elif data_len == 6 or data_len == 32:
+        elif data_len in [6, 9, 32]:
             for i in valid_data:
                 res.append(i)
         else:
@@ -268,6 +268,11 @@ class Pro450Client(CloseLoop):
             if res == [1] * 7:
                 return 1
             return res
+        elif genre == ProtocolCode.GET_BASE_EXTERNAL_CONFIG:
+            mode = res[0]
+            baud_rate = int.from_bytes(res[1:5], byteorder="little", signed=False)
+            timeout = int.from_bytes(res[5:9], byteorder="little", signed=False)
+            return [mode, baud_rate, timeout]
         else:
             return res
 
@@ -1127,7 +1132,7 @@ class Pro450Client(CloseLoop):
             timeout (int): Timeout
 
         """
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG)
+        return self._mesg(ProtocolCode.GET_BASE_EXTERNAL_CONFIG)
 
     def set_model_direction(self, joint_id, direction):
         """Set the direction of the robot model

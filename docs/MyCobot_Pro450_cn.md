@@ -689,12 +689,7 @@ print(mc.get_angles())
 #### `get_base_external_config(communicate_mode, baud_rate, timeout)`
 
 - **功能**：读取底部外部设备配置
-- **返回值**：
-  - `communicate_mode` (`int`) 
-    - `1`: 485
-    - `2`: can
-  - `baud_rate` (`int`): 波特率
-  - `timeout`: 超时时间
+- **返回值**：`list` 返回列表：[通信模式， 波特率， 超时时间]
 
 #### `base_external_can_control(can_id, can_data)`
 
@@ -731,10 +726,12 @@ print(mc.get_angles())
 - **参数**： data_len (int): 需要读取的字节数，范围1~45
 - **返回值:** 0：未设置 1：设置完成
 
-#### `tool_serial_write_data()`
+#### `tool_serial_write_data(command)`
 
 - **功能：** 末端485发送数据，数据长度范围为1~45字节
-- **返回值:** 0-正常 1-机器人触发碰撞检测
+- **参数**： 
+  - `command` (`list`): modbus格式的数据指令
+- **返回值:** modbus数据列表
 
 <!-- #### `tool_serial_flush()`
 

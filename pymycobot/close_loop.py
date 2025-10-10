@@ -57,7 +57,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             with self.lock:
                 if genre in self.write_command:
                     self.write_command.remove(genre)
-            return None
+            return 1
         t = time.time()
         wait_time = 0.15
         big_wait_time = False
@@ -694,7 +694,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """End 485 sends data， Data length range is 1 ~ 45 bytes
 
         Args:
-            command : data instructions
+            command (list) : data instructions
 
         Return:
             number of bytes received
