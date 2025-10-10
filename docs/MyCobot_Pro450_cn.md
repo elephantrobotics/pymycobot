@@ -686,7 +686,7 @@ print(mc.get_angles())
   - `baud_rate` (`int`): 波特率
   - `timeout`: 超时时间
 
-#### `get_base_external_config(communicate_mode, baud_rate, timeout)`
+#### `get_base_external_config()`
 
 - **功能**：读取底部外部设备配置
 - **返回值**：`list` 返回列表：[通信模式， 波特率， 超时时间]

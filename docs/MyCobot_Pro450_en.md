@@ -686,7 +686,7 @@ print(mc.get_angles())
   - `baud_rate` (`int`): Baud rate
   - `timeout`: Timeout
 
-#### `get_base_external_config(communicate_mode, baud_rate, timeout)`
+#### `get_base_external_config()`
 
 - **Function**: Read the bottom external device configuration
 - **Return value**: `list` returns a list: [communication mode, baud rate, timeout]
