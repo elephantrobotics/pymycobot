@@ -57,7 +57,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             with self.lock:
                 if genre in self.write_command:
                     self.write_command.remove(genre)
-            return None
+            return 1
         t = time.time()
         wait_time = 0.15
         big_wait_time = False
@@ -220,8 +220,8 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 data_pos -= 1
         elif genre == ProtocolCode.GET_DIGITAL_INPUT:
             if self.__class__.__name__ == "Pro450Client":
-                data_len -= 1
-                data_pos = 5
+                data_len = 1
+                data_pos = 4
         else:
             data_pos = 4
         if is_get_return:
@@ -510,6 +510,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             endpoint (list): Arc end point coordinates
             speed (int): 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
         start = []
         end = []
         for index in range(6):
@@ -693,7 +694,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """End 485 sends data， Data length range is 1 ~ 45 bytes
 
         Args:
-            command : data instructions
+            command (list) : data instructions
 
         Return:
             number of bytes received
@@ -1008,6 +1009,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         Args:
             mode (int): 0 - open, 1 - close
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, vr_mode=mode)
         return self._mesg(ProtocolCode.SET_VR_MODE, mode)
 
     def get_model_direction(self):
@@ -1049,6 +1051,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 5 : Drag teaching sampling period
             value (int): Filter length, range is 1 ~ 100
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
 
     def clear_zero_pos(self):
@@ -1168,6 +1171,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             0 - False\n
             -1 - Error
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         if mode == 1:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, coords=data)
@@ -1180,8 +1184,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             self.calibration_parameters(
                 class_name=self.__class__.__name__, angles=data)
             data_list = [self._angle2int(i) for i in data]
-        else:
-            raise Exception("mode is not right, please input 0 or 1")
 
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
 
@@ -1259,7 +1261,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             1: _description_
         """
         self.calibration_parameters(
-            lass_name=self.__class__.__name__, mode=mode, max_speed=max_speed)
+            class_name=self.__class__.__name__, mode=mode, max_speed=max_speed)
         return self._mesg(ProtocolCode.SET_SPEED, mode, [max_speed])
 
     def set_max_acc(self, mode, max_acc):
@@ -1279,6 +1281,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         Args:
             mode (int): 0 - angle acceleration. 1 - coord acceleration.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.GET_MAX_ACC, mode)
 
     def get_joint_min_angle(self, joint_id):
@@ -1648,6 +1651,8 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
     def solve_inv_kinematics(self, new_coords, old_angles):
         """_summary_
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=new_coords, angles=old_angles)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(new_coords[idx]))
@@ -1746,9 +1751,16 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
 
     def set_identify_mode(self, mode):
+        """Set the kinetic parameter identification mode
+
+        Args:
+            mode (int): 0 - open. 1 - close
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_IDENTIFY_MODE, mode)
 
     def get_identify_mode(self):
+        """Obtaining kinetic parameter identification mode"""
         return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
 
     def write_move_c_r(self, coords, r, speed, rank=0):
@@ -1770,14 +1782,35 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.WRITE_MOVE_C_R, coord_list, [r * 100], speed, rank, has_reply=True)
 
     def fourier_trajectories(self, trajectory):
+        """Execute dynamic identification trajectory
+
+        Args:
+            trajectory (int): 0 ~ 4
+        """
         self.calibration_parameters(
             class_name=self.__class__.__name__, trajectory=trajectory)
         return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
 
     def get_dynamic_parameters(self, add):
+        """Setting the dynamics parameters
+
+        Args:
+            add (int): 0 ~ 62
+
+        Returns: data * 0.001
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, add=add)
         return self._mesg(ProtocolCode.GET_DYNAMIC_PARAMETERS, add)
 
     def set_dynamic_parameters(self, add, data):
+        """Setting the dynamics parameters
+
+        Args:
+            add (int): 0 ~ 62
+            data : data * 1000
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, add=add)
         return self._mesg(ProtocolCode.SET_DYNAMIC_PARAMETERS, add, [data * 1000])
 
     def identify_print(self):
@@ -1792,9 +1825,20 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_MOTORS_RUN_ERR)
 
     def get_fusion_parameters(self, rank_mode):
+        """Get speed fusion planning parameters
+        Args:
+            rank_mode: 1 ~ 4
+                1: Fusion joint velocity
+                2: Fusion joint acceleration
+                3: Fusion coordinate velocity
+                4: Fusion coordinate acceleration
+        Returns:
+            1: Fusion joint velocity
+            2: Fusion joint acceleration
+            3: Fusion coordinate velocity
+            4: Fusion coordinate acceleration
         """
-        rank_mode: 1 ~ 4
-        """
+        self.calibration_parameters(class_name=self.__class__.__name__, get_rank_mode=rank_mode)
         return self._mesg(ProtocolCode.GET_FUSION_PARAMETERS, rank_mode)
 
     def set_fusion_parameters(self, rank_mode, value):

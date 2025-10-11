@@ -123,7 +123,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
 
 - **Function:** Get the current coordinates of the mechanical arm.
 - **Return value:** `list` include list of coordinates, `θ` is Rotation angle at the end
-  - Triaxial：The length is 3, which is in turn ` [x, y, z, θ]`
+  - Triaxial：The length is 4, which is in turn ` [x, y, z, θ]`
 
 
 **2.5** `set_coord(id,coord,speed)`
@@ -131,7 +131,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
 - **Function:** Send a single coordinate value to the mechanical arm for movement
 - **Parameter description:**
   - `id`:Represents the coordinates of the mechanical arm. The three axes have three coordinates and have a specific representation method.
-    Representation of X coordinate:`"X"or"x"`.
+    Representation of X coordinate:`"X"`.
   - `coord`: Enter the coordinate value you want to reach
 
       <table>
@@ -140,15 +140,15 @@ from pymycobot.ultraArmP340 import ultraArmP340
             <th>Range</th>
         </tr>
         <tr>
-            <td text-align: center>x</td>
+            <td text-align: center>X</td>
             <td>-360 ~ 365.55</td>
         </tr>
         <tr>
-            <td>y</td>
+            <td>Y</td>
             <td>-365.55 ~ 365.55</td>
         </tr>
         <tr>
-            <td>z</td>
+            <td>Z</td>
             <td>-140 ~ 130</td>
         </tr>
 
@@ -220,9 +220,9 @@ from pymycobot.ultraArmP340 import ultraArmP340
 
 **2.12** `set_init_pose()`		
 
-- **Function:** Set the current position as a fixed position,for example（0,0,0）,set this position to zero
+- **Function:** Set the current position as a fixed position,for example[0,0,0],set this position to zero
 - **Parameter Description**
-  - `coords`: All coordinates of mechanical arm
+  - `coords` (`list`): All coordinates of mechanical arm, For example, [0, 0, 0]
   - `speed`: It represents the speed of the mechanical arm movement, and the range is 0-200 (unit: mm/s).
 - **Return value:** None
 
@@ -276,7 +276,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
 
 - **Function:** Control the robot to move continuously according to the specified coordinates or attitude values
 - **Parameter Description**
-  - `axis`: Represents the joint of the mechanical arm, which is represented by the x/y/z given by the axis of the joint
+  - `axis`: Represents the joints of the robotic arm, ranging from 1 to 3.
   - `direction`: It mainly controls the moving direction of the machine arm. Input 0 is negative move and input 1 is positive move
   - `speed`: Speed 0~200 (unit: mm/s)
 - **Return value:** None
@@ -302,11 +302,13 @@ from pymycobot.ultraArmP340 import ultraArmP340
 - **Function:** Set gripper zero position（Set the current position to zero）
 - **Return value:** None
 
-**4.3** `set_gripper_state(state):`
+**4.3** `set_gripper_state(gripper_value, gripper_speed):`
 
-- **Function:** Set gripper switch
-- **Parameter Description** `state`：Input 0 to open the gripper, and input 1 to close the gripper
-- **Return value:** None
+- **Function:** Setting the jaw open position
+- **Parameter Description:**
+  - `gripper_value`: `int`, 0 to 100.
+  - `gripper_speed:` 0 to 1500 RPM/s
+- **Return Value:** None
 
 **4.4** `get_gripper_angle():`
 
