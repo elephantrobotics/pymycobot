@@ -44,35 +44,42 @@ class UltraArmP1:
         self.lock = threading.Lock()
         time.sleep(1)
 
-    def _respone(self, timeout=90, _async=True):
+    def _respone(self, timeout=90, _async=True, _gcode=False):
         """Wait for device response from the serial buffer.
 
         This method continuously reads data from the serial port until either:
-          - A specific keyword ("timx") is detected in the incoming data, or
+          - A specific keyword ("end" or "start") is detected in the incoming data, or
           - The timeout is reached.
 
         Args:
             timeout (float): Maximum time (in seconds) to wait for a valid response.
             _async (bool): Whether to wait for a response.
+            _gcode (bool): Whether to wait for a response.
 
         Returns:
-            str: 'ok' if the keyword response ("timx") is detected.
+            str: 'ok' if the keyword response ("end" or "start") is detected.
             bool: False if the timeout occurs without receiving a valid response.
         """
 
         import time
-        if not _async:
+
+        if _gcode:
+            _async = False
+
+        if not _async and not _gcode:
             return 1
         start_time = time.time()
         received_data = b""
+        if _gcode:
+            keyword = b"start"
+        else:  # _async=True
+            keyword = b"end"
+
         while time.time() - start_time < timeout:
             received_data += self._serial_port.read(self._serial_port.inWaiting())
-            # if b"end" in received_data.lower():
-            #     return 'ok'
-            end_count = received_data.lower().count(b"end")
-            if end_count >= 2:
+            if received_data.lower().count(keyword) >= 1:
                 return 'ok'
-            time.sleep(0.02)
+            time.sleep(0.01)
         # Timeout
         if self.debug:
             print("data (timeout):", received_data)
@@ -213,13 +220,14 @@ class UltraArmP1:
             self._debug(command)
             return self._request("coord")
 
-    def set_coords(self, coords, speed, _async=True):
+    def set_coords(self, coords, speed, _async=True, _gcode=False):
         """Move the robot using Cartesian coordinate control.
 
         Args:
             coords (list[float]): Coordinates [X, Y, Z].
             speed (int): Movement speed (1~5700).
             _async: (bool): Closed-loop switch
+            _gcode: (bool): GCode switch
         """
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
@@ -236,9 +244,9 @@ class UltraArmP1:
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
-            return self._respone(_async=_async)
+            return self._respone(_async=_async, _gcode=_gcode)
 
-    def set_angle(self, joint_id, angle, speed, _async=True):
+    def set_angle(self, joint_id, angle, speed, _async=True, _gcode=False):
         """Set a single joint angle.
 
         Args:
@@ -246,6 +254,7 @@ class UltraArmP1:
             angle (float): Angle value.
             speed (int): Movement speed (1~5700).
             _async: (bool): Closed-loop switch
+            _gcode: (bool): Closed-loop switch
         """
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
@@ -258,15 +267,16 @@ class UltraArmP1:
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
-            return self._respone(_async=_async)
+            return self._respone(_async=_async, _gcode=_gcode)
 
-    def set_angles(self, angles, speed, _async=True):
+    def set_angles(self, angles, speed, _async=True, _gcode=False):
         """Move robot using joint angle control.
 
         Args:
             angles (list[float]): Joint angles [J1, J2, J3, J4].
             speed (int): Movement speed (1~5700).
             _async: (bool): Closed-loop switch
+            _gcode: (bool): Closed-loop switch
         """
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
@@ -285,7 +295,7 @@ class UltraArmP1:
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
-            return self._respone(_async=_async)
+            return self._respone(_async=_async, _gcode=_gcode)
 
     def close(self):
         """Close the serial port."""
