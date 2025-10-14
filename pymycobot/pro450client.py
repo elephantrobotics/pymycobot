@@ -1120,7 +1120,8 @@ class Pro450Client(CloseLoop):
             timeout (int): Timeout ms
 
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode)
+        self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode,
+                                    baud_rate=baud_rate, timeout=timeout)
         data = bytearray()
         data += communicate_mode.to_bytes(1, 'little')
         data += baud_rate.to_bytes(4, 'little')
@@ -1167,7 +1168,8 @@ class Pro450Client(CloseLoop):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, can_id, *can_data)
+        can_id_bytes = can_id.to_bytes(4, 'little')
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *can_id_bytes, *can_data)
 
     def base_external_485_control(self, data):
         """Bottom external device 485 control
@@ -1177,7 +1179,7 @@ class Pro450Client(CloseLoop):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, *data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *data)
 
     def get_error_information(self):
         """Obtaining robot error information

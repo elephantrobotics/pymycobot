@@ -1757,8 +1757,8 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 100 ~ 300, but received {}".format(parameter, value))
             elif parameter == "can_id":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if value not in [1,2,3,4]:
-                    raise MyCobotPro450DataException("The parameter {} only supports 1, 2, 3, 4 but received {}".format(parameter, value))
+            elif parameter in ["baud_rate", "timeout"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
             elif parameter in ["can_data", "data_485"]:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, list)
                 if len(value) > 64:
