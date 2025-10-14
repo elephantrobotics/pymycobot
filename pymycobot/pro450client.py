@@ -1177,7 +1177,7 @@ class Pro450Client(CloseLoop):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, *data)
 
     def get_error_information(self):
         """Obtaining robot error information
