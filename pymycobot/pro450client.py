@@ -1123,9 +1123,9 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode,
                                     baud_rate=baud_rate, timeout=timeout)
         data = bytearray()
-        data += communicate_mode.to_bytes(1, 'little')
-        data += baud_rate.to_bytes(4, 'little')
-        data += timeout.to_bytes(4, 'little')
+        data += communicate_mode.to_bytes(1, 'big')
+        data += baud_rate.to_bytes(4, 'big')
+        data += timeout.to_bytes(4, 'big')
         return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, *data)
 
     def get_base_external_config(self):
@@ -1168,7 +1168,7 @@ class Pro450Client(CloseLoop):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
-        can_id_bytes = can_id.to_bytes(4, 'little')
+        can_id_bytes = can_id.to_bytes(4, 'big')
         return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *can_id_bytes, *can_data)
 
     def base_external_485_control(self, data):
