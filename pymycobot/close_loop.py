@@ -101,7 +101,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             if real_command[3] == FingerGripper.SET_HAND_GRIPPER_CALIBRATION:
                 wait_time = 10
         if genre == ProtocolCode.SET_FRESH_MODE and self.__class__.__name__ == 'Pro450Client':
-            wait_time = 3
+            wait_time = 4
 
         need_break = False
         data = None
@@ -109,7 +109,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
         elif self.__class__.__name__ == "Pro450Client":
-            timeout = 3
+            if genre == ProtocolCode.SET_FRESH_MODE:
+                timeout = 4
+            else:
+                timeout = 3
         elif self.__class__.__name__ == "MercuryArmsSocket":
             timeout = 1
         else:
