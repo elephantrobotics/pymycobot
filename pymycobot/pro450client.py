@@ -46,7 +46,7 @@ class Pro450Client(CloseLoop):
         elif read_data == 1:
             return 1
         elif read_data == -2:
-            return -1
+            return 1
         elif read_data == 0:
             return read_data
         if isinstance(read_data, tuple):
