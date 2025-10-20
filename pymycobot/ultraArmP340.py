@@ -1,6 +1,7 @@
 # coding: utf-8
 import time
 from pymycobot.common import ProtocolCode
+from pymycobot.error import calibration_parameters
 import math
 import threading
 
@@ -25,6 +26,7 @@ class ultraArmP340:
         self._serial_port.dtr = True
         self._serial_port.open()
         self.debug = debug
+        self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
         time.sleep(1)
 
@@ -211,9 +213,15 @@ class ultraArmP340:
                                 print(data)
                             break
 
-    def sleep(self, time):
+    def sleep(self, wait_time):
+        """Set wait time
+
+        Args:
+            wait_time (int): wait time 0 ~ 65535
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, wait_time=wait_time)
         with self.lock:
-            command = ProtocolCode.SLEEP_TIME + " S" + str(time) + ProtocolCode.END
+            command = ProtocolCode.SLEEP_TIME + " S" + str(wait_time) + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
@@ -258,80 +266,72 @@ class ultraArmP340:
             self._debug(command)
             return self._request("endstop")
 
-    def set_init_pose(self, x=None, y=None, z=None):
-        """Set the current coords to zero."""
+    def set_init_pose(self, pose_coords):
+        """Set the current coords to zero.
+
+        Args:
+            pose_coords (list[float]): [x, y, z] coordinate values.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pose_coords=pose_coords)
         with self.lock:
             command = ProtocolCode.SET_JOINT
-            if x is not None:
-                command += " x" + str(x)
-            if y is not None:
-                command += " y" + str(y)
-            if z is not None:
-                command += " z" + str(z)
+            command += " x" + str(pose_coords[0])
+            command += " y" + str(pose_coords[1])
+            command += " z" + str(pose_coords[2])
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
-    def set_coords(self, degrees, speed=0):
+    def set_coords(self, coords, speed):
         """Set all joints coords.
 
         Args:
-            degrees: a list of coords value(List[float]).
+            coords: a list of coords value(List[float]).
                 x : -360 ~ 365.55 mm
                 y : -365.55 ~ 365.55 mm
                 z : -140 ~ 130 mm
             speed : (int) 0-200 mm/s
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords, speed=speed)
+
         with self.lock:
-            length = len(degrees)
-            degrees = [degree for degree in degrees]
             command = ProtocolCode.COORDS_SET
-            if degrees[0] is not None:
-                command += " X" + str(degrees[0])
-            if degrees[1] is not None:
-                command += " Y" + str(degrees[1])
-            if degrees[2] is not None:
-                command += " Z" + str(degrees[2])
-            if length == 4:
-                if degrees[3] is not None:
-                    command += " E" + str(degrees[3])
-            if speed > 0:
-                command += " F" + str(speed)
+            command += " X" + str(coords[0])
+            command += " Y" + str(coords[1])
+            command += " Z" + str(coords[2])
+            if len(coords) == 4:
+                if coords[3] is not None:
+                    command += " E" + str(coords[3])
+            command += " F" + str(speed)
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
-    def set_coord(self, id=None, coord=None, speed=0):
-        """Set single coord.
+    def set_coord(self, coord_id, coord, speed):
+        """Set single coordinate.
 
         Args:
-            coord:
-                x : -360 ~ 365.55 mm
-                y : -365.55 ~ 365.55 mm
-                z : -140 ~ 130 mm
-            speed : (int) 0-200 mm/s
+            coord_id (str): 'X', 'Y', 'Z', 'E'
+            coord (float): coordinate value
+            speed (int): movement speed (0-200 mm/s)
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
         with self.lock:
             command = ProtocolCode.COORDS_SET
-            if id == "x" or id == "X":
-                command += " X" + str(coord)
-            if id == "y" or id == "Y":
-                command += " Y" + str(coord)
-            if id == "z" or id == "Z":
-                command += " Z" + str(coord)
-            if speed > 0:
-                command += " F" + str(speed)
+            command += f" {coord_id}{coord}"
+            command += f" F{speed}"
             command += ProtocolCode.END
+
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
-    def set_mode(self, mode=None):
+    def set_mode(self, mode):
         """set coord mode.
 
         Args:
@@ -340,6 +340,7 @@ class ultraArmP340:
 
                 1 - Relative Cartesian mode
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         with self.lock:
             if mode == 0:
                 command = ProtocolCode.ABS_CARTESIAN + ProtocolCode.END
@@ -351,33 +352,32 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def set_speed_mode(self, mode=None):
+    def set_speed_mode(self, speed_mode):
         """set speed mode.
 
         Args:
-            mode:
+            speed_mode:
                 0 - Constant speed mode
 
                 2 - Acceleration / deceleration mode
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, speed_mode=speed_mode)
         with self.lock:
-            if mode != None:
-                command = "M16 S" + str(mode) + ProtocolCode.END
-            else:
-                print("Please enter the correct value!")
+            command = "M16 S" + str(speed_mode) + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
-    def set_pwm(self, p=None):
+    def set_pwm(self, p_value):
         """PWM control.
 
         Args:
-            p (int) : Duty cycle 0 ~ 255; 128 means 50%
+            p_value (int) : Duty cycle 0 ~ 255; 128 means 50%
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, p_value=p_value)
         with self.lock:
-            command = ProtocolCode.SET_PWM + "p" + str(p) + ProtocolCode.END
+            command = ProtocolCode.SET_PWM + "p" + str(p_value) + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
@@ -387,10 +387,11 @@ class ultraArmP340:
         """Set gpio state.
 
         Args:
-            state:
+            state (int):
                 1 - open
                 0 - close
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         with self.lock:
             if state:
                 command = ProtocolCode.GPIO_CLOSE + ProtocolCode.END
@@ -402,6 +403,7 @@ class ultraArmP340:
             self._respone()
 
     def set_gripper_zero(self):
+        """Set gripper zero."""
         with self.lock:
             command = ProtocolCode.GRIPPER_ZERO + ProtocolCode.END
             self._serial_port.write(command.encode())
@@ -409,23 +411,24 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def set_gripper_state(self, state, speed):
-        """Set gripper state.
+    def set_gripper_state(self, gripper_value, gripper_speed):
+        """Set gripper angle.
 
         Args:
-            state: 0 - 100
-                0 - full close
-                100 - full open
-            speed: 0 - 1500
+            gripper_value (int): 0 - 100
+
+            gripper_speed: 0 - 1500
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, gripper_speed=gripper_speed)
         with self.lock:
-            command = ProtocolCode.GIRPPER_OPEN + "A" + str(state) + "F" + str(speed) + ProtocolCode.END
+            command = ProtocolCode.GIRPPER_OPEN + "A" + str(gripper_value) + "F" + str(gripper_speed) + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
     def set_gripper_release(self):
+        """Set gripper release."""
         with self.lock:
             command = ProtocolCode.GIRPPER_RELEASE + ProtocolCode.END
             self._serial_port.write(command.encode())
@@ -437,10 +440,11 @@ class ultraArmP340:
         """Set fan state.
 
         Args:
-            state:
+            state (int):
                 0 - close
                 1 - open
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         with self.lock:
             if state:
                 command = ProtocolCode.FAN_ON + ProtocolCode.END
@@ -451,12 +455,11 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def set_angle(self, id=None, angle=None, speed=0):
+    def set_angle(self, joint_id, angle, speed):
         """Set single angle.
 
         Args:
-            id : joint (1/2/3/4)
-
+            joint_id (int) : joint (1/2/3/4)
             angle :
                 1 : -150° ~ +170°
                 2 : -20° ~ 90°
@@ -464,117 +467,97 @@ class ultraArmP340:
                 4 : -179° ~ + 179°
             speed : (int) 0-200 mm/s
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         with self.lock:
             command = ProtocolCode.SET_ANGLE
-            if id is not None:
-                command += " j" + str(id)
-            if angle is not None:
-                command += " a" + str(angle)
-            if speed > 0:
-                command += " f" + str(speed)
+            command += " J" + str(joint_id)
+            command += " A" + str(angle)
+            command += " F" + str(speed)
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
-    def set_angles(self, degrees, speed=0):
+    def set_angles(self, angles, speed):
         """Set all joints angles.
 
         Args:
-            degrees: a list of angles value(List[float]).
-            angle :
-                1 : -150° ~ +170°
-                2 : -20° ~ 90°
-                3 : -5° ~ 110°
-                4 : -179° ~ + 179°
+            angles: A list of angles value(List[float]).
             speed : (int) 0-200 mm/s
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
         with self.lock:
-            length = len(degrees)
-            degrees = [degree for degree in degrees]
             command = ProtocolCode.SET_ANGLES
-            if degrees[0] is not None:
-                command += " X" + str(degrees[0])
-            if degrees[1] is not None:
-                command += " Y" + str(degrees[1])
-            if degrees[2] is not None:
-                command += " Z" + str(degrees[2])
-            if length == 4:
-                if degrees[3] is not None:
-                    command += " E" + str(degrees[3])
-            if speed > 0:
-                command += " F" + str(speed)
+            command += " X" + str(angles[0])
+            command += " Y" + str(angles[1])
+            command += " Z" + str(angles[2])
+            if len(angles) == 4:
+                command += " E" + str(angles[3])
+            command += " F" + str(speed)
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
-    def set_radians(self, degrees, speed=0):
+    def set_radians(self, degrees, speed):
         """Set all joints radians
 
         Args:
-            degrees: a list of radians value(List[float]).
-            angle :
-                1 : 2.6179 ~ 2.9670
-                2 : -0.3490 ~ 1.5707
-                3 : -0.0872 ~ 1.9198
-                4 : -3.1241 ~ + 3.1241
+            degrees: A list of radians value(List[float]).
+                    1 : -2.6179 ~ 2.9670
+                    2 : -0.3490 ~ 1.5707
+                    3 : -0.0872 ~ 1.9198
+                    4 : -3.1241 ~ + 3.1241
             speed : (int) 0-200 mm/s
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, radians=degrees, speed=speed)
         with self.lock:
             degrees = [round(degree * (180 / math.pi), 2) for degree in degrees]
             self.set_angles(degrees, speed)
 
-    def set_jog_angle(self, id=None, direction=None, speed=0):
+    def set_jog_angle(self, joint_id, direction, speed):
         """Start jog movement with angle
 
         Args:
-            id : joint(1/2/3)
+            joint_id : joint(1/2/3)
 
             direction :
-                0 : positive
-                1 : negative
+                1 : Negative motion
+                0 : Positive motion
             speed : (int) 0-200 mm/s
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
         with self.lock:
             command = ProtocolCode.SET_JOG_ANGLE
-            if id is not None:
-                command += " j" + str(id)
-            if direction is not None:
-                command += " d" + str(direction)
-            if speed > 0:
-                command += " f" + str(speed)
+            command += " J" + str(joint_id)
+            command += " D" + str(direction)
+            command += " F" + str(speed)
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
 
-    def set_jog_coord(self, axis=None, direction=None, speed=0):
+    def set_jog_coord(self, axis_id, direction, speed):
         """Start jog movement with coord
 
         Args:
-            axis : 
-            1 : x
-            2 : y
-            3 : z
-            4 : θ
+            axis_id(int) : axis 1-X, 2-Y, 3-Z
 
             direction:
-                0 : positive
-                1 : negative
+                1 : Negative motion
+                0 : Positive motion
             speed : (int) 0-200 mm/s
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
+                                    speed=speed)
         with self.lock:
             command = ProtocolCode.JOG_COORD_
-            if axis is not None:
-                command += " j" + str(axis)
-            if direction is not None:
-                command += " d" + str(direction)
-            if speed > 0:
-                command += " f" + str(speed)
+            command += " J" + str(axis_id)
+            command += " A" + str(direction)
+            command += " F" + str(speed)
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
@@ -591,23 +574,29 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def play_gcode_file(self, filename=None):
-        """Play the imported track file"""
+    def play_gcode_file(self, filename):
+        """Play the imported track file
+
+        Args:
+            filename (str): Path to a G-code file (.gcode or .nc or .ngc)
+        """
+
+        self.calibration_parameters(class_name=self.__class__.__name__, filename=filename)
+        X = []
+        try:
+            with open(filename) as f:
+                lines = f.readlines()
+                for line in lines:
+                    line = line.strip("\n")
+                    X.append(line)
+        except Exception:
+            print("There is no such file!")
+
+        begin, end = 0, len(X)
+
+        self.set_speed_mode(0)  # Constant speed mode
+
         with self.lock:
-            X = []
-            try:
-                with open(filename) as f:
-                    lines = f.readlines()
-                    for line in lines:
-                        line = line.strip("\n")
-                        X.append(line)
-            except Exception:
-                print("There is no such file!")
-
-            begin, end = 0, len(X)
-
-            self.set_speed_mode(0)  # Constant speed mode
-
             for i in range(begin, end):
                 command = X[i] + ProtocolCode.END
                 self._serial_port.write(command.encode())
@@ -661,9 +650,7 @@ class ultraArmP340:
             pass
 
     def get_gripper_angle(self):
-        """
-        
-        """
+        """Get gripper angle"""
         command = ProtocolCode.GET_GRIPPER_ANGLE + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
@@ -671,7 +658,7 @@ class ultraArmP340:
         return self._request("gripper")
 
     def set_system_value(self, id, address, value, mode=None):
-        """_summary_
+        """Set system parameters
 
         Args:
             id (int): 4 or 7
@@ -682,9 +669,12 @@ class ultraArmP340:
                 2 - setting value range is 0-65535, address 56 (setting position) can be used
         """
         if mode:
+            self.calibration_parameters(class_name=self.__class__.__name__, id=id, address=address,
+                                        system_value=value, system_mode=mode)
             command = ProtocolCode.SET_SYSTEM_VALUE + " X{} ".format(id) + "Y{} ".format(address) + "Z{} ".format(
                 value) + "P{} ".format(mode) + ProtocolCode.END
         else:
+            self.calibration_parameters(class_name=self.__class__.__name__, id=id, address=address, system_value=value)
             command = ProtocolCode.SET_SYSTEM_VALUE + " X{} ".format(id) + "Y{} ".format(address) + "Z{} ".format(
                 value) + ProtocolCode.END
         self._serial_port.write(command.encode())
@@ -692,22 +682,24 @@ class ultraArmP340:
         self._debug(command)
 
     def get_system_value(self, id, address, mode=None):
-        """_summary_
+        """Get system parameters
 
         Args:
             id (int): 4 or 7
-            address (_type_): 0 ~ 69
+            address (int): 0 ~ 69
             mode (int): 1 or 2, can be empty, default mode is 1
                 1 - read range is 0-255, address 21 (P value) can be used
                 2 - read value range is 0-65535, address 56 (read position) can be used
 
         Returns:
-            _type_: _description_
+            int: 0 ~ 65535
         """
         if mode:
+            self.calibration_parameters(class_name=self.__class__.__name__, id=id, get_address=address, system_mode=mode)
             command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) + "P{} ".format(
                 mode) + ProtocolCode.END
         else:
+            self.calibration_parameters(class_name=self.__class__.__name__, id=id, get_address=address)
             command = ProtocolCode.GET_SYSTEM_VALUE + " J{} ".format(id) + "S{} ".format(address) + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()

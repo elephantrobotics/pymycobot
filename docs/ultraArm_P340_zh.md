@@ -130,7 +130,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
 - **功能：** 发送单个坐标值给机械臂进行移动
 - **参数说明：**
   - `id`:代表机械臂的坐标，三轴有三个坐标，有特定的表示方法。
-    X坐标的表示法：`"X"或者"x"`.
+    X坐标的表示法：`"X"`.
   - `coord`: 输入您想要到达的坐标值
   
       <table>
@@ -139,15 +139,15 @@ from pymycobot.ultraArmP340 import ultraArmP340
             <th>范围</th>
         </tr>
         <tr>
-            <td text-align: center>x</td>
+            <td text-align: center>X</td>
             <td>-360 ~ 365.55</td>
         </tr>
         <tr>
-            <td>y</td>
+            <td>Y</td>
             <td>-365.55 ~ 365.55</td>
         </tr>
         <tr>
-            <td>z</td>
+            <td>Z</td>
             <td>-140 ~ 130</td>
         </tr>
 
@@ -219,9 +219,9 @@ from pymycobot.ultraArmP340 import ultraArmP340
 
 **2.12** `set_init_pose()`		
 
-- **功能：** 设置当前位置为某个固定位置。如（0,0,0）就把这个位置设为零点
+- **功能：** 设置当前位置为某个固定位置。如[0,0,0]就把这个位置设为零点
 - **参数说明：**
-  - `coords`: 机械臂所有坐标
+  - `coords` (`list`): 机械臂所有坐标，比如[0, 0, 0]
   - `speed`: 表示机械臂运动的速度，范围是0-200 (单位：mm/s)。
 - **返回值：** 无
 
@@ -267,7 +267,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
 - **功能：** 设置点动模式（角度）
 - **参数说明：**
   - `id`: 代表机械臂的关节，按照关节id给入1~3来表示
-  - `direction`: 主要控制机器臂移动的方向，给入0 为负值移动，给入1为正值移动
+  - `direction`: 主要控制机器臂移动的方向，0 - 正向移动，1 - 负向移动
   - `speed`: 速度 0 ~ 200 (单位：mm/s)。
 - **返回值：** 无
 
@@ -275,8 +275,8 @@ from pymycobot.ultraArmP340 import ultraArmP340
 
 - **功能：** 控制机器人按照指定的坐标或姿态值持续移动
 - **参数说明：**
-  - `axis`: 代表机械臂的关节，按照关节axis给入x/y/z来表示
-  - `direction`: 主要控制机器臂移动的方向，给入0 为负值移动，给入1为正值移动
+  - `axis`: 代表机械臂的关节，范围 1 ~ 3
+  - `direction`: 主要控制机器臂移动的方向，0 - 正向移动，1 - 负向移动
   - `speed`: 速度 0 ~ 200 (单位：mm/s)。
 - **返回值：** 无
 
@@ -301,10 +301,12 @@ from pymycobot.ultraArmP340 import ultraArmP340
 - **功能：** 设置夹爪零位（设置当前位置为零位）。
 - **返回值：** 无
 
-**4.3** `set_gripper_state(state):`
+**4.3** `set_gripper_state(gripper_value, gripper_speed):`
 
-- **功能：** 设置夹爪开关
-- **参数说明:** `state`：输入0表示张开夹爪，输入1表示闭合夹爪。
+- **功能：** 设置夹爪张开位置
+- **参数说明:** 
+  - `gripper_value`： `int`, 0 ~ 100。
+  - `gripper_speed:` 0 ~ 1500 RPM/s
 - **返回值：** 无
 
 **4.4** `get_gripper_angle():`

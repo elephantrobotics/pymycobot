@@ -8,6 +8,9 @@ def setup_logging(debug=False):
     # logging.basicConfig()
     root_logger = logging.getLogger()
 
+    if root_logger.handlers:
+        return root_logger
+
     debug_fomatter = logging.Formatter(
         fmt="%(asctime)s.%(msecs)03d %(levelname).4s [%(name)s] %(message)s",
         datefmt="%H:%M:%S",
