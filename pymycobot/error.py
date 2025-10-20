@@ -1620,7 +1620,7 @@ def calibration_parameters(**kwargs):
                 if value not in [0, 1, 2, 3, 4]:
                     raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
             elif parameter in ['log_state']:
-                check_0_or_1(parameter, value, list(range(0, 25)), value_type, MyCobotPro450DataException, int)
+                check_0_or_1(parameter, value, list(range(0, 8)), value_type, MyCobotPro450DataException, int)
             elif parameter in ['max_acc']:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 mode = kwargs.get('mode', None)
