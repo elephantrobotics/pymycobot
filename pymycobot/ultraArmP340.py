@@ -556,7 +556,7 @@ class ultraArmP340:
         with self.lock:
             command = ProtocolCode.JOG_COORD_
             command += " J" + str(axis_id)
-            command += " A" + str(direction)
+            command += " D" + str(direction)
             command += " F" + str(speed)
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
