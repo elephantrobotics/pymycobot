@@ -217,7 +217,7 @@ class ultraArmP340:
         """Set wait time
 
         Args:
-            wait_time (int): wait time 0 ~ 65535
+            wait_time (int): wait time 1 ~ 65535
         """
         self.calibration_parameters(class_name=self.__class__.__name__, wait_time=wait_time)
         with self.lock:
@@ -270,14 +270,17 @@ class ultraArmP340:
         """Set the current coords to zero.
 
         Args:
-            pose_coords (list[float]): [x, y, z] coordinate values.
+            pose_coords (list[float]): [X, Y, Z, E] coordinate values.
         """
         self.calibration_parameters(class_name=self.__class__.__name__, pose_coords=pose_coords)
         with self.lock:
             command = ProtocolCode.SET_JOINT
-            command += " x" + str(pose_coords[0])
-            command += " y" + str(pose_coords[1])
-            command += " z" + str(pose_coords[2])
+            command += " X" + str(pose_coords[0])
+            command += " Y" + str(pose_coords[1])
+            command += " Z" + str(pose_coords[2])
+            if len(pose_coords) == 4:
+                if pose_coords[3] is not None:
+                    command += " E" + str(pose_coords[3])
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
@@ -292,7 +295,7 @@ class ultraArmP340:
                 x : -360 ~ 365.55 mm
                 y : -365.55 ~ 365.55 mm
                 z : -140 ~ 130 mm
-            speed : (int) 0-200 mm/s
+            speed : (int) 1-200 mm/s
         """
         self.calibration_parameters(class_name=self.__class__.__name__, coords=coords, speed=speed)
 
@@ -317,7 +320,7 @@ class ultraArmP340:
         Args:
             coord_id (str): 'X', 'Y', 'Z', 'E'
             coord (float): coordinate value
-            speed (int): movement speed (0-200 mm/s)
+            speed (int): movement speed (1-200 mm/s)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
         with self.lock:
@@ -417,7 +420,7 @@ class ultraArmP340:
         Args:
             gripper_value (int): 0 - 100
 
-            gripper_speed: 0 - 1500
+            gripper_speed: 1 - 1500
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_value=gripper_value, gripper_speed=gripper_speed)
         with self.lock:
@@ -465,7 +468,7 @@ class ultraArmP340:
                 2 : -20° ~ 90°
                 3 : -5° ~ 110°
                 4 : -179° ~ + 179°
-            speed : (int) 0-200 mm/s
+            speed : (int) 1-200 mm/s
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         with self.lock:
@@ -484,7 +487,7 @@ class ultraArmP340:
 
         Args:
             angles: A list of angles value(List[float]).
-            speed : (int) 0-200 mm/s
+            speed : (int) 1-200 mm/s
         """
         self.calibration_parameters(class_name=self.__class__.__name__, angles=angles, speed=speed)
         with self.lock:
@@ -510,7 +513,7 @@ class ultraArmP340:
                     2 : -0.3490 ~ 1.5707
                     3 : -0.0872 ~ 1.9198
                     4 : -3.1241 ~ + 3.1241
-            speed : (int) 0-200 mm/s
+            speed : (int) 1-200 mm/s
         """
         self.calibration_parameters(class_name=self.__class__.__name__, radians=degrees, speed=speed)
         with self.lock:
@@ -526,7 +529,7 @@ class ultraArmP340:
             direction :
                 1 : Negative motion
                 0 : Positive motion
-            speed : (int) 0-200 mm/s
+            speed : (int) 1-200 mm/s
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
         with self.lock:
@@ -549,7 +552,7 @@ class ultraArmP340:
             direction:
                 1 : Negative motion
                 0 : Positive motion
-            speed : (int) 0-200 mm/s
+            speed : (int) 1-200 mm/s
         """
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     speed=speed)
