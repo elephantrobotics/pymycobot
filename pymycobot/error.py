@@ -1856,7 +1856,7 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 1 <= value <= 1500:
                     raise ultraArmP340DataException(
-                        "gripper speed not right, should be 0 ~ 1500, the error gripper_speed is {}".format(value))
+                        "gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
             elif parameter == 'address':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 7 <= value <= 69:
