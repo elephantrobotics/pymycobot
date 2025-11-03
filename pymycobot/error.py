@@ -1834,17 +1834,14 @@ def calibration_parameters(**kwargs):
             elif parameter == 'speed':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
 
-                if not (0 <= value <= 200):
+                if not (1 <= value <= 200):
                     raise ultraArmP340DataException(
-                        "Speed out of range, should be 0 ~ 200, but received {}".format(value))
-                if not 0 <= value <= 200:
-                    raise ultraArmP340DataException(
-                        "speed value not right, should be 0 ~ 200, the error speed is {}".format(value))
+                        "Speed out of range, should be 1 ~ 200, but received {}".format(value))
             elif parameter == 'wait_time':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
-                if not 0 <= value <= 65535:
+                if not 1 <= value <= 65535:
                     raise ultraArmP340DataException(
-                        "wait time value not right, should be 0 ~ 65535, the error time is {}".format(value))
+                        "wait time value not right, should be 1 ~ 65535, the error time is {}".format(value))
             elif parameter == 'p_value':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 0 <= value <= 255:
@@ -1857,9 +1854,9 @@ def calibration_parameters(**kwargs):
                         "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
             elif parameter == 'gripper_speed':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
-                if not 0 <= value <= 1500:
+                if not 1 <= value <= 1500:
                     raise ultraArmP340DataException(
-                        "gripper speed not right, should be 0 ~ 1500, the error gripper_speed is {}".format(value))
+                        "gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
             elif parameter == 'address':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 7 <= value <= 69:
@@ -1905,9 +1902,9 @@ def calibration_parameters(**kwargs):
                 if not isinstance(value, list):
                     raise ultraArmP340DataException(
                         "`{}` must be a list, but the received {}".format(parameter, type(value)))
-                if len(value) not in [3]:
+                if len(value) not in [3, 4]:
                     raise ultraArmP340DataException(
-                        "The length of `{}` must be 3, but the received length is {}".format(parameter, len(value)))
+                        "The length of `{}` must be 3 or 4, but the received length is {}".format(parameter, len(value)))
                 min_coord = robot_limit[class_name]["coords_min"]
                 max_coord = robot_limit[class_name]["coords_max"]
                 for idx, coord in enumerate(value):
