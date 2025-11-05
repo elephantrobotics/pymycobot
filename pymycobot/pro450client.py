@@ -84,8 +84,12 @@ class Pro450Client(CloseLoop):
         elif data_len == 4:
             if genre == ProtocolCode.COBOTX_GET_ANGLE:
                 res = self.bytes4_to_int(valid_data)
-            for i in range(1,4):
-                res.append(valid_data[i])
+            elif genre == ProtocolCode.PRO450_GET_DIGITAL_INPUTS:
+                for i in range(4):
+                    res.append(valid_data[i])
+            else:
+                for i in range(1,4):
+                    res.append(valid_data[i])
         elif data_len == 7:
             error_list = [i for i in valid_data]
             if genre == ProtocolCode.IS_INIT_CALIBRATION:
@@ -201,6 +205,7 @@ class Pro450Client(CloseLoop):
             ProtocolCode.GET_ERROR_INFO,
             ProtocolCode.GET_COLLISION_MODE,
             ProtocolCode.GET_IDENTIFY_MODE,
+            ProtocolCode.GET_COMMUNICATION_MODE,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -270,8 +275,8 @@ class Pro450Client(CloseLoop):
             return res
         elif genre == ProtocolCode.GET_BASE_EXTERNAL_CONFIG:
             mode = res[0]
-            baud_rate = int.from_bytes(res[1:5], byteorder="little", signed=False)
-            timeout = int.from_bytes(res[5:9], byteorder="little", signed=False)
+            baud_rate = int.from_bytes(res[1:5], byteorder="big", signed=False)
+            timeout = int.from_bytes(res[5:9], byteorder="big", signed=False)
             return [mode, baud_rate, timeout]
         else:
             return res
@@ -1261,4 +1266,11 @@ class Pro450Client(CloseLoop):
             0 : failed.
         """
         return self.send_angles([0, 0, 0, 0, 0, 0], speed, _async=_async)
+
+    def get_digital_inputs(self):
+        """Read the status of all pins at the end,
+        including: IN1, IN2, button 1 (right),
+        and button 2 (button 2 is closer to the emergency stop, left).
+        """
+        return self._mesg(ProtocolCode.PRO450_GET_DIGITAL_INPUTS)
 
