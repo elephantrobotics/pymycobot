@@ -54,7 +54,9 @@ class Pro450Client(CloseLoop):
         else:
             return -1
         res = []
-        if data_len in [8, 12, 14, 16, 26, 60]:
+        if genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
+            res = [i for i in valid_data]
+        elif data_len in [8, 12, 14, 16, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
                 if valid_data[0] == 1:
                     return 1

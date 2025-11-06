@@ -111,6 +111,9 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         elif self.__class__.__name__ == "Pro450Client":
             if genre == ProtocolCode.SET_FRESH_MODE:
                 timeout = 4
+            elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
+                timeout = 5
+                wait_time = 4
             else:
                 timeout = 3
         elif self.__class__.__name__ == "MercuryArmsSocket":
@@ -121,6 +124,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         interval_time = time.time()
         is_moving = 0
         check_is_moving_t = 1
+
         while True and time.time() - t < wait_time:
             with self.lock_out:
                 for v in self.read_command:
