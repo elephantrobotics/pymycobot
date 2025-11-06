@@ -639,6 +639,12 @@ print(mc.get_angles())
 - **Parameters**: `pin_no` (int), range 1 to 2
 - **Return Value**: `int` 0 / 1, 0 - low level, 1 - high level
 
+#### `get_digital_inputs()`
+
+- **Function:** Reads the status of all pins at the end, including: IN1, IN2, Button 1 (right side), and Button 2 (Button 2 is closer to the emergency stop button, located on the left side).
+
+- **Return Value:** `list[int]` 0 / 1, 0 - low level, 1 - high level. e.g. [0, 0, 1, 0] represents button 1 being pressed.
+
 ### 14. End Light Panel Function
 
 <!-- #### `is_btn_clicked()`
