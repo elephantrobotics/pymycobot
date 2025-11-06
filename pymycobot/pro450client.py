@@ -280,6 +280,13 @@ class Pro450Client(CloseLoop):
             baud_rate = int.from_bytes(res[1:5], byteorder="big", signed=False)
             timeout = int.from_bytes(res[5:9], byteorder="big", signed=False)
             return [mode, baud_rate, timeout]
+        elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
+            mode = res[0]
+            if mode == 1:
+                return res
+            elif mode == 2:
+                can_id = (res[1] << 24) | (res[2] << 16) | (res[3] << 8) | res[4]
+                return [mode, can_id] + res[5:]
         else:
             return res
 
@@ -1166,27 +1173,29 @@ class Pro450Client(CloseLoop):
             class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
 
-    def base_external_can_control(self, can_id, can_data):
+    def base_external_can_control(self, can_id, can_data, mode=2):
         """Bottom external device can control
 
         Args:
             can_id (int): 1 - 4.
             can_data (list): The maximum length is 64
+            mode (int): 2 - can mode
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
         can_id_bytes = can_id.to_bytes(4, 'big')
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *can_id_bytes, *can_data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, mode, *can_id_bytes, *can_data)
 
-    def base_external_485_control(self, data):
+    def base_external_485_control(self, data, mode=1):
         """Bottom external device 485 control
 
         Args:
             data (list): The maximum length is 64
+            mode (int):  1 - 485 mode
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, mode, *data)
 
     def get_error_information(self):
         """Obtaining robot error information
