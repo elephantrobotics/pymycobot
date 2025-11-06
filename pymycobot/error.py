@@ -519,6 +519,11 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MyCobot280DataException)
+            elif parameter in ['coord_id']:
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if value not in robot_limit[class_name][parameter]:
+                    raise MyCobot280DataException(
+                    "The coord_id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6], value))
             elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
                 raise MyCobot280DataException(
                     "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
@@ -572,7 +577,7 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobot280DataException, str)
             elif parameter == 'coords':
                 check_coords(parameter, value, robot_limit, class_name, MyCobot280DataException)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobot280DataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MyCobot280DataException, int)
@@ -597,7 +602,6 @@ def calibration_parameters(**kwargs):
             elif parameter == 'coord':
                 id = kwargs.get('id', None)
                 index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
-
                 if value < robot_limit[class_name]["coords_min"][index] or value > \
                         robot_limit[class_name]["coords_max"][index]:
                     raise MyCobot280DataException(
@@ -607,6 +611,10 @@ def calibration_parameters(**kwargs):
                             value
                         )
                     )
+            elif parameter == 'encoder':
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if not 0 <= value <= 4096:
+                    raise MyCobot280DataException(f"The range of encoder is 0 ~ 4096, but the received value is {value}")
             elif parameter == 'encoders':
 
                 if len(value) != 6:
@@ -649,6 +657,26 @@ def calibration_parameters(**kwargs):
             elif parameter == 'is_torque':
                 if value is not None:
                     check_0_or_1(parameter, value, [0, 1], value_type, MyCobot280DataException, int)
+            elif parameter == 'increment_angle':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobot280DataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
+            elif parameter == 'increment_coord':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobot280DataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MyCobot280DataException)
     elif class_name in ["MyCobot320", "MyCobot320Socket"]:
@@ -696,7 +724,7 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobot320DataException, str)
             elif parameter == 'coords':
                 check_coords(parameter, value, robot_limit, class_name, MyCobot320DataException)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobot320DataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MyCobot320DataException, int)
@@ -954,7 +982,7 @@ def calibration_parameters(**kwargs):
                         "The range of {} is 0 ~ 100, but the received value is {}".format(parameter, value))
             elif parameter in ['account', 'password']:
                 check_value_type(parameter, value_type, MechArmDataException, str)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MechArmDataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MechArmDataException, int)
@@ -991,6 +1019,10 @@ def calibration_parameters(**kwargs):
                             value
                         )
                     )
+            elif parameter == 'encoder':
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if not 0 <= value <= 4096:
+                    raise MechArmDataException(f"The range of encoder is 0 ~ 4096, but the received value is {value}")
             elif parameter == 'encoders':
                 if len(value) != 6:
                     raise MechArmDataException("The length of `encoders` must be 6.")
@@ -1218,7 +1250,7 @@ def calibration_parameters(**kwargs):
                         "The range of {} is 0 ~ 100, but the received value is {}".format(parameter, value))
             elif parameter in ['account', 'password']:
                 check_value_type(parameter, value_type, MyPalletizer260DataException, str)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyPalletizer260DataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MyPalletizer260DataException, int)
@@ -1834,17 +1866,14 @@ def calibration_parameters(**kwargs):
             elif parameter == 'speed':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
 
-                if not (0 <= value <= 200):
+                if not (1 <= value <= 200):
                     raise ultraArmP340DataException(
-                        "Speed out of range, should be 0 ~ 200, but received {}".format(value))
-                if not 0 <= value <= 200:
-                    raise ultraArmP340DataException(
-                        "speed value not right, should be 0 ~ 200, the error speed is {}".format(value))
+                        "Speed out of range, should be 1 ~ 200, but received {}".format(value))
             elif parameter == 'wait_time':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
-                if not 0 <= value <= 65535:
+                if not 1 <= value <= 65535:
                     raise ultraArmP340DataException(
-                        "wait time value not right, should be 0 ~ 65535, the error time is {}".format(value))
+                        "wait time value not right, should be 1 ~ 65535, the error time is {}".format(value))
             elif parameter == 'p_value':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 0 <= value <= 255:
@@ -1857,9 +1886,9 @@ def calibration_parameters(**kwargs):
                         "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
             elif parameter == 'gripper_speed':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
-                if not 0 <= value <= 1500:
+                if not 1 <= value <= 1500:
                     raise ultraArmP340DataException(
-                        "gripper speed not right, should be 0 ~ 1500, the error gripper_speed is {}".format(value))
+                        "gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
             elif parameter == 'address':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 7 <= value <= 69:
@@ -1905,9 +1934,9 @@ def calibration_parameters(**kwargs):
                 if not isinstance(value, list):
                     raise ultraArmP340DataException(
                         "`{}` must be a list, but the received {}".format(parameter, type(value)))
-                if len(value) not in [3]:
+                if len(value) not in [3, 4]:
                     raise ultraArmP340DataException(
-                        "The length of `{}` must be 3, but the received length is {}".format(parameter, len(value)))
+                        "The length of `{}` must be 3 or 4, but the received length is {}".format(parameter, len(value)))
                 min_coord = robot_limit[class_name]["coords_min"]
                 max_coord = robot_limit[class_name]["coords_max"]
                 for idx, coord in enumerate(value):
