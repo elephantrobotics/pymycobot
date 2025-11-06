@@ -7,7 +7,7 @@ import socket
 import numpy as np
 
 from pymycobot.close_loop import CloseLoop
-from pymycobot.robot_info import _interpret_status_code
+from pymycobot.robot_info import _interpret_status_code, RobotStatusPro450Info
 from pymycobot.common import ProtocolCode,ProGripper
 
 
@@ -269,6 +269,51 @@ class Pro450Client(CloseLoop):
                     for i in range(start, start + 12, 2):
                         val = (res[i] << 8) | res[i + 1]
                         parsed.append(self._val_to_bits_list(val))
+
+                info = RobotStatusPro450Info.error_info[self.language]
+                output_msgs = []  # Record all erroneous text
+
+                if res[0] == 1:
+                    msg = '机器人发生碰撞检测' if self.language == "zh_CN" else 'Robot collision detected'
+                    print(f"⚠️ {msg}")
+                    output_msgs.append(msg)
+                elif res[1] == 1:
+                    msg = '机器人正在运动' if self.language == "zh_CN" else 'Robot is moving'
+                    print(f"⚠️ {msg}")
+                    output_msgs.append(msg)
+
+                # Byte3-8: Joint over-limit
+                for i, val in enumerate(res[2:8]):
+                    if val == 1:
+                        msg = info["joint_limit"][i]
+                        print(f"⚠️ {msg}")
+                        output_msgs.append(msg)
+
+                # Byte9-20: Motor error
+                for i in range(6):
+                    high = res[8 + i * 2]
+                    low = res[8 + i * 2 + 1]
+                    val = (high << 8) | low
+                    if val != 0:
+                        bits = [bit for bit in range(16) if (val >> bit) & 1]
+                        for bit in bits:
+                            msg = info["motor_error"].get(bit,"未知错误" if self.language == "zh_CN" else "Unknown error")
+                            print(
+                                f"错误: 关节{i + 1} - {msg}" if self.language == "zh_CN" else f"Error: Joint{i + 1} - {msg}")
+                            output_msgs.append(f"J{i + 1} 电机异常: {msg}")
+
+                # Byte21-32: Communication error
+                for i in range(6):
+                    high = res[20 + i * 2]
+                    low = res[20 + i * 2 + 1]
+                    val = (high << 8) | low
+                    if val != 0:
+                        bits = [bit for bit in range(16) if (val >> bit) & 1]
+                        for bit in bits:
+                            msg = info["comm_error"].get(bit, "未知错误" if self.language == "zh_CN" else "Unknown error")
+                            print(
+                                f"错误: 关节{i + 1} - {msg}" if self.language == "zh_CN" else f"Error: Joint{i + 1} - {msg}")
+                            output_msgs.append(f"J{i + 1} 通信异常: {msg}")
 
                 return parsed
         elif genre == ProtocolCode.IS_INIT_CALIBRATION:
