@@ -1218,29 +1218,25 @@ class Pro450Client(CloseLoop):
             class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
 
-    def base_external_can_control(self, can_id, can_data, mode=2):
+    def base_external_can_control(self, can_id, can_data):
         """Bottom external device can control
 
         Args:
             can_id (int): 1 - 4.
             can_data (list): The maximum length is 64
-            mode (int): 2 - can mode
-
         """
         self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
         can_id_bytes = can_id.to_bytes(4, 'big')
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, mode, *can_id_bytes, *can_data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *can_id_bytes, *can_data)
 
-    def base_external_485_control(self, data, mode=1):
+    def base_external_485_control(self, data):
         """Bottom external device 485 control
 
         Args:
             data (list): The maximum length is 64
-            mode (int):  1 - 485 mode
-
         """
         self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, mode, *data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *data)
 
     def get_error_information(self):
         """Obtaining robot error information
