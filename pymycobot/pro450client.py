@@ -1222,7 +1222,7 @@ class Pro450Client(CloseLoop):
         """Bottom external device can control
 
         Args:
-            can_id (int): 1 - 4.
+            can_id (int): 1 - 65535.
             can_data (list): The maximum length is 64
         """
         self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
