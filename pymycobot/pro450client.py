@@ -46,7 +46,7 @@ class Pro450Client(CloseLoop):
         elif read_data == 1:
             return 1
         elif read_data == -2:
-            return -1
+            return 1
         elif read_data == 0:
             return read_data
         if isinstance(read_data, tuple):
@@ -1117,11 +1117,16 @@ class Pro450Client(CloseLoop):
         Args:
             communicate_mode (int): 1 - 485. 2 - can
             baud_rate (int): Baud rate
-            timeout (int): Timeout
+            timeout (int): Timeout ms
 
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, communicate_mode, baud_rate, timeout)
+        self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode,
+                                    baud_rate=baud_rate, timeout=timeout)
+        data = bytearray()
+        data += communicate_mode.to_bytes(1, 'big')
+        data += baud_rate.to_bytes(4, 'big')
+        data += timeout.to_bytes(4, 'big')
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, *data)
 
     def get_base_external_config(self):
         """Read the bottom external device configuration
@@ -1129,7 +1134,7 @@ class Pro450Client(CloseLoop):
         Returns:
             communicate_mode (int): 1 - 485. 2 - can
             baud_rate (int): Baud rate
-            timeout (int): Timeout
+            timeout (int): Timeout ms
 
         """
         return self._mesg(ProtocolCode.GET_BASE_EXTERNAL_CONFIG)
@@ -1163,7 +1168,8 @@ class Pro450Client(CloseLoop):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, can_id, can_data)
+        can_id_bytes = can_id.to_bytes(4, 'big')
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *can_id_bytes, *can_data)
 
     def base_external_485_control(self, data):
         """Bottom external device 485 control
@@ -1173,7 +1179,7 @@ class Pro450Client(CloseLoop):
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
-        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *data)
 
     def get_error_information(self):
         """Obtaining robot error information

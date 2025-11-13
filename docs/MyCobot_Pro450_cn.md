@@ -684,7 +684,7 @@ print(mc.get_angles())
     - `1`: 485
     - `2`: can
   - `baud_rate` (`int`): 波特率
-  - `timeout`: 超时时间
+    - `timeout`: (`int`) 超时时间，单位毫秒
 
 #### `get_base_external_config()`
 
