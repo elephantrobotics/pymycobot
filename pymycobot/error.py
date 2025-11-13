@@ -78,6 +78,10 @@ class ultraArmP340DataException(Exception):
     pass
 
 
+class ultraArmP1DataException(Exception):
+    pass
+
+
 def check_boolean(b):
     if b != 0 and b != 1:
         raise MyCobotDataException("This parameter needs to be 0 or 1")
@@ -3400,6 +3404,102 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP340DataException(
                         f"Unsupported file format, please use .gcode, .ngc, or .nc, but received {value}"
                     )
+
+    elif class_name in ["UltraArmP1"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter == "joint_id":
+                if value not in [1, 2, 3, 4]:
+                    check_id(value, [1, 2, 3, 4], ultraArmP1DataException)
+            elif parameter == "axis_id":
+                if value not in [1, 2, 3]:
+                    raise ultraArmP1DataException(
+                        f"The axis_id not right, should be in [1, 2, 3], but received {value}."
+                    )
+            elif parameter == ["servo_restore", "set_motor_enabled"]:
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MyCobotPro450DataException(
+                        f"The joint_id should be in [1,2,3,4,5,6,254], but received {value}"
+                    )
+            elif parameter in ["angle"]:
+                joint_id = kwargs.get("joint_id", None)
+                index = robot_limit[class_name]["joint_id"][joint_id - 1] - 1
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                if value < min_angle[index] or value > max_angle[index]:
+                    raise ultraArmP1DataException(
+                        f"angle value not right, should be {min_angle[index]} ~ {max_angle[index]}, but received {value}"
+                    )
+            elif parameter == "coord":
+                coord_id = kwargs.get("coord_id", None)
+                coord_map = {"X": 0, "Y": 1, "Z": 2}
+                index = coord_map[coord_id]
+
+                min_val = robot_limit[class_name]["coords_min"][index]
+                max_val = robot_limit[class_name]["coords_max"][index]
+
+                if not (min_val <= value <= max_val):
+                    raise ultraArmP1DataException(
+                        f"Coordinate {coord_id} out of range: should be {min_val} ~ {max_val}, but received {value}"
+                    )
+            elif parameter == "coord_id":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, str
+                )
+                if value not in ["X", "Y", "Z"]:
+                    raise ultraArmP1DataException(
+                        f"coord_id must be 'X', 'Y', or 'Z', but received {value}"
+                    )
+            elif parameter == "speed":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, int
+                )
+
+                if not (1 <= value <= 5700):
+                    raise ultraArmP1DataException(
+                        f"Speed out of range, should be 1 ~ 5700, but received {value}"
+                    )
+            elif parameter == "wait_time":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, int
+                )
+                if not 1 <= value <= 65535:
+                    raise ultraArmP340DataException(
+                        f"wait time value not right, should be 1 ~ 65535, the error time is {value}"
+                    )
+            elif parameter == "angles":
+                if not isinstance(value, list):
+                    raise ultraArmP1DataException(
+                        f"`angles` must be a list, but the received {type(value)}"
+                    )
+                if len(value) not in [3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The length of `angles` must be 3 or 4, but received length is {len(value)}"
+                    )
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                for idx, angle in enumerate(value):
+                    if not min_angle[idx] <= angle <= max_angle[idx]:
+                        raise ultraArmP1DataException(
+                            f"Has invalid angle value, error on index {idx}. Received {angle} but angle should be {min_angle[idx]} ~ {max_angle[idx]}."
+                        )
+            elif parameter == "coords":
+                if not isinstance(value, list):
+                    raise ultraArmP1DataException(
+                        f"`{parameter}` must be a list, but the received {type(value)}"
+                    )
+                if len(value) not in [3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The length of `{parameter}` must be 3 or 4, but the received length is {len(value)}"
+                    )
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise ultraArmP1DataException(
+                            f"Has invalid coord value, error on index {idx}, received {coord}, but coord should be {min_coord[idx]} ~ {max_coord[idx]}."
+                        )
 
 
 def restrict_serial_port(func):

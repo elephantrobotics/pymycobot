@@ -472,5 +472,14 @@ class RobotLimit:
             "angles_max": [170, 90, 110, 179],
             "coords_min": [-360, -365.55, -140, -180],
             "coords_max": [366.55, 365.55, 130, 180]
+        },
+        "UltraArmP1": {
+            "joint_id": [1, 2, 3, 4],
+            "servo_id": [1, 2, 3, 4],
+            "coord_id": ['X', 'Y', 'Z'],
+            "angles_min": [-160, -20, 90, -180],
+            "angles_max": [160, 80, 170, 180],
+            "coords_min": [-360, -360, -250],
+            "coords_max": [360, 360, 90]
         }
     }

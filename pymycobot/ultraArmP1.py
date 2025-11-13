@@ -15,6 +15,7 @@ import threading
 import time
 
 from pymycobot.common import ProtocolCode
+from pymycobot.error import calibration_parameters
 
 
 class UltraArmP1:
@@ -41,6 +42,7 @@ class UltraArmP1:
         self._serial_port.dtr = True
         self._serial_port.open()
         self.debug = debug
+        self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
         time.sleep(1)
 
@@ -220,6 +222,31 @@ class UltraArmP1:
             self._debug(command)
             return self._request("coord")
 
+    # def set_coord(self, coord_id, coord, speed):
+    #     """Set single coordinate.
+    #
+    #     Args:
+    #         coord_id (str): 'X', 'Y', 'Z'
+    #         coord (float): coordinate value
+    #         speed (int): movement speed (1-200 mm/s)
+    #     """
+    #     self.calibration_parameters(
+    #         class_name=self.__class__.__name__,
+    #         coord_id=coord_id,
+    #         coord=coord,
+    #         speed=speed,
+    #     )
+    #     with self.lock:
+    #         command = ProtocolCode.COORDS_SET
+    #         command += f" {coord_id}{coord}"
+    #         command += f" F{speed}"
+    #         command += ProtocolCode.END
+    #
+    #         self._serial_port.write(command.encode())
+    #         self._serial_port.flush()
+    #         self._debug(command)
+    #         self._respone()
+
     def set_coords(self, coords, speed, _async=True, _gcode=False):
         """Move the robot using Cartesian coordinate control.
 
@@ -229,6 +256,8 @@ class UltraArmP1:
             _async: (bool): Closed-loop switch
             _gcode: (bool): GCode switch
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords, speed=speed)
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
             if len(coords) > 0 and coords[0] is not None:
@@ -256,6 +285,8 @@ class UltraArmP1:
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
             joint_map = {1: "A", 2: "B", 3: "C", 4: "D"}
@@ -278,6 +309,8 @@ class UltraArmP1:
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, angles=angles, speed=speed)
         with self.lock:
             command = ProtocolCode.SET_ANGLES_COORDS
             if len(angles) > 0 and angles[0] is not None:
