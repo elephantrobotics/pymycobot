@@ -1645,7 +1645,7 @@ def calibration_parameters(**kwargs):
             elif parameter in ["pin_no", "communicate_mode"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, MyCobotPro450DataException, int)
             elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration',
-                               'communication_mode', 'protocol_mode', 'state']:
+                               'communication_mode', 'protocol_mode', 'state', 'damping']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobotPro450DataException, int)
             elif parameter == "move_type":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
@@ -1725,9 +1725,9 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
             elif parameter == 'rank_value':
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if not 1 <= value <= 100:
+                if not 1 <= value <= 120:
                     raise MyCobotPro450DataException(
-                        "rank value not right, should be 1 ~ 100, the error speed is {}".format(value))
+                        "rank value not right, should be 1 ~ 120, the error speed is {}".format(value))
             elif parameter == "axis":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value not in [1,2,3]:
