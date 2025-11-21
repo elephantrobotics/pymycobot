@@ -533,12 +533,13 @@ print(mc.get_angles())
 - **功能**：获取关节碰撞阈值
 - **返回值**：一个列表, 全关节碰撞阈值
 
-#### `set_torque_comp(joint_id, comp_value=100)`
+#### `set_torque_comp(joint_id, damping, comp_value=0)`
 
 - **功能**设置力矩补偿系数
 - **参数**：
   - `joint_id` `int`: 关节ID，范围 1 ~ 6
-  - `comp_value`: 补偿值，范围0~250，默认100，值越小，关节拖动越吃力
+  - `damping` `int`: 范围 0 ~ 1。 1-打开，0-关闭
+  - `comp_value`: 补偿值，范围0~250，默认0，值越小，关节拖动越吃力
 
 #### `get_torque_comp()`
 

@@ -536,12 +536,13 @@ print(mc.get_angles())
 - **Function**: Get the joint collision threshold
 - **Return value**: A list of all joint collision thresholds
 
-#### `set_torque_comp(joint_id, comp_value=100)`
+#### `set_torque_comp(joint_id, damping, comp_value=0)`
 
 - **Function**: Set the torque compensation coefficient
 - **Parameter**:
   - `joint_id` `int`: Joint ID, range 1 to 6
-  - `comp_value`: Compensation value, range 0-250, default 100. Smaller values ​​result in more difficult joint dragging.
+  - `damping` `int`: Range 0 ~ 1. 1 - On, 0 - Off
+  - `comp_value`: Compensation value, range 0-250, default 0. Smaller values ​​result in more difficult joint dragging.
 
 #### `get_torque_comp()`
 

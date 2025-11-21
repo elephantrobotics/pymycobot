@@ -562,17 +562,6 @@ class Pro450CloseLoop(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_COLLISION_THRESHOLD)
 
-    def set_torque_comp(self, joint_id, comp_value=100):
-        """Set joint torque compensation
-
-        Args:
-            joint_id (int): joint ID， range 1 ~ 6
-            comp_value (int): Compensation value, range is 0 ~ 250, default is 100, The smaller the value, the harder it is to drag the joint
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, comp_value=comp_value)
-        return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, comp_value)
-
     def get_torque_comp(self):
         """Get joint torque compensation
         """
