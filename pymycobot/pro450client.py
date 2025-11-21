@@ -6,12 +6,12 @@ import socket
 
 import numpy as np
 
-from pymycobot.close_loop import CloseLoop
+from pymycobot.pro450_close_loop import Pro450CloseLoop
 from pymycobot.robot_info import _interpret_status_code, RobotStatusPro450Info
 from pymycobot.common import ProtocolCode,ProGripper
 
 
-class Pro450Client(CloseLoop):
+class Pro450Client(Pro450CloseLoop):
     def __init__(self, ip='192.168.0.232', netport=4500, debug=False):
         """
         Args:
@@ -41,6 +41,7 @@ class Pro450Client(CloseLoop):
         
     def _mesg(self, genre, *args, **kwargs):
         read_data = super(Pro450Client, self)._mesg(genre, *args, **kwargs)
+        # print('read_data:', read_data)
         if read_data is None:
             return -1
         elif read_data == 1:
@@ -372,7 +373,7 @@ class Pro450Client(CloseLoop):
 
         cmd.extend(self._modbus_crc(cmd))
         recv = self.tool_serial_write_data(cmd)
-        # time.sleep(0.05)
+        time.sleep(0.5)
         # recv = []
         # for _ in range(3):
         #     recv = self.tool_serial_read_data(expect_len)
@@ -386,26 +387,74 @@ class Pro450Client(CloseLoop):
 
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
 
-    def _write_and_check(self, gripper_id, reg_addr, value):
-        """Write register and verify return"""
+    def _write_and_check(self, gripper_id, reg_addr, value,
+                         timeout=4.0, poll_interval=0.1):
+        """Write register and verify response robustly (support calibration delay)"""
         self._check_gripper_id(gripper_id)
         high, low = (value >> 8) & 0xFF, value & 0xFF
-        cmd, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
-        if isinstance(recv, (list, bytearray)) and len(recv) >= 6 and recv[1] == 0x06:
+
+        # First time: Send a write command, but do not expect to receive a response immediately.
+        self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
+
+        start_t = time.time()
+        last_recv = None
+
+        while time.time() - start_t < timeout:
+            # Continuously read the response packets, and send a read command to trigger feedback each time.
+            _, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
+
+            last_recv = recv
+
+            if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
+                time.sleep(poll_interval)
+                continue
+
+            # The verification code must be 0x06 (write).
+            if recv[1] != 0x06:
+                continue
+
+            # Verify that the register address is consistent to avoid consuming old data.
+            if recv[2] != (reg_addr >> 8) & 0xFF or recv[3] != (reg_addr & 0xFF):
+                continue
+
+            # Determine the write return status
             if recv[4] == 0x00 and recv[5] == 0x01:
-                return 1
+                return 1  # success
             elif recv[4] == 0x00 and recv[5] == 0x00:
-                return 0
-            else:
-                return -1
+                return 0  # In progress/Not yet completed
+
         return -1
 
-    def _read_register(self, gripper_id, reg_addr):
-        """Reads a register and returns an integer value"""
+    def _write_and_check_old(self, gripper_id, reg_addr, value, retries=3):
+        """Write register and optionally retry if response is unexpected"""
         self._check_gripper_id(gripper_id)
-        _, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
-        if isinstance(recv, (list, bytearray)) and len(recv) >= 5 and recv[1] == 0x03:
-            return (recv[4] << 8) | recv[5]
+        high, low = (value >> 8) & 0xFF, value & 0xFF
+
+        for _ in range(retries):
+            cmd, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
+            time.sleep(0.05)
+
+            # 对力控夹爪，写命令不一定返回功能码+寄存器匹配，可以只检查长度或 CRC
+            if isinstance(recv, (list, bytearray)) and len(recv) >= 6 and recv[1] == 0x06:
+                return 1  # 写入成功
+            time.sleep(0.05)
+
+        return -1  # 多次尝试仍失败
+
+    def _read_register(self, gripper_id, reg_addr, retries=3):
+        """Reads a register with command verification"""
+        self._check_gripper_id(gripper_id)
+
+        for _ in range(retries):
+            cmd, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
+            time.sleep(0.05)
+
+            if isinstance(recv, (list, bytearray)) and len(recv) >= 6:
+                recv_func = recv[1]
+                recv_addr = (recv[2] << 8) | recv[3]
+                if recv_func == 0x03 and recv_addr == reg_addr:
+                    return (recv[4] << 8) | recv[5]
+
         return -1
 
     def _joint_limit_init(self):
@@ -485,6 +534,15 @@ class Pro450Client(CloseLoop):
 
         return error_info
 
+    def _check_jog_allowed(self):
+        """Check whether jog motion is allowed based on fresh mode."""
+        if self.get_fresh_mode() != 0:
+            if self.language == "en_US":
+                return 'Error: JOG motion cannot be used in refresh mode. Please switch to interpolation mode.'
+            else:
+                return '错误：刷新模式无法使用JOG运动，请切换插补模式使用'
+        return None
+
     def open(self):
         self.sock = self.connect_socket()
         
@@ -524,11 +582,33 @@ class Pro450Client(CloseLoop):
         Args:
             main_version (str): Tool firmware version (format: 'x.y')
             modified_version (int): Tool firmware modified version, 0~255, defaults to 0
+        Returns:
+            (str): firmware version
 
         """
+        wait_time = 45
         self.calibration_parameters(class_name=self.__class__.__name__, tool_main_version=main_version, tool_modified_version=modified_version)
         main_version = int(float(main_version) *10)
-        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
+        # return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
+        self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
+
+        print(f'Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
+
+        time.sleep(wait_time)
+
+        for _ in range(5):
+            tool_main_version = self.get_atom_version()
+            tool_modify_version = self.get_tool_modify_version()
+
+            if tool_main_version != -1 and tool_modify_version != -1:
+                version_str = f"v{tool_main_version}.{tool_modify_version}"
+                msg = f"Current firmware version：{version_str}"
+                return msg
+
+            time.sleep(1)
+
+        print("⚠️ Burning complete, but failed to read the end version number")
+        return -1
 
     def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions
@@ -1078,7 +1158,45 @@ class Pro450Client(CloseLoop):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
         return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, _async=_async, has_reply=True)
+
+    def jog_coord(self, coord_id, direction, speed, _async=True):
+        """Jog control coord. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the jog_base_coord interface
+
+        Args:
+            coord_id (int): int 1-6
+            direction (int): 0 - decrease, 1 - increase
+            speed (int): 1 - 100
+            _async (bool, optional): Whether to execute asynchronous control. Defaults to True.
+
+        Returns:
+            1: End of the Movement
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, direction=direction, speed=speed)
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
+        return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, _async=_async, has_reply=True)
+
+    def jog_rpy(self, axis, direction, speed, _async=True):
+        """Rotate the end point around the fixed axis of the base coordinate system
+
+        Args:
+            axis (int): 1 ~ 3. 1 - Roll, 2 - Pitch, 3 - Yaw
+            direction (int): 1 - Forward. 0 - Reverse.
+            speed (int): 1 ~ 100.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, axis=axis, direction=direction, speed=speed)
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
+        return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, _async=_async, has_reply=True)
 
     def set_fusion_parameters(self, rank_mode, value):
         """Set speed fusion planning parameters
@@ -1118,6 +1236,9 @@ class Pro450Client(CloseLoop):
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, speed=speed)
         scaled_increment = self._angle2int(increment)
         scaled_increment = max(min(scaled_increment, 32767), -32768)
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, has_reply=True, _async=_async)
 
     def jog_increment_coord(self, coord_id, increment, speed, _async=False):
@@ -1136,34 +1257,24 @@ class Pro450Client(CloseLoop):
         else:
             scaled_increment = self._angle2int(increment)
             value = max(min(scaled_increment, 32767), -32768)
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
-    def set_communication_mode(self, communication_mode, protocol_mode=None):
-        """Set communication mode
+    def set_communication_mode(self, protocol_mode):
+        """Set Modbus communication mode
         Args:
-            communication_mode (int):
-                0 - socket communication mode
-                1 - 485 communication mode
-            protocol_mode (int, optional):
-                0 - Custom protocol
-                1 - Modbus protocol
-                Default: None (means not specified)
+            protocol_mode (int):
+             0 - close modbus protocol
+             1 - open modbus protocol
         """
-        if protocol_mode is not None:
-            self.calibration_parameters(
-                class_name=self.__class__.__name__, communication_mode=communication_mode, protocol_mode=protocol_mode)
-            return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, communication_mode, protocol_mode)
-        else:
-            self.calibration_parameters(
-                class_name=self.__class__.__name__, communication_mode=communication_mode)
-            return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, communication_mode)
+        self.calibration_parameters(class_name=self.__class__.__name__, protocol_mode=protocol_mode)
+        return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, protocol_mode)
 
     def get_communication_mode(self):
         """Get communication mode
         Returns:
-            communication_mode (int):
-                0 - socket communication mode
-                1 - 485 communication mode
             protocol_mode (int, optional):
                 0 - Custom protocol
                 1 - Modbus protocol
@@ -1270,7 +1381,7 @@ class Pro450Client(CloseLoop):
         """Kinetic parameter identification"""
         return self._mesg(ProtocolCode.PARAMETER_IDENTIFY)
 
-    def fourier_trajectories(self, trajectory):
+    def fourier_trajectories(self, trajectory, _async=False):
         """Execute dynamic identification trajectory
 
         Args:
@@ -1278,7 +1389,28 @@ class Pro450Client(CloseLoop):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, trajectory=trajectory)
-        return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
+        # return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
+        res = self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory, _async=_async)
+
+        # 如果是异步模式，直接返回
+        if _async:
+            return res
+
+        stable_stop = 0
+        # print("Fourier trajectory started, waiting for finish...")
+
+        while True:
+            moving = self.is_moving()
+            # print("moving:", moving)
+
+            if moving == 0:
+                stable_stop += 1
+                if stable_stop >= 2:  # 连续两次停止 → 执行完毕
+                    return 0
+            else:
+                stable_stop = 0
+
+            time.sleep(0.01)
 
     def set_world_reference(self, coords):
         """Set the world coordinate system
@@ -1326,3 +1458,34 @@ class Pro450Client(CloseLoop):
         """
         return self._mesg(ProtocolCode.PRO450_GET_DIGITAL_INPUTS)
 
+    def set_filter_len(self, rank, value):
+        """Set the filter length
+
+        Args:
+            rank (int):
+                1 : Drag teaching sampling filter
+                2 : Drag teaching execution filter
+                3 : Joint velocity fusion filter
+                4 : Coordinate velocity fusion filter
+                5 : Drag teaching sampling period
+            value (int): Filter length, range is 1 ~ 120
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
+        return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
+
+    def set_torque_comp(self, joint_id, damping, comp_value=0):
+        """Set joint torque compensation
+
+        Args:
+            joint_id (int): joint ID， range 1 ~ 6
+            damping (int): damping  0-close 1-open
+            comp_value (int): Compensation value, range is 0 ~ 250, default is 0, The smaller the value, the harder it is to drag the joint
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, comp_value=comp_value, damping=damping)
+        return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, comp_value, damping)
+
+    def get_torque_comp(self):
+        """Get joint torque compensation
+        """
+        return self._mesg(ProtocolCode.GET_TORQUE_COMP)

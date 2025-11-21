@@ -128,17 +128,17 @@ print(mc.get_angles())
   - 0 - Failure
   - 1 - Error
 
-#### `set_communication_mode(communication_mode, protocol_mode=None)`
+#### `set_communication_mode(protocol_mode)`
 
-- **Function:** Sets the current robot communication mode.
+- **Function:** Sets the current robot Modbus communication mode.
 
 - **Parameters:**
-  - `communication_mode`: `int`
-    - 0 - Socket communication mode
-    - 1 - 485 communication mode
-  - `protocol_mode`: `int`, protocol mode, optional, default: None
-    - `0`: Custom protocol
-    - `1`: Modbus protocol
+
+  - `protocol_mode`: `int` 0 or 1
+
+    - `0`: close Modbus protocol
+
+    - `1`: open Modbus protocol
 - **Return value**: `int`
   - 1 - Success
   - 0 - Failure
@@ -149,9 +149,6 @@ print(mc.get_angles())
 - **Function:** Gets the current robot communication mode.
 
 - **Return value:**
-  - `communication_mode`: `int`
-    - 0 - Socket communication mode
-    - 1 - 485 communication mode
   - `protocol_mode`: `int`
     - `0`: Custom protocol
     - `1`: Modbus protocol
