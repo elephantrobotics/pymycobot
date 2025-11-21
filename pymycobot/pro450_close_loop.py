@@ -24,7 +24,6 @@ class Pro450CloseLoop(DataProcessor):
         self.lock = threading.Lock()
 
     def _send_command(self, genre, real_command):
-        self._cmd_start_time = time.time()
         self.write_command.append(genre)
         if "Socket" in self.__class__.__name__ or "Client" in self.__class__.__name__:
             self._write(self._flatten(real_command), method="socket")
