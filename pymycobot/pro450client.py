@@ -209,6 +209,7 @@ class Pro450Client(Pro450CloseLoop):
             ProtocolCode.GET_COLLISION_MODE,
             ProtocolCode.GET_IDENTIFY_MODE,
             ProtocolCode.GET_COMMUNICATION_MODE,
+            ProtocolCode.IS_MOTOR_PAUSE,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -1506,3 +1507,12 @@ class Pro450Client(Pro450CloseLoop):
             self.sync_mode = False
         elif limit_mode == 2 and state == 1:
             self.sync_mode = True
+
+    def is_motor_pause(self):
+        """Read motor pause status
+
+        Return:
+            1 : Paused, can be resumed using the resume() interface.
+            0 : Not paused.
+        """
+        return self._mesg(ProtocolCode.IS_MOTOR_PAUSE)

@@ -198,6 +198,16 @@ print(mc.get_angles())
 - **Function**: Read motor error information during robot motion
 - **Return value**: `list`, a list of 6, all zeros, indicating normal operation
 
+#### `is_motor_pause()`
+
+- **Function**: Reads the motor's pause status
+
+- **Return value**: `int`
+
+  - `0`: Not paused
+
+  - `1`: Paused, can be resumed using the resume() interface.
+
 ### 4.MDI Mode and Operation
 
 #### `set_control_mode(mode)`
