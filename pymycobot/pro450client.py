@@ -1489,3 +1489,20 @@ class Pro450Client(Pro450CloseLoop):
         """Get joint torque compensation
         """
         return self._mesg(ProtocolCode.GET_TORQUE_COMP)
+
+    def set_limit_switch(self, limit_mode, state):
+        """Set the master switch for motion closed loop.
+
+        Args:
+            limit_mode (int): 1 - Location out of tolerance. 2 - Synchronous control
+            state (int): 0 - close. 1 - open
+
+                set_limit_switch(2, 0) indicates that the motion loop is closed.
+                set_limit_switch(2, 1) indicates that the motion closed loop is opened.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, limit_mode=limit_mode, state=state)
+        if limit_mode == 2 and state == 0:
+            self.sync_mode = False
+        elif limit_mode == 2 and state == 1:
+            self.sync_mode = True
