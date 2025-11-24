@@ -246,6 +246,29 @@ class UltraArmP1:
     #         self._serial_port.flush()
     #         self._debug(command)
     #         self._respone()
+    def set_coords_max_speed(self, coords, _async=True, _gcode=False):
+        """The robot moves at its maximum speed using Cartesian coordinates.
+
+        Args:
+            coords (list[float]): Coordinates [X, Y, Z].
+            _async: (bool): Closed-loop switch
+            _gcode: (bool): GCode switch
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        with self.lock:
+            command = ProtocolCode.SET_COORDS_MAX_SPEED
+            if len(coords) > 0 and coords[0] is not None:
+                command += f" X{coords[0]}"
+            if len(coords) > 1 and coords[1] is not None:
+                command += f" Y{coords[1]}"
+            if len(coords) > 2 and coords[2] is not None:
+                command += f" Z{coords[2]}"
+
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._respone(_async=_async, _gcode=_gcode)
 
     def set_coords(self, coords, speed, _async=True, _gcode=False):
         """Move the robot using Cartesian coordinate control.
@@ -259,7 +282,7 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, coords=coords, speed=speed)
         with self.lock:
-            command = ProtocolCode.SET_ANGLES_COORDS
+            command = ProtocolCode.SET_COORDS
             if len(coords) > 0 and coords[0] is not None:
                 command += f" X{coords[0]}"
             if len(coords) > 1 and coords[1] is not None:
