@@ -127,13 +127,13 @@ print(mc.get_angles())
   - 0-失败
   - -1-错误
 
-#### `set_communication_mode(protocol_mode)`
+#### `set_communication_mode(protocol_mode=0)`
 
 - **功能:** 设置当前机器人Modbus通信模式。
   
 - **参数:**
   - `protocol_mode`: `int` 0 或者 1
-    - `0`: 关闭 Modbus协议
+    - `0`: 关闭 Modbus协议, 默认关闭
     - `1`: 打开 Modbus协议
 - **返回值**：`int`
   - 1-成功

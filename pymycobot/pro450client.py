@@ -1263,11 +1263,11 @@ class Pro450Client(Pro450CloseLoop):
             return msg
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
-    def set_communication_mode(self, protocol_mode):
+    def set_communication_mode(self, protocol_mode=0):
         """Set Modbus communication mode
         Args:
             protocol_mode (int):
-             0 - close modbus protocol
+             0 - close modbus protocol, default
              1 - open modbus protocol
         """
         self.calibration_parameters(class_name=self.__class__.__name__, protocol_mode=protocol_mode)
