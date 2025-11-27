@@ -244,12 +244,12 @@ print(mc.get_angles())
   - `degree`: degree value(`float`)
     | Joint Id | range |
     | ---- | ---- |
-    | 1 | -165 ~ 165 |
-    | 2 | -120 ~ 120 |
-    | 3 | -158 ~ 158 |
-    | 4 | -165 ~ 165 |
-    | 5 | -165 ~ 165 |
-    | 6 | -175 ~ 175 |
+    | 1 | -162 ~ 162 |
+    | 2 | -114 ~ 114 |
+    | 3 | -154 ~ 154 |
+    | 4 | -162 ~ 162 |
+    | 5 | -162 ~ 162 |
+    | 6 | -165 ~ 165 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100
 
