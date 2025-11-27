@@ -477,6 +477,7 @@ class RobotLimit:
             "joint_id": [1, 2, 3, 4],
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z'],
+            "jog_coord_id": [1, 2, 3],
             "angles_min": [-160, -20, 90, -360],
             "angles_max": [160, 80, 200, 360],
             "coords_min": [-280.7, -298.7, -250],

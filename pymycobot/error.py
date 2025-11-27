@@ -3500,6 +3500,43 @@ def calibration_parameters(**kwargs):
                         raise ultraArmP1DataException(
                             f"Has invalid coord value, error on index {idx}, received {coord}, but coord should be {min_coord[idx]} ~ {max_coord[idx]}."
                         )
+            elif parameter == "increment_angle":
+                joint_id = kwargs.get("joint_id", None)
+                index = robot_limit[class_name]["joint_id"][joint_id - 1] - 1
+                span = abs(
+                    robot_limit[class_name]["angles_max"][index]
+                    - robot_limit[class_name]["angles_min"][index]
+                )
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise ultraArmP1DataException(
+                        f"increment angle value not right, should be {increment_min} ~ {increment_max}, but received {value}"
+                    )
+
+            elif parameter == "increment_coord":
+                jog_coord_id = kwargs.get("jog_coord_id", None)
+                index = (
+                    robot_limit[class_name]["jog_coord_id"][jog_coord_id - 1] - 1
+                )  # Get the index based on the ID
+                span = abs(
+                    robot_limit[class_name]["coords_max"][index]
+                    - robot_limit[class_name]["coords_min"][index]
+                )
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise ultraArmP1DataException(
+                        f"Coordinate increment value not right, should be {increment_min} ~ {increment_max}, but received {value}"
+                    )
+            elif parameter == "jog_speed":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (1 <= value <= 200):
+                    raise ultraArmP1DataException(
+                        f"Speed out of range, should be 1 ~ 200, but received {value}")
 
 
 def restrict_serial_port(func):
