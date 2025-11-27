@@ -1198,7 +1198,17 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                     continue
                 break
             elif len(datas) == 2:
+                if data == b'\xfe':
+                    datas += data
+                    data_len = -1
+                else:
+                    data_len = struct.unpack("b", data)[0]
+                    datas += data
+            elif len(datas) == 3 and datas[:3] == b'\xfe\xfe\xfe' and data_len == -1:
+                # This resolves an issue where the `get_servo_data(4, 85)` interface
+                # on 280 PI and JN version machines cannot read parameters at address 85 of servo motor 4.
                 data_len = struct.unpack("b", data)[0]
+                datas = datas[1:]
                 datas += data
             elif len(datas) > 2 and data_len > 0:
                 datas += data
