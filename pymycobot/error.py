@@ -3413,9 +3413,9 @@ def calibration_parameters(**kwargs):
                 if value not in [1, 2, 3, 4]:
                     check_id(value, [1, 2, 3, 4], ultraArmP1DataException)
             elif parameter == "axis_id":
-                if value not in [1, 2, 3]:
+                if value not in [1, 2, 3, 4]:
                     raise ultraArmP1DataException(
-                        f"The axis_id not right, should be in [1, 2, 3], but received {value}."
+                        f"The axis_id not right, should be in [1, 2, 3, 4], but received {value}."
                     )
             elif parameter == ["servo_restore", "set_motor_enabled"]:
                 if value not in [1, 2, 3, 4, 5, 6, 254]:
@@ -3534,9 +3534,84 @@ def calibration_parameters(**kwargs):
             elif parameter == "jog_speed":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
 
-                if not (1 <= value <= 200):
+                if not (1 <= value <= 5700):
                     raise ultraArmP1DataException(
-                        f"Speed out of range, should be 1 ~ 200, but received {value}")
+                        f"Speed out of range, should be 1 ~ 5700, but received {value}")
+            elif parameter in ["direction", "state", "pin_signal", "shaft_state"]:
+                check_0_or_1(parameter, value, [0, 1], value_type, ultraArmP1DataException, int)
+            elif parameter == "gripper_speed":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (1 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"gripper_speed out of range, should be 1 ~ 100, but received {value}")
+            elif parameter == "gripper_angle":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (1 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"gripper_angle out of range, should be 1 ~ 100, but received {value}")
+            elif parameter in ["gripper_addr"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 69):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 69, but received {value}")
+            elif parameter in ["gripper_mode"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [1, 2]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 2, but received {value}")
+
+            elif parameter in ["parameter_value"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                gripper_mode = kwargs.get("gripper_mode", None)
+                if gripper_mode is None:
+                    raise ultraArmP1DataException("gripper_mode must be specified before parameter_value")
+
+                if gripper_mode == 1:
+                    if not (0 <= value <= 255):
+                        raise ultraArmP1DataException(
+                            f"When gripper_mode=1, the parameter_value only supports 0 ~ 255, but received {value}")
+                elif gripper_mode == 2:
+                    if not (value > 255):
+                        raise ultraArmP1DataException(
+                            f"When gripper_mode=2, the parameter_value must > 255, but received {value}")
+            elif parameter in ["pump_state"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [0, 1, 2]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 2, but received {value}")
+            elif parameter in ["end_pin_no"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [1, 2, 3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 4, but received {value}")
+            elif parameter in ["basic_pin_no"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 10):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 10, but received {value}")
+            elif parameter in ["p_value"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 255):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 255, but received {value}")
+            elif parameter in ["baud_rate"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 65535):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 65535, but received {value}")
+            elif parameter in ["number_data"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 49):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 49, but received {value}")
+
+            elif parameter in ["joint_number"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 4):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 4, but received {value}")
 
 
 def restrict_serial_port(func):

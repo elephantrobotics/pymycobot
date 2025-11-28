@@ -15,6 +15,7 @@ import threading
 import time
 import datetime
 
+from demo.myArm_demo.myarm_handle_control import command
 from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
 
@@ -41,7 +42,7 @@ class UltraArmP1:
         self._serial_port.timeout = timeout
         self._serial_port.rts = True
         self._serial_port.dtr = True
-        # self._serial_port.open()
+        self._serial_port.open()
         self.debug = debug
         self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
@@ -240,20 +241,14 @@ class UltraArmP1:
         self._serial_port.flush()
 
     # ---------------------- Control methods ----------------------
-    def set_unlock(self):
-        """Unlock the robot's safety state."""
-        with self.lock:
-            self._send_command(ProtocolCode.SET_UNLOCK)
-            return self._response(_async=False)
-
     def set_reboot(self):
-        """Reboot the robot controller board."""
+        """Reboot the robot controller board.(Internal Interface)"""
         with self.lock:
             self._send_command(ProtocolCode.SET_REBOOT)
             return self._response(_async=False)
 
-    def set_joint_disable(self):
-        """Disable the robot joints."""
+    def set_joint_release(self):
+        """release the robot joints."""
         with self.lock:
             self._send_command(ProtocolCode.SET_JOINT_DISABLE)
             return self._response(_async=False)
@@ -288,7 +283,7 @@ class UltraArmP1:
         """The robot moves at its maximum speed using Cartesian coordinates.
 
         Args:
-            coords (list[float]): Coordinates [X, Y, Z].
+            coords (list[float]): Coordinates [X, Y, Z, RX].
             _async: (bool): Closed-loop switch
             _gcode: (bool): GCode switch
         """
@@ -301,6 +296,8 @@ class UltraArmP1:
                 command += f" Y{coords[1]}"
             if len(coords) > 2 and coords[2] is not None:
                 command += f" Z{coords[2]}"
+            if len(coords) > 3 and coords[3] is not None:
+                command += f" R{coords[3]}"
 
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
@@ -324,6 +321,8 @@ class UltraArmP1:
                 command += f" Y{coords[1]}"
             if len(coords) > 2 and coords[2] is not None:
                 command += f" Z{coords[2]}"
+            if len(coords) > 3 and coords[3] is not None:
+                command += f" R{coords[3]}"
             if speed is not None and 1 <= speed <= 5700:
                 command += f" F{speed}"
 
@@ -407,12 +406,12 @@ class UltraArmP1:
         """Start jog movement with angle
 
         Args:
-            joint_id : joint(1/2/3)
+            joint_id : 1 ~ 4
 
             direction :
                 1 : Negative motion
                 0 : Positive motion
-            speed : (int) 1-200 mm/s
+            speed : (int) 1-5700
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
                                     jog_speed=speed)
@@ -428,12 +427,12 @@ class UltraArmP1:
         """Start jog movement with coord
 
         Args:
-            axis_id(int) : axis 1-X, 2-Y, 3-Z
+            axis_id(int) : axis 1-X, 2-Y, 3-Z, 4-RX
 
             direction:
                 1 : Negative motion
                 0 : Positive motion
-            speed : (int) 1-200 mm/s
+            speed : (int) 1-5700
         """
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     jog_speed=speed)
@@ -451,33 +450,32 @@ class UltraArmP1:
         Args:
             joint_id: Joint id 1 - 4
             increment: Angle increment value
-            speed: int (1 - 200)
+            speed: int (1 - 5700)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
         with self.lock:
             command = ProtocolCode.JOG_INCREMENT_ANGLE_P1
             command += " J" + str(joint_id)
-            command += " D" + str(increment)
+            command += " T" + str(increment)
             command += " F" + str(speed)
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
     def jog_increment_coord(self, coord_id, increment, speed, _async=False, _gcode=False):
         """Single coordinate incremental motion control.
-        This interface is based on a single arm 1-axis coordinate system.
 
         Args:
             coord_id: axis id 1 - 4.
             increment: Coord increment value
-            speed: int (1 - 200)
+            speed: int (1 - 5700)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
         with self.lock:
             command = ProtocolCode.JOG_INCREMENT_ANGLE_P1
             command += " J" + str(coord_id)
-            command += " D" + str(increment)
+            command += " T" + str(increment)
             command += " F" + str(speed)
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
@@ -487,11 +485,43 @@ class UltraArmP1:
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
         return self._request("error_information")
 
+    def set_zero_calibration(self, joint_number):
+        """Set zero-point calibration.
+
+        Args:
+            joint_number (int) : 0 ~ 4
+                0 : All joint
+                1: J1
+                2: J2
+                3: J3
+                4: J4
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_number=joint_number)
+        with self.lock:
+            self._send_command(ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1)
+            return self._response(_async=False)
+
     def get_zero_calibration_state(self):
-        """Read zero-point calibration status."""
+        """Read zero-point calibration status.
+
+        Returns:
+            (list) zero-point calibration status, len 4
+        """
         with self.lock:
             self._send_command(ProtocolCode.GET_BACK_ZERO_STATUS_P1)
             return self._request("zero_calibration_state")
+
+    def set_joint1_encoder_calibration(self):
+        """Set the 730 encoder calibration for J1.(Internal Interface)"""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_J1_ENCODER_CALIBRATION_P1)
+            return self._response(_async=False)
+
+    def get_run_status(self):
+        """Read running status."""
+        with self.lock:
+            self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1)
+            return self._request("run_status")
 
     def open_laser(self):
         """Open laser"""
@@ -505,13 +535,13 @@ class UltraArmP1:
             self._send_command(ProtocolCode.CLOSE_LASER)
             return self._response(_async=False)
 
-    def set_gripper_state(self, gripper_angle, gripper_speed):
+    def set_gripper_angle(self, gripper_angle, gripper_speed):
         """Set gripper angle.
 
         Args:
-            gripper_angle (int): 0 - 100
+            gripper_angle (int): 1 - 100
 
-            gripper_speed: 1 - 1500
+            gripper_speed(int): 1 - 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle,
                                     gripper_speed=gripper_speed)
@@ -519,6 +549,283 @@ class UltraArmP1:
             command = ProtocolCode.SET_GRIPPER_ANGLE_P1
             command += " A" + str(gripper_angle)
             command += " F" + str(gripper_speed)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def get_gripper_angle(self):
+        """Read gripper angle.
+
+        Returns: (int) gripper angle.
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_GRIPPER_ANGLE_P1)
+            return self._request("get_gripper_angle")
+
+    def set_gripper_parameter(self, addr, mode, parameter_value):
+        """Set gripper parameter
+
+        Args:
+            addr (int) : axis 1-X, 2-Y, 3-Z, 4-RX
+            mode (int) : 1 - 2
+            parameter_value (int) : 1 - 100
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr,
+                                    gripper_mode=mode, parameter_value=parameter_value)
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_PARAMETER_P1
+            command += " A" + str(addr)
+            command += " P" + str(mode)
+            command += " D" + str(parameter_value)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def get_gripper_parameter(self):
+        """Get gripper parameter.
+
+        Returns: gripper parameter.
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_GRIPPER_PARAMETER_P1)
+            return self._request("get_gripper_parameter")
+
+    def get_gripper_run_status(self):
+        """Get gripper running status.
+
+        Returns: gripper status.
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_GRIPPER_RUN_STATUS_P1)
+            return self._request("get_gripper_run_status")
+
+    def set_gripper_enable_status(self, state):
+        """set gripper enable status.
+
+        Args:
+            state (int) :
+                0 - disabled
+                1 - enabled
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_ENABLE_STATUS_P1
+            command += " S" + str(state)
+            self._send_command(command)
+            return self._response(_async=False)
+
+    def set_gripper_zero(self):
+        """Set gripper zero."""
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_ZERO_P1
+            self._send_command(command)
+            self._response(_async=False)
+
+    def set_pump_state(self, pump_state):
+        """Set the suction pump's on/off state.
+
+        Args:
+            pump_state (int) :
+                0 - open
+                1 - release
+                2 - closed
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pump_state=pump_state)
+        with self.lock:
+            command = ProtocolCode.SET_PUMP_STATE_P1
+            command += " S" + str(pump_state)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def set_basic_io_output(self, pin_no, pin_signal):
+        """Set the status of the base output pin.
+
+        Args:
+            pin_no (int) : 1 ~ 10
+            pin_signal (int) : 0 ~ 1
+                0 - Low level
+                1 - High level
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no, pin_signal=pin_signal)
+        with self.lock:
+            command = ProtocolCode.SET_BASIC_OUTPUT_P1
+            command += " P" + str(pin_no)
+            command += " S" + str(pin_signal)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def set_digital_io_output(self, pin_no, pin_signal):
+        """Set the state of the end output pin.
+
+        Args:
+            pin_no (int) : 1 ~ 4
+            pin_signal (int) : 0 ~ 1
+                0 - Low level
+                1 - High level
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, end_pin_no=pin_no, pin_signal=pin_signal)
+        with self.lock:
+            command = ProtocolCode.SET_DIGITAL_OUTPUT_P1
+            command += " P" + str(pin_no)
+            command += " S" + str(pin_signal)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def set_outer_shaft(self, shaft_state, speed):
+        """Set the state of the end output pin.
+
+        Args:
+            shaft_state (int) : 0 ~ 1
+                0 - close
+                1 - open
+            speed (int) : 1 ~ 5700
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, shaft_state=shaft_state, speed=speed)
+        with self.lock:
+            command = ProtocolCode.SET_OUTER_SHAFT_P1
+            command += " S" + str(shaft_state)
+            command += " F" + str(speed)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def set_pwm(self, p_value):
+        """PWM control.
+
+        Args:
+            p_value (int) : Duty cycle 0 ~ 255; 128 means 50%
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, p_value=p_value)
+        with self.lock:
+            command = ProtocolCode.SET_PWM_VALUE_P1
+            command += " P" + str(p_value)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def set_i2c_data(self, data_state, data_addr, data_len, data_value):
+        """Set i2c data.
+
+        Args:
+            data_state (int) : 0 ~ 1
+                0 - read
+                1 - write
+            data_addr (int) : 0 ~ 255
+            data_len (int) : 0 ~ 64
+            data_value (int) : 0 ~ 255
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, data_state=data_state,
+                                    data_addr=data_addr, data_len=data_len, data_value=data_value)
+        with self.lock:
+            command = ProtocolCode.SET_OUTER_SHAFT_P1
+            command += " S" + str(data_state)
+            command += " A" + str(data_addr)
+            command += " L" + str(data_len)
+            command += " D" + str(data_value)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def drag_teach_start(self):
+        """Drag teach start"""
+        with self.lock:
+            command = ProtocolCode.DRAG_TEACH_START_P1
+            self._send_command(command)
+            self._response(_async=False)
+
+    def drag_teach_reproduction(self, number_data):
+        """Drag teach reproduction
+
+        Args:
+            number_data (int) : 0 ~ 49
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, number_data=number_data)
+        with self.lock:
+            command = ProtocolCode.DRAG_TEACH_REPRODUCTION_P1
+            command += " B" + str(number_data)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def drag_teach_pause(self):
+        """Drag teach pause"""
+        with self.lock:
+            command = ProtocolCode.DRAG_TEACH_PAUSE_P1
+            self._send_command(command)
+            self._response(_async=False)
+
+    def drag_teach_resume(self, number_data):
+        """Drag teach resume
+
+        Args:
+            number_data (int) : 0 ~ 49
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, number_data=number_data)
+        with self.lock:
+            command = ProtocolCode.DRAG_TEACH_PAUSE_P1
+            command += " B" + str(number_data)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def drag_teach_stop(self):
+        """Drag teach stop"""
+        with self.lock:
+            command = ProtocolCode.DRAG_TEACH_STOP_P1
+            self._send_command(command)
+            self._response(_async=False)
+
+    def drag_teach_execute(self):
+        """Drag teach execute"""
+        with self.lock:
+            command = ProtocolCode.DRAG_TEACH_EXECUTE_P1
+            self._send_command(command)
+            self._response(_async=False)
+
+    def wifi_open(self):
+        """wifi open"""
+        with self.lock:
+            command = ProtocolCode.WIFI_OPEN_P1
+            self._send_command(command)
+            self._response(_async=False)
+
+    def get_system_screen_version(self):
+        """Read system screen version.
+
+        Returns: (float) screen version.
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_GRIPPER_ANGLE_P1)
+            return self._request("get_screen_version")
+
+    def get_modify_screen_version(self):
+        """Read modify screen version.
+
+        Returns: (float) modify screen version.
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_GRIPPER_ANGLE_P1)
+            return self._request("get_modify_screen_version")
+
+    def set_communication_baud_rate(self, baud_rate):
+        """set communication baud rate
+
+        Args:
+            baud_rate (int) : 1 ~ 65535
+            """
+        self.calibration_parameters(class_name=self.__class__.__name__, baud_rate=baud_rate)
+        with self.lock:
+            command = ProtocolCode.DRAG_TEACH_EXECUTE_P1
+            command += " B" + str(baud_rate)
+            self._send_command(command)
+            self._response(_async=False)
+
+    def update_stm_firmware(self):
+        """update stm firmware"""
+        with self.lock:
+            command = ProtocolCode.UPDATE_STM32_FIRMWARE
+            self._send_command(command)
+            self._response(_async=False)
+
+    def receive_485_data(self):
+        """receive 485 data"""
+        with self.lock:
+            command = ProtocolCode.RECEIVE_485_DATA_P1
             self._send_command(command)
             self._response(_async=False)
 
