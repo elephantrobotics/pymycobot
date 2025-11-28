@@ -150,12 +150,18 @@ class MyCobot280(CommandGenerator):
             data = self._read(genre)
         else:
             try_count = 0
+            expected_genre = genre
             while try_count < 3:
+                self._serial_port.reset_input_buffer()
                 self._write(self._flatten(real_command))
                 data = self._read(genre)
-                if data is not None and data != b'':
-                    break
-                try_count += 1
+                if not data or len(data) < 4:
+                    try_count += 1
+                    continue
+                if data[3] != expected_genre:
+                    try_count += 1
+                    continue
+                break
             else:
                 return -1
         if genre == ProtocolCode.SET_SSID_PWD:
