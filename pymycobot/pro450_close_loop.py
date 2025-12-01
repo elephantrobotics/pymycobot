@@ -610,7 +610,7 @@ class Pro450CloseLoop(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, rank=rank)
         return self._mesg(ProtocolCode.GET_FILTER_LEN, rank)
 
-    def set_filter_len(self, rank, value):
+    def set_filter_len(self, rank, value=120):
         """Set the filter length
 
         Args:
@@ -620,7 +620,7 @@ class Pro450CloseLoop(DataProcessor):
                 3 : Joint velocity fusion filter
                 4 : Coordinate velocity fusion filter
                 5 : Drag teaching sampling period
-            value (int): Filter length, range is 1 ~ 120
+            value (int): Filter length, range is 1 ~ 255
         """
         self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)

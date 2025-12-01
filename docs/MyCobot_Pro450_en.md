@@ -275,7 +275,7 @@ print(mc.get_angles())
     | ---- | ---- |
     | x | -466 ~ 466 |
     | y | -466 ~ 466 |
-    | z | -230 ~ 614 |
+    | z | -150 ~ 677 |
     | rx | -180 ~ 180 |
     | ry | -180 ~ 180 |
     | rz | -180 ~ 180 |
@@ -906,7 +906,12 @@ print(mc.get_angles())
 - **Function:** Set filter parameters
 - **Parameters:**
   - `rank (int)`: 1 to 5
-  - `value (int)`: 1 to 100
+    - `1`: Drag teach sampling filter
+    - `2`: Drag teach execution filter
+    - `3`: Joint velocity fusion filter
+    - `4`: Coordinate velocity fusion filter
+    - `5`: Drag teach sampling period
+  - `value (int)`: 1 to 255
 
 #### `get_fusion_parameters(rank_mode)`
 

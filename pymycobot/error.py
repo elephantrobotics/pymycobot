@@ -1725,9 +1725,9 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
             elif parameter == 'rank_value':
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if not 1 <= value <= 120:
+                if not 1 <= value <= 255:
                     raise MyCobotPro450DataException(
-                        "rank value not right, should be 1 ~ 120, the error speed is {}".format(value))
+                        "rank value not right, should be 1 ~ 255, the error speed is {}".format(value))
             elif parameter == "axis":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value not in [1,2,3]:
