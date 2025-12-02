@@ -379,19 +379,27 @@ from pymycobot import UltraArmP1
 
 - **Parameter description:**
 
-  - `addr`: `int`, 1 ~ 4
+  - `addr`: `int`, 1 ~ 69
 
   - `mode:` (`int`): 1 ~ 2
 
-  - `parameter_value` (`int`): 1 ~ 100
+  - `parameter_value` (`int`):
+    - `Mode 1:` 0 ~ 255
 
+    - `Mode 2:` Greater than 255
 - **Return value:** 1
 
-## 26 `get_gripper_parameter()`
+## 26 `get_gripper_parameter(addr, mode)`
 
 - **Function:** Reads the gripper parameter
+- **Parameter description:**
+  - `addr`: `int`, 1 ~ 69
 
-- **Return value:** Gripper parameter
+  - `mode:` (`int`): 1 ~ 2
+- **Return value:** (int) Gripper parameter
+    - `Mode 1:` 0 ~ 255
+
+    - `Mode 2:` Greater than 255
 
 ## 27 `set_gripper_enable_status(state):`
 

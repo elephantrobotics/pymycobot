@@ -304,18 +304,27 @@ from pymycobot import UltraArmP1
 - **功能：** 设置夹爪参数
 
 - **参数说明:** 
-  - `addr`： `int`, 1 ~ 4
+  - `addr`： `int`, 1 ~ 69
 
   - `mode:`  (`int`): 1 ~ 2
-  - `parameter_value` (`int`): 1 ~ 100
+  - `parameter_value` (`int`):
+    - `模式为1`：0 ~ 255
+    - `模式为2`： 大于255
 
 - **返回值：** 1
 
-## 26 `get_gripper_parameter()`
+## 26 `get_gripper_parameter(addr, mode)`
 
 - **功能：** 读取夹爪参数
 
-- **返回值：** 夹爪参数
+- **参数说明:** 
+  - `addr`： `int`, 1 ~ 69
+
+  - `mode:`  (`int`): 1 ~ 2
+
+- **返回值：** (int) 夹爪参数
+  - `模式为1`：0 ~ 255
+  - `模式为2`： 大于255
 
 ## 27 `set_gripper_enable_status(state):`
 

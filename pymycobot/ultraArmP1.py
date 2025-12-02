@@ -547,7 +547,7 @@ class UltraArmP1:
                                     gripper_speed=gripper_speed)
         with self.lock:
             command = ProtocolCode.SET_GRIPPER_ANGLE_P1
-            command += " A" + str(gripper_angle)
+            command += " P" + str(gripper_angle)
             command += " F" + str(gripper_speed)
             self._send_command(command)
             self._response(_async=False)
@@ -565,28 +565,40 @@ class UltraArmP1:
         """Set gripper parameter
 
         Args:
-            addr (int) : axis 1-X, 2-Y, 3-Z, 4-RX
+            addr (int) : 1 ~ 69
             mode (int) : 1 - 2
-            parameter_value (int) : 1 - 100
+            parameter_value (int) :
+                mode is 1: 0 ~ 255
+                mode is 2: > 255
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr,
                                     gripper_mode=mode, parameter_value=parameter_value)
         with self.lock:
             command = ProtocolCode.SET_GRIPPER_PARAMETER_P1
-            command += " A" + str(addr)
-            command += " P" + str(mode)
-            command += " D" + str(parameter_value)
+            command += " J" + str(addr)
+            command += " K" + str(mode)
+            command += " L" + str(parameter_value)
             self._send_command(command)
             self._response(_async=False)
 
-    def get_gripper_parameter(self):
+    def get_gripper_parameter(self, addr, mode):
         """Get gripper parameter.
 
-        Returns: gripper parameter.
+        Args:
+            addr (int) : 1 ~ 69
+            mode (int) : 1 - 2
+
+        Returns: (int) gripper parameter.
+            mode is 1: 0 ~ 255
+            mode is 2: > 255
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr, gripper_mode=mode)
         with self.lock:
-            self._send_command(ProtocolCode.GET_GRIPPER_PARAMETER_P1)
+            command = ProtocolCode.GET_GRIPPER_PARAMETER_P1
+            command += " J" + str(addr)
+            command += " K" + str(mode)
+            self._send_command(command)
             return self._request("get_gripper_parameter")
 
     def get_gripper_run_status(self):
@@ -717,9 +729,9 @@ class UltraArmP1:
         with self.lock:
             command = ProtocolCode.SET_OUTER_SHAFT_P1
             command += " S" + str(data_state)
-            command += " A" + str(data_addr)
-            command += " L" + str(data_len)
-            command += " D" + str(data_value)
+            command += " L" + str(data_addr)
+            command += " N" + str(data_len)
+            command += " M" + str(data_value)
             self._send_command(command)
             self._response(_async=False)
 
