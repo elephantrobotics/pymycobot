@@ -22,6 +22,7 @@ class Pro450CloseLoop(DataProcessor):
         self.all_read_data = b""
         self.lock_out = threading.Lock()
         self.lock = threading.Lock()
+        self.event = threading.Event()
 
     def _send_command(self, genre, real_command):
         self.write_command.append(genre)
@@ -116,6 +117,8 @@ class Pro450CloseLoop(DataProcessor):
         check_is_moving_t = 1
 
         while True and time.time() - t < wait_time:
+            self.event.wait(0.1)
+            self.event.clear()
             with self.lock_out:
                 for v in self.read_command:
                     read_data = v[0]
@@ -199,7 +202,7 @@ class Pro450CloseLoop(DataProcessor):
                             if genre in self.write_command:
                                 self.write_command.remove(genre)
                         return -2
-            time.sleep(0.0001)
+            # time.sleep(0.0001)
         else:
             # print("ERROR: ---超时---")
             pass
@@ -269,10 +272,11 @@ class Pro450CloseLoop(DataProcessor):
                             with self.lock:
                                 self.read_command.append(
                                     [res, time.time()])
+                            self.event.set()
             except Exception as e:
                 # self.log.error("read error: {}".format(traceback.format_exc()))
                 pass
-            time.sleep(0.0001)
+            # time.sleep(0.0001)
 
     def _process_received(self, data):
         if not data:
