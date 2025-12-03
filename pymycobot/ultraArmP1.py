@@ -15,7 +15,6 @@ import threading
 import time
 import datetime
 
-from demo.myArm_demo.myarm_handle_control import command
 from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
 
@@ -44,6 +43,7 @@ class UltraArmP1:
         self._serial_port.dtr = True
         self._serial_port.open()
         self.debug = debug
+        self._debug = debug
         self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
         time.sleep(1)
@@ -236,6 +236,7 @@ class UltraArmP1:
     def _send_command(self, command: str):
         """Send commands to serial port"""
         command += ProtocolCode.END
+        print('command_write', command)
         self._debug_write(command)
         self._serial_port.write(command.encode())
         self._serial_port.flush()
@@ -498,7 +499,9 @@ class UltraArmP1:
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_number=joint_number)
         with self.lock:
-            self._send_command(ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1)
+            command = ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1
+            command += " J" + str(joint_number)
+            self._send_command(command)
             return self._response(_async=False)
 
     def get_zero_calibration_state(self):
@@ -550,7 +553,7 @@ class UltraArmP1:
             command += " P" + str(gripper_angle)
             command += " F" + str(gripper_speed)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def get_gripper_angle(self):
         """Read gripper angle.
@@ -580,7 +583,7 @@ class UltraArmP1:
             command += " K" + str(mode)
             command += " L" + str(parameter_value)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def get_gripper_parameter(self, addr, mode):
         """Get gripper parameter.
@@ -630,7 +633,7 @@ class UltraArmP1:
         with self.lock:
             command = ProtocolCode.SET_GRIPPER_ZERO_P1
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def set_pump_state(self, pump_state):
         """Set the suction pump's on/off state.
@@ -646,7 +649,7 @@ class UltraArmP1:
             command = ProtocolCode.SET_PUMP_STATE_P1
             command += " S" + str(pump_state)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def set_basic_io_output(self, pin_no, pin_signal):
         """Set the status of the base output pin.
@@ -663,7 +666,7 @@ class UltraArmP1:
             command += " P" + str(pin_no)
             command += " S" + str(pin_signal)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def set_digital_io_output(self, pin_no, pin_signal):
         """Set the state of the end output pin.
@@ -680,7 +683,7 @@ class UltraArmP1:
             command += " P" + str(pin_no)
             command += " S" + str(pin_signal)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def set_outer_shaft(self, shaft_state, speed):
         """Set the state of the end output pin.
@@ -697,7 +700,7 @@ class UltraArmP1:
             command += " S" + str(shaft_state)
             command += " F" + str(speed)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def set_pwm(self, p_value):
         """PWM control.
@@ -711,7 +714,7 @@ class UltraArmP1:
             command = ProtocolCode.SET_PWM_VALUE_P1
             command += " P" + str(p_value)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def set_i2c_data(self, data_state, data_addr, data_len, data_value):
         """Set i2c data.
@@ -733,14 +736,14 @@ class UltraArmP1:
             command += " N" + str(data_len)
             command += " M" + str(data_value)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def drag_teach_start(self):
         """Drag teach start"""
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_START_P1
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def drag_teach_reproduction(self, number_data):
         """Drag teach reproduction
@@ -753,14 +756,14 @@ class UltraArmP1:
             command = ProtocolCode.DRAG_TEACH_REPRODUCTION_P1
             command += " B" + str(number_data)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def drag_teach_pause(self):
         """Drag teach pause"""
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_PAUSE_P1
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def drag_teach_resume(self, number_data):
         """Drag teach resume
@@ -773,28 +776,28 @@ class UltraArmP1:
             command = ProtocolCode.DRAG_TEACH_PAUSE_P1
             command += " B" + str(number_data)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def drag_teach_stop(self):
         """Drag teach stop"""
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_STOP_P1
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def drag_teach_execute(self):
         """Drag teach execute"""
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_EXECUTE_P1
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def wifi_open(self):
         """wifi open"""
         with self.lock:
             command = ProtocolCode.WIFI_OPEN_P1
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def get_system_screen_version(self):
         """Read system screen version.
@@ -825,21 +828,24 @@ class UltraArmP1:
             command = ProtocolCode.DRAG_TEACH_EXECUTE_P1
             command += " B" + str(baud_rate)
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def update_stm_firmware(self):
         """update stm firmware"""
         with self.lock:
             command = ProtocolCode.UPDATE_STM32_FIRMWARE
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
 
     def receive_485_data(self):
         """receive 485 data"""
         with self.lock:
             command = ProtocolCode.RECEIVE_485_DATA_P1
             self._send_command(command)
-            self._response(_async=False)
+            return self._response(_async=False)
+
+    def go_home(self):
+        self.set_angles([0, 0, 90, 0], 2000, _async=False)
 
     def close(self):
         """Close the serial port."""
