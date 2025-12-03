@@ -103,6 +103,7 @@ class Pro450CloseLoop(DataProcessor):
 
         need_break = False
         data = None
+        timeout = 3
 
         if self.__class__.__name__ == "Pro450Client":
             if genre == ProtocolCode.SET_FRESH_MODE:
@@ -110,6 +111,9 @@ class Pro450CloseLoop(DataProcessor):
             elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
                 timeout = 5
                 wait_time = 4
+            elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+                timeout = 4
+                wait_time = 10
             else:
                 timeout = 3
         interval_time = time.time()

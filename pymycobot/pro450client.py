@@ -374,7 +374,7 @@ class Pro450Client(Pro450CloseLoop):
 
         cmd.extend(self._modbus_crc(cmd))
         recv = self.tool_serial_write_data(cmd)
-        time.sleep(0.5)
+        # time.sleep(0.5)
         # recv = []
         # for _ in range(3):
         #     recv = self.tool_serial_read_data(expect_len)
@@ -395,16 +395,12 @@ class Pro450Client(Pro450CloseLoop):
         high, low = (value >> 8) & 0xFF, value & 0xFF
 
         # First time: Send a write command, but do not expect to receive a response immediately.
-        self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
+        # self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
 
         start_t = time.time()
-        last_recv = None
-
         while time.time() - start_t < timeout:
             # Continuously read the response packets, and send a read command to trigger feedback each time.
             _, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
-
-            last_recv = recv
 
             if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
                 time.sleep(poll_interval)
