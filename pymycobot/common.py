@@ -1199,6 +1199,9 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                 break
             elif len(datas) == 2:
                 data_len = struct.unpack("b", data)[0]
+                if data_len < 0 or data_len > 30:
+                    data_len = -1
+                    continue
                 datas += data
             elif len(datas) > 2 and data_len > 0:
                 datas += data
