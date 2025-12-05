@@ -218,6 +218,119 @@ class UltraArmP1:
                                         print(
                                             f"{self._now()} DEBU [UltraArmP1] _warn : coords parse failed, continue receiving...")
                                     # continue waiting
+                    elif flag == "error_information":
+                        if "error" in lower:
+                            idx = lower.find("error")
+                            bracket_start = lower.find("[", idx)
+                            bracket_end = lower.find("]", idx)
+                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                                try:
+                                    sub = lower[bracket_start + 1:bracket_end]
+                                    error_list = [int(x.strip()) for x in sub.split(",") if x.strip() != ""]
+                                    return error_list
+                                except Exception:
+                                    if self.debug:
+                                        print(
+                                            f"{self._now()} DEBU [UltraArmP1] _warn : error info parse failed, continue receiving...")
+                    elif flag == "get_gripper_angle":
+                        idx = lower.find("gripperangle")
+                        bracket_start = lower.find("[", idx)
+                        bracket_end = lower.find("]", idx)
+                        if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                            try:
+                                sub = lower[bracket_start + 1:bracket_end]
+                                gripper_angle = [int(x.strip()) for x in sub.split(",") if x.strip() != ""]
+                                return gripper_angle[0]
+                            except Exception:
+                                if self.debug:
+                                    print(
+                                        f"{self._now()} DEBU [UltraArmP1] _warn : gripper angle parse failed, continue receiving...")
+                    elif flag == "zero_calibration_state":
+                        idx = lower.find("zero state")
+                        bracket_start = lower.find("[", idx)
+                        bracket_end = lower.find("]", idx)
+                        if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                            try:
+                                sub = lower[bracket_start + 1:bracket_end]
+                                zero_state = [int(x.strip()) for x in sub.split(",") if x.strip() != ""]
+                                return zero_state
+                            except Exception:
+                                if self.debug:
+                                    print(
+                                        f"{self._now()} DEBU [UltraArmP1] _warn : zero calibration state parse failed, continue receiving...")
+                    # parse system version
+                    elif flag == "system_version":
+                        idx = lower.find("getsystemversion[")
+                        if idx != -1:
+                            bracket_start = lower.find("[", idx)
+                            bracket_end = lower.find("]", idx)
+                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                                try:
+                                    sub = lower[bracket_start + 1:bracket_end].strip()
+                                    version = round(float(sub), 1)  # 保留1位小数
+                                    return version / 10
+                                except Exception:
+                                    if self.debug:
+                                        print(
+                                            f"{self._now()} DEBU [UltraArmP1] _warn : system_version parse failed")
+
+                    # parse modify version
+                    elif flag == "modify_version":
+                        idx = lower.find("getmodifyversion[")
+                        if idx != -1:
+                            bracket_start = lower.find("[", idx)
+                            bracket_end = lower.find("]", idx)
+                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                                try:
+                                    sub = lower[bracket_start + 1:bracket_end].strip()
+                                    version = int(sub)  # 整数
+                                    return version
+                                except Exception:
+                                    if self.debug:
+                                        print(
+                                            f"{self._now()} DEBU [UltraArmP1] _warn : modify_version parse failed")
+                    elif flag == "run_status":
+                        idx = lower.find("mainmoving[")
+                        if idx != -1:
+                            bracket_start = lower.find("[", idx)
+                            bracket_end = lower.find("]", idx)
+                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                                try:
+                                    sub = lower[bracket_start + 1:bracket_end].strip()
+                                    version = int(sub)  # 整数
+                                    return version
+                                except Exception:
+                                    if self.debug:
+                                        print(
+                                            f"{self._now()} DEBU [UltraArmP1] _warn : run status parse failed")
+                    elif flag == "get_gripper_run_status":
+                        idx = lower.find("motionstate[")
+                        if idx != -1:
+                            bracket_start = lower.find("[", idx)
+                            bracket_end = lower.find("]", idx)
+                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                                try:
+                                    sub = lower[bracket_start + 1:bracket_end].strip()
+                                    version = int(sub)  # 整数
+                                    return version
+                                except Exception:
+                                    if self.debug:
+                                        print(
+                                            f"{self._now()} DEBU [UltraArmP1] _warn : get gripper run status parse failed")
+                    elif flag == "get_gripper_parameter":
+                        idx = lower.find("gripperparameters[")
+                        if idx != -1:
+                            bracket_start = lower.find("[", idx)
+                            bracket_end = lower.find("]", idx)
+                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+                                try:
+                                    sub = lower[bracket_start + 1:bracket_end].strip()
+                                    version = int(sub)  # 整数
+                                    return version
+                                except Exception:
+                                    if self.debug:
+                                        print(
+                                            f"{self._now()} DEBU [UltraArmP1] _warn : get gripper run status parse failed")
                     elif flag is None:
                         return -1
 

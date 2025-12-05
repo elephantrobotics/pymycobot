@@ -514,7 +514,7 @@ class ProtocolCode(object):
     SET_COORDS = 'G1'
     OPEN_LASER = 'M3'
     CLOSE_LASER = 'M5'
-    SET_ANGLES_P1 = 'G0'
+    SET_ANGLES_P1 = 'G1'
     SET_ANGLE_P1 = 'G1'
     # GET_JOINT_ANGLES_COORDS = 'M12'
     GET_JOINT_ANGLES_COORDS = '?'
@@ -540,7 +540,7 @@ class ProtocolCode(object):
     SET_OUTER_SHAFT_P1 = 'M80'
     SET_PWM_VALUE_P1 = 'M21'
     GET_BACK_ZERO_STATUS_P1 = "M119"
-    GET_RUNNING_STATUS_P1 = "M120"
+    GET_RUNNING_STATUS_P1 = "M200"
     SET_I2C_P1 = "M300"
     GET_SYSTEM_VERSION_P1 = "G6"
     GET_MODIFY_VERSION_P1 = "G7"
