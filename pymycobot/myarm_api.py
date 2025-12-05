@@ -77,6 +77,8 @@ class MyArmMCProcessor(DataProcessor):
             timeout = 0.4
         elif genre == ProtocolCode.POWER_ON:
             timeout = 2
+        elif genre == ProtocolCode.IS_SD_INSERT:
+            timeout = 1
         else:
             timeout = 0.1
 
@@ -132,7 +134,8 @@ class MyArmMCProcessor(DataProcessor):
                 ProtocolCode.POWER_ON,
                 ProtocolCode.GET_MASTER_PIN_STATUS,
                 ProtocolCode.GET_ATOM_PIN_STATUS,
-                ProtocolCode.GET_SERVO_D
+                ProtocolCode.GET_SERVO_D,
+                ProtocolCode.IS_SD_INSERT
             ]
 
             if genre in return_single_genres:

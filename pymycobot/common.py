@@ -517,6 +517,9 @@ class ProtocolCode(object):
     SET_JOINT_DISABLE = '*7'
     SET_JOINT_ENABLE = '*8'
 
+    # MyArm M750
+    IS_SD_INSERT = 0xC4
+
 
 class DataProcessor(object):
     crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client"]
