@@ -44,7 +44,11 @@ class Pro450Client(Pro450CloseLoop):
         if read_data is None:
             return -1
         elif read_data == 1:
-            return 1
+            if genre in [ProtocolCode.SET_TOOL_485_BAUD_RATE, ProtocolCode.SET_TOOL_SERIAL_TIMEOUT]:
+                time.sleep(0.3)
+                return 1
+            else:
+                return 1
         elif read_data == -2:
             return 1
         elif read_data == 0:
@@ -1621,12 +1625,12 @@ class Pro450Client(Pro450CloseLoop):
         """ Set the gripper modbus mode
 
         Args:
-            state (bool): 0 or 1, 0 - close modbus 1 - open modbus
+            state (int): 0 or 1, 0 - close modbus 1 - open modbus
             custom_mode (bool):
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
-            1 - success, 0 -    failed
+            1 - success, 0 -  failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         if custom_mode:
@@ -1750,7 +1754,6 @@ class Pro450Client(Pro450CloseLoop):
         print("The gripper is initializing, please wait...")
 
         self.set_tool_serial_timeout(250)
-        time.sleep(0.09)
 
         test = self.get_pro_gripper_angle(gripper_id=gripper_id)
         if test != -1:
@@ -1759,9 +1762,7 @@ class Pro450Client(Pro450CloseLoop):
             self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # gripper -> 115200
 
             self.set_tool_serial_baud_rate(115200)  # end -> 115200
-            time.sleep(0.3)
             self.set_tool_serial_timeout(10000)
-            time.sleep(0.09)
 
             print("Gripper Initialization Successful!")
             return True
@@ -1769,7 +1770,6 @@ class Pro450Client(Pro450CloseLoop):
         for baud in try_bauds:
             # print(f"\n👉 Try the end baud rate: {baud}")
             self.set_tool_serial_baud_rate(baud_rate=baud)
-            time.sleep(0.3)  # Waiting for hardware switchover and stabilization
 
             cfg = self.get_tool_config()
             # print(f"   485 current config: {cfg}")
@@ -1781,15 +1781,12 @@ class Pro450Client(Pro450CloseLoop):
             if test != -1:
                 self.set_pro_gripper_baud(0, gripper_id=gripper_id)
                 self.set_tool_serial_baud_rate(115200)
-                time.sleep(0.3)
                 self.set_tool_serial_timeout(10000)
-                time.sleep(0.09)
                 print("Gripper Initialization Successful!")
                 return True
 
             # print(f"\n👉 Try the end baud rate again: {baud}")
             self.set_tool_serial_baud_rate(baud_rate=baud)
-            time.sleep(0.3)
             cfg = self.get_tool_config()
             # print(f"   485 current config: {cfg}")
             ret = self.set_pro_gripper_modbus(1, True, gripper_id=gripper_id)
@@ -1808,9 +1805,7 @@ class Pro450Client(Pro450CloseLoop):
                     self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # change gripper → 115200
 
                     self.set_tool_serial_baud_rate(115200)  # end back → 115200
-                    time.sleep(0.3)
                     self.set_tool_serial_timeout(10000)
-                    time.sleep(0.09)
 
                     print("Gripper Initialization Successful!")
                     return True
