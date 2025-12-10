@@ -140,12 +140,17 @@ class MyCobot280Socket(CommandGenerator):
             data = self._read(genre, method='socket')
         else:
             try_count = 0
+            expected_genre = genre
             while try_count < 3:
                 self._write(self._flatten(real_command), "socket")
                 data = self._read(genre, method='socket')
-                if data is not None and data != b'':
-                    break
-                try_count += 1
+                if not data or len(data) < 4:
+                    try_count += 1
+                    continue
+                if data[3] != expected_genre:
+                    try_count += 1
+                    continue
+                break
             else:
                 return -1
         if genre == ProtocolCode.SET_SSID_PWD:

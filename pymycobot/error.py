@@ -418,7 +418,7 @@ def public_check(
                 check_0_or_1(
                     parameter,
                     value,
-                    [19, 22, 23, 33],
+                    [19, 22, 23, 33, 39],
                     value_type,
                     exception_class,
                     int,
