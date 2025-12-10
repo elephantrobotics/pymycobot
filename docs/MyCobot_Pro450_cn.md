@@ -1156,7 +1156,7 @@ print(mc.get_angles())
   - `state` (`int`): 范围 0 ~ 1。
     - `0`: 关闭modbus通信模式，打开自定义通信模式
     - `1`: 打开modbus通信模式，关闭自定义通信模式
-  - `custom_mode`: 自定义通信模式标识，默认False（当前是modbus模式）。如果当前是自定义通信模式，打开modbus通信模式，需要把custom_mode改为True. 比如：`set_pro_gripper_modbus(1, True)`
+  - `custom_mode` (`bool`): 自定义通信模式标识，默认False（当前是modbus模式）。如果当前是自定义通信模式，打开modbus通信模式，需要把custom_mode改为True. 比如：`set_pro_gripper_modbus(1, True)`
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
   - 0 - 失败

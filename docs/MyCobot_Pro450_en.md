@@ -1198,7 +1198,7 @@ print(mc.get_angles())
 
     - `1`: Enables Modbus communication mode, disables custom communication mode
 
-  - `custom_mode`: Custom communication mode identifier, default False (currently in Modbus mode). If the current communication mode is custom, to enable Modbus communication mode, you need to change `custom_mode` to `True`. For example: `set_pro_gripper_modbus(1, True)`
+  - `custom_mode` (`bool`): Custom communication mode identifier, default False (currently in Modbus mode). If the current communication mode is custom, to enable Modbus communication mode, you need to change `custom_mode` to `True`. For example: `set_pro_gripper_modbus(1, True)`
 
   - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
 
