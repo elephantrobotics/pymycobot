@@ -112,8 +112,11 @@ class Pro450CloseLoop(DataProcessor):
                 timeout = 5
                 wait_time = 4
             elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
-                timeout = 4
-                wait_time = 10
+                if real_command[7] in [36, 13]:
+                    timeout = 3
+                    wait_time = 10
+                else:
+                    wait_time = 0.25
             else:
                 timeout = 3
         interval_time = time.time()

@@ -52,6 +52,9 @@ class ProGripper(object):
     MODBUS_GET_MINI_PRESSURE = 0x1A
     MODBUS_SET_PROTECTION_CURRENT = 0x2B
     MODBUS_GET_PROTECTION_CURRENT = 0x2C
+    MODBUS_SET_MODE = 0x2F
+    MODBUS_GET_BAUD_RATE = 0x06
+    MODBUS_SET_BAUD_RATE = 0x05
 
 class MyHandGripper(object):
     GET_HAND_MAJOR_FIRMWARE_VERSION = 1
@@ -143,7 +146,6 @@ class ProtocolCode(object):
 
     CLEAR_ZERO_POS = 0x0A
     SET_MONITOR_STATE = 0x0A
-    SET_OVER_TIME = 0x0A
     SET_SERVO_CW = 0x0B
     GET_MONITOR_STATE = 0x0B
     GET_SERVO_CW = 0x0C
@@ -301,6 +303,9 @@ class ProtocolCode(object):
     # Set Debug Log for Pro450
     SET_DEBUG_LOG_MODE = 0x68
     GET_DEBUG_LOG_MODE = 0x69
+    SET_TOOL_SERIAL_TIMEOUT = 0xB9
+    SET_TOOL_485_BAUD_RATE = 0xB8
+    GET_TOOL_485_BAUD_RATE_TIMEOUT = 0xBA
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -1023,7 +1028,8 @@ def write(self, command, method=None):
             if isinstance(i, str):
                 log_command += i
             else:
-                log_command += hex(i)[2:] + " "
+                # log_command += hex(i)[2:] + " "
+                log_command += f"{i:02X} "
         self.log.debug("_write: {}".format(log_command))
 
         py_version = DataProcessor.check_python_version()

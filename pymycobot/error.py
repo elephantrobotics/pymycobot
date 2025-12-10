@@ -304,7 +304,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             elif class_name in ["MyCobot320", "MyCobot320Socket"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, exception_class, int)
             elif class_name in ["MyCobot280", "MyCobot280Socket", "MechArm270", "MechArmSocket", "MyPalletizer260", "MyPalletizerSocket"]:
-                check_0_or_1(parameter, value, [19, 22, 23, 33], value_type, exception_class, int)
+                check_0_or_1(parameter, value, [19, 22, 23, 33, 39], value_type, exception_class, int)
         elif parameter == "pin_no_basic":
             if class_name in ["Mercury"]:
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, exception_class, int)
@@ -1791,7 +1791,7 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 1 or value > 65535:
                     raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 65535, but received {}".format(parameter, value))
-            elif parameter in ["baud_rate", "timeout"]:
+            elif parameter in ["baud_rate"]:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
             elif parameter in ["can_data", "data_485"]:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, list)
@@ -1816,6 +1816,22 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
             elif parameter in ["tool_coords", "world_coords"]:
                 check_world_tool_coords(parameter, value, MyCobotPro450DataException)
+            elif parameter in ["gripper_baud_rate"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 1:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports 0 ~ 1, but received {}".format(parameter, value))
+            elif parameter in ["end_485_baud_rate"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                baud_list = [115200, 1000000]
+                if value not in baud_list:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports {}, but received {}".format(parameter, baud_list, value))
+            elif parameter in ["timeout"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 1 or value > 10000:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports 1 ~ 10000 ms, but received {}".format(parameter, value))
 
     elif class_name in ["ultraArmP340"]:
         for parameter in parameter_list[1:]:

@@ -41,7 +41,6 @@ class Pro450Client(Pro450CloseLoop):
         
     def _mesg(self, genre, *args, **kwargs):
         read_data = super(Pro450Client, self)._mesg(genre, *args, **kwargs)
-        # print('read_data:', read_data)
         if read_data is None:
             return -1
         elif read_data == 1:
@@ -150,6 +149,14 @@ class Pro450Client(Pro450CloseLoop):
         elif data_len in [6, 9, 32]:
             for i in valid_data:
                 res.append(i)
+
+            if genre == ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT:
+                baud_rate = int.from_bytes(res[0:4], byteorder="big", signed=False)
+                timeout = int.from_bytes(res[4:6], byteorder="big", signed=False)
+                return [baud_rate, timeout]
+        elif data_len == 11 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+            res_list = [i for i in valid_data]
+            return res_list
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_VOLTAGES,
@@ -210,6 +217,7 @@ class Pro450Client(Pro450CloseLoop):
             ProtocolCode.GET_IDENTIFY_MODE,
             ProtocolCode.GET_COMMUNICATION_MODE,
             ProtocolCode.IS_MOTOR_PAUSE,
+            ProtocolCode.IS_FREE_MODE,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -342,7 +350,7 @@ class Pro450Client(Pro450CloseLoop):
             return 0
         return [bit for bit in range(16) if (val >> bit) & 1]
 
-    def _modbus_crc(self, data: bytes) -> bytes:
+    def _modbus_crc(self, data: bytes, mode='little') -> bytes:
         crc = 0xFFFF
         for byte in data:
             crc ^= byte
@@ -352,9 +360,9 @@ class Pro450Client(Pro450CloseLoop):
                     crc ^= 0xA001
                 else:
                     crc >>= 1
-        return crc.to_bytes(2, byteorder='little')
+        return crc.to_bytes(2, byteorder=mode)
 
-    def _send_modbus_command(self, gripper_id, func_code, reg_addr, value_high=None, value_low=None, expect_len=7):
+    def _send_modbus_command(self, gripper_id, func_code, reg_addr, value_high=None, value_low=None, custom_mode=False):
         """
         General Modbus command sending method
 
@@ -364,22 +372,28 @@ class Pro450Client(Pro450CloseLoop):
             reg_addr: Register address
             value_high: High byte of the write data (can be None for read operations)
             value_low: Low byte of the write data (can be None for read operations)
-            expect_len: Expected return data length
         """
-        cmd = [gripper_id, func_code, (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
-        if func_code == 0x06:
-            cmd.extend([value_high, value_low])
-        else:
-            cmd.extend([0x00, 0x00])
+        # Base payload part shared by both modes
+        payload = [gripper_id, func_code,
+                   (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
 
-        cmd.extend(self._modbus_crc(cmd))
+        # Append value for write, or 0x00 0x00 for read
+        if func_code == 0x06:
+            payload.extend([value_high, value_low])
+        else:
+            payload.extend([0x00, 0x00])
+
+        # Build full command based on mode
+        if not custom_mode:
+            # Modbus RTU classic format
+            cmd = payload.copy()
+            cmd.extend(self._modbus_crc(cmd))  # little-endian
+        else:
+            # Custom packet: FE FE LEN + payload + CRC(big-end)
+            # LEN = payload length + CRC length (2)，即 6+2 = 8
+            cmd = [0xFE, 0xFE, 0x08] + payload
+            cmd.extend(self._modbus_crc(cmd, mode='big'))
         recv = self.tool_serial_write_data(cmd)
-        # time.sleep(0.5)
-        # recv = []
-        # for _ in range(3):
-        #     recv = self.tool_serial_read_data(expect_len)
-        #     if recv:
-        #         break
         if not recv:
             return cmd, -1
         return cmd, recv
@@ -388,71 +402,170 @@ class Pro450Client(Pro450CloseLoop):
 
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
 
-    def _write_and_check(self, gripper_id, reg_addr, value,
+    def _write_and_check(self, gripper_id, reg_addr, value, custom_mode=False):
+        """Write register and verify response robustly (support calibration delay)"""
+        self._check_gripper_id(gripper_id)
+        high, low = (value >> 8) & 0xFF, value & 0xFF
+        # Continuously read the response packets, and send a read command to trigger feedback each time.
+        _, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low, custom_mode)
+
+        # Basic validity check
+        if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
+            return -1
+
+        # Two modes have different byte offsets
+        # Modbus RTU standard: [id][cmd][regH][regL][valH][valL]...
+        # Custom packet       : [fe][fe][len][id][cmd][regH][regL][valH][valL]...
+        offset = 0 if not custom_mode else 3
+
+        cmd_idx = 1 + offset  # command index
+        reg_h_idx = 2 + offset  # register high
+        reg_l_idx = 3 + offset  # register low
+        val_h_idx = 4 + offset  # value high
+        val_l_idx = 5 + offset  # value low
+
+        # Verify command
+        if recv[cmd_idx] != 0x06:
+            return -1
+
+        # Verify register address consistency
+        if recv[reg_h_idx] != (reg_addr >> 8) & 0xFF or recv[reg_l_idx] != (reg_addr & 0xFF):
+            return -1
+
+        # Determine return status
+        if recv[val_h_idx] == 0x00 and recv[val_l_idx] == 0x01:
+            return 1
+
+        return -1
+        # if not custom_mode:
+        #     if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
+        #         return -1
+        #     # The verification code must be 0x06 (write).
+        #     if recv[1] != 0x06:
+        #         return -1
+        #     # Verify that the register address is consistent to avoid consuming old data.
+        #     if recv[2] != (reg_addr >> 8) & 0xFF or recv[3] != (reg_addr & 0xFF):
+        #         return -1
+        #     # Determine the write return status
+        #     if recv[4] == 0x00 and recv[5] == 0x01:
+        #         return 1  # success
+        #     else:
+        #         return -1
+        # else:
+        #     if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
+        #         return -1
+        #
+        #     # The verification code must be 0x06 (write).
+        #     if recv[4] != 0x06:
+        #         return -1
+        #
+        #     # Verify that the register address is consistent to avoid consuming old data.
+        #     if recv[5] != (reg_addr >> 8) & 0xFF or recv[6] != (reg_addr & 0xFF):
+        #         return -1
+        #
+        #     # Determine the write return status
+        #     if recv[7] == 0x00 and recv[8] == 0x01:
+        #         return 1  # success
+        #     else:
+        #         return -1
+
+    def _read_register(self, gripper_id, reg_addr):
+        """Reads a register with command verification"""
+        self._check_gripper_id(gripper_id)
+
+        cmd, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
+
+        if isinstance(recv, (list, bytearray)) and len(recv) >= 6:
+            recv_func = recv[1]
+            recv_addr = (recv[2] << 8) | recv[3]
+            if recv_func == 0x03 and recv_addr == reg_addr:
+                return (recv[4] << 8) | recv[5]
+            else:
+                return -1
+
+        return -1
+    def _send_modbus_command_custom(self, gripper_id, func_code, reg_addr, value_high=None, value_low=None):
+        """
+        General Modbus command sending method
+
+        Args:
+            gripper_id: Device ID
+            func_code: Function code (0x03 = read, 0x06 = write)
+            reg_addr: Register address
+            value_high: High byte of the write data (can be None for read operations)
+            value_low: Low byte of the write data (can be None for read operations)
+        """
+        cmd = [0xFE,0XFE,0x08,gripper_id, func_code, (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
+        # cmd = [gripper_id, func_code, (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
+        if func_code == 0x06:
+            cmd.extend([value_high, value_low])
+        else:
+            cmd.extend([0x00, 0x00])
+        cmd.extend(self._modbus_crc(cmd, mode='big'))
+        recv = self.tool_serial_write_data(cmd)
+        if not recv:
+            return cmd, -1
+        return cmd, recv
+
+    def _write_and_check_custom(self, gripper_id, reg_addr, value,
                          timeout=4.0, poll_interval=0.1):
         """Write register and verify response robustly (support calibration delay)"""
         self._check_gripper_id(gripper_id)
         high, low = (value >> 8) & 0xFF, value & 0xFF
-
-        # First time: Send a write command, but do not expect to receive a response immediately.
-        # self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
-
         start_t = time.time()
-        while time.time() - start_t < timeout:
+        # while time.time() - start_t < timeout:
             # Continuously read the response packets, and send a read command to trigger feedback each time.
-            _, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
+        _, recv = self._send_modbus_command_custom(gripper_id, 0x06, reg_addr, high, low)
 
-            if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
-                time.sleep(poll_interval)
-                continue
+        if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
+            time.sleep(poll_interval)
+            return -1
 
-            # The verification code must be 0x06 (write).
-            if recv[1] != 0x06:
-                continue
+        # The verification code must be 0x06 (write).
+        if recv[4] != 0x06:
+            return -1
 
-            # Verify that the register address is consistent to avoid consuming old data.
-            if recv[2] != (reg_addr >> 8) & 0xFF or recv[3] != (reg_addr & 0xFF):
-                continue
+        # Verify that the register address is consistent to avoid consuming old data.
+        if recv[5] != (reg_addr >> 8) & 0xFF or recv[6] != (reg_addr & 0xFF):
+            return -1
 
-            # Determine the write return status
-            if recv[4] == 0x00 and recv[5] == 0x01:
-                return 1  # success
-            elif recv[4] == 0x00 and recv[5] == 0x00:
-                return 0  # In progress/Not yet completed
+        # Determine the write return status
+        if recv[7] == 0x00 and recv[8] == 0x01:
+            return 1  # success
+        else:
+            return -1
 
-        return -1
+    def clear_socket_buffer(self):
+        with self.lock:  # 防止 read_thread 抢读
+            self.sock.setblocking(False)
+            try:
+                while True:
+                    try:
+                        data = self.sock.recv(4096)  # 更大
+                        if not data:
+                            break
+                    except BlockingIOError:
+                        break
+            finally:
+                self.sock.setblocking(True)
 
-    def _write_and_check_old(self, gripper_id, reg_addr, value, retries=3):
-        """Write register and optionally retry if response is unexpected"""
-        self._check_gripper_id(gripper_id)
-        high, low = (value >> 8) & 0xFF, value & 0xFF
+    def debug_clear_socket(self):
+        total = 0
+        self.sock.setblocking(False)
+        try:
+            while True:
+                try:
+                    data = self.sock.recv(4096)
+                    if not data:
+                        break
+                    print("清空读取:", len(data), "bytes ->", data.hex(' '))
+                    total += len(data)
+                except BlockingIOError:
+                    break
+        finally:
+            self.sock.setblocking(True)
 
-        for _ in range(retries):
-            cmd, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low)
-            time.sleep(0.05)
-
-            # 对力控夹爪，写命令不一定返回功能码+寄存器匹配，可以只检查长度或 CRC
-            if isinstance(recv, (list, bytearray)) and len(recv) >= 6 and recv[1] == 0x06:
-                return 1  # 写入成功
-            time.sleep(0.05)
-
-        return -1  # 多次尝试仍失败
-
-    def _read_register(self, gripper_id, reg_addr, retries=3):
-        """Reads a register with command verification"""
-        self._check_gripper_id(gripper_id)
-
-        for _ in range(retries):
-            cmd, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
-            time.sleep(0.05)
-
-            if isinstance(recv, (list, bytearray)) and len(recv) >= 6:
-                recv_func = recv[1]
-                recv_addr = (recv[2] << 8) | recv[3]
-                if recv_func == 0x03 and recv_addr == reg_addr:
-                    return (recv[4] << 8) | recv[5]
-
-        return -1
+        print("清空总计:", total, "bytes")
 
     def _joint_limit_init(self):
         max_joint = np.zeros(6)
@@ -556,22 +669,6 @@ class Pro450Client(Pro450CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, set_motor_enabled=joint_id, state=state)
         return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
-
-    def set_over_time(self, timeout=1000):
-        """
-        Set the timeout (unit: ms)
-        Default is 1000ms (1 second)
-
-        Args:
-            timeout (int): Timeout period, in ms, range 0~65535
-        """
-        if not isinstance(timeout, int) or not (0 <= timeout <= 65535):
-            raise ValueError("Timeout must be an integer between 0 and 65535 milliseconds.")
-
-        high_byte = (timeout >> 8) & 0xFF
-        low_byte = timeout & 0xFF
-
-        return self._mesg(ProtocolCode.SET_OVER_TIME, high_byte, low_byte)
 
     def flash_tool_firmware(self, main_version, modified_version=0):
         """Burn tool firmware
@@ -1512,3 +1609,205 @@ class Pro450Client(Pro450CloseLoop):
             0 : Not paused.
         """
         return self._mesg(ProtocolCode.IS_MOTOR_PAUSE)
+
+    def set_pro_gripper_modbus(self, state, custom_mode=False, gripper_id=14):
+        """ Set the gripper modbus mode
+
+        Args:
+            state (bool): 0 or 1, 0 - close modbus 1 - open modbus
+            custom_mode (bool):
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 -    failed
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        if custom_mode:
+            return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MODE, state, custom_mode=custom_mode)
+        else:
+            return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MODE, state)
+
+    def set_pro_gripper_baud(self, baud_rate=0, gripper_id=14):
+        """ Set the gripper baud rate
+
+        Args:
+            baud_rate (int): 0 ~ 5, defaults to 0 - 115200
+                0 - 115200
+                1 - 1000000
+                2 - 57600
+                3 - 19200
+                4 - 9600
+                5 - 4800
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            1 - success, 0 - failed
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_baud_rate=baud_rate)
+        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_BAUD_RATE, baud_rate)
+
+    def get_pro_gripper_baud(self, gripper_id=14):
+        """ Set the gripper baud rate
+
+        Args:
+            gripper_id (int): 1 ~ 254, defaults to 14
+
+        Returns:
+            baud_rate (int): 0 ~ 5, defaults to 0 - 115200
+                0 - 115200
+                1 - 1000000
+                2 - 57600
+                3 - 19200
+                4 - 9600
+                5 - 4800
+        """
+        return self._read_register(gripper_id, ProGripper.MODBUS_GET_BAUD_RATE)
+
+    def set_tool_serial_baud_rate(self, baud_rate=115200):
+        """ Set the end 485 baud rate
+
+            Args:
+                baud_rate (int): Standard baud rates, such as 115200, 1000000, 57600, 19200, 9600, 4800.
+                                defaults to 115200
+            """
+        self.calibration_parameters(class_name=self.__class__.__name__, end_485_baud_rate=baud_rate)
+        data = bytearray()
+        data += baud_rate.to_bytes(4, 'big')
+        return self._mesg(ProtocolCode.SET_TOOL_485_BAUD_RATE, *data)
+
+    def set_tool_serial_timeout(self, timeout=10000):
+        """
+        Set end 485 timeout (unit: ms)
+
+        Args:
+            timeout (int): Timeout period, in ms, range 0 ~ 10000 ms, defaults to 10000
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, timeout=timeout)
+
+        high_byte = (timeout >> 8) & 0xFF
+        low_byte = timeout & 0xFF
+
+        return self._mesg(ProtocolCode.SET_TOOL_SERIAL_TIMEOUT, high_byte, low_byte)
+
+    def get_tool_config(self):
+        """ Get the end 485 baud rate and timeout
+
+            Returns: (list) [baud_rate, timeout]
+            """
+        return self._mesg(ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT)
+
+    def set_free_move_mode(self, mode):
+        """ Set the free move mode"""
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_FREE_MODE, mode)
+
+    def get_free_move_mode(self):
+        """ Set the free move mode"""
+        return self._mesg(ProtocolCode.IS_FREE_MODE)
+
+    def set_pro_gripper_init(self, gripper_id=14):
+        """
+        Initialize the Pro450 gripper and automatically recover communication.
+
+        This function automatically handles **four possible gripper states** and
+        brings the device back to Modbus mode at **115200 baud**:
+
+        1. Already in Modbus mode with baudrate = 115200
+           - Angle reading works directly.
+
+        2. Modbus mode but baudrate incorrect (e.g., 1,000,000)
+           - Angle fails at 115200 but succeeds at alternative baudrate.
+
+        3. Custom (non-Modbus) mode + correct baudrate
+           - Baudrate is correct but Modbus commands fail.
+           - Forcing Modbus mode succeeds.
+
+        4. Custom mode + wrong baudrate
+           - Requires scanning possible baudrates and forcing Modbus mode.
+
+        After successful initialization:
+          - Gripper is set to Modbus mode (mode = 1)
+          - Baudrate is restored to 115200
+          - Tool serial port baudrate is restored to 115200
+
+        Args:
+            gripper_id (int): Modbus ID of the gripper, range 1–254.
+                Defaults to 14.
+
+        Returns:
+            bool: True if initialization succeeds, otherwise False.
+        """
+
+        try_bauds = [115200, 1000000]
+
+        print("The gripper is initializing, please wait...")
+
+        self.set_tool_serial_timeout(250)
+        time.sleep(0.09)
+
+        test = self.get_pro_gripper_angle(gripper_id=gripper_id)
+        if test != -1:
+            self.set_pro_gripper_modbus(1, gripper_id=gripper_id)  # ensure normal modbus mode
+
+            self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # gripper -> 115200
+
+            self.set_tool_serial_baud_rate(115200)  # end -> 115200
+            time.sleep(0.3)
+            self.set_tool_serial_timeout(10000)
+            time.sleep(0.09)
+
+            print("Gripper Initialization Successful!")
+            return True
+
+        for baud in try_bauds:
+            # print(f"\n👉 Try the end baud rate: {baud}")
+            self.set_tool_serial_baud_rate(baud_rate=baud)
+            time.sleep(0.3)  # Waiting for hardware switchover and stabilization
+
+            cfg = self.get_tool_config()
+            # print(f"   485 current config: {cfg}")
+
+            # Read the angle again, applicable to: Baud rate = Correct, Mode = Modbus
+            test = self.get_pro_gripper_angle(gripper_id=gripper_id)
+            # print(f"🔁 Test Modbus to read angle return: {test}")
+
+            if test != -1:
+                self.set_pro_gripper_baud(0, gripper_id=gripper_id)
+                self.set_tool_serial_baud_rate(115200)
+                time.sleep(0.3)
+                self.set_tool_serial_timeout(10000)
+                time.sleep(0.09)
+                print("Gripper Initialization Successful!")
+                return True
+
+            # print(f"\n👉 Try the end baud rate again: {baud}")
+            self.set_tool_serial_baud_rate(baud_rate=baud)
+            time.sleep(0.3)
+            cfg = self.get_tool_config()
+            # print(f"   485 current config: {cfg}")
+            ret = self.set_pro_gripper_modbus(1, True, gripper_id=gripper_id)
+            # print(f"   set_modbus(custom) ret={ret}")
+
+            if ret == 1:
+                for i in range(3):
+                    t = self.get_pro_gripper_angle(gripper_id=gripper_id)
+                    # print(f" 🔧 Test angle read[{i}] -> {t}")
+                    if t != -1:
+                        break
+                    time.sleep(0.1)
+
+                if t != -1:
+
+                    self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # change gripper → 115200
+
+                    self.set_tool_serial_baud_rate(115200)  # end back → 115200
+                    time.sleep(0.3)
+                    self.set_tool_serial_timeout(10000)
+                    time.sleep(0.09)
+
+                    print("Gripper Initialization Successful!")
+                    return True
+
+        print("Gripper Initialization Failed!")
+        return False
+
