@@ -149,6 +149,22 @@ print(mc.get_angles())
     - `0`: 自定义协议
     - `1`: Modbus协议
 
+#### `get_free_move_mode()`
+
+- **功能:** 读取自由移动模式
+
+- **返回值:** 
+  - `0`: 关闭自由移动模式
+  - `1`: 打开自由移动模式
+
+#### `set_free_move_mode(mode)`
+
+- **功能:** 设置自由移动模式（仅当打开自由移动后，按住末端按钮才可放松关节）
+  
+- **参数:**
+  - `1`: 打开自由移动模式。
+  - `0`: 关闭自由移动模式。
+
 ### 3. 机器人异常检测
 
 #### `get_robot_status()`
@@ -743,29 +759,7 @@ print(mc.get_angles())
 <!-- #### `tool_serial_flush()`
 
 - **功能：** Clear 485 buffer
-- **返回值:** 0-Normal 1-Robot triggered collision detection
-
-#### `tool_serial_peek()`
-
-- **功能：** View the first data in the buffer, the data will not be cleared
-- **返回值:** 1 byte data
-
-#### `tool_serial_set_baud(baud)`
-
-- **功能：** Set 485 baud rate, default 115200
-- **参数**: baud (int): baud rate
-- **返回值:** NULL
-
-#### `tool_serial_set_timeout(max_time)`
-
-- **功能：** Set 485 timeout in milliseconds, default 30ms
-- **参数**: max_time (int): timeout
-- **返回值:** NULL -->
-
-#### `set_over_time(timeout=1000)`
-
-- **功能：** 设置超时时间(默认1s,超时时间内未读取数据缓冲区会清除)
-- **参数**： timeout (int): 超时时间，单位ms，范围0~65535
+- **返回值:** 0-Normal 1-Robot triggered collision detection -->
 
 #### `flash_tool_firmware(main_version, modified_version=0)`
 
@@ -773,6 +767,23 @@ print(mc.get_angles())
 - **参数:**
   - `main_version (str)`: 主次版本号，比如 `'1.1'`
   - `modified_version (int)`: 更正版本号，范围 0 ~ 255，默认是 0 
+
+#### `set_tool_serial_baud_rate(baud_rate=115200)`
+
+- **功能：** 设置末端485波特率，默认115200
+- **参数**: `baud_rate` (`int`): 标准波特率，仅支持115200和1000000
+- **返回值:** 1
+
+#### `set_tool_serial_timeout(timeou=10000)`
+
+- **功能：** 设置末端485超时时间，默认10秒
+- **参数**: `timeout (int)`: 超时时间， 单位毫秒，范围 0 ~ 10000
+- **返回值:** 1 
+
+#### `get_tool_config()`
+
+- **功能：** 获取末端485波特率和超时时间
+- **返回值:** (`list`) 包含波特率和超时时间的列表，比如：[波特率, 超时时间]
 
 ### 17. 工具坐标系操作
 
@@ -1145,3 +1156,46 @@ print(mc.get_angles())
 - **参数**：
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：(`int`) 夹持电流值，范围 100 ~ 300。
+
+#### `set_pro_gripper_baud(baud_rate=0, gripper_id=14)`
+
+- **功能**：设置力控夹爪夹持电流
+- **参数**：
+  - `baud_rate` (`int`): 波特率索引，范围0 ~ 1, 默认 0 - 115200
+    - `0` - 115200
+    - `1` - 1000000
+  - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
+
+#### `get_pro_gripper_baud(gripper_id=14)`
+
+- **功能**：读取力控夹爪波特率
+- **参数**：
+  - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：(`int`)  波特率索引，默认 0 - 115200
+  - `0` - 115200
+  - `1` - 1000000
+
+#### `set_pro_gripper_modbus(state, custom_mode=False, gripper_id=14)`
+
+- **功能**：设置力控夹爪modbus通信模式
+- **参数**：
+  - `state` (`int`): 范围 0 ~ 1。
+    - `0`: 关闭modbus通信模式，打开自定义通信模式
+    - `1`: 打开modbus通信模式，关闭自定义通信模式
+  - `custom_mode`: 自定义通信模式标识，默认False（当前是modbus模式）。如果当前是自定义通信模式，打开modbus通信模式，需要把custom_mode改为True. 比如：`set_pro_gripper_modbus(1, True)`
+  - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：
+  - 0 - 失败
+  - 1 - 成功
+
+#### `set_pro_gripper_init(gripper_id=14)`
+
+- **功能**：夹爪初始化，将夹爪恢复到 **115200波特率** 的Modbus模式
+- **参数**：
+  - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
+- **返回值**：(`bool`) 
+  - `True` - 成功
+  - `False` - 失败

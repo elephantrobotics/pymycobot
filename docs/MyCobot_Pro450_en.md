@@ -153,6 +153,26 @@ print(mc.get_angles())
     - `0`: Custom protocol
     - `1`: Modbus protocol
 
+#### `get_free_move_mode()`
+
+- **Function:** Reads the free movement mode
+
+- **Return Value:**
+
+  - `0`: Disables free movement mode
+
+  - `1`: Enables free movement mode
+
+#### `set_free_move_mode(mode)`
+
+- **Function:** Sets the free movement mode (only when free movement is enabled can the joint be released by holding down the end button)
+
+- **Parameters:**
+
+  - `1`: Enables free movement mode.
+
+  - `0`: Disables free movement mode.
+
 ### 3.Robot abnormal control
 
 #### `get_robot_status()`
@@ -747,39 +767,34 @@ print(mc.get_angles())
   - `command` (`list`): Data instructions in modbus format
 - **Return value:** Modbus data list
 
-<!-- #### `tool_serial_flush()`
-
-- **function:** Clear 485 buffer
-- **Return value:** 0-Normal 1-Robot triggered collision detection
-
-#### `tool_serial_peek()`
-
-- **function:** View the first data in the buffer, the data will not be cleared
-- **Return value:** 1 byte data
-
-#### `tool_serial_set_baud(baud)`
-
-- **function:** Set 485 baud rate, default 115200
-- **Parameters**: baud (int): baud rate
-- **Return value:** NULL
-
-#### `tool_serial_set_timeout(max_time)`
-
-- **function:** Set 485 timeout in milliseconds, default 30ms
-- **Parameters**: max_time (int): timeout
-- **Return value:** NULL -->
-
-#### `set_over_time(timeout=1000)`
-
-- **function:** Set the timeout (unit: ms), default is 1000ms (1 second)
-- **Parameters**： timeout (int): Timeout period, in ms, range 0~65535
-
 #### `flash_tool_firmware(main_version, modified_version=0)`
 
 - **Function:** Flash the terminal firmware
 - **Parameters:**
   - `main_version (str)`: Major and minor version numbers, e.g. `1.1`
   - `modified_version (int)`: Modified version number, range 0 to 255, default is 0
+
+#### `set_tool_serial_baud_rate(baud_rate=115200)`
+
+- **Function:** Sets the terminal 485 baud rate, default 115200
+
+- **Parameter:** `baud_rate` (`int`): Standard baud rate, only supports 115200 and 1000000
+
+- **Return Value:** 1
+
+#### `set_tool_serial_timeout(timeout=10000)`
+
+- **Function:** Sets the terminal 485 timeout, default 10 seconds
+
+- **Parameter:** `timeout (int)`: Timeout duration, in milliseconds, range 1 ~ 10000
+
+- **Return Value:** 1
+
+#### `get_tool_config()`
+
+- **Function:** Retrieves the terminal 485 baud rate and timeout duration
+
+- **Return Value:** (`list`) A list containing baud rates and timeout durations, e.g., [baud rate, timeout duration]
 
 ### 17. Tool Coordinate System Operations
 
@@ -1152,3 +1167,73 @@ print(mc.get_angles())
 - **Parameter**:
   - `gripper_id` (`int`) Gripper ID, default 14, range 1 to 254.
 - **Return value**: (`int`) Clamping current value, range 100 ~ 300.
+
+#### `set_pro_gripper_baud(baud_rate=0, gripper_id=14)`
+
+- **Function**: Sets the gripping current of the force-controlled gripper.
+
+- **Parameters**:
+
+  - `baud_rate` (`int`): Baud rate index, range 0 ~ 1, default 0 - 115200
+
+    - `0` - 115200
+
+    - `1` - 1000000
+
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return Value**:
+
+  - 0 - Failure
+
+  - 1 - Success
+
+#### `get_pro_gripper_baud(gripper_id=14)`
+
+- **Function**: Reads the baud rate of the force control gripper
+
+- **Parameters**:
+
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return Value**: (`int`) Baud rate index, default 0 - 115200
+
+  - `0` - 115200
+
+  - `1` - 1000000
+
+#### `set_pro_gripper_modbus(state, custom_mode=False, gripper_id=14)`
+
+- **Function**: Sets the force control gripper's Modbus communication mode
+
+- **Parameters**:
+
+  - `state` (`int`): Range 0 ~ 1.
+
+    - `0`: Disables Modbus communication mode, enables custom communication mode
+
+    - `1`: Enables Modbus communication mode, disables custom communication mode
+
+  - `custom_mode`: Custom communication mode identifier, default False (currently in Modbus mode). If the current communication mode is custom, to enable Modbus communication mode, you need to change `custom_mode` to `True`. For example: `set_pro_gripper_modbus(1, True)`
+
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return value**:
+
+  - 0 - Failure
+
+  - 1 - Success
+
+#### `set_pro_gripper_init(gripper_id=14)`
+
+- **Function**: Initializes the gripper, restoring it to Modbus mode at **115200 baud rate**.
+
+- **Parameters**:
+
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return Value**: (`bool`)
+
+  - `True` - Success
+
+  - `False` - Failure
