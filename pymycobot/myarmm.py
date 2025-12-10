@@ -162,3 +162,11 @@ class MyArmM(MyArmAPI):
     def clear_recv_queue(self):
         """Clear the queue for receiving commands"""
         self._mesg(ProtocolCode.CLEAR_RECV_QUEUE)
+
+    def is_sd_insert(self):
+        """Check if the SD card is inserted
+
+        Returns:
+            int: 0/1, 1: insert, 0: no insert
+        """
+        return self._mesg(ProtocolCode.IS_SD_INSERT, has_reply=True)
