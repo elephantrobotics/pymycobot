@@ -939,10 +939,6 @@ class Pro450CloseLoop(DataProcessor):
             class_name=self.__class__.__name__, pin_no=pin_no)
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no)
 
-    def get_digital_inputs(self):
-        """Read the end-of-arm IO status, IN1/IN2/ATOM Button"""
-        return self._mesg(ProtocolCode.GET_DIGITAL_INPUTS)
-
     def get_world_reference(self):
         """Get the world coordinate system"""
         return self._mesg(ProtocolCode.GET_WORLD_REFERENCE)
@@ -1027,6 +1023,9 @@ class Pro450CloseLoop(DataProcessor):
             0 - close
         """
         return self._mesg(ProtocolCode.GET_COLLISION_MODE)
+
+    def get_servo_encoders(self):
+        return self._mesg(ProtocolCode.GET_ENCODERS)
 
     def set_base_io_output(self, pin_no, pin_signal):
         """Set the base output IO status
