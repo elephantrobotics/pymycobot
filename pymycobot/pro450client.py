@@ -47,6 +47,9 @@ class Pro450Client(Pro450CloseLoop):
             if genre in [ProtocolCode.SET_TOOL_485_BAUD_RATE, ProtocolCode.SET_TOOL_SERIAL_TIMEOUT]:
                 time.sleep(0.3)
                 return 1
+            elif genre in [ProtocolCode.SET_DIGITAL_OUTPUT]:
+                time.sleep(0.02)
+                return 1
             else:
                 return 1
         elif read_data == -2:
