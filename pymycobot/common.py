@@ -561,6 +561,9 @@ class ProtocolCode(object):
     RECEIVE_485_DATA_P1 = "M411"
 
 
+    # MyArm M750
+    IS_SD_INSERT = 0xC4
+
 
 class DataProcessor(object):
     crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client"]
@@ -1243,6 +1246,9 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                 break
             elif len(datas) == 2:
                 data_len = struct.unpack("b", data)[0]
+                if data_len < 0 or data_len > 30:
+                    data_len = -1
+                    continue
                 datas += data
             elif len(datas) > 2 and data_len > 0:
                 datas += data
