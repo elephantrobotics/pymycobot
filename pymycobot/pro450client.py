@@ -674,7 +674,7 @@ class Pro450Client(Pro450CloseLoop):
             class_name=self.__class__.__name__, set_motor_enabled=joint_id, state=state)
         return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
 
-    def flash_tool_firmware(self, main_version, modified_version=0):
+    def flash_tool_firmware(self, main_version, modified_version=0, _async=False):
         """Burn tool firmware
 
         Args:
@@ -687,26 +687,28 @@ class Pro450Client(Pro450CloseLoop):
         wait_time = 45
         self.calibration_parameters(class_name=self.__class__.__name__, tool_main_version=main_version, tool_modified_version=modified_version)
         main_version = int(float(main_version) *10)
-        # return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
-        self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
+        if _async:
+            return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
+        else:
+            self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
 
-        print(f'Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
+            print(f'Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
 
-        time.sleep(wait_time)
+            time.sleep(wait_time)
 
-        for _ in range(5):
-            tool_main_version = self.get_atom_version()
-            tool_modify_version = self.get_tool_modify_version()
+            for _ in range(5):
+                tool_main_version = self.get_atom_version()
+                tool_modify_version = self.get_tool_modify_version()
 
-            if tool_main_version != -1 and tool_modify_version != -1:
-                version_str = f"v{tool_main_version}.{tool_modify_version}"
-                msg = f"Current firmware version：{version_str}"
-                return msg
+                if tool_main_version != -1 and tool_modify_version != -1:
+                    version_str = f"v{tool_main_version}.{tool_modify_version}"
+                    msg = f"Current firmware version：{version_str}"
+                    return msg
 
-            time.sleep(1)
+                time.sleep(1)
 
-        print("⚠️ Burning complete, but failed to read the end version number")
-        return -1
+            print("⚠️ Burning complete, but failed to read the end version number")
+            return -1
 
     def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions
