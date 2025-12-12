@@ -166,7 +166,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 13 `set_jog_angle(joint_id, direction, speed, _async=False)`
+## 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG角度运动
 
@@ -178,11 +178,11 @@ from pymycobot import UltraArmP1
 
   - `speed`: 速度 1 ~ 5700。
 
-  - `_async`: 运动到位反馈，默认关闭。
+  - `_async`: 运动到位反馈，默认打开。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 14 `set_jog_coord(axis_id, direction, speed, _async=False)`
+## 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG坐标运动。
 
@@ -194,11 +194,11 @@ from pymycobot import UltraArmP1
 
   - `speed`: 速度 1 ~ 5700 。
 
-  - `_async`: 运动到位反馈，默认关闭。
+  - `_async`: 运动到位反馈，默认打开。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 15 `jog_increment_angle(joint_id, increment, speed, _async=False)`
+## 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
 
 - **功能：** 设置角度步进运动
 
@@ -210,11 +210,11 @@ from pymycobot import UltraArmP1
 
   - `speed`: 速度 1 ~ 5700。
 
-  - `_async`: 运动到位反馈，默认关闭。
+  - `_async`: 运动到位反馈，默认打开。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 16 `jog_increment_coord(coord_id, increment, speed, _async=False)`
+## 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
 
 - **功能：** 设置坐标步进运动。
 
@@ -226,7 +226,7 @@ from pymycobot import UltraArmP1
 
   - `speed`: 速度 1 ~ 5700 。
 
-  - `_async`: 运动到位反馈，默认关闭。
+  - `_async`: 运动到位反馈，默认打开。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 

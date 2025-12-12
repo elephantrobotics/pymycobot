@@ -516,7 +516,7 @@ class UltraArmP1:
             self._send_command(ProtocolCode.SET_STOP_P1)
             return self._response(_async=False)
 
-    def set_jog_angle(self, joint_id, direction, speed, _async=False, _gcode=False):
+    def set_jog_angle(self, joint_id, direction, speed, _async=True, _gcode=False):
         """Start jog movement with angle
 
         Args:
@@ -537,7 +537,7 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
-    def set_jog_coord(self, axis_id, direction, speed, _async=False, _gcode=False):
+    def set_jog_coord(self, axis_id, direction, speed, _async=True, _gcode=False):
         """Start jog movement with coord
 
         Args:
@@ -558,7 +558,7 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
-    def jog_increment_angle(self, joint_id, increment, speed, _async=False, _gcode=False):
+    def jog_increment_angle(self, joint_id, increment, speed, _async=True, _gcode=False):
         """Single angle incremental motion control.
 
         Args:
@@ -576,7 +576,7 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
-    def jog_increment_coord(self, coord_id, increment, speed, _async=False, _gcode=False):
+    def jog_increment_coord(self, coord_id, increment, speed, _async=True, _gcode=False):
         """Single coordinate incremental motion control.
 
         Args:

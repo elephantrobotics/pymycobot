@@ -247,7 +247,7 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-## 13 `set_jog_angle(joint_id, direction, speed, _async=False)`
+## 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
 - **Function:** Sets the JOG angle.
 
@@ -259,11 +259,11 @@ from pymycobot import UltraArmP1
 
   - `speed`: Speed ​​from 1 to 5700.
 
-  - `_async`: Motion positioning feedback, disabled by default.
+  - `_async`: Motion positioning feedback, enabled by default.
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-## 14 `set_jog_coord(axis_id, direction, speed, _async=False)`
+## 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
 
 - **Function:** Sets the JOG coordinate motion.
 
@@ -275,11 +275,11 @@ from pymycobot import UltraArmP1
 
   - `speed`: Speed ​​1 to 5700.
 
-  - `_async`: Motion positioning feedback, disabled by default.
+  - `_async`: Motion positioning feedback, enabled by default.
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-## 15 `jog_increment_angle(joint_id, increment, speed, _async=False)`
+## 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
 
 - **Function:** Sets the angle step motion
 
@@ -291,11 +291,11 @@ from pymycobot import UltraArmP1
 
   - `speed`: Speed ​​1 ~ 5700.
 
-  - `_async`: Motion positioning feedback, off by default.
+  - `_async`: Motion positioning feedback, enabled by default.
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-## 16 `jog_increment_coord(coord_id, increment, speed, _async=False)`
+## 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
 
 - **Function:** Sets the coordinate stepping motion.
 
@@ -307,7 +307,7 @@ from pymycobot import UltraArmP1
 
   - `speed`: Speed, ranging from 1 to 5700.
 
-  - `_async`: Motion positioning feedback, disabled by default.
+  - `_async`: Motion positioning feedback, enabled by default.
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
