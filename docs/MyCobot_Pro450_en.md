@@ -1,15 +1,49 @@
 # Pro 450 Python Socket API
 [toc]
-## API usage instructions
+
+## Preparing For Use
+
+Before using the Python API, please ensure that the following hardware and environment are complete:
+
+- **Hardware**
+  - MyCobot Pro 450 robot arm
+  - Network cable (for connecting the robot arm to the computer)
+  - Power adapter
+  - Emergency stop switch (for safe operation)
+
+- **Software and Environment**
+  - Python 3.6 or later installed
+  - The `pymycobot` library installed (using the `pip install pymycobot` terminal command)
+  - Ensure that the MyCobot Pro 450 is properly powered on and in standby mode.
+  - **Note**: The Pro 450 server automatically starts upon powering on; no manual operation is required.
+
+- **Network Configuration**
+  - MyCobot Pro 450 default IP address: `192.168.0.232`
+  - Default port number: `4500`
+  - **Note**: PC The local network card IP address must be set to the same network segment as the robot (e.g., 192.168.0.xxx, where xxx is a number between 2 and 254 and must not conflict with the robot).
+  - Example:
+    - Robot IP: 192.168.0.232
+    - PC IP: 192.168.0.100
+    - Subnet mask: 255.255.255.0
+
+  - **Verification**: After completing the network configuration, execute the following command on the PC terminal. If data packets are successfully returned, the network connection is normal:
+
+    ```bash
+    ping 192.168.0.232
+    ```
+
+---
+
+## API Usage Instructions
 
 API (Application Programming Interface), also known as Application Programming Interface functions, are predefined functions. When using the following function interfaces, please import our API library at the beginning by entering the following code, otherwise it will not run successfully:
 
-**Note:** Before use, please make sure that the MyCobot Pro 450 server is turned on.
+**Note:** Before use, please make sure that the MyCobot Pro 450 server is turned on and the PC and the robot are in the same network segment.
 
 ```python
 # Example
 from pymycobot import Pro450Client
-
+# The default IP address is "192.168.0.232" and the default port number is 4500
 mc = Pro450Client('192.168.0.232', 4500)
 
 if mc.is_power_on() !=1:
@@ -128,17 +162,17 @@ print(mc.get_angles())
   - 0 - Failure
   - 1 - Error
 
-#### `set_communication_mode(communication_mode, protocol_mode=None)`
+#### `set_communication_mode(protocol_mode)`
 
-- **Function:** Sets the current robot communication mode.
+- **Function:** Sets the current robot Modbus communication mode.
 
 - **Parameters:**
-  - `communication_mode`: `int`
-    - 0 - Socket communication mode
-    - 1 - 485 communication mode
-  - `protocol_mode`: `int`, protocol mode, optional, default: None
-    - `0`: Custom protocol
-    - `1`: Modbus protocol
+
+  - `protocol_mode`: `int` 0 or 1
+
+    - `0`: close Modbus protocol
+
+    - `1`: open Modbus protocol
 - **Return value**: `int`
   - 1 - Success
   - 0 - Failure
@@ -156,12 +190,35 @@ print(mc.get_angles())
     - `0`: Custom protocol
     - `1`: Modbus protocol
 
-### 3.Robot abnormal control
+#### `get_free_move_mode()`
+
+- **Function:** Reads the free movement mode
+
+- **Return Value:**
+
+  - `0`: Disables free movement mode
+
+  - `1`: Enables free movement mode
+
+#### `set_free_move_mode(mode)`
+
+- **Function:** Sets the free movement mode (only when free movement is enabled can the joint be released by holding down the end button)
+
+- **Parameters:**
+
+  - `1`: Enables free movement mode.
+
+  - `0`: Disables free movement mode.
+
+### 3.Robot Abnormal Control
 
 #### `get_robot_status()`
 
-- **function:** Upper computer error security status
-- **Return value:** 0 - Normal. other - Robot triggered collision detection
+- **Function:** Read robot error and safety status
+
+- **Return Value:** 0 - Normal. For example, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], Other - Robot abnormal
+
+  - `[Joint collision, whether in motion, whether J1 exceeds limits, whether J2 exceeds limits, whether J3 exceeds limits, whether J4 exceeds limits, whether J5 exceeds limits, whether J6 exceeds limits, whether J1 has a motor hardware error, whether J2 has a motor hardware error, whether J3 has a motor hardware error, whether J4 has a motor hardware error, whether J5 has a motor hardware error, whether J6 has a motor hardware error, whether J1 has a software communication error, whether J2 has a software communication error, whether J3 has a software communication error, whether J4 has a software communication error, whether J5 has a software communication error, whether J6 has a software communication error]`
 
 #### `servo_restore(joint_id)`
 
@@ -174,6 +231,15 @@ print(mc.get_angles())
 - **function**：Read the number of communication exceptions
 - **Parameters**：
   - `joint_id`: int. joint id 1 - 6
+- **Return value**: `list` A list of length 4, such as [0, 0, 0, 0], represents:
+
+  - `[0]`: Number of joint sending exceptions
+
+  - `[1]`: Number of joint reading exceptions
+
+  - `[2]`: Number of end-point sending exceptions
+
+  - `[3]`: Number of end-point sending exceptions
 
 #### `get_error_information()`
 
@@ -187,6 +253,7 @@ print(mc.get_angles())
     - `34`: Velocity fusion error.
     - `35`: No adjacent solution for null space motion.
     - `36`: No solution for singular position. Please use joint control to leave the singular point.
+  - `81~86`: Collision triggered at joints J1 to J6. Please use the `resume` interface to recover.
 
 #### `clear_error_information()`
 
@@ -201,7 +268,7 @@ print(mc.get_angles())
 - **Function**: Read motor error information during robot motion
 - **Return value**: `list`, a list of 6, all zeros, indicating normal operation
 
-### 4.MDI Mode and Operation
+### 4.MDI Mode And Operation
 
 #### `set_control_mode(mode)`
 
@@ -237,12 +304,12 @@ print(mc.get_angles())
   - `degree`: degree value(`float`)
     | Joint Id | range |
     | ---- | ---- |
-    | 1 | -165 ~ 165 |
-    | 2 | -120 ~ 120 |
-    | 3 | -158 ~ 158 |
-    | 4 | -165 ~ 165 |
-    | 5 | -165 ~ 165 |
-    | 6 | -175 ~ 175 |
+    | 1 | -162 ~ 162 |
+    | 2 | -125 ~ 125 |
+    | 3 | -154 ~ 154 |
+    | 4 | -162 ~ 162 |
+    | 5 | -162 ~ 162 |
+    | 6 | -165 ~ 165 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100
 
@@ -268,7 +335,7 @@ print(mc.get_angles())
     | ---- | ---- |
     | x | -466 ~ 466 |
     | y | -466 ~ 466 |
-    | z | -230 ~ 614 |
+    | z | -150 ~ 677 |
     | rx | -180 ~ 180 |
     | ry | -180 ~ 180 |
     | rz | -180 ~ 180 |
@@ -334,7 +401,7 @@ print(mc.get_angles())
   - `0` not moving
   - `-1` error
 
-### 5. JOG Mode and Operation
+### 5. JOG Mode And Operation
 
 #### `jog_angle(joint_id, direction, speed)`
 
@@ -367,23 +434,6 @@ print(mc.get_angles())
   - `joint_id`: axis id 1 - 6.
   - `increment`: Incremental movement based on the current position coord
   - `speed`: 1 ~ 100
-
-<!-- ### 5. Coordinate controlled attitude deviation angle
-
-#### `get_solution_angles()`
-
-- **function:** Obtain the value of zero space deflection angle
-- **Return value**：Zero space deflection angle value
-
-#### `set_solution_angles(angle, speed)`
-
-- **function:** Obtain the value of zero space deflection angle
-
-- **Parameters:**
-
-  - ` angle` : Input the angle range of joint 1, angle range -90 to 90
-
-  - `speed` : 1 - 100. -->
 
 ### 6. Speed/Acceleration Parameters
 
@@ -423,7 +473,7 @@ print(mc.get_angles())
     - `1`: Coordinate acceleration
     - `max_acc`: Angular acceleration range 1 to 150°/s, coordinate acceleration range 1 to 400 mm/s
 
-### 7. Joint software limit operation
+### 7. Joint Software Limit Operation
 
 #### `get_joint_min_angle(joint_id)`
 
@@ -453,7 +503,7 @@ print(mc.get_angles())
   - `id` : Enter joint ID (range 1-6)
   - `angle`: Refer to the limit information of the corresponding joint in the [send_angle()](#send_angleid-degree-speed) interface, which must not be greater than the maximum value
 
-### 8. Joint motor auxiliary control
+### 8. Joint Motor Auxiliary Control
 
 #### `get_servo_encoders()`
 
@@ -528,22 +578,33 @@ print(mc.get_angles())
 
 #### `set_collision_mode(mode)`
 
-- **Function**: Set the joint collision threshold
+- **Function**: Set the joint collision detection mode
 - **Parameter**: `int`
   - `mode`:
     - `0`: Off
     - `1`: On
+
+#### `set_collision_threshold(joint_id, threshold_value=100)`
+
+- **Function:** Sets joint collision detection
+
+- **Parameters:** 
+
+  - `mode`: `int` Joint ID, range 1 ~ 6
+
+  - `threshold_value`: `int` Collision threshold, range 50 ~ 250, default value is 100. The smaller the value, the easier it is to trigger a collision.
 
 #### `get_collision_threshold()`
 
 - **Function**: Get the joint collision threshold
 - **Return value**: A list of all joint collision thresholds
 
-#### `set_torque_comp(joint_id, comp_value=100)`
+#### `set_torque_comp(joint_id, damping, comp_value=0)`
 
 - **Function**: Set the torque compensation coefficient
 - **Parameter**:
   - `joint_id` `int`: Joint ID, range 1 to 6
+  - `damping` `int`: Range 0 ~ 1. 1 - On, 0 - Off
   - `comp_value`: Compensation value, range 0-250, default 100. Smaller values ​​result in more difficult joint dragging.
 
 #### `get_torque_comp()`
@@ -551,40 +612,11 @@ print(mc.get_angles())
 - **Function**: Get torque compensation coefficients
 - **Return value**: A list of torque compensation coefficients for all joints
 
-<!-- #### `set_identify_mode(mode)`
-
-- **Function**: Set dynamic parameter identification mode
-- **Parameter**: `int`
-  - `mode`:
-    - `0`: Off
-    - `1`: On
-
-#### `get_identify_mode()`
-
-- **Function**: Get dynamic parameter identification mode
-- **Return value**:
-  - `0`: Off
-  - `1`: On -->
-
 #### `fourier_trajectories(trajectory)`
 
 - **Function**: Execute dynamic identification trajectory
 - **Parameter**:
   - `trajectory`: `int`, range 0-1
-
-<!-- #### `set_dynamic_parameters(add, data)`
-
-- **Function**: Set dynamic parameters
-- **Parameter**:
-  - `add`: `int`, range 0 to 62
-  - `data`: Parameter value
-
-#### `get_dynamic_parameters(add)`
-
-- **Function**: Read dynamic parameters
-- **Parameter**:
-  - `add`: (int), range 0 to 62
-- **Return value**: data * 0.001 -->
 
 #### `parameter_identify()`
 
@@ -600,7 +632,7 @@ print(mc.get_angles())
 - `endpoint(list)`: Arc endpoint
 - `speed(int)`: 1 to 100
 
-### 12. Run auxiliary information
+### 12. Run Auxiliary Information
 
 #### `get_zero_pos()`
 
@@ -622,7 +654,7 @@ print(mc.get_angles())
 - **function**：Get the movement status of all joints
 - **Return value**： a value of 0 means no error
 
-### 13. Robotic arm end IO control
+### 13. Robotic Arm End IO Control
 
 #### `set_digital_output(pin_no, pin_signal)`
 
@@ -638,6 +670,12 @@ print(mc.get_angles())
 - **Function:** Get terminal IO status
 - **Parameters**: `pin_no` (int), range 1 to 2
 - **Return Value**: `int` 0 / 1, 0 - low level, 1 - high level
+
+#### `get_digital_inputs()`
+
+- **Function:** Reads the status of all pins at the end, including: IN1, IN2, Button 1 (right side), and Button 2 (Button 2 is closer to the emergency stop button, located on the left side).
+
+- **Return Value:** `list[int]` 0 / 1, 0 - low level, 1 - high level. e.g., [0, 0, 1, 0] represents button 1 being pressed.
 
 ### 14. End Light Panel Function
 
@@ -660,7 +698,7 @@ print(mc.get_angles())
 
   - `b (int)`: 0 to 255
 
-### 15. Bottom IO control
+### 15. Bottom IO Control
 
 #### `set_base_io_output(pin_no, pin_signal)`
 
@@ -684,7 +722,7 @@ print(mc.get_angles())
     - `1`: 485
     - `2`: can
   - `baud_rate` (`int`): Baud rate
-  - `timeout`: (`int`) timeout in milliseconds
+  - `timeout`: (`int`) Timeout period, in milliseconds
 
 #### `get_base_external_config()`
 
@@ -704,27 +742,7 @@ print(mc.get_angles())
 - **Parameters:**
   - `data` (`list`) List contents are in hexadecimal format, with a maximum length of 64 characters.
 
-### 16. Set up 485 communication at the end of the robotic arm
-
-<!-- #### `tool_serial_restore()`
-
-- **function**：485 factory reset
-
-#### `tool_serial_ready()`
-
-- **function:** Set up 485 communication
-- **Return value:** 0 : not set 1 : Setup completed
-
-#### `tool_serial_available()`
-
-- **function:** Set up 485 communication
-- **Return value:** 0-Normal 1-Robot triggered collision detection -->
-
-#### `tool_serial_read_data(data_len)`
-
-- **function:** Read fixed length data. Before reading, read the buffer length first. After reading, the data will be cleared
-- **Parameters**： data_len (int): The number of bytes to be read, range 1 ~ 45
-- **Return value:** 0 : not set 1 : Setup completed
+### 16. Set Up 485 Communication At The End Of The Robotic Arm
 
 #### `tool_serial_write_data(command)`
 
@@ -733,39 +751,34 @@ print(mc.get_angles())
   - `command` (`list`): Data instructions in modbus format
 - **Return value:** Modbus data list
 
-<!-- #### `tool_serial_flush()`
-
-- **function:** Clear 485 buffer
-- **Return value:** 0-Normal 1-Robot triggered collision detection
-
-#### `tool_serial_peek()`
-
-- **function:** View the first data in the buffer, the data will not be cleared
-- **Return value:** 1 byte data
-
-#### `tool_serial_set_baud(baud)`
-
-- **function:** Set 485 baud rate, default 115200
-- **Parameters**: baud (int): baud rate
-- **Return value:** NULL
-
-#### `tool_serial_set_timeout(max_time)`
-
-- **function:** Set 485 timeout in milliseconds, default 30ms
-- **Parameters**: max_time (int): timeout
-- **Return value:** NULL -->
-
-#### `set_over_time(timeout=1000)`
-
-- **function:** Set the timeout (unit: ms), default is 1000ms (1 second)
-- **Parameters**： timeout (int): Timeout period, in ms, range 0~65535
-
 #### `flash_tool_firmware(main_version, modified_version=0)`
 
 - **Function:** Flash the terminal firmware
 - **Parameters:**
   - `main_version (str)`: Major and minor version numbers, e.g. `1.1`
   - `modified_version (int)`: Modified version number, range 0 to 255, default is 0
+
+#### `set_tool_serial_baud_rate(baud_rate=115200)`
+
+- **Function:** Sets the terminal 485 baud rate, default 115200
+
+- **Parameter:** `baud_rate` (`int`): Standard baud rate, only supports 115200 and 1000000
+
+- **Return Value:** 1
+
+#### `set_tool_serial_timeout(timeout=10000)`
+
+- **Function:** Sets the terminal 485 timeout, default 10 seconds
+
+- **Parameter:** `timeout (int)`: Timeout duration, in milliseconds, range 1 ~ 10000
+
+- **Return Value:** 1
+
+#### `get_tool_config()`
+
+- **Function:** Retrieves the terminal 485 baud rate and timeout duration
+
+- **Return Value:** (`list`) A list containing baud rates and timeout durations, e.g., [baud rate, timeout duration]
 
 ### 17. Tool Coordinate System Operations
 
@@ -848,7 +861,7 @@ print(mc.get_angles())
 
 ### 18. Algorithm Parameters
 
-#### `get_vr_mode()`
+<!-- #### `get_vr_mode()`
 
 - **Function:** Get the VR mode
 - **Return value:**
@@ -859,7 +872,7 @@ print(mc.get_angles())
 
 - **Function:** Set the VR mode
 - **Parameters:**
-  - `move`: 1 - On, 0 - Off.
+  - `move`: 1 - On, 0 - Off. -->
 
 #### `get_model_direction()`
 
@@ -885,14 +898,19 @@ print(mc.get_angles())
     - `3`: Joint velocity fusion filter
     - `4`: Coordinate velocity fusion filter
     - `5`: Drag teach sampling period
-- **Return value:** `int` 1 to 100
+- **Return value:** `int` 1 to 255
 
 #### `set_filter_len(rank, value)`
 
 - **Function:** Set filter parameters
 - **Parameters:**
   - `rank (int)`: 1 to 5
-  - `value (int)`: 1 to 100
+    - `1`: Drag teach sampling filter
+    - `2`: Drag teach execution filter
+    - `3`: Joint velocity fusion filter
+    - `4`: Coordinate velocity fusion filter
+    - `5`: Drag teach sampling period
+  - `value (int)`: 1 to 255
 
 #### `get_fusion_parameters(rank_mode)`
 
@@ -922,7 +940,7 @@ print(mc.get_angles())
   - `current_angles`: `list` A list of floating-point values ​​for all angles, indicating the current angles of the robot arm.
 - **Return Value**: `list` A list of floating-point values ​​for all angles.
 
-### 20. Pro force-controlled gripper
+### 20. Pro Force-controlled Gripper
 
 #### `get_pro_gripper_firmware_version( gripper_id=14)`
 
@@ -1133,3 +1151,74 @@ print(mc.get_angles())
 - **Parameter**:
   - `gripper_id` (`int`) Gripper ID, default 14, range 1 to 254.
 - **Return value**: (`int`) Clamping current value, range 100 ~ 300.
+
+#### `set_pro_gripper_baud(baud_rate=0, gripper_id=14)`
+
+- **Function**: Sets the baud rate of the force control gripper
+
+- **Parameters**:
+
+  - `baud_rate` (`int`): Baud rate index, range 0 ~ 1, default 0 - 115200
+
+    - `0` - 115200
+
+    - `1` - 1000000
+
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return Value**:
+
+  - 0 - Failure
+
+  - 1 - Success
+
+#### `get_pro_gripper_baud(gripper_id=14)`
+
+- **Function**: Reads the baud rate of the force control gripper
+
+- **Parameters**:
+
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return Value**: (`int`) Baud rate index, default 0 - 115200
+
+  - `0` - 115200
+
+  - `1` - 1000000
+
+#### `set_pro_gripper_modbus(state, custom_mode=False, gripper_id=14)`
+
+- **Function**: Sets the force control gripper's Modbus communication mode
+
+- **Parameters**:
+
+  - `state` (`int`): Range 0 ~ 1.
+
+    - `0`: Disables Modbus communication mode, enables custom communication mode
+
+    - `1`: Enables Modbus communication mode, disables custom communication mode
+
+  - `custom_mode` (`bool`): Custom communication mode identifier, default False (currently in Modbus mode). If the current communication mode is custom, to enable Modbus communication mode, you need to change `custom_mode` to `True`. For example: `set_pro_gripper_modbus(1, True)`
+
+  - `gripper_id` (`int`) Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return value**:
+
+  - 0 - Failure
+
+  - 1 - Success
+
+#### `set_pro_gripper_init(gripper_id=14)`
+
+- **Function**: Initializes the gripper, restoring it to Modbus mode at **115200 baud rate**.
+
+- **Parameters**:
+
+  - `gripper_id` (`int`): Gripper ID, default 14, value range 1 ~ 254.
+
+- **Return Value**: (`bool`)
+
+  - `True` - Success
+
+  - `False` - Failure
+  
