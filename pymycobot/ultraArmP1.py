@@ -24,7 +24,7 @@ class UltraArmP1:
 
     """
 
-    def __init__(self, port, baudrate=115200, timeout=0.1, debug=False):
+    def __init__(self, port, baudrate=1000000, timeout=0.05, debug=False):
         """Initialize the ultraArmP1 robot communication.
 
         Args:
@@ -39,14 +39,13 @@ class UltraArmP1:
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
         self._serial_port.timeout = timeout
-        self._serial_port.rts = True
+        self._serial_port.rts = False
         self._serial_port.dtr = True
         self._serial_port.open()
         self.debug = debug
-        self._debug = debug
         self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
-        time.sleep(1)
+        time.sleep(0.5)
 
     # ---------------------- Debug / time helpers ----------------------
     def _now(self):
@@ -54,17 +53,12 @@ class UltraArmP1:
         return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
     def _debug_write(self, data: str):
-        if self._debug:
+        if self.debug:
             print(f"{self._now()} DEBU [UltraArmP1] _write: {data}")
 
     def _debug_read(self, data: str):
-        if self._debug:
-            print(f"{self._now()} DEBU [UltraArmP1] _read : {data}")
-
-    # Keep original _debug for backward compatibility (calls new writer)
-    def _debug(self, data):
         if self.debug:
-            self._debug_write(data)
+            print(f"{self._now()} DEBU [UltraArmP1] _read : {data}")
 
     # ---------------------- Serial helpers ----------------------
     def _serial_in_waiting(self):
@@ -102,10 +96,13 @@ class UltraArmP1:
             keyword = b"start"
         else:  # _async=True
             keyword = b"end"
-
+        no_data_timeout = 1
+        last_data_time = time.time()
         while time.time() - start_time < timeout:
             chunk = self._read_available_bytes()
             # print('chunk:', chunk)
+            # if not chunk:
+            #     return -1
             if chunk:
                 received_data += chunk
                 # try decode for debug
@@ -122,6 +119,9 @@ class UltraArmP1:
                     # fallback to raw bytes check
                     if received_data.lower().count(keyword) >= 1:
                         return 'ok'
+            else:
+                if time.time() - last_data_time > no_data_timeout:
+                    return -1
             time.sleep(0.01)
         # Timeout
         if self.debug:
@@ -133,30 +133,26 @@ class UltraArmP1:
         return False
 
     def _request(self, flag=""):
-        """Send a request and read data from the robot.
-        Improved: clear input before send (caller should send cmd before calling _request),
-        accumulate chunks, wait until 'angles' or 'coords' fully parsed or timeout.
         """
-        # total timeout (seconds) to wait for a complete response
-        TOTAL_TIMEOUT = 1.0
-        # small sleep between polls
-        POLL_SLEEP = 0.01
+        Improved request handler:
+        - clear input before reading
+        - accumulate chunks
+        - parse by flag until success or timeout
+        """
+        TOTAL_TIMEOUT = 0.02
+        POLL_SLEEP = 0.001
 
-        start_time = time.time()
         raw_data = ""
-
-        # If available, flush leftover input first to avoid stale data interference
+        start_time = time.time()
+        # clear stale input
         try:
-            # pyserial: reset_input_buffer() is preferred in newer versions
             if hasattr(self._serial_port, "reset_input_buffer"):
                 self._serial_port.reset_input_buffer()
             elif hasattr(self._serial_port, "flushInput"):
                 self._serial_port.flushInput()
         except Exception:
-            # non-fatal
             pass
 
-        # Poll until timeout
         while time.time() - start_time < TOTAL_TIMEOUT:
             try:
                 n = self._serial_port.inWaiting()
@@ -166,190 +162,146 @@ class UltraArmP1:
             if n > 0:
                 try:
                     chunk = self._serial_port.read(n)
-                    try:
-                        chunk_str = chunk.decode(errors="ignore")
-                    except Exception:
-                        chunk_str = str(chunk)
+                    chunk_str = chunk.decode(errors="ignore")
                     raw_data += chunk_str
-
-                    # debug print only when we have new data; do not treat first fragment as final
                     if self.debug:
-                        # show accumulated buffer (shortened if too long)
                         display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
                         self._debug_read(display)
-
                     lower = raw_data.lower()
-
-                    # Check command-not-recognized
+                    # common error
                     if "error: command not recognized" in lower:
                         return -1
-
-                    # parse angles when requested
+                    # -------- dispatch by flag --------
                     if flag == "angle":
-                        if "angles" in lower:
-                            # find the first '[...'] after 'angles'
-                            idx = lower.find("angles")
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end]
-                                    angles_list = [round(float(x), 2) for x in sub.split(",") if x.strip() != ""]
-                                    return angles_list
-                                except Exception:
-                                    # parsing failed -> keep accumulating until timeout
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : angles parse failed, continue receiving...")
-                                    # continue waiting
-                    # parse coords when requested
-                    elif flag == "coord":
-                        if "coords" in lower:
-                            idx = lower.find("coords")
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end]
-                                    coords_list = [round(float(x), 2) for x in sub.split(",") if x.strip() != ""]
-                                    return coords_list
-                                except Exception:
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : coords parse failed, continue receiving...")
-                                    # continue waiting
-                    elif flag == "error_information":
-                        if "error" in lower:
-                            idx = lower.find("error")
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end]
-                                    error_list = [int(x.strip()) for x in sub.split(",") if x.strip() != ""]
-                                    return error_list
-                                except Exception:
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : error info parse failed, continue receiving...")
-                    elif flag == "get_gripper_angle":
-                        idx = lower.find("gripperangle")
-                        bracket_start = lower.find("[", idx)
-                        bracket_end = lower.find("]", idx)
-                        if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                            try:
-                                sub = lower[bracket_start + 1:bracket_end]
-                                gripper_angle = [int(x.strip()) for x in sub.split(",") if x.strip() != ""]
-                                return gripper_angle[0]
-                            except Exception:
-                                if self.debug:
-                                    print(
-                                        f"{self._now()} DEBU [UltraArmP1] _warn : gripper angle parse failed, continue receiving...")
-                    elif flag == "zero_calibration_state":
-                        idx = lower.find("zero state")
-                        bracket_start = lower.find("[", idx)
-                        bracket_end = lower.find("]", idx)
-                        if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                            try:
-                                sub = lower[bracket_start + 1:bracket_end]
-                                zero_state = [int(x.strip()) for x in sub.split(",") if x.strip() != ""]
-                                return zero_state
-                            except Exception:
-                                if self.debug:
-                                    print(
-                                        f"{self._now()} DEBU [UltraArmP1] _warn : zero calibration state parse failed, continue receiving...")
-                    # parse system version
-                    elif flag == "system_version":
-                        idx = lower.find("getsystemversion[")
-                        if idx != -1:
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end].strip()
-                                    version = round(float(sub), 1)  # 保留1位小数
-                                    return version / 10
-                                except Exception:
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : system_version parse failed")
+                        start_time = time.time()
+                        r = self._parse_bracket_values(lower, "angles", float, 2)
+                        if r is not None:
+                            return r
 
-                    # parse modify version
+                    elif flag == "coord":
+                        r = self._parse_bracket_values(lower, "coords", float, 2)
+                        if r is not None:
+                            return r
+
+                    elif flag == "error_information":
+                        r = self._parse_bracket_values(lower, "error", int)
+                        if r is not None:
+                            return r
+
+                    elif flag == "get_gripper_angle":
+                        r = self._parse_bracket_values(lower, "gripperangle", int, single=True)
+                        if r is not None:
+                            return r
+
+                    elif flag == "zero_calibration_state":
+                        r = self._parse_bracket_values(lower, "zero state", int)
+                        if r is not None:
+                            return r
+
+                    elif flag == "system_version":
+                        r = self._parse_bracket_values(
+                            lower, "getsystemversion", float, 1, single=True
+                        )
+                        if r is not None:
+                            return r / 10
+
                     elif flag == "modify_version":
-                        idx = lower.find("getmodifyversion[")
-                        if idx != -1:
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end].strip()
-                                    version = int(sub)  # 整数
-                                    return version
-                                except Exception:
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : modify_version parse failed")
+                        r = self._parse_bracket_values(
+                            lower, "getmodifyversion", int, single=True
+                        )
+                        if r is not None:
+                            return r
+
+                    elif flag == "get_screen_version":
+                        r = self._parse_bracket_values(
+                            lower, "getscreenversion", float, 1, single=True
+                        )
+                        if r is not None:
+                            return r
+
+                    elif flag == "get_screen_modify_version":
+                        r = self._parse_bracket_values(
+                            lower, "getscreenmodifyversion", float, 1, single=True
+                        )
+                        if r is not None:
+                            return r
+
                     elif flag == "run_status":
-                        idx = lower.find("mainmoving[")
-                        if idx != -1:
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end].strip()
-                                    version = int(sub)  # 整数
-                                    return version
-                                except Exception:
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : run status parse failed")
+                        r = self._parse_bracket_values(
+                            lower, "mainmoving", int, single=True
+                        )
+                        if r is not None:
+                            return r
+
                     elif flag == "get_gripper_run_status":
-                        idx = lower.find("motionstate[")
-                        if idx != -1:
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end].strip()
-                                    version = int(sub)  # 整数
-                                    return version
-                                except Exception:
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : get gripper run status parse failed")
+                        r = self._parse_bracket_values(
+                            lower, "motionstate", int, single=True
+                        )
+                        if r is not None:
+                            return r
+
                     elif flag == "get_gripper_parameter":
-                        idx = lower.find("gripperparameters[")
-                        if idx != -1:
-                            bracket_start = lower.find("[", idx)
-                            bracket_end = lower.find("]", idx)
-                            if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
-                                try:
-                                    sub = lower[bracket_start + 1:bracket_end].strip()
-                                    version = int(sub)  # 整数
-                                    return version
-                                except Exception:
-                                    if self.debug:
-                                        print(
-                                            f"{self._now()} DEBU [UltraArmP1] _warn : get gripper run status parse failed")
+                        r = self._parse_bracket_values(
+                            lower, "gripperparameters", int, single=True
+                        )
+                        if r is not None:
+                            return r
+
                     elif flag is None:
                         return -1
 
                 except Exception as e:
                     if self.debug:
                         print(f"{self._now()} DEBU [UltraArmP1] _error : serial read exception: {e}")
-                    # small sleep and continue
-            # no data right now
             time.sleep(POLL_SLEEP)
 
-        # timeout
         if self.debug:
-            print(f"{self._now()} DEBU [UltraArmP1] _warn : request timeout, received buffer: {raw_data!r}")
+            print(
+                f"{self._now()} DEBU [UltraArmP1] _warn : request timeout, received buffer: {raw_data!r}"
+            )
         return -1
+
+    def _parse_bracket_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
+        """
+        Parse keyword[...] values from lower string.
+
+        Args:
+            lower (str): lower-case received buffer
+            keyword (str): keyword to search (lower-case)
+            value_type: int or float
+            round_ndigits (int|None): rounding digits for float
+            single (bool): return first value only
+
+        Returns:
+            list | int | float | None
+        """
+        idx = lower.find(keyword)
+        if idx == -1:
+            return -1
+
+        bracket_start = lower.find("[", idx)
+        bracket_end = lower.find("]", idx)
+        if bracket_start == -1 or bracket_end == -1 or bracket_end <= bracket_start:
+            return -1
+
+        try:
+            sub = lower[bracket_start + 1: bracket_end]
+            items = [x.strip() for x in sub.split(",") if x.strip() != ""]
+
+            values = []
+            for x in items:
+                v = value_type(x)
+                if value_type is float and round_ndigits is not None:
+                    v = round(v, round_ndigits)
+                values.append(v)
+
+            return values[0] if single else values
+        except Exception:
+            return -1
 
     def _send_command(self, command: str):
         """Send commands to serial port"""
         command += ProtocolCode.END
-        print('command_write', command)
         self._debug_write(command)
         self._serial_port.write(command.encode())
         self._serial_port.flush()
@@ -440,6 +392,22 @@ class UltraArmP1:
             if speed is not None and 1 <= speed <= 5700:
                 command += f" F{speed}"
 
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def set_coord(self, coord_id, coord, speed, _async=True, _gcode=False):
+        """Set single coordinate.
+
+        Args:
+            coord_id (str): 'X', 'Y', 'Z', 'R'
+            coord (float): coordinate value
+            speed (int): movement speed 1 ~ 5700
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
+        with self.lock:
+            command = ProtocolCode.SET_COORDS
+            command += f" {coord_id}{coord}"
+            command += f" F{speed}"
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
@@ -819,7 +787,7 @@ class UltraArmP1:
         """PWM control.
 
         Args:
-            p_value (int) : Duty cycle 0 ~ 255; 128 means 50%
+            p_value (int) : Duty cycle 0 ~ 5;
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, p_value=p_value)
@@ -851,6 +819,52 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=False)
 
+    def play_gcode_file(self, filename):
+        """Play the imported track file
+
+        Args:
+            filename (str): Path to a G-code file (.gcode or .nc or .ngc)
+        """
+
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,
+            filename=filename
+        )
+
+        try:
+            with open(filename) as f:
+                lines = f.readlines()
+        except Exception:
+            print("There is no such file!")
+            return
+
+        with self.lock:
+            for raw_line in lines:
+                line = self._normalize_gcode_line(raw_line)
+
+                if line is None:
+                    continue
+
+                command = line + ProtocolCode.END
+
+                self._serial_port.write(command.encode())
+                self._serial_port.flush()
+                time.sleep(0.02)
+                self._debug_write(command)
+
+    def _normalize_gcode_line(self, line):
+        line = line.strip()
+
+        if not line or line.startswith(";"):
+            return None
+
+        tokens = line.strip().split()
+
+        if tokens[0].upper() == "G0":
+            tokens[0] = "G1"
+
+        return " ".join(tokens)
+
     def drag_teach_start(self):
         """Drag teach start"""
         with self.lock:
@@ -858,17 +872,10 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=False)
 
-    def drag_teach_reproduction(self, number_data):
-        """Drag teach reproduction
-
-        Args:
-            number_data (int) : 0 ~ 49
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, number_data=number_data)
+    def drag_teach_save(self):
+        """Drag teach save"""
         with self.lock:
-            command = ProtocolCode.DRAG_TEACH_REPRODUCTION_P1
-            command += " B" + str(number_data)
-            self._send_command(command)
+            self._send_command(ProtocolCode.DRAG_TEACH_SAVE_P1)
             return self._response(_async=False)
 
     def drag_teach_pause(self):
@@ -918,27 +925,27 @@ class UltraArmP1:
         Returns: (float) screen version.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_GRIPPER_ANGLE_P1)
+            self._send_command(ProtocolCode.GET_SYSTEM_SCREEN_VERSION_P1)
             return self._request("get_screen_version")
 
-    def get_modify_screen_version(self):
-        """Read modify screen version.
+    def get_screen_modify_version(self):
+        """Read screen modify version.
 
         Returns: (float) modify screen version.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_GRIPPER_ANGLE_P1)
-            return self._request("get_modify_screen_version")
+            self._send_command(ProtocolCode.GET_MODIFY_SCREEN_VERSION_P1)
+            return self._request("get_screen_modify_version")
 
     def set_communication_baud_rate(self, baud_rate):
         """set communication baud rate
 
         Args:
-            baud_rate (int) : 1 ~ 65535
+            baud_rate (int) : 115200 or 1000000
             """
         self.calibration_parameters(class_name=self.__class__.__name__, baud_rate=baud_rate)
         with self.lock:
-            command = ProtocolCode.DRAG_TEACH_EXECUTE_P1
+            command = ProtocolCode.SET_COMMUNICATION_BAUD_RATE_P1
             command += " B" + str(baud_rate)
             self._send_command(command)
             return self._response(_async=False)

@@ -106,7 +106,7 @@ __all__ = [
     "Pro320Modbus",
 ]
 
-__version__ = "4.0.4b6"
+__version__ = "4.0.4b7"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

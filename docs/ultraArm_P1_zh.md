@@ -240,7 +240,7 @@ from pymycobot import UltraArmP1
 
 - **功能：** 设置PWM控制
 
-- **参数说明：**  `p_value` 占空比，范围：0-255
+- **参数说明：**  `p_value` 占空比，范围：0-5
 
 - **返回值：** 1
 
@@ -414,12 +414,9 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 35 `drag_teach_reproduction(number_data)`
+## 35 `drag_teach_save()`
 
-- **功能：** 拖动示教复现
-
-- **参数说明:** 
-  - `number_data`： `int` 0 ~ 49
+- **功能：** 拖动示教保存
 
 - **返回值：** 1
 
@@ -470,7 +467,7 @@ from pymycobot import UltraArmP1
 - **功能：** 设置通信波特率
 
 - **参数说明:** 
-  - `baud_rate`： `int` 1 ~ 65535，标准波特率
+  - `baud_rate`： `int` 标准波特率, 115200 or 1000000
 
 - **返回值：** 1
 
@@ -485,3 +482,10 @@ from pymycobot import UltraArmP1
 - **功能：** 接收485数据
 
 - **返回值：** 485数据
+
+## 46 `play_gcode_file(filename)`
+
+- **功能：** 播放导入的轨迹文件。
+- **参数说明：**
+  - `filename` ：轨迹文件名称
+- **返回值：** 无

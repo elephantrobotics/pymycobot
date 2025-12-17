@@ -3433,7 +3433,7 @@ def calibration_parameters(**kwargs):
                     )
             elif parameter == "coord":
                 coord_id = kwargs.get("coord_id", None)
-                coord_map = {"X": 0, "Y": 1, "Z": 2}
+                coord_map = {"X": 0, "Y": 1, "Z": 2, "R": 3}
                 index = coord_map[coord_id]
 
                 min_val = robot_limit[class_name]["coords_min"][index]
@@ -3447,9 +3447,9 @@ def calibration_parameters(**kwargs):
                 check_value_type(
                     parameter, value_type, ultraArmP1DataException, str
                 )
-                if value not in ["X", "Y", "Z"]:
+                if value not in ["X", "Y", "Z", 'R']:
                     raise ultraArmP1DataException(
-                        f"coord_id must be 'X', 'Y', or 'Z', but received {value}"
+                        f"coord_id must be 'X', 'Y', 'Z', or 'R', but received {value}"
                     )
             elif parameter == "speed":
                 check_value_type(
@@ -3593,14 +3593,14 @@ def calibration_parameters(**kwargs):
                         f"The parameter {parameter} only supports 1 ~ 10, but received {value}")
             elif parameter in ["p_value"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
-                if not (0 <= value <= 255):
+                if not (0 <= value <= 5):
                     raise ultraArmP1DataException(
-                        f"The parameter {parameter} only supports 0 ~ 255, but received {value}")
+                        f"The parameter {parameter} only supports 0 ~ 5, but received {value}")
             elif parameter in ["baud_rate"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
-                if not (1 <= value <= 65535):
+                if value not in [115200, 1000000]:
                     raise ultraArmP1DataException(
-                        f"The parameter {parameter} only supports 1 ~ 65535, but received {value}")
+                        f"The parameter {parameter} only supports 115200 and 1000000, but received {value}")
             elif parameter in ["number_data"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if not (0 <= value <= 49):
@@ -3612,6 +3612,21 @@ def calibration_parameters(**kwargs):
                 if not (0 <= value <= 4):
                     raise ultraArmP1DataException(
                         f"The parameter {parameter} only supports 0 ~ 4, but received {value}")
+            elif parameter == "filename":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `filename` must be a string, but received {type(value)}"
+                    )
+
+                if not os.path.isfile(value):
+                    raise ultraArmP1DataException(
+                        f"The file '{value}' does not exist"
+                    )
+
+                if not value.lower().endswith((".gcode", ".ngc", ".nc")):
+                    raise ultraArmP1DataException(
+                        f"Unsupported file format, please use .gcode, .ngc, or .nc, but received {value}"
+                    )
 
 
 def restrict_serial_port(func):

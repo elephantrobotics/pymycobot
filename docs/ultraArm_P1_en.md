@@ -321,7 +321,7 @@ from pymycobot import UltraArmP1
 
 - **Function:** Sets PWM control
 
-- **Parameter Description:** `p_value` Duty cycle, range: 0-255
+- **Parameter Description:** `p_value` Duty cycle, range: 0-5
 
 - **Return Value:** 1
 
@@ -511,13 +511,9 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-## 35 `drag_teach_reproduction(number_data)`
+## 35 `drag_teach_save()`
 
-- **Function:** Reproduces drag-and-drop teaching
-
-- **Parameter Description:**
-
-  - `number_data`: `int` 0 ~ 49
+- **Function:** save drag-and-drop teaching
 
 - **Return Value:** 1
 
@@ -569,7 +565,7 @@ from pymycobot import UltraArmP1
 
 - **Parameter Description:**
 
-  - `baud_rate`: `int` 1 ~ 65535, standard baud rate
+  - `baud_rate`: `int` standard baud rate, 115200 or 1000000
 
 - **Return Value:** 1
 
@@ -584,3 +580,13 @@ from pymycobot import UltraArmP1
 - **Function:** Receives 485 data
 
 - **Return Value:** 485 data
+
+## 46 `play_gcode_file(filename)`
+
+- **Function:** Plays the imported track file.
+
+- **Parameter Description:**
+
+  - `filename`: Track file name
+
+- **Return Value:** None
