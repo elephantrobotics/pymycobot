@@ -87,6 +87,10 @@ class Pro450Client(Pro450CloseLoop):
                 return [self._decode_int8(valid_data[1:2])]
             elif genre in [ProtocolCode.GET_ERROR_INFO]:
                 return self._decode_int8(valid_data[1:])
+            elif genre in [ProtocolCode.GET_ROBOT_ID]:
+                high, low = valid_data
+                motor_type = (high << 8) | low  # 组合成 16 位整数
+                return hex(motor_type)
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
@@ -1817,4 +1821,15 @@ class Pro450Client(Pro450CloseLoop):
 
         print("Gripper Initialization Failed!")
         return False
+
+    def set_motor_type(self, motor_type):
+        """Set motor type.
+
+        Args:
+            motor_type (hex): motor type, range: 0xA1C2 or 0xA3C0
+        """
+        high_byte = (motor_type >> 8) & 0xFF  # 0xA3
+        low_byte = motor_type & 0xFF  # 0xC0
+        self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
+        return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
 

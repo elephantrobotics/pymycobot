@@ -1832,6 +1832,13 @@ def calibration_parameters(**kwargs):
                 if value < 1 or value > 10000:
                     raise MyCobotPro450DataException(
                         "The parameter {} only supports 1 ~ 10000 ms, but received {}".format(parameter, value))
+            elif parameter in ["motor_type"]:
+                if not (0x0000 <= value <= 0xFFFF):
+                    raise MyCobotPro450DataException(f"motor_type out of range: {hex(value)} (must be 0x0000~0xFFFF)")
+                allowed_types = [0xA1C2, 0xA3C0]
+                if value not in allowed_types:
+                    raise MyCobotPro450DataException(
+                        f"motor_type {hex(value)} not allowed. Must be one of: {[hex(x) for x in allowed_types]}")
 
     elif class_name in ["ultraArmP340"]:
         for parameter in parameter_list[1:]:
