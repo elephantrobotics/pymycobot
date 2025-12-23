@@ -1826,10 +1826,16 @@ class Pro450Client(Pro450CloseLoop):
         """Set motor type.
 
         Args:
-            motor_type (hex): motor type, range: 0xA1C2 or 0xA3C0
+            motor_type (hex/int/str): motor type, can be 0xA1C2, 0xA3C0, or 'A1C2', 'a3c0'
         """
+
+        self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
+
+        if isinstance(motor_type, str):
+            motor_type = int(motor_type, 16)
+
         high_byte = (motor_type >> 8) & 0xFF  # 0xA3
         low_byte = motor_type & 0xFF  # 0xC0
-        self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
+
         return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
 
