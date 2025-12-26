@@ -555,7 +555,7 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
         with self.lock:
-            command = ProtocolCode.JOG_INCREMENT_ANGLE_P1
+            command = ProtocolCode.JOG_INCREMENT_COORD_P1
             command += " J" + str(coord_id)
             command += " T" + str(increment)
             command += " F" + str(speed)
