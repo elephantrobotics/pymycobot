@@ -90,7 +90,7 @@ class Pro450Client(Pro450CloseLoop):
             elif genre in [ProtocolCode.GET_ROBOT_ID]:
                 high, low = valid_data
                 motor_type = (high << 8) | low  # 组合成 16 位整数
-                return hex(motor_type)
+                return f"{motor_type:04X}"
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
