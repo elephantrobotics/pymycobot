@@ -196,6 +196,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     "The data supported by parameter {} is 0 or 1 or 2, but the received value is {}".format(parameter,
                                                                                                              value))
         elif parameter == 'pin_signal':
+            print('22222')
             check_0_or_1(parameter, value, [0, 1], value_type, exception_class, int)
         elif parameter == 'speed':
             check_value_type(parameter, value_type, exception_class, int)
@@ -300,7 +301,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             check_0_or_1(parameter, value, [1, 2, 3], value_type, exception_class, int)
         elif parameter == "pin_no":
             if class_name in ["Mercury"]:
-                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, exception_class, int)
+                check_0_or_1(parameter, value, [1, 2], value_type, exception_class, int)
             elif class_name in ["MyCobot320", "MyCobot320Socket"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, exception_class, int)
             elif class_name in ["MyCobot280", "MyCobot280Socket", "MechArm270", "MechArmSocket", "MyPalletizer260", "MyPalletizerSocket"]:
@@ -322,6 +323,7 @@ def calibration_parameters(**kwargs):
     if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
+            value_type = type(value)
             if parameter == 'joint_id':
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryDataException)
@@ -353,12 +355,22 @@ def calibration_parameters(**kwargs):
             elif parameter == 'coord':
                 
                 index = kwargs.get('coord_id', None) - 1
-                if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
+
+                serial_port = kwargs.get('serial_port', None)
+                print('serial_port:', serial_port)
+                if serial_port == '/dev/left_arm':
+                    min_coord = robot_limit[class_name]["left_coords_min"][index]
+                    max_coord = robot_limit[class_name]["left_coords_max"][index]
+                elif serial_port == "/dev/right_arm":
+                    min_coord = robot_limit[class_name]["right_coords_min"][index]
+                    max_coord = robot_limit[class_name]["right_coords_max"][index]
+                else:
+                    min_coord = robot_limit[class_name]["coords_min"][index]
+                    max_coord = robot_limit[class_name]["coords_max"][index]
+
+                if value < min_coord or value > max_coord:
                     raise MercuryDataException(
-                        "The `coord` value of {} exceeds the limit, and the limit range is {} ~ {}".format(
-                            value, robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index]
-                        )
-                    )
+                        "The `coord` value of {} exceeds the limit, and the limit range is {} ~ {}".format(value, min_coord, max_coord))
             elif parameter == 'base_coord':
                 coord_id = kwargs.get('coord_id', None)
                 
@@ -450,8 +462,13 @@ def calibration_parameters(**kwargs):
                 if value < 0 or value > 655.5:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 655.5, but received {}".format(parameter, value))
             elif parameter == "rank":
-                if value not in [0,1,2]:
-                    raise MercuryDataException("The parameter {} only supports 0 or 1 or 2, but received {}".format(parameter, value))
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 1 or value > 5:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == 'rank_value':
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if not 1 <= value <= 100:
+                    raise MercuryDataException("rank value not right, should be 1 ~ 255, the error speed is {}".format(value))
             elif parameter == "move_type":
                 if value not in [0, 1, 2, 3, 4]:
                     raise MercuryDataException("The parameter {} only supports 0 or 4, but received {}".format(parameter, value))
@@ -484,6 +501,33 @@ def calibration_parameters(**kwargs):
             elif parameter == "idle_flag":
                 if value != 1:
                     raise MercuryDataException("The parameter {} only supports 1, but received {}".format(parameter, value))
+            elif parameter in ['max_acc']:
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                mode = kwargs.get('mode', None)
+                if mode == 0:
+                    if not (1 <= value <= 200):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 400):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 400 (coord mode), but received {value}")
+            elif parameter in ['max_speed']:
+                mode = kwargs.get('mode', None)
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if mode == 0:
+                    if not (1 <= value <= 150):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 150 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 200):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (coord mode), but received {value}")
+            elif parameter == "pin_no":
+                check_0_or_1(parameter, value, [1, 2], value_type, MercuryDataException, int)
+            elif parameter == "pin_no_base":
+                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, MercuryDataException, int)
+
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":

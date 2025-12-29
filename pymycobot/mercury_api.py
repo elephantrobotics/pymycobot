@@ -419,7 +419,10 @@ class MercuryCommandGenerator(CloseLoop):
         elif genre == ProtocolCode.GET_ANGLES:
             return [self._int3angle(angle) for angle in res]
         elif genre == ProtocolCode.SOLVE_INV_KINEMATICS:
-            return [self._int2angle(angle) for angle in res]
+            # return [self._int2angle(angle) for angle in res]
+            if res == [-572957] * 7:
+                return 'No solution for conversion'
+            return [self._int3angle(angle) for angle in res]
         elif genre == ProtocolCode.COBOTX_GET_ANGLE:
             return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:

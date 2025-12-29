@@ -8,7 +8,7 @@ class ForceGripper:
     def _mesg(self, *args, **kwargs):
         pass
     # 设置力矩手爪
-    def set_pro_gripper(self, gripper_id, gripper_address, value=0, has_return=False):
+    def set_pro_gripper(self, gripper_address, value=0, has_return=False, gripper_id=14):
         # 调用校准参数函数
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
                                     gripper_address=gripper_address)
@@ -17,7 +17,7 @@ class ForceGripper:
                           has_return=has_return)
 
     # 获取力矩手爪
-    def get_pro_gripper(self, gripper_id, gripper_address):
+    def get_pro_gripper(self, gripper_address, gripper_id=14):
         # 调用校准参数函数
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
                                     gripper_address=gripper_address)
@@ -25,88 +25,88 @@ class ForceGripper:
         return self._mesg(ProtocolCode.MERCURY_GET_TOQUE_GRIPPER, gripper_id, [gripper_address])
 
     # 设置力矩手爪角度
-    def set_pro_gripper_angle(self, gripper_id, gripper_angle):
+    def set_pro_gripper_angle(self, gripper_angle, gripper_id=14):
         # 调用校准参数函数
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
                                     gripper_angle=gripper_angle)
         # 发送设置力矩手爪角度的指令
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, gripper_angle)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_ANGLE, gripper_angle, gripper_id=gripper_id)
 
     # 设置力矩手爪打开
-    def set_pro_gripper_open(self, gripper_id):
+    def set_pro_gripper_open(self, gripper_id=14):
         # 调用校准参数函数
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, 100)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_ANGLE, 100, gripper_id=gripper_id)
 
-    def set_pro_gripper_close(self, gripper_id):
+    def set_pro_gripper_close(self, gripper_id=14):
     # 设置力矩手爪关闭
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         # 调用校准参数函数
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ANGLE, 0)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_ANGLE, 0, gripper_id=gripper_id)
         # 发送设置力矩手爪关闭的指令
 
-    def get_pro_gripper_angle(self, gripper_id):
+    def get_pro_gripper_angle(self, gripper_id=14):
     # 获取力矩手爪角度
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         # 调用校准参数函数
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_ANGLE)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_ANGLE, gripper_id=gripper_id)
         # 发送获取力矩手爪角度的指令
 
-    def set_pro_gripper_calibration(self, gripper_id):
+    def set_pro_gripper_calibration(self, gripper_id=14):
     # 设置力矩手爪校准
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         # 调用校准参数函数
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_CALIBRATION)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_CALIBRATION, gripper_id=gripper_id)
         # 发送设置力矩手爪校准的指令
 
-    def get_pro_gripper_status(self, gripper_id):
+    def get_pro_gripper_status(self, gripper_id=14):
     # 获取力矩手爪状态
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         # 调用校准参数函数
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_STATUS)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_STATUS, gripper_id=gripper_id)
         # 发送获取力矩手爪状态的指令
 
-    def set_pro_gripper_torque(self, gripper_id, torque):
+    def set_pro_gripper_torque(self, torque, gripper_id=14):
     # 设置力矩手爪扭矩
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id, torque=torque)
         # 调用校准参数函数
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_TORQUE, torque)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_TORQUE, torque, gripper_id=gripper_id)
         # 发送设置力矩手爪扭矩的指令
 
-    def get_pro_gripper_torque(self, gripper_id):
+    def get_pro_gripper_torque(self, gripper_id=14):
     # 获取力矩手爪扭矩
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         # 调用校准参数函数
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_TORQUE)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_TORQUE, gripper_id=gripper_id)
         # 发送获取力矩手爪扭矩的指令
 
-    def set_pro_gripper_speed(self, gripper_id, speed):
+    def set_pro_gripper_speed(self, speed, gripper_id=14):
     # 设置力矩手爪速度
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id, speed=speed)
         # 调用校准参数函数
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_SPEED, speed)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_SPEED, speed, gripper_id=gripper_id)
         # 发送设置力矩手爪速度的指令
 
-    def get_pro_gripper_speed(self, gripper_id):
+    def get_pro_gripper_speed(self, gripper_id=14):
     # 获取力矩手爪速度
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         # 调用校准参数函数
-        return self.get_pro_gripper(gripper_id, ProGripper.GET_GRIPPER_SPEED)
+        return self.get_pro_gripper(ProGripper.GET_GRIPPER_SPEED, gripper_id=gripper_id)
         # 发送获取力矩手爪速度的指令
 
-    def set_pro_gripper_abs_angle(self, gripper_id, angle):
+    def set_pro_gripper_abs_angle(self, angle, gripper_id=14):
     # 设置力矩手爪绝对角度
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_ABS_ANGLE, angle, has_return=True)
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_ABS_ANGLE, angle, has_return=True, gripper_id=gripper_id)
         # 发送设置力矩手爪绝对角度的指令
 
-    def set_pro_gripper_pause(self, gripper_id):
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_PAUSE)
+    def set_pro_gripper_pause(self, gripper_id=14):
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_PAUSE, gripper_id=gripper_id)
 
-    def set_pro_gripper_stop(self, gripper_id):
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_STOP)
+    def set_pro_gripper_stop(self, gripper_id=14):
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_STOP, gripper_id=gripper_id)
 
-    def set_pro_gripper_resume(self, gripper_id):
-        return self.set_pro_gripper(gripper_id, ProGripper.SET_GRIPPER_RESUME)
+    def set_pro_gripper_resume(self, gripper_id=14):
+        return self.set_pro_gripper(ProGripper.SET_GRIPPER_RESUME, gripper_id=gripper_id)
     
 
 class ThreeHand:
@@ -324,7 +324,7 @@ class ThreeHand:
 
         """
         self.calibration_parameters(class_name=self.__class__.__name__, hand_id=hand_id)
-        return self.__get_tool_fittings_value(
+        return self.__set_tool_fittings_value(
             FingerGripper.SET_HAND_GRIPPER_MIN_PRESSURE, [hand_id], [value], gripper_id=gripper_id
         )
 

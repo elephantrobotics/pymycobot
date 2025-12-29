@@ -31,6 +31,11 @@ print(mc.get_angles())
 - **function：** Get the end version number
 - **Return value：** End parameters(`float`)
 
+#### `get_atom_modify_version()`
+
+- **function：** Get the end modify version number
+- **Return value：** End parameters(`int`)
+
 #### `get_robot_status()`
 
 - **function:** Upper computer error security status

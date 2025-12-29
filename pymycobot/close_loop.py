@@ -87,6 +87,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 ProtocolCode.JOG_BASE_INCREMENT_COORD,
                 ProtocolCode.WRITE_MOVE_C,
                 ProtocolCode.JOG_RPY,
+                ProtocolCode.JOG_BASE_RPY,
                 ProtocolCode.WRITE_MOVE_C_R,
                 ProtocolCode.MERCURY_DRAG_TECH_EXECUTE] and self.sync_mode:
             wait_time = 300
@@ -105,9 +106,15 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
         need_break = False
         data = None
+        timeout = 0.5
 
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
+        elif self.__class__.__name__ == "Mercury":
+            if genre == ProtocolCode.MERCURY_SET_TOQUE_GRIPPER:
+                if real_command[6] in [13]:
+                    timeout = 3
+                    wait_time = 10
         elif self.__class__.__name__ == "Pro450Client":
             if genre == ProtocolCode.SET_FRESH_MODE:
                 timeout = 4
@@ -464,6 +471,14 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             float: version number.
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION)
+
+    def get_atom_modify_version(self):
+        """Get atom firmware modify version.
+
+        Returns:
+            float: version number.
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_MODIFY_VERSION)
 
     def is_power_on(self):
         """Adjust robot arm status
@@ -1133,7 +1148,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
 
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed, serial_port=self._serial_port.port)
         value = self._coord2int(
             coord) if coord_id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
@@ -1152,7 +1167,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords, speed=speed)
+            class_name=self.__class__.__name__, coords=coords, speed=speed, serial_port=self._serial_port.port)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -1160,9 +1175,19 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
 
-    def resume(self):
-        """Recovery movement"""
-        return self._mesg(ProtocolCode.RESUME)
+    def resume(self, deceleration=0):
+        """Recovery movement
+
+        Args:
+            deceleration (bool, optional): Whether to slow up and resume. Defaults to False.
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, deceleration=deceleration)
+        if deceleration == 1:
+            return self._mesg(ProtocolCode.RESUME, 1)
+        else:
+            return self._mesg(ProtocolCode.RESUME)
 
     def set_servo_calibration(self, joint_id):
         """The current position of the calibration joint actuator is the angle zero point, 
@@ -1726,8 +1751,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         return self._mesg(ProtocolCode.INIT_ELECTRIC_GRIPPER)
 
-    def get_servo_encoder(self, id):
-        return self._mesg(ProtocolCode.GET_ENCODER, id)
+    def get_servo_encoder(self, joint_id):
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_ENCODER, joint_id)
 
     def get_servo_encoders(self):
         return self._mesg(ProtocolCode.GET_ENCODERS)
@@ -1740,7 +1767,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             pin_signal: 0 - low. 1 - high.
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
+            class_name=self.__class__.__name__, pin_no_base=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_base_io_input(self, pin_no):
@@ -1750,7 +1777,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             pin_no: (int) pin port number. range 1 ~ 6
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, pin_no=pin_no)
+            class_name=self.__class__.__name__, pin_no_base=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
 
     def set_world_reference(self, coords):

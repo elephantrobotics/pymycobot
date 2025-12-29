@@ -143,6 +143,7 @@ class ProtocolCode(object):
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
+    GET_ATOM_MODIFY_VERSION = 0x06
 
     CLEAR_ZERO_POS = 0x0A
     SET_MONITOR_STATE = 0x0A
@@ -409,6 +410,7 @@ class ProtocolCode(object):
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
     JOG_RPY = 0xF5
+    JOG_BASE_RPY = 0xEB
 
     GET_MONITOR_MODE = 0xFB
     SET_MONITOR_MODE = 0xFC
