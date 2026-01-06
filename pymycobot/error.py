@@ -341,8 +341,9 @@ def calibration_parameters(**kwargs):
                         )
                     )
             elif parameter == 'angles':
-                if len(value) not in [7, 10]:
-                    raise MercuryDataException("The length of `angles` must be 7 or 10.")
+                check_value_type(parameter, value_type, MercuryDataException, list)
+                if len(value) not in [7]:
+                    raise MercuryDataException("The length of `angles` must be 7.")
                 for idx, angle in enumerate(value):
                     joint_id = idx+1
                     angle_min = robot_limit[class_name]["angles_min"][idx]
@@ -409,7 +410,9 @@ def calibration_parameters(**kwargs):
             elif parameter in ['direction', 'flag', 'value']:
                 if value not in [0, 1]:
                     raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
-
+            elif parameter in ['position_mode']:
+                if value not in [0, 1, 2]:
+                    raise MercuryDataException("{} only supports 0 or 1 or 2, but received {}".format(parameter, value))
             elif parameter == 'coord_id':
                 if value < 1 or value > 6:
                     raise MercuryDataException("coord_id only supports 1 ~ 6, but received {}".format(value))

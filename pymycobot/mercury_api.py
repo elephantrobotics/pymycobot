@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import locale
+import numpy as np
 
 from pymycobot.error import restrict_serial_port
 from pymycobot.common import ProtocolCode, FingerGripper
@@ -11,10 +12,6 @@ from pymycobot.close_loop import CloseLoop
 class MercuryCommandGenerator(CloseLoop):
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
-        try:
-            import numpy as np
-        except ImportError:
-            raise ImportError("Please install numpy")
         # 同步模式
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
@@ -601,7 +598,11 @@ class MercuryCommandGenerator(CloseLoop):
             0 - False\n
             -1 - Error
         """
-        if mode in [1,2]:
+        self.calibration_parameters(class_name=self.__class__.__name__, position_mode=mode)
+        if mode == 0:
+            self.calibration_parameters(class_name=self.__class__.__name__, angles=data)
+            data_list = [self._angle2int(i) for i in data]
+        else:
             if mode == 2:
                 self.calibration_parameters(class_name=self.__class__.__name__, base_coords=data, serial_port=self._serial_port.port)
             else:
@@ -611,11 +612,6 @@ class MercuryCommandGenerator(CloseLoop):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
                 data_list.append(self._angle2int(data[idx]))
-        elif mode == 0:
-            self.calibration_parameters(class_name=self.__class__.__name__, angles=data)
-            data_list = [self._angle2int(i) for i in data]
-        else:
-            raise Exception("mode is not right, please input 0 or 1 or 2")
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
     
     def write_waist_sync(self, current_angle, target_angle, speed):

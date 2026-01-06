@@ -1216,20 +1216,20 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             -1 - Error
         """
         self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        if mode == 1:
-            self.calibration_parameters(
-                class_name=self.__class__.__name__, coords=data)
-            data_list = []
-            for idx in range(3):
-                data_list.append(self._coord2int(data[idx]))
-            for idx in range(3, 6):
-                data_list.append(self._angle2int(data[idx]))
-        elif mode == 0:
-            self.calibration_parameters(
-                class_name=self.__class__.__name__, angles=data)
-            data_list = [self._angle2int(i) for i in data]
-
-        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
+        # if mode == 1:
+        #     self.calibration_parameters(
+        #         class_name=self.__class__.__name__, coords=data)
+        #     data_list = []
+        #     for idx in range(3):
+        #         data_list.append(self._coord2int(data[idx]))
+        #     for idx in range(3, 6):
+        #         data_list.append(self._angle2int(data[idx]))
+        # elif mode == 0:
+        #     self.calibration_parameters(
+        #         class_name=self.__class__.__name__, angles=data)
+        #     data_list = [self._angle2int(i) for i in data]
+        #
+        # return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
 
     def is_moving(self):
         """Detect if the robot is moving
