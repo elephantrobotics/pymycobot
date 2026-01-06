@@ -563,7 +563,7 @@ class MercuryCommandGenerator(CloseLoop):
 
         Args:
             axis_id (int): axis id, range 1 ~ 6 corresponds to [x,y,z,rx,ry,rz]
-            increment (float): Incremental value
+            increment (float): Base coord incremental value
             speed (int): speed
 
         Return:
@@ -577,13 +577,13 @@ class MercuryCommandGenerator(CloseLoop):
             52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=axis_id, speed=speed)
-        coord_list = []
-        if axis_id < 4:
-            coord_list.append(self._coord2int(increment))
+            class_name=self.__class__.__name__, coord_id=axis_id, base_increment_coord=increment, speed=speed, serial_port=self._serial_port.port)
+        if axis_id <= 3:
+            value = self._coord2int(increment)
         else:
-            coord_list.append(self._angle2int(increment))
-        return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, coord_list, speed, has_reply=True,
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, [value], speed, has_reply=True,
                           _async=_async)
         
     def is_in_position(self, data, mode=0):

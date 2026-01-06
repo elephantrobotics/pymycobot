@@ -530,7 +530,35 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [1, 2], value_type, MercuryDataException, int)
             elif parameter == "pin_no_base":
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, MercuryDataException, int)
+            elif parameter == 'increment_angle':
+                joint_id = kwargs.get('joint_id', None)
+                if joint_id in [11,12,13]:
+                    index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
+                else:
+                    index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
 
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryDataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
+            elif parameter in ['increment_coord', 'base_increment_coord']:
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                serial_port = kwargs.get('serial_port', None)
+                if serial_port == "/dev/left_arm":
+                    span = abs(robot_limit[class_name]["left_coords_max"][index] - robot_limit[class_name]["left_coords_min"][index])
+                elif serial_port == "/dev/right_arm":
+                    span = abs(robot_limit[class_name]["right_coords_max"][index] - robot_limit[class_name]["right_coords_min"][index])
+                else:
+                    span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryDataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":

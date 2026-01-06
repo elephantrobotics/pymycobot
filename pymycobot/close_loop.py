@@ -863,27 +863,31 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
         Args:
             joint_id: Joint id 1 - 7.
-            increment: 
+            increment: Angle increment value
             speed: int (1 - 100)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, speed=speed)
-
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, has_reply=True,
+            class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, speed=speed)
+        scaled_increment = self._angle2int(increment)
+        scaled_increment = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, has_reply=True,
                           _async=_async)
 
     def jog_increment_coord(self, coord_id, increment, speed, _async=False):
         """Single coordinate incremental motion control. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the job_base_increment_coord interface
 
         Args:
-            joint_id: axis id 1 - 6.
-            increment: 
+            coord_id: axis id 1 - 6.
+            increment: Coord increment value
             speed: int (1 - 100)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, speed=speed)
-        value = self._coord2int(
-            increment) if coord_id <= 3 else self._angle2int(increment)
+            class_name=self.__class__.__name__, coord_id=coord_id, increment_coord=increment, speed=speed, serial_port=self._serial_port.port)
+        if coord_id <= 3:
+            value = self._coord2int(increment)
+        else:
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
     def get_quick_move_info(self):
