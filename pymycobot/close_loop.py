@@ -203,24 +203,15 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             if is_in_position and time.time() - interval_time > check_is_moving_t and wait_time == 300:
                 interval_time = time.time()
                 moving = self.is_moving()
-                # if isinstance(moving, int) and moving == 0:
-                #     print("停止运动，退出")
-                #     is_moving += 1
-                #     # 由于is_moving接口比到位反馈更快，所以第一次收到停止运动后，将下一次的检测时间更改为0.25s，防止此处先退出，返回-2
-                #     check_is_moving_t = 0.25
-                #     if is_moving > 1:
-                #         # 累计两次才退出
-                #         with self.lock:
-                #             if genre in self.write_command:
-                #                 self.write_command.remove(genre)
-                #         return -2
                 if isinstance(moving, int) and moving == 0:
+                    # print("停止运动，退出")
                     is_moving += 1
                     if is_moving == 1:
                         # 第一次检测到停止，只是标记，不退出
-                        check_is_moving_t = 0.25
-                    elif is_moving > 1:
-                        # 第二次检测到停止才真正退出
+                        # 由于is_moving接口比到位反馈更快，所以第一次收到停止运动后，将下一次的检测时间更改为0.35s，防止此处先退出，返回-2
+                        check_is_moving_t = 0.35
+                    elif is_moving > 2:
+                        # 第三次检测到停止才真正退出
                         with self.lock:
                             if genre in self.write_command:
                                 self.write_command.remove(genre)
