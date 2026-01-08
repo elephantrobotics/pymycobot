@@ -523,6 +523,8 @@ class MercuryCommandGenerator(CloseLoop):
             51: Motor encoder error
             52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=axis, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed, _async=_async, has_reply=True)
 
     @restrict_serial_port

@@ -327,7 +327,7 @@ def calibration_parameters(**kwargs):
             if parameter == 'joint_id':
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryDataException)
-            elif parameter == 'angle':
+            elif parameter in ['angle', 'degree']:
                 joint_id = kwargs.get('joint_id', None)
                 if joint_id in [11,12,13]:
                     index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
