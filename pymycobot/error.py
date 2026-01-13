@@ -481,6 +481,16 @@ def calibration_parameters(**kwargs):
             elif parameter in ["gripper_id", "new_hand_id"]:
                 if value < 1 or value > 254:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
+            elif parameter == "get_gripper_address":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                invalid_addresses = [3, 5, 7, 8, 9, 10, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 30, 31, 32, 36, 37,
+                                     38, 39, 41, 43]
+                if value < 1 or value > 44:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 44, but received {}".format(parameter, value))
+                if value in invalid_addresses:
+                    raise MercuryDataException(
+                        "'address' in {} cannot be one of the following values: {}, but the received value is {}".format(
+                            parameter, invalid_addresses, value))
             elif parameter == "set_gripper_address":
                 check_value_type(parameter, value_type, MercuryDataException, int)
                 invalid_addresses = [1, 2, 4, 6, 7, 8, 9, 12, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 33, 34, 35,
@@ -493,14 +503,70 @@ def calibration_parameters(**kwargs):
                             parameter, invalid_addresses, value))
             elif parameter == "gripper_address_value":
                 check_value_type(parameter, value_type, MercuryDataException, int)
-                invalid_addresses = [1, 2, 4, 6, 7, 8, 9, 12, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 33, 34, 35,
-                                     40, 42, 44]
+                address_id = kwargs.get('set_gripper_address', None)
+                if address_id in [3]:
+                    if value < 1 or value > 254:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
+                elif address_id in [5]:
+                    if value < 0 or value > 5:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 5, but received {}".format(parameter, value))
+                elif address_id in [10]:
+                    if value not in [0, 1]:
+                        raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
+                elif address_id in [11, 27, 30, 31, 36, 41]:
+                    if value < 0 or value > 100:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+                elif address_id in [13]:
+                    if value != 0:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0, but received {}".format(parameter, value))
+                elif address_id in [21, 23]:
+                    if value < 0 or value > 16:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 16, but received {}".format(parameter, value))
+                elif address_id in [25]:
+                    if value < 0 or value > 254:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 254, but received {}".format(parameter, value))
+                elif address_id in [29]:
+                    if value not in [0, 1, 16, 17]:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 or 1 or 16 or 17, but received {}".format(parameter, value))
+                elif address_id in [32]:
+                    if value < 1 or value > 100:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 1 ~ 100, but received {}".format(parameter, value))
+                elif address_id in [43]:
+                    if value < 100 or value > 300:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 100 ~ 300, but received {}".format(parameter, value))
             elif parameter == "gripper_angle":
                 if value < 0 or value > 100:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+            elif parameter == "gripper_angles":
+                check_value_type(parameter, value_type, MercuryDataException, list)
+                if len(value) != 6:
+                    raise MercuryDataException("{}: 'gripper_angles' must contain exactly 6 values, but received {}.".format(class_name, len(value)))
+
+                for i, angle in enumerate(value):
+                    if not isinstance(angle, int):
+                        raise MercuryDataException("{}: Value at position {} in 'gripper_angles' must be an integer, but received {}.".format(class_name, i + 1, angle))
+                    if angle < 0 or angle > 100:
+                        raise MercuryDataException("{}: Value {} at position {} in 'gripper_angles' is out of range (0 ~ 100).".format(class_name, angle, i + 1))
+            elif parameter in ["min_pressure", "gripper_i", "gripper_p", "gripper_d"]:
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 0 or value > 254:
+                    raise MercuryDataException("The range of 'value' in {} is 0 ~ 254, but the received value is {}".format(parameter, value))
+            elif parameter == "clockwise":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 0 or value > 16:
+                    raise MercuryDataException("The range of 'value' in {} is 0 ~ 16, but the received value is {}".format(parameter, value))
             elif parameter == "torque":
-                if value < 1 or value > 100:
-                    raise MercuryDataException("The parameter {} only supports 1 ~ 100, but received {}".format(parameter, value))
+                if value < 0 or value > 100:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
             elif parameter == "hand_id":
                 if value < 1 or value > 6:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 6, but received {}".format(parameter, value))

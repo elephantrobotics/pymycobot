@@ -112,7 +112,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             timeout = 1
         elif self.__class__.__name__ == "Mercury":
             if genre == ProtocolCode.MERCURY_SET_TOQUE_GRIPPER:
-                if real_command[6] in [13]:
+                if real_command[6] in [13, 36]:
                     timeout = 3
                     wait_time = 10
         elif self.__class__.__name__ == "MercuryArmsSocket":

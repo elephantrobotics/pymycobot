@@ -123,6 +123,7 @@ class FingerGripper(object):
     GET_HAND_ALL_ANGLES = 0x32
     SET_HAND_GRIPPER_PINCH_ACTION = 0x33
     SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT = 0x34
+    GET_HAND_GRIPPER_MODEL = 0x35
 
 
 class ProtocolCode(object):
