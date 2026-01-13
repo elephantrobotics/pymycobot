@@ -11,7 +11,7 @@ class ForceGripper:
     def set_pro_gripper(self, gripper_address, value=0, has_return=False, gripper_id=14):
         # 调用校准参数函数
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id,
-                                    gripper_address=gripper_address)
+                                    set_gripper_address=gripper_address, gripper_address_value=value)
         # 发送设置力矩手爪的指令
         return self._mesg(ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, gripper_id, [gripper_address], [value],
                           has_return=has_return)

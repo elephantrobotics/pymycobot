@@ -470,8 +470,8 @@ def calibration_parameters(**kwargs):
                     raise MercuryDataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
             elif parameter == 'rank_value':
                 check_value_type(parameter, value_type, MercuryDataException, int)
-                if not 1 <= value <= 100:
-                    raise MercuryDataException("rank value not right, should be 1 ~ 255, the error speed is {}".format(value))
+                if not 1 <= value <= 255:
+                    raise MercuryDataException("rank value not right, should be 1 ~ 255, the error rank value is {}".format(value))
             elif parameter == "move_type":
                 if value not in [0, 1, 2, 3, 4]:
                     raise MercuryDataException("The parameter {} only supports 0 or 4, but received {}".format(parameter, value))
@@ -481,9 +481,20 @@ def calibration_parameters(**kwargs):
             elif parameter in ["gripper_id", "new_hand_id"]:
                 if value < 1 or value > 254:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
-            elif parameter == "gripper_address":
-                if value < 1 or value > 44 or value in [15,17,19]:
-                    raise MercuryDataException("The parameter {} only supports 1 ~ 44 (except 15, 17, and 19), but received {}".format(parameter, value))
+            elif parameter == "set_gripper_address":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                invalid_addresses = [1, 2, 4, 6, 7, 8, 9, 12, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 33, 34, 35,
+                                     40, 42, 44]
+                if value < 1 or value > 44:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 44, but received {}".format(parameter, value))
+                if value in invalid_addresses:
+                    raise MercuryDataException(
+                        "'address' in {} cannot be one of the following values: {}, but the received value is {}".format(
+                            parameter, invalid_addresses, value))
+            elif parameter == "gripper_address_value":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                invalid_addresses = [1, 2, 4, 6, 7, 8, 9, 12, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 33, 34, 35,
+                                     40, 42, 44]
             elif parameter == "gripper_angle":
                 if value < 0 or value > 100:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))

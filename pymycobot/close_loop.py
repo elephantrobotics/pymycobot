@@ -115,14 +115,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 if real_command[6] in [13]:
                     timeout = 3
                     wait_time = 10
-        elif self.__class__.__name__ == "Pro450Client":
-            if genre == ProtocolCode.SET_FRESH_MODE:
-                timeout = 4
-            elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
-                timeout = 5
-                wait_time = 4
-            else:
-                timeout = 3
         elif self.__class__.__name__ == "MercuryArmsSocket":
             timeout = 1
         else:
@@ -231,13 +223,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             data_len -= 1
             if self.__class__.__name__ == "Pro630Client":
                 data_len += 1
-            elif self.__class__.__name__ == "Pro450Client":
-                data_len += 1
-                data_pos -= 1
-        elif genre == ProtocolCode.GET_DIGITAL_INPUT:
-            if self.__class__.__name__ == "Pro450Client":
-                data_len = 1
-                data_pos = 4
         else:
             data_pos = 4
         if is_get_return:
@@ -1081,7 +1066,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 3 : Joint velocity fusion filter
                 4 : Coordinate velocity fusion filter
                 5 : Drag teaching sampling period
-            value (int): Filter length, range is 1 ~ 100
+            value (int): Filter length, range is 1 ~ 255
         """
         self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
