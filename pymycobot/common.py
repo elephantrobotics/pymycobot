@@ -297,6 +297,10 @@ class ProtocolCode(object):
     GET_FILTER_LEN = 0x7E
     SET_FILTER_LEN = 0x7F
 
+    # Set Debug Log for Pro450
+    SET_DEBUG_LOG_MODE = 0x68
+    GET_DEBUG_LOG_MODE = 0x69
+
     # Basic
     SET_BASIC_OUTPUT = 0xA0
     GET_BASIC_INPUT = 0xA1
@@ -351,6 +355,7 @@ class ProtocolCode(object):
     FOURIER_TRAJECTORIES = 0xF8
     GET_DYNAMIC_PARAMETERS = 0x98
     SET_DYNAMIC_PARAMETERS = 0x97
+    PARAMETER_IDENTIFY = 0x97
     SOLVE_INV_KINEMATICS = 0x8D
 
     # Impact checking
@@ -464,6 +469,13 @@ class ProtocolCode(object):
     GET_ANGLES_PLAN = 0xF6
     GET_COORDS_PLAN = 0xF7
 
+    SET_COMMUNICATION_MODE = 0x6A
+    GET_COMMUNICATION_MODE = 0x6B
+    SET_BASE_EXTERNAL_CONFIG = 0x65
+    GET_BASE_EXTERNAL_CONFIG = 0x67
+    SET_BASE_EXTERNAL_CONTROL = 0x66
+    SET_COLOR_PRO450 = 0x0C
+
     # ultraArm
     END = "\r"
     COORDS_SET = "G0"
@@ -496,6 +508,14 @@ class ProtocolCode(object):
     GET_SYSTEM_VALUE = "M52"
     GET_SYSTEM_VERSION = "G6"
     GET_MODIFY_VERSION = "G7"
+
+    # ultraArm P1
+    SET_ANGLES_COORDS = 'G1'
+    GET_CURRENT_ANGLES_COORDS_INFO = '?'
+    SET_UNLOCK = '*2'
+    SET_REBOOT = '*5'
+    SET_JOINT_DISABLE = '*7'
+    SET_JOINT_ENABLE = '*8'
 
 
 class DataProcessor(object):

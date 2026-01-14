@@ -63,7 +63,7 @@ class MyArmSocket(CommandGenerator, sms_sts):
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
-        super(sms_sts, self).__init__(self._serial_port, 0)
+        super(sms_sts, self).__init__(self.sock, 0)
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -92,8 +92,8 @@ class MyArmSocket(CommandGenerator, sms_sts):
                 if genre == ProtocolCode.SET_SSID_PWD:
                     return None
                 res = self._process_received(data, genre)
-                if res == []:
-                    return None
+                if not res:
+                    return -1
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.IS_POWER_ON,

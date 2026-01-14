@@ -1,18 +1,21 @@
 # coding=utf-8
-
+import locale
 import time
 import threading
 import socket
 
+import numpy as np
+
 from pymycobot.close_loop import CloseLoop
+from pymycobot.robot_info import _interpret_status_code
 from pymycobot.common import ProtocolCode,ProGripper
 
 
 class Pro450Client(CloseLoop):
-    def __init__(self, ip, netport=4500, debug=False):
+    def __init__(self, ip='192.168.0.232', netport=4500, debug=False):
         """
         Args:
-            ip     : Server IP address
+            ip     : Server IP address, default '192.168.0.232'
             netport : Socket port number, default is 4500
             debug    : whether show debug info
         """
@@ -22,10 +25,14 @@ class Pro450Client(CloseLoop):
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
         self.is_stop = False
-        self.sync_mode = False
+        self.sync_mode = True
         self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True
         self.read_threading.start()
+        self.language, _ = locale.getdefaultlocale()
+        if self.language not in ["zh_CN", "en_US"]:
+            self.language = "en_US"
+        self.max_joint, self.min_joint = 0, 0
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,12 +42,17 @@ class Pro450Client(CloseLoop):
     def _mesg(self, genre, *args, **kwargs):
         read_data = super(Pro450Client, self)._mesg(genre, *args, **kwargs)
         if read_data is None:
-            return None
+            return -1
         elif read_data == 1:
             return 1
         elif read_data == -2:
+            return 1
+        elif read_data == 0:
+            return read_data
+        if isinstance(read_data, tuple):
+            valid_data, data_len = read_data
+        else:
             return -1
-        valid_data, data_len = read_data
         res = []
         if data_len in [8, 12, 14, 16, 26, 60]:
             if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
@@ -65,7 +77,7 @@ class Pro450Client(CloseLoop):
             if genre in [ProtocolCode.IS_SERVO_ENABLE]:
                 return [self._decode_int8(valid_data[1:2])]
             elif genre in [ProtocolCode.GET_ERROR_INFO]:
-                return [self._decode_int8(valid_data[1:])]
+                return self._decode_int8(valid_data[1:])
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
@@ -76,7 +88,10 @@ class Pro450Client(CloseLoop):
                 res.append(valid_data[i])
         elif data_len == 7:
             error_list = [i for i in valid_data]
-            return error_list
+            if genre == ProtocolCode.IS_INIT_CALIBRATION:
+                res = error_list
+            else:
+                return error_list
             # for i in error_list:
             #     if i in range(16,23):
             #         res.append(1)
@@ -125,7 +140,7 @@ class Pro450Client(CloseLoop):
                 
         #         byte_value = int.from_bytes(valid_data[i:i+4], byteorder='big', signed=True)
         #         res.append(byte_value)
-        elif data_len == 6 or data_len == 32:
+        elif data_len in [6, 9, 32]:
             for i in valid_data:
                 res.append(i)
         else:
@@ -180,7 +195,12 @@ class Pro450Client(CloseLoop):
             ProtocolCode.GET_FILTER_LEN,
             ProtocolCode.IS_SERVO_ENABLE,
             ProtocolCode.GET_POS_SWITCH,
-            ProtocolCode.GET_TOOL_MODIFY_VERSION
+            ProtocolCode.GET_TOOL_MODIFY_VERSION,
+            ProtocolCode.GET_FUSION_PARAMETERS,
+            ProtocolCode.GET_MAX_ACC,
+            ProtocolCode.GET_ERROR_INFO,
+            ProtocolCode.GET_COLLISION_MODE,
+            ProtocolCode.GET_IDENTIFY_MODE,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -202,6 +222,10 @@ class Pro450Client(CloseLoop):
                 return res
         elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
             return [self._int2coord(angle) for angle in res]
+        elif genre in [ProtocolCode.SOLVE_INV_KINEMATICS]:
+            if res == [-57295, -57295, -57295, -57295, -57295, -57295]:
+                return 'No solution for conversion'
+            return [self._int2angle(angle) for angle in res]
         elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
             return self._int2coord(self._process_single(res))
         elif genre in [
@@ -230,33 +254,32 @@ class Pro450Client(CloseLoop):
                             r.append(i)
             return r
         elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES, ProtocolCode.GET_POS_OVER]:
-                return self._int2angle(res[0])
+            return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
-            if len(res) == 23:
-                i = 9
-                for i in range(9, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
-            else:
-                for i in range(10, len(res)):
-                    if res[i] != 0:
-                        data = bin(res[i])[2:]
-                        res[i] = []
-                        while len(data) != 16:
-                            data = "0"+data
-                        for j in range(16):
-                            if data[j] != "0":
-                                res[i].append(15-j)
-                return res
+            if len(res) == 32:
+                parsed = res[:8]
+                for start in (8, 20):
+                    for i in range(start, start + 12, 2):
+                        val = (res[i] << 8) | res[i + 1]
+                        parsed.append(self._val_to_bits_list(val))
+
+                return parsed
+        elif genre == ProtocolCode.IS_INIT_CALIBRATION:
+            if res == [1] * 7:
+                return 1
+            return res
+        elif genre == ProtocolCode.GET_BASE_EXTERNAL_CONFIG:
+            mode = res[0]
+            baud_rate = int.from_bytes(res[1:5], byteorder="little", signed=False)
+            timeout = int.from_bytes(res[5:9], byteorder="little", signed=False)
+            return [mode, baud_rate, timeout]
         else:
             return res
+
+    def _val_to_bits_list(self, val):
+        if val == 0:
+            return 0
+        return [bit for bit in range(16) if (val >> bit) & 1]
 
     def _modbus_crc(self, data: bytes) -> bytes:
         crc = 0xFFFF
@@ -301,8 +324,8 @@ class Pro450Client(CloseLoop):
         return cmd, recv
 
     def _check_gripper_id(self, gripper_id):
-        if not (1 <= gripper_id <= 254):
-            raise ValueError("The range of 'gripper_id' is 1 ~ 254, but the received value is {}".format(gripper_id))
+
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
 
     def _write_and_check(self, gripper_id, reg_addr, value):
         """Write register and verify return"""
@@ -323,8 +346,85 @@ class Pro450Client(CloseLoop):
         self._check_gripper_id(gripper_id)
         _, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
         if isinstance(recv, (list, bytearray)) and len(recv) >= 5 and recv[1] == 0x03:
-            return (recv[3] << 8) | recv[4]
+            return (recv[4] << 8) | recv[5]
         return -1
+
+    def _joint_limit_init(self):
+        max_joint = np.zeros(6)
+        min_joint = np.zeros(6)
+        for i in range(6):
+            max_joint[i] = self.get_joint_max_angle(i + 1)
+            min_joint[i] = self.get_joint_min_angle(i + 1)
+        return max_joint, min_joint
+
+    def _joint_limit_judge(self, angles):
+        offset = 3
+        try:
+            for i in range(6):
+                if self.min_joint[i] + offset < angles[i] < self.max_joint[i] - offset:
+                    pass
+                else:
+                    if self.language == "zh_CN":
+                        return f"当前角度为{angles[i]}, 角度范围为： {self.min_joint[i]} ~ {self.max_joint[i]}"
+                    return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
+        except TypeError:
+            return "joint limit error"
+        return "over limit error {}".format(angles)
+
+    def _Singularity(self, angles):
+        try:
+            # Joint 6: 0 and 180 degrees are singular points
+            singular_angles = [0, 180]
+            state = ""
+            offset = 5
+            for singular in singular_angles:
+                if singular - offset < angles[5] < singular + offset:
+                    if self.language == "zh_CN":
+                        return f"在关节 6 处检测到奇点：{angles[5]} 度"
+                    return f"Singularity detected at joint 6: {angles[5]} degrees"
+            return state
+        except:
+            return "Singularity error"
+
+    def _check_coords(self, new_coords, is_print=0):
+        try:
+            first_three = new_coords[:3]
+            first_three[2] -= 83.64
+            info = ""
+            # Calculate the Euclidean norm (magnitude)
+            magnitude = np.linalg.norm(first_three)
+            if is_print == 1:
+                if self.language == "zh_CN":
+                    info += f"当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
+                else:
+                    info += f"Arm span is {magnitude}, max is {self.arm_span}"
+
+            # if magnitude > self.arm_span - 10:
+            #     if self.language == "zh_CN":
+            #         info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
+            #     else:
+            #         info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
+            return info
+        except:
+            return "check coords error"
+
+    def _status_explain(self, status):
+        error_info = _interpret_status_code(self.language, status)
+        if error_info != "":
+            self.arm_span = 440
+        if 0x00 < status <= 0x07:
+            angles = self.get_angles()
+            if type(self.max_joint) == int and self.max_joint == 0:
+                self.max_joint, self.min_joint = self._joint_limit_init()
+            error_info += self._joint_limit_judge(angles)
+        elif status in [32, 33]:
+            error_coords = self.get_coords()
+            error_info += self._check_coords(error_coords, 1)
+        elif status == 36:
+            angles = self.get_angles()
+            error_info += self._Singularity(angles)
+
+        return error_info
 
     def open(self):
         self.sock = self.connect_socket()
@@ -359,11 +459,17 @@ class Pro450Client(CloseLoop):
 
         return self._mesg(ProtocolCode.SET_OVER_TIME, high_byte, low_byte)
 
-    def flash_tool_firmware(self):
+    def flash_tool_firmware(self, main_version, modified_version=0):
         """Burn tool firmware
 
+        Args:
+            main_version (str): Tool firmware version (format: 'x.y')
+            modified_version (int): Tool firmware modified version, 0~255, defaults to 0
+
         """
-        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE)
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_main_version=main_version, tool_modified_version=modified_version)
+        main_version = int(float(main_version) *10)
+        return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
 
     def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions
@@ -429,8 +535,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (1 <= target_id <= 254):
-            raise ValueError("The range of 'target_id' is 1 ~ 254, but the received value is {}".format(target_id))
+        self.calibration_parameters(class_name=self.__class__.__name__, target_id=target_id)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ID, target_id)
 
     def get_pro_gripper_id(self, gripper_id=14):
@@ -454,8 +559,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ANGLE, gripper_angle)
 
     def get_pro_gripper_angle(self, gripper_id=14):
@@ -479,6 +583,7 @@ class Pro450Client(CloseLoop):
             1 - success, 0 - failed
         """
         return self.set_pro_gripper_angle(100, gripper_id)
+
     def set_pro_gripper_close(self, gripper_id=14):
         """ Close the gripper
 
@@ -525,8 +630,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if state not in [0, 1]:
-            raise ValueError("The range of 'state' is 0 or 1, but the received value is {}".format(state))
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ENABLED, state)
 
     def set_pro_gripper_torque(self, gripper_torque, gripper_id=14):
@@ -539,8 +643,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_torque <= 100):
-            raise ValueError("The range of 'gripper_torque' is 0 ~ 100, but the received value is {}".format(gripper_torque))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_torque=gripper_torque)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_TORQUE, gripper_torque)
 
     def get_pro_gripper_torque(self, gripper_id=14):
@@ -564,8 +667,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (1 <= speed <= 100):
-            raise ValueError("The range of 'speed' is 1 ~ 100, but the received value is {}".format(speed))
+        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_SPEED, speed)
 
     def get_pro_gripper_speed(self, gripper_id=14):
@@ -586,8 +688,7 @@ class Pro450Client(CloseLoop):
             gripper_angle (int): 0 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ABS_ANGLE, gripper_angle)
 
     def set_pro_gripper_io_open_angle(self, gripper_angle, gripper_id=14):
@@ -600,8 +701,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_OPEN_ANGLE, gripper_angle)
 
     def get_pro_gripper_io_open_angle(self, gripper_id=14):
@@ -625,8 +725,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= gripper_angle <= 100):
-            raise ValueError("The range of 'gripper_angle' is 0 ~ 100, but the received value is {}".format(gripper_angle))
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_CLOSE_ANGLE, gripper_angle)
 
     def get_pro_gripper_io_close_angle(self, gripper_id=14):
@@ -650,8 +749,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (0 <= pressure_value <= 254):
-            raise ValueError("The range of 'pressure_value' is 0 ~ 254, but the received value is {}".format(pressure_value))
+        self.calibration_parameters(class_name=self.__class__.__name__, pressure_value=pressure_value)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MINI_PRESSURE, pressure_value)
 
     def get_pro_gripper_mini_pressure(self, gripper_id=14):
@@ -675,8 +773,7 @@ class Pro450Client(CloseLoop):
         Returns:
             1 - success, 0 - failed
         """
-        if not (100 <= current_value <= 300):
-            raise ValueError("The range of 'current_value' is 100 ~ 300, but the received value is {}".format(current_value))
+        self.calibration_parameters(class_name=self.__class__.__name__, current_value=current_value)
         return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_PROTECTION_CURRENT, current_value)
 
     def get_pro_gripper_protection_current(self, gripper_id=14):
@@ -698,8 +795,7 @@ class Pro450Client(CloseLoop):
                 1 - Always execute the latest command first.
                 0 - Execute instructions sequentially in the form of a queue.
         """
-        if mode not in [0, 1]:
-            raise ValueError("The range of 'mode' is 0 or 1, but the received value is {}".format(mode))
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
 
     def get_fresh_mode(self):
@@ -741,6 +837,16 @@ class Pro450Client(CloseLoop):
             class_name=self.__class__.__name__, servo_restore=joint_id
         )
         return self._mesg(ProtocolCode.SERVO_RESTORE, joint_id)
+
+    def get_angle(self, joint_id):
+        """Get single joint angle
+
+        Args:
+            joint_id (int): 1 ~ 6.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
 
     def send_angles(self, angles, speed, _async=False):
         """Send the angles of all joints to robot arm.
@@ -863,3 +969,296 @@ class Pro450Client(CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
         return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
+
+    def set_debug_state(self, log_state):
+        """
+        Set the debug log mode of the robot.
+
+        Args:
+            log_state (int): Debug state as bitmask (0~7)
+                0: No debug logs
+                1: Only common debug log (_debug.log)
+                2: Only motion-related log (_move.log)
+                3: Common + motion-related logs (_debug.log+_move.log)
+                4: Motor read/control frequency log (_clock_rate_debug.log)
+                5: Common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log)
+                6: Motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log)
+                7: All logs
+
+        Returns:
+            int: 1-success, 0-failure, -1-error
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, log_state=log_state)
+        return self._mesg(ProtocolCode.SET_DEBUG_LOG_MODE, log_state)
+
+    def get_debug_state(self):
+        """
+        Get the current debug log mode of the robot.
+
+        Returns:
+            int: Current debug state (0-7), or -1 if failed
+                0: No debug logs
+                1: Only common debug log (_debug.log)
+                2: Only motion-related log (_move.log)
+                3: Common + motion-related logs (_debug.log+_move.log)
+                4: Motor read/control frequency log (_clock_rate_debug.log)
+                5: Common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log)
+                6: Motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log)
+                7: All logs
+        """
+        return self._mesg(ProtocolCode.GET_DEBUG_LOG_MODE)
+
+    def jog_angle(self, joint_id, direction, speed, _async=True):
+        """Jog control angle.
+
+        Args:
+            joint_id (int): Joint id 1 - 6.
+            direction (int): 0 - decrease, 1 - increase
+            speed (int): int range 1 - 100
+            _async (bool, optional): Whether to execute asynchronous control. Defaults to True.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
+        return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, _async=_async, has_reply=True)
+
+    def set_fusion_parameters(self, rank_mode, value):
+        """Set speed fusion planning parameters
+        Args:
+            rank_mode: 0 ~ 4
+                0: Restore default parameters (only available in set mode)
+                1: Fusion joint velocity
+                2: Fusion joint acceleration
+                3: Fusion coordinate velocity
+                4: Fusion coordinate acceleration
+            value: 0 ~ 10000
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, rank_mode=rank_mode, rank_mode_value=value)
+        return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
+
+    def set_max_acc(self, mode, max_acc):
+        """Set maximum acceleration
+
+        Args:
+            mode (int): 0 - angle acceleration. 1 - coord acceleration.
+            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 200°/s. Coordinate acceleration range is 1 ~ 400mm/s
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, mode=mode, max_acc=max_acc)
+        return self._mesg(ProtocolCode.SET_MAX_ACC, mode, [max_acc])
+
+    def jog_increment_angle(self, joint_id, increment, speed, _async=False):
+        """Single angle incremental motion control.
+
+        Args:
+            joint_id: Joint id 1 - 6.
+            increment: Angle increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, speed=speed)
+        scaled_increment = self._angle2int(increment)
+        scaled_increment = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, has_reply=True, _async=_async)
+
+    def jog_increment_coord(self, coord_id, increment, speed, _async=False):
+        """Single coordinate incremental motion control.
+        This interface is based on a single arm 1-axis coordinate system.
+
+        Args:
+            coord_id: axis id 1 - 6.
+            increment: Coord increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=coord_id, increment_coord=increment, speed=speed)
+        if coord_id <= 3:
+            value = self._coord2int(increment)
+        else:
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
+
+    def set_communication_mode(self, communication_mode, protocol_mode=None):
+        """Set communication mode
+        Args:
+            communication_mode (int):
+                0 - socket communication mode
+                1 - 485 communication mode
+            protocol_mode (int, optional):
+                0 - Custom protocol
+                1 - Modbus protocol
+                Default: None (means not specified)
+        """
+        if protocol_mode is not None:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, communication_mode=communication_mode, protocol_mode=protocol_mode)
+            return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, communication_mode, protocol_mode)
+        else:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, communication_mode=communication_mode)
+            return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, communication_mode)
+
+    def get_communication_mode(self):
+        """Get communication mode
+        Returns:
+            communication_mode (int):
+                0 - socket communication mode
+                1 - 485 communication mode
+            protocol_mode (int, optional):
+                0 - Custom protocol
+                1 - Modbus protocol
+        """
+        return self._mesg(ProtocolCode.GET_COMMUNICATION_MODE)
+
+    def set_base_external_config(self, communicate_mode, baud_rate, timeout):
+        """Bottom external device configuration
+
+        Args:
+            communicate_mode (int): 1 - 485. 2 - can
+            baud_rate (int): Baud rate
+            timeout (int): Timeout ms
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode,
+                                    baud_rate=baud_rate, timeout=timeout)
+        data = bytearray()
+        data += communicate_mode.to_bytes(1, 'big')
+        data += baud_rate.to_bytes(4, 'big')
+        data += timeout.to_bytes(4, 'big')
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, *data)
+
+    def get_base_external_config(self):
+        """Read the bottom external device configuration
+
+        Returns:
+            communicate_mode (int): 1 - 485. 2 - can
+            baud_rate (int): Baud rate
+            timeout (int): Timeout ms
+
+        """
+        return self._mesg(ProtocolCode.GET_BASE_EXTERNAL_CONFIG)
+
+    def set_model_direction(self, joint_id, direction):
+        """Set the direction of the robot model
+
+        Args:
+            joint_id (int): joint ID, 1 ~ 6.
+            direction (int): 1 - forward, 0 - backward
+        """
+        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
+
+    def set_control_mode(self, mode=0):
+        """Set robot motion mode
+
+        Args:
+            mode (int): 0 - location mode, 1 - torque mode
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
+
+    def base_external_can_control(self, can_id, can_data):
+        """Bottom external device can control
+
+        Args:
+            can_id (int): 1 - 4.
+            can_data (list): The maximum length is 64
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
+        can_id_bytes = can_id.to_bytes(4, 'big')
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *can_id_bytes, *can_data)
+
+    def base_external_485_control(self, data):
+        """Bottom external device 485 control
+
+        Args:
+            data (list): The maximum length is 64
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
+        return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *data)
+
+    def get_error_information(self):
+        """Obtaining robot error information
+
+        Return:
+            0: No error message.
+            1 ~ 6: The corresponding joint exceeds the limit position.
+            32-36: Coordinate motion error.
+                32: No coordinate solution. Please check if the arm span is near the limit.
+                33: No adjacent solution for linear motion.
+                34: Velocity fusion error.
+                35: No adjacent solution for null space motion.
+                36: No solution for singular position. Please use joint control to leave the singular point.
+        """
+        return self._mesg(ProtocolCode.GET_ERROR_INFO)
+
+    def set_color(self, r=0, g=0, b=0):
+        """Set the light color on the top of the robot end.
+
+        Args:
+            r (int): 0 ~ 255
+            g (int): 0 ~ 255
+            b (int): 0 ~ 255
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, rgb=[r, g, b])
+        return self._mesg(ProtocolCode.SET_COLOR_PRO450, r, g, b)
+
+    def parameter_identify(self):
+        """Kinetic parameter identification"""
+        return self._mesg(ProtocolCode.PARAMETER_IDENTIFY)
+
+    def fourier_trajectories(self, trajectory):
+        """Execute dynamic identification trajectory
+
+        Args:
+            trajectory (int): 0 ~ 1
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, trajectory=trajectory)
+        return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
+
+    def set_world_reference(self, coords):
+        """Set the world coordinate system
+
+        Args:
+            coords: a list of coords value(List[float]). [x(mm), y, z, rx(angle), ry, rz]
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, world_coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
+
+    def set_tool_reference(self, coords):
+        """Set tool coordinate system
+
+        Args:
+            coords: a list of coords value(List[float])
+        """
+        self.calibration_parameters(class_name = self.__class__.__name__, tool_coords=coords)
+        coord_list = []
+        for idx in range(3):
+            coord_list.append(self._coord2int(coords[idx]))
+        for angle in coords[3:]:
+            coord_list.append(self._angle2int(angle))
+        return self._mesg(ProtocolCode.SET_TOOL_REFERENCE, coord_list)
+
+    def go_home(self, speed=20, _async=False):
+        """Control the machine to return to the zero position.
+
+        Args:
+            speed (int): 1 ~ 100
+        Return:
+            1 : All motors return to zero position.
+            0 : failed.
+        """
+        return self.send_angles([0, 0, 0, 0, 0, 0], speed, _async=_async)
+

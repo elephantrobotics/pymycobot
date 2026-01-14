@@ -52,6 +52,9 @@ class ProtocolCode(enum.Enum):
     GET_BLUETOOTH_UUID = 0x52
     GET_BLUETOOTH_ADDRESS = 0x53
 
+    SET_HANDLE_CONTROL_STATE = 0x3D
+    GET_HANDLE_CONTROL_STATE = 0x3F
+
     def equal(self, other):
         if isinstance(other, ProtocolCode):
             return self.value == other.value
@@ -279,29 +282,40 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             return respond
 
         if ProtocolCode.GET_ROBOT_STATUS.equal(genre):
+            machine_states = [0] * 8
             machine_status = reply_data[0]
             if machine_status != 0:
-                machine_status = Utils.get_bits(machine_status)
+                for index in Utils.get_bits(machine_status):
+                    machine_states[index] = 1
 
             battery_voltage = round(reply_data[1] / 10, 2)
 
-            return machine_status, battery_voltage
+            return machine_states, battery_voltage
 
         if ProtocolCode.GET_AUTO_REPORT_MESSAGE.equal(genre):
             respond = []
             for index, data in enumerate(reply_data):
                 if index < 3:
                     respond.append(round(data / 100, 2))
+
                 elif index in (3, 4):
                     if data == 0:
                         rank = data
                     else:
                         rank = Utils.get_bits(data)
                     respond.append(rank)
+
                 elif index == 5:
                     respond.append(round(data / 10, 1))
+
                 elif index == 6:
                     respond.append(data)
+
+                elif index > 7 and index % 2 == 0:
+                    piece = reply_data[index - 1:index + 1]
+                    int16 = Utils.decode_int16(piece)
+                    respond.append(round(int16 / 100, 2))
+
             return respond
 
         if ProtocolCode.GET_MOTOR_ENABLE_STATUS.equal(genre):
@@ -502,7 +516,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
 
     def move_right_lateral(self, speed):
         """Pan the robot right
@@ -514,11 +528,11 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             int: 1: Success, 0: Failed
         """
         if not 0.01 <= speed <= 1.00:
-            raise ValueError("Speed must be between 0.00 and 1.00")
+            raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
 
     def turn_left(self, speed):
         """Rotate to the left
@@ -612,7 +626,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             int: 1: Success, 0: Failed
         """
         if motor_id not in (1, 2, 3, 4, 254):
-            raise ValueError("Motor ID must be 0 or 1")
+            raise ValueError("Motor id must be in (1, 2, 3, 4, 254)")
 
         if state not in (0, 1):
             raise ValueError("State must be 0 or 1")
@@ -812,6 +826,26 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
 
         return self._merge(ProtocolCode.GET_BLUETOOTH_ADDRESS)
+
+    def set_handle_control_state(self, state):
+        """Set the handle control switch status
+        Args:
+            state(int): 0: Disable, 1: Enable
+
+        Returns:
+            int: 1: Success, 0: Failed
+        """
+        if state not in (0, 1):
+            raise ValueError("state must be 0 or 1")
+        return self._merge(ProtocolCode.SET_HANDLE_CONTROL_STATE, state)
+
+    def get_handle_control_state(self):
+        """Get the handle control switch status
+
+        Returns:
+            int: 0: Disable, 1: Enable
+        """
+        return self._merge(ProtocolCode.GET_HANDLE_CONTROL_STATE)
 
 
 class MyAGVPro(MyAGVProCommandApi):

@@ -91,8 +91,8 @@ class MyArm(CommandGenerator, sms_sts):
             if has_reply:
                 data = self._read(genre, command=command)
                 res = self._process_received(data, genre, arm=7)
-                if res == []:
-                    return None
+                if not res:
+                    return -1
                 if genre in [
                     ProtocolCode.ROBOT_VERSION,
                     ProtocolCode.GET_ROBOT_ID,
@@ -155,18 +155,18 @@ class MyArm(CommandGenerator, sms_sts):
                         else:
                             r.append(self._int2angle(res[index]))
                     return r
-                elif genre == ProtocolCode.GET_ANGLES_COORDS_END:
-                    r = []
-                    for index in range(len(res)):
-                        if index < 7:
-                            r.append(self._int2angle(res[index]))
-                        elif index < 10:
-                            r.append(self._int2coord(res[index]))
-                        elif index < 13:
-                            r.append(self._int2angle(res[index]))
-                        else:
-                            r.append(res[index])
-                    return r
+                # elif genre == ProtocolCode.GET_ANGLES_COORDS_END:
+                #     r = []
+                #     for index in range(len(res)):
+                #         if index < 7:
+                #             r.append(self._int2angle(res[index]))
+                #         elif index < 10:
+                #             r.append(self._int2coord(res[index]))
+                #         elif index < 13:
+                #             r.append(self._int2angle(res[index]))
+                #         else:
+                #             r.append(res[index])
+                #     return r
                 elif genre == ProtocolCode.GET_SOLUTION_ANGLES:
                     return self._int2angle(res[0])
                 else:
