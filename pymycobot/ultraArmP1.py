@@ -119,9 +119,9 @@ class UltraArmP1:
                     # fallback to raw bytes check
                     if received_data.lower().count(keyword) >= 1:
                         return 'ok'
-            else:
-                if time.time() - last_data_time > no_data_timeout:
-                    return -1
+            # else:
+            #     if time.time() - last_data_time > no_data_timeout:
+            #         return -1
             time.sleep(0.01)
         # Timeout
         if self.debug:
