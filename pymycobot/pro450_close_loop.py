@@ -397,7 +397,7 @@ class Pro450CloseLoop(DataProcessor):
         return self._mesg(ProtocolCode.GET_ANGLES)
 
     def drag_teach_save(self):
-        """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 90 seconds."""
+        """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 120 seconds."""
         return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE)
 
     def drag_teach_execute(self):
