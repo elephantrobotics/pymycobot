@@ -47,6 +47,9 @@ class Pro450Client(Pro450CloseLoop):
             if genre in [ProtocolCode.SET_TOOL_485_BAUD_RATE, ProtocolCode.SET_TOOL_SERIAL_TIMEOUT]:
                 time.sleep(0.3)
                 return 1
+            elif genre in [ProtocolCode.SET_DIGITAL_OUTPUT]:
+                time.sleep(0.02)
+                return 1
             else:
                 return 1
         elif read_data == -2:
@@ -84,6 +87,10 @@ class Pro450Client(Pro450CloseLoop):
                 return [self._decode_int8(valid_data[1:2])]
             elif genre in [ProtocolCode.GET_ERROR_INFO]:
                 return self._decode_int8(valid_data[1:])
+            elif genre in [ProtocolCode.GET_ROBOT_ID]:
+                high, low = valid_data
+                motor_type = (high << 8) | low  # 组合成 16 位整数
+                return f"{motor_type:04X}"
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
@@ -674,7 +681,7 @@ class Pro450Client(Pro450CloseLoop):
             class_name=self.__class__.__name__, set_motor_enabled=joint_id, state=state)
         return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
 
-    def flash_tool_firmware(self, main_version, modified_version=0):
+    def flash_tool_firmware(self, main_version, modified_version=0, _async=False):
         """Burn tool firmware
 
         Args:
@@ -687,26 +694,28 @@ class Pro450Client(Pro450CloseLoop):
         wait_time = 45
         self.calibration_parameters(class_name=self.__class__.__name__, tool_main_version=main_version, tool_modified_version=modified_version)
         main_version = int(float(main_version) *10)
-        # return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
-        self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
+        if _async:
+            return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
+        else:
+            self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, [main_version], modified_version)
 
-        print(f'Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
+            print(f'Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
 
-        time.sleep(wait_time)
+            time.sleep(wait_time)
 
-        for _ in range(5):
-            tool_main_version = self.get_atom_version()
-            tool_modify_version = self.get_tool_modify_version()
+            for _ in range(5):
+                tool_main_version = self.get_atom_version()
+                tool_modify_version = self.get_tool_modify_version()
 
-            if tool_main_version != -1 and tool_modify_version != -1:
-                version_str = f"v{tool_main_version}.{tool_modify_version}"
-                msg = f"Current firmware version：{version_str}"
-                return msg
+                if tool_main_version != -1 and tool_modify_version != -1:
+                    version_str = f"v{tool_main_version}.{tool_modify_version}"
+                    msg = f"Current firmware version：{version_str}"
+                    return msg
 
-            time.sleep(1)
+                time.sleep(1)
 
-        print("⚠️ Burning complete, but failed to read the end version number")
-        return -1
+            print("⚠️ Burning complete, but failed to read the end version number")
+            return -1
 
     def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions
@@ -1812,4 +1821,21 @@ class Pro450Client(Pro450CloseLoop):
 
         print("Gripper Initialization Failed!")
         return False
+
+    def set_motor_type(self, motor_type):
+        """Set motor type.
+
+        Args:
+            motor_type (hex/int/str): motor type, can be 0xA1C2, 0xA3C0, or 'A1C2', 'a3c0'
+        """
+
+        self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
+
+        if isinstance(motor_type, str):
+            motor_type = int(motor_type, 16)
+
+        high_byte = (motor_type >> 8) & 0xFF  # 0xA3
+        low_byte = motor_type & 0xFF  # 0xC0
+
+        return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
 
