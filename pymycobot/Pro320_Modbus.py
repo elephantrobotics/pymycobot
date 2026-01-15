@@ -467,7 +467,7 @@ class Pro320Modbus:
         self._build_write_frame(ModbusCommandAddress.RGB_COLOR, [r, g, b])
         return self.driver.set_color(r, g, b)
 
-    def process_modbus_command(self, frame: list[int]):
+    def process_modbus_command(self, frame):
         # frame example:
         # [slave, func, regH, regL, lenH, lenL, data..., crcL, crcH]
 
