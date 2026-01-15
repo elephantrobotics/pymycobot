@@ -73,6 +73,8 @@ class MyCobotPro450DataException(Exception):
 class ultraArmP340DataException(Exception):
     pass
 
+class MercuryE1DataException(Exception):
+    pass
 
 def check_boolean(b):
     if b != 0 and b != 1:
@@ -2002,6 +2004,229 @@ def calibration_parameters(**kwargs):
                 if not value.lower().endswith((".gcode", ".ngc", ".nc")):
                     raise ultraArmP340DataException(
                         "Unsupported file format, please use .gcode, .ngc, or .nc, but received {}".format(value))
+
+    elif class_name in ["MercuryE1"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter == "pin_no_base":
+                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value_type, MercuryE1DataException, int)
+            elif parameter in ["pin_no", "communicate_mode"]:
+                check_0_or_1(parameter, value, [1, 2], value_type, MercuryE1DataException, int)
+            elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration',
+                               'communication_mode', 'protocol_mode', 'state', 'damping']:
+                check_0_or_1(parameter, value, [0, 1], value_type, MercuryE1DataException, int)
+            elif parameter == "move_type":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value not in [0, 1, 2, 3, 4]:
+                    raise MercuryE1DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter in ['log_state']:
+                check_0_or_1(parameter, value, list(range(0, 8)), value_type, MercuryE1DataException, int)
+            elif parameter in ['max_acc']:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                mode = kwargs.get('mode', None)
+                if mode == 0:
+                    if not (1 <= value <= 200):
+                        raise MercuryE1DataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 400):
+                        raise MercuryE1DataException(
+                            f"The parameter {parameter} only supports 1 ~ 400 (coord mode), but received {value}")
+            elif parameter in ['max_speed']:
+                mode = kwargs.get('mode', None)
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if mode == 0:
+                    if not (1 <= value <= 150):
+                        raise MercuryE1DataException(
+                            f"The parameter {parameter} only supports 1 ~ 150 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 200):
+                        raise MercuryE1DataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (coord mode), but received {value}")
+            elif parameter in['joint_id', 'coord_id']:
+                if value not in robot_limit[class_name][parameter]:
+                    check_id(value, robot_limit[class_name][parameter], MercuryE1DataException)
+            elif parameter in ["servo_restore", "set_motor_enabled"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value not in [1, 2, 3, 4, 5, 6, 7, 254]:
+                    raise MercuryE1DataException(
+                        "The joint_id should be in [1,2,3,4,5,6,7], but received {}".format(value))
+            elif parameter in ['angle', 'degree']:
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                if value < robot_limit[class_name]["angles_min"][index] or value > robot_limit[class_name]["angles_max"][index]:
+                    raise MercuryE1DataException(
+                        "angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            robot_limit[class_name]["angles_min"][index], robot_limit[class_name]["angles_max"][index], value))
+            elif parameter == 'coord':
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+
+                if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
+                    raise MercuryE1DataException(
+                        "Coordinate value not right, should be {0} ~ {1}, but received {2}".format(
+                            robot_limit[class_name]["coords_min"][index],robot_limit[class_name]["coords_max"][index], value))
+            elif parameter == 'speed':
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if not 1 <= value <= 100:
+                    raise MercuryE1DataException(
+                        "speed value not right, should be 1 ~ 100, the error speed is {}".format(value))
+            elif parameter == "angles":
+                # check_angles(value, robot_limit, class_name, MercuryE1DataException)
+                check_value_type(parameter, value_type, MercuryE1DataException, list)
+                if len(value) not in [7]:
+                    raise MercuryE1DataException("The length of `angles` must be 7.")
+                for idx, angle in enumerate(value):
+                    joint_id = idx+1
+                    angle_min = robot_limit[class_name]["angles_min"][idx]
+                    angle_max = robot_limit[class_name]["angles_max"][idx]
+                    if angle < angle_min or angle > angle_max:
+                        raise MercuryE1DataException(
+                            "Joint {} angle value of {} exceeds the limit, with a limit range of {} ~ {}.".format(joint_id, angle, angle_min, angle_max)
+                        )
+            elif parameter == 'coords':
+                check_coords(parameter, value, robot_limit, class_name, MercuryE1DataException)
+            elif parameter == "rank_mode":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 4:
+                    raise MercuryE1DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "get_rank_mode":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 4:
+                    raise MercuryE1DataException("The parameter {} only supports 1 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "rank_mode_value":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 10000:
+                    raise MercuryE1DataException("The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
+            elif parameter == 'rank':
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 5:
+                    raise MercuryE1DataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == 'rank_value':
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if not 1 <= value <= 255:
+                    raise MercuryE1DataException(
+                        "rank value not right, should be 1 ~ 255, the error speed is {}".format(value))
+            elif parameter == "axis":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value not in [1,2,3]:
+                    raise MercuryE1DataException("The parameter {} only supports 1, 2, 3, but received {}".format(parameter, value))
+            elif parameter == 'increment_angle':
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryE1DataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
+            elif parameter == 'increment_coord':
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryE1DataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+            elif parameter == "threshold_value":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 50 or value > 250:
+                    raise MercuryE1DataException("The parameter {} only supports 50 ~ 250, but received {}".format(parameter, value))
+            elif parameter == "comp_value":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 250:
+                    raise MercuryE1DataException("The parameter {} only supports 0 ~ 250, but received {}".format(parameter, value))
+            elif parameter == "trajectory":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value not in [0,1]:
+                    raise MercuryE1DataException("The parameter {} only supports [0,1], but received {}".format(parameter, value))
+            elif parameter == 'add':
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 62:
+                    raise MercuryE1DataException(
+                        "The parameter {} only supports 0 ~ 62, but received {}".format(parameter, value))
+            elif parameter == 'rgb':
+                check_rgb_value(value, MercuryE1DataException, class_name)
+            elif parameter in ["gripper_id", "target_id"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 254:
+                    raise MercuryE1DataException("The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
+            elif parameter in ["gripper_angle", "gripper_torque"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 100:
+                    raise MercuryE1DataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+            elif parameter in ["pressure_value"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 254:
+                    raise MercuryE1DataException("The parameter {} only supports 0 ~ 254, but received {}".format(parameter, value))
+            elif parameter in ["current_value"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 100 or value > 300:
+                    raise MercuryE1DataException("The parameter {} only supports 100 ~ 300, but received {}".format(parameter, value))
+            elif parameter == "can_id":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 65535:
+                    raise MercuryE1DataException("The parameter {} only supports 1 ~ 65535, but received {}".format(parameter, value))
+            elif parameter in ["baud_rate"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+            elif parameter in ["can_data", "data_485"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, list)
+                if len(value) > 64:
+                    raise MercuryE1DataException(
+                        f"The parameter {parameter} list length exceeds 64, received {len(value)}")
+                for v in value:
+                    if not (0x00 <= v <= 0xFF):
+                        raise MercuryE1DataException(
+                            f"The parameter {parameter} value out of range (0x00~0xFF), received {hex(v)}")
+            elif parameter in ["tool_main_version"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, str)
+                if not re.fullmatch(r"\d+\.\d", str(value)):
+                    raise MercuryE1DataException(
+                        f"Invalid version format: '{value}', expected format like '1.1'")
+                if float(value) < 1.0:
+                    raise MercuryE1DataException(
+                        f"Version must be >= 1.0, but received '{value}'")
+            elif parameter in ["tool_modified_version"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 255:
+                    raise MercuryE1DataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
+            elif parameter in ["tool_coords", "world_coords"]:
+                check_world_tool_coords(parameter, value, MercuryE1DataException)
+            elif parameter in ["gripper_baud_rate"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 1:
+                    raise MercuryE1DataException(
+                        "The parameter {} only supports 0 ~ 1, but received {}".format(parameter, value))
+            elif parameter in ["end_485_baud_rate"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                baud_list = [115200, 1000000]
+                if value not in baud_list:
+                    raise MercuryE1DataException(
+                        "The parameter {} only supports {}, but received {}".format(parameter, baud_list, value))
+            elif parameter in ["timeout"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 10000:
+                    raise MercuryE1DataException(
+                        "The parameter {} only supports 1 ~ 10000 ms, but received {}".format(parameter, value))
+            elif parameter in ["motor_type"]:
+                if isinstance(value, str):
+                    try:
+                        value = int(value, 16)  # 'A3C0' / 'a3c0' / '0xA3C0'
+                    except ValueError:
+                        raise MercuryE1DataException(f"motor_type '{value}' is not a valid hex string")
+                if not isinstance(value, int):
+                    raise MercuryE1DataException(
+                        f"motor_type must be int or hex string, got {type(value)}")
+                if not (0x0000 <= value <= 0xFFFF):
+                    raise MercuryE1DataException(f"motor_type out of range: {hex(value)} (must be 0x0000~0xFFFF)")
+                allowed_types = [0xA1C2, 0xA3C0]
+                if value not in allowed_types:
+                    raise MercuryE1DataException(
+                        f"motor_type {hex(value)} not allowed. Must be one of: {[hex(x) for x in allowed_types]}")
 
 def restrict_serial_port(func):
     """

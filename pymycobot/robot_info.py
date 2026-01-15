@@ -153,6 +153,75 @@ class RobotStatusPro450Info(object):
         }
     }
 
+
+class RobotStatusE1Info(object):
+    error_info = {
+        "zh_CN": {
+            "joint_limit": {i: f"关节{i+1} 超限" for i in range(7)},
+            "motor_error": {
+                0: "CAN总线错误，可使用异常恢复，无法恢复时，检查通信线路，修复后重新通电使能",
+                1: "短路，可使用异常恢复",
+                2: "无效设置数据",
+                3: "控制错误，可使用异常恢复",
+                4: "CAN通信错误，可使用异常恢复，无法恢复时，检查通信线路，修复后重新通电使能",
+                5: "反馈错误，可使用异常恢复",
+                6: "正限位开关激活",
+                7: "负限位开关激活",
+                8: "过流，可使用异常恢复",
+                9: "I2t保护，可使用异常恢复",
+                10: "过温，可使用异常恢复",
+                11: "驱动板过温，可使用异常恢复",
+                12: "过压，可使用异常恢复",
+                13: "欠压，可使用异常恢复",
+                14: "命令错误",
+                15: "启用处于非活动状态"
+            },
+            "comm_error": {
+                0: "CAN初始化异常。需检查主控板，修复控制板异常后，掉电再上电。",
+                1: "电机初始化异常，需检查电机通信线路等修复异常后，掉电再上电。",
+                2: "电机发送异常，需检查电机通信线路等，可使用异常恢复清除。",
+                3: "电机接收异常，需检查电机通信线路等，可正常控制机器",
+                4: "位置超差，需检查电机编码器等，可使用异常恢复清除。",
+                5: "末端发送异常，需检查末端通信线路等，可使用异常恢复清除。",
+                6: "末端接收异常，需检查末端通信线路等，可正常控制机器",
+                7: "电机编码器报错，编码器报错时，不可运动，需要清除编码器报错。",
+                8: "掉使能，运动前机器必须是使能状态"
+            }
+        },
+        "en_US": {
+            "joint_limit": {i: f"Joint {i+1} limit exceeded" for i in range(7)},
+            "motor_error": {
+                0: "CAN bus error, can be recovered using exception recovery. If recovery fails, check the communication line, repair and then power on to enable.",
+                1: "Short circuit, can be recovered using exception recovery.",
+                2: "Invalid setting data.",
+                3: "Control error, can be recovered using exception recovery.",
+                4: "CAN communication error, can be recovered using exception recovery. If recovery fails, check the communication line, repair and then power on to enable.",
+                5: "Feedback error, can be recovered using exception recovery.",
+                6: "Positive limit switch activated.",
+                7: "Negative limit switch activated.",
+                8: "Overcurrent, can be recovered using exception recovery.",
+                9: "I2t protection, can be recovered using exception recovery.",
+                10: "Overtemperature, can be recovered using exception recovery.",
+                11: "Driver board overtemperature, can be recovered using exception recovery.",
+                12: "Overvoltage, can be recovered using exception recovery.",
+                13: "Undervoltage, can be recovered using exception recovery.",
+                14: "Command error.",
+                15: "Enabled inactive state."
+            },
+            "comm_error": {
+                0: "CAN initialization error. Check the main control board, repair the control board error, then power off and on again.",
+                1: "Motor initialization error. Check the motor communication lines, repair the error, then power off and on again.",
+                2: "Motor transmission error. Check the motor communication lines, etc. Error recovery can be used to clear this.",
+                3: "Motor reception error. Check the motor communication lines, etc. Machine can be controlled normally now.",
+                4: "Position out of tolerance. Check the motor encoder, etc. Error recovery can be used to clear this.",
+                5: "End-point transmission error. Check the end-point communication lines, etc. Error recovery can be used to clear this.",
+                6: "End-point reception error. Check the end-point communication lines, etc. Machine can be controlled normally now.",
+                7: "Motor encoder error. When the encoder reports an error, do not move. Clear the encoder error.",
+                8: "Enabled down. The machine must be enabled before movement."
+            }
+        }
+    }
+
 # coding=utf-8
 
 def _interpret_status_code(language, status_code):
@@ -539,5 +608,14 @@ class RobotLimit:
             "angles_max": [170, 90, 110, 179],
             "coords_min": [-360, -365.55, -140, -180],
             "coords_max": [366.55, 365.55, 130, 180]
-        }
+        },
+        "MercuryE1": {
+            "joint_id": [1, 2, 3, 4, 5, 6, 7],
+            "servo_id": [1, 2, 3, 4, 5, 6, 7],
+            "coord_id": (1, 2, 3, 4, 5, 6, 7),
+            "angles_min":  [-155, -45, -160, -130, -155, -125, -155],
+            "angles_max":  [155, 95, 160, 30, 155, 110, 155],
+            "coords_min": [-474, -474, -180, -180, -180, -180],
+            "coords_max": [474, 474, 677, 180, 180, 180]
+        },
     }

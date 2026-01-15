@@ -51,6 +51,7 @@ from pymycobot.ultraArmP1 import UltraArmP1
 from pymycobot.exoskeleton import Exoskeleton
 from pymycobot.exoskeletonsocket import ExoskeletonSocket
 from pymycobot.mybuddyemoticon import MyBuddyEmoticon
+from pymycobot.mercury_e1 import MercuryE1
 
 
 __all__ = [
@@ -102,9 +103,10 @@ __all__ = [
     "MyBuddyEmoticon",
     "Pro450Client",
     "UltraArmP1",
+    "MercuryE1",
 ]
 
-__version__ = "4.0.4b8"
+__version__ = "4.0.4b15"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
