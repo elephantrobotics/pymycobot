@@ -16,13 +16,39 @@ from pymycobot.error import MyCobot630ProDataException
 import time
 from pymycobot.pro630common import Axis, Joint, DI, DO, AI, AO
 
-
 COORDS_EPSILON = 0.50
 
 
 class JogMode(Enum):
     JOG_JOINT = 0
     JOG_TELEOP = 1
+
+
+def modbus_crc(data: bytes) -> bytes:
+    crc = 0xFFFF
+    for byte in data:
+        crc ^= byte
+        for _ in range(8):
+            if crc & 0x0001:
+                crc >>= 1
+                crc ^= 0xA001
+            else:
+                crc >>= 1
+    return crc.to_bytes(2, byteorder='little')
+
+def parse_modbus_data(recv_value: str):
+    # 1. 拆成整数列表
+    byte_vals = [int(b, 16) for b in recv_value.split(',')]
+
+    # 2. 去掉前三个和最后两个字节
+    data_bytes = byte_vals[3:-2]
+
+    # 4. 高字节在前，低字节在后，直接合并
+    combined = []
+    for i in range(0, len(data_bytes), 2):
+        combined.append((data_bytes[i] << 8) + data_bytes[i+1])
+
+    return combined
 
 
 mutex = Lock()
@@ -1746,105 +1772,176 @@ class ElephantRobot(object):
         command = "SetLedColor(" + str(red) + "," + str(green) + "," + str(blue) + ")\n"
         return int(self.send_command(command))
     
+    def get_five_fingers_angles(self, ID):
+        """Obtain the end color.
+
+        Args:
+            ID (int): (0 ~ 255)。
+        """
+        value = bytearray([ID, 0x03, 0x04, 0x83, 0x00, 0x06])
+        value += modbus_crc(value)
+        byte_strs = [f"0x{b:02X}" for b in value]
+        command = f"five_fingers_Get({','.join(byte_strs)})"
+        recv_value =  self.send_command(command)
+        result = [round(x / 100, 2) for x in parse_modbus_data(recv_value)]
+        if len(result) > 64:
+            return 255
+        return result
+    
+    def set_five_fingers_angles(self, ID, angles):
+        """Obtain the end color.
+
+        Args:
+            ID (int): (0 ~ 255)。
+            angles (flot): J1:2.26° ~ 36.76
+                           J2:100.22°~178.37°
+                           J3:97.81° ~ 176.06°
+                           J4:101.38° ~ 176.54°
+                           J5:98.84° ~ 174.86°
+                           J6:0° ~ 90°
+        Returns:
+            str: return message
+        """
+        value = bytearray([ID, 0x10, 0x04, 0x83, 0x00, 0x06, 0x0c])
+        if angles[0] < 2.26 or  angles[0] > 36.76:
+            raise MyCobot630ProDataException(
+            "The Hand J1 value must be 2.26 ~ 36.76, but received {}".format(angles))
+        elif angles[1] < 100.22 or  angles[1] > 178.37:
+             raise MyCobot630ProDataException(
+             "The Hand J2 value must be 100.22 ~ 178.37, but received {}".format(angles))
+        elif angles[2] < 97.81 or  angles[2] > 176.06:
+             raise MyCobot630ProDataException(
+            "The Hand J3 value must be 97.81 ~ 176.06, but received {}".format(angles))
+        elif angles[3] < 101.38 or  angles[3] > 176.54:
+             raise MyCobot630ProDataException(
+            "The Hand J4 value must be 101.38 ~ 176.54, but received {}".format(angles))
+        elif angles[4] < 98.84 or  angles[4] > 174.86:
+             raise MyCobot630ProDataException(
+            "The Hand J5 value must be 98.84 ~ 174.86, but received {}".format(angles))
+        elif angles[5] <0 or  angles[4] > 90:
+             raise MyCobot630ProDataException(
+            "The Hand J6 value must be 0 ~ 90, but received {}".format(angles))
+        if ID < 0 and ID > 255:
+            raise MyCobot630ProDataException(
+            "ID value range is 0-255{}".format(angles))
+            
+        for angle in angles:
+            # if not (0 <= angle <= 0xFFFF):
+                # raise ValueError(f"angle {angle} out of range 0~65535")
+            angle_new = int(angle * 100 + 1e-8)
+            high = (angle_new >> 8) & 0xFF
+            low = angle_new & 0xFF
+            value.extend([high, low])
+       
+        value += modbus_crc(value)
+        byte_strs = [f"0x{b:02X}" for b in value]
+        command = f"five_fingers_set({','.join(byte_strs)})"
+        self.send_command(command)
+        return 1
+
         
 
 if __name__ == "__main__":
-    ep = ElephantRobot("192.168.1.248", 5001)
+    ep = ElephantRobot("192.168.6.34", 5001)
     resp = ep.start_client()
     if resp != True:
         print(resp)
         sys.exit(1)
     print(ep.wait(5))
     time.sleep(2)
-    ep.force_get_angle(14,0)
-    print(ep.Force_SetAngle(14,20))
-    print(ep.Force_SetId(14,255))
-    print(ep.get_coords())
-    print(ep.get_speed())
-    print(ep._power_on())
-    print(ep._power_off())
-    print(ep.check_running())
-    print(ep.state_check())
-    print(ep.program_open("a.tax"))
-    print(ep.program_run(0))
-    print(ep.read_next_error())
-    print(ep.write_coords([1, 2, 3, 4, 5, 6], 110))
-    print(ep.write_coord(1, 100, 200))
-    print(ep.write_angles([10, 20, 30, 40, 50, 60], 110))
-    print(ep.write_angle(3, 180, 200))
-    print(ep.set_speed(377))
-    print(ep.set_carte_torque_limit("x", 55))
-    print(ep.set_upside_down(False))
-    print(ep.set_payload(100))
-    print(ep._state_on())
-    print(ep._state_off())
-    print(ep.task_stop())
-    print(ep.jog_angle("j2", 1, 300))
-    print(ep.jog_coord("rY", 0, 200))
-    print(ep.get_digital_in(3))
-    print(ep.get_digital_out(3))
-    print(ep.set_digital_out(3, 1))
-    print(ep.get_digital_out(3))
-    print(ep.set_analog_out(1, 3.5))
-    print(ep.get_acceleration())
-    print(ep.set_acceleration(55))
-    print(ep.command_wait_done())
-    print(ep.get_variable("f"))
-    print(ep.assign_variable("ss", '"eee"'))
-    print(ep.get_joint_current(1))
-    print(ep.wait(5))
-    time.sleep(2)
-    ep.force_get_angle(14,0)
-    print(ep.Force_SetAngle(14,20))
-    print(ep.Force_SetId(14,255))
-    print(ep.get_coords())
-    print(ep.get_speed())
-    print(ep._power_on())
-    print(ep._power_off())
-    print(ep.check_running())
-    print(ep.state_check())
-    print(ep.program_open("a.tax"))
-    print(ep.program_run(0))
-    print(ep.read_next_error())
-    print(ep.write_coords([1, 2, 3, 4, 5, 6], 110))
-    print(ep.write_coord(1, 100, 200))
-    print(ep.write_angles([10, 20, 30, 40, 50, 60], 110))
-    print(ep.write_angle(3, 180, 200))
-    print(ep.set_speed(377))
-    print(ep.set_carte_torque_limit("x", 55))
-    print(ep.set_upside_down(False))
-    print(ep.set_payload(100))
-    print(ep._state_on())
-    print(ep._state_off())
-    print(ep.task_stop())
-    print(ep.jog_angle("j2", 1, 300))
-    print(ep.jog_coord("rY", 0, 200))
-    print(ep.get_digital_in(3))
-    print(ep.get_digital_out(3))
-    print(ep.set_digital_out(3, 1))
-    print(ep.get_digital_out(3))
-    print(ep.set_analog_out(1, 3.5))
-    print(ep.get_acceleration())
-    print(ep.set_acceleration(55))
-    print(ep.command_wait_done())
-    print(ep.get_variable("f"))
-    print(ep.assign_variable("ss", '"eee"'))
-    print(ep.get_joint_current(1))
 
-    print(ep.set_gripper_mode(1))
-    print(ep.wait(2))
-    print(ep.set_gripper_mode(0))
+    # angle = ep.get_five_fingers_angles(2)
+    # print(angle)
 
-    print(ep.set_gripper_value(100, 20))
-    print(ep.wait(2))
-    print(ep.set_gripper_value(50, 20))
-    print(ep.wait(2))
-    print(ep.set_gripper_value(0, 20))
-    print(ep.wait(2))
+    # ep.force_get_angle(14,0)
+    # print(ep.Force_SetAngle(14,20))
+    # print(ep.Force_SetId(14,255))
+    # print(ep.get_coords())
+    # print(ep.get_speed())
+    # print(ep._power_on())
+    # print(ep._power_off())
+    # print(ep.check_running())
+    # print(ep.state_check())
+    # print(ep.program_open("a.tax"))
+    # print(ep.program_run(0))
+    # print(ep.read_next_error())
+    # print(ep.write_coords([1, 2, 3, 4, 5, 6], 110))
+    # print(ep.write_coord(1, 100, 200))
+    # print(ep.write_angles([10, 20, 30, 40, 50, 60], 110))
+    # print(ep.write_angle(3, 180, 200))
+    # print(ep.set_speed(377))
+    # print(ep.set_carte_torque_limit("x", 55))
+    # print(ep.set_upside_down(False))
+    # print(ep.set_payload(100))
+    # print(ep._state_on())
+    # print(ep._state_off())
+    # print(ep.task_stop())
+    # print(ep.jog_angle("j2", 1, 300))
+    # print(ep.jog_coord("rY", 0, 200))
+    # print(ep.get_digital_in(3))
+    # print(ep.get_digital_out(3))
+    # print(ep.set_digital_out(3, 1))
+    # print(ep.get_digital_out(3))
+    # print(ep.set_analog_out(1, 3.5))
+    # print(ep.get_acceleration())
+    # print(ep.set_acceleration(55))
+    # print(ep.command_wait_done())
+    # print(ep.get_variable("f"))
+    # print(ep.assign_variable("ss", '"eee"'))
+    # print(ep.get_joint_current(1))
+    # print(ep.wait(5))
+    # time.sleep(2)
+    # ep.force_get_angle(14,0)
+    # print(ep.Force_SetAngle(14,20))
+    # print(ep.Force_SetId(14,255))
+    # print(ep.get_coords())
+    # print(ep.get_speed())
+    # print(ep._power_on())
+    # print(ep._power_off())
+    # print(ep.check_running())
+    # print(ep.state_check())
+    # print(ep.program_open("a.tax"))
+    # print(ep.program_run(0))
+    # print(ep.read_next_error())
+    # print(ep.write_coords([1, 2, 3, 4, 5, 6], 110))
+    # print(ep.write_coord(1, 100, 200))
+    # print(ep.write_angles([10, 20, 30, 40, 50, 60], 110))
+    # print(ep.write_angle(3, 180, 200))
+    # print(ep.set_speed(377))
+    # print(ep.set_carte_torque_limit("x", 55))
+    # print(ep.set_upside_down(False))
+    # print(ep.set_payload(100))
+    # print(ep._state_on())
+    # print(ep._state_off())
+    # print(ep.task_stop())
+    # print(ep.jog_angle("j2", 1, 300))
+    # print(ep.jog_coord("rY", 0, 200))
+    # print(ep.get_digital_in(3))
+    # print(ep.get_digital_out(3))
+    # print(ep.set_digital_out(3, 1))
+    # print(ep.get_digital_out(3))
+    # print(ep.set_analog_out(1, 3.5))
+    # print(ep.get_acceleration())
+    # print(ep.set_acceleration(55))
+    # print(ep.command_wait_done())
+    # print(ep.get_variable("f"))
+    # print(ep.assign_variable("ss", '"eee"'))
+    # print(ep.get_joint_current(1))
 
-    print(ep.set_gripper_enabled(1))
-    print(ep.wait(2))
-    print(ep.set_gripper_enabled(0))
+    # print(ep.set_gripper_mode(1))
+    # print(ep.wait(2))
+    # print(ep.set_gripper_mode(0))
+
+    # print(ep.set_gripper_value(100, 20))
+    # print(ep.wait(2))
+    # print(ep.set_gripper_value(50, 20))
+    # print(ep.wait(2))
+    # print(ep.set_gripper_value(0, 20))
+    # print(ep.wait(2))
+
+    # print(ep.set_gripper_enabled(1))
+    # print(ep.wait(2))
+    # print(ep.set_gripper_enabled(0))
 
     ep.stop_client()
 
