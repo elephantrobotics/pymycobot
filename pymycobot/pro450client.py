@@ -78,6 +78,9 @@ class Pro450Client(Pro450CloseLoop):
             elif data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
                 res_list = [i for i in valid_data]
                 return res_list
+            elif data_len == 12 and genre == ProtocolCode.GET_TORQUE_COMP:
+                res_list = [i for i in valid_data]
+                return res_list
             else:
                 for header_i in range(0, len(valid_data), 2):
                     one = valid_data[header_i : header_i + 2]
@@ -1312,7 +1315,7 @@ class Pro450Client(Pro450CloseLoop):
             return msg
         return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, _async=_async, has_reply=True)
 
-    def set_fusion_parameters(self, rank_mode, value):
+    def set_fusion_parameters(self, rank_mode, value=None):
         """Set speed fusion planning parameters
         Args:
             rank_mode: 0 ~ 4
@@ -1323,9 +1326,14 @@ class Pro450Client(Pro450CloseLoop):
                 4: Fusion coordinate acceleration
             value: 0 ~ 10000
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, rank_mode=rank_mode, rank_mode_value=value)
-        return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
+        if rank_mode == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, rank_mode=rank_mode, rank_mode_value=value)
+            return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode)
+        else:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, rank_mode=rank_mode, rank_mode_value=value)
+            return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
 
     def set_max_acc(self, mode, max_acc):
         """Set maximum acceleration
@@ -1506,7 +1514,6 @@ class Pro450Client(Pro450CloseLoop):
         # return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
         res = self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory, _async=_async)
 
-        # 如果是异步模式，直接返回
         if _async:
             return res
 
@@ -1519,7 +1526,7 @@ class Pro450Client(Pro450CloseLoop):
 
             if moving == 0:
                 stable_stop += 1
-                if stable_stop >= 2:  # 连续两次停止 → 执行完毕
+                if stable_stop >= 2:
                     return 0
             else:
                 stable_stop = 0
@@ -1582,7 +1589,7 @@ class Pro450Client(Pro450CloseLoop):
                 3 : Joint velocity fusion filter
                 4 : Coordinate velocity fusion filter
                 5 : Drag teaching sampling period
-            value (int): Filter length, range is 1 ~ 120
+            value (int): Filter length, range is 1 ~ 255
         """
         self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
