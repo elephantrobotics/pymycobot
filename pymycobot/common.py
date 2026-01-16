@@ -567,6 +567,8 @@ class ProtocolCode(object):
     DRAG_TEACH_STOP_P1 = "M415"
     RECEIVE_485_DATA_P1 = "M420"
     WIFI_OPEN_P1 = "M430"
+    SET_WIFI_PASSWORD = "M431"
+    CHECK_SD_CARD = "M440"
 
 
 

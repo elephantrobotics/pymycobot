@@ -120,6 +120,7 @@ class UltraArmP1:
                     if received_data.lower().count(keyword) >= 1:
                         return 'ok'
             # else:
+                # print('no data')
             #     if time.time() - last_data_time > no_data_timeout:
             #         return -1
             time.sleep(0.01)
@@ -139,21 +140,23 @@ class UltraArmP1:
         - accumulate chunks
         - parse by flag until success or timeout
         """
-        TOTAL_TIMEOUT = 0.02
-        POLL_SLEEP = 0.001
+        timeout = 0.1
+        if flag == "check_sd_card":
+            timeout = 3
 
         raw_data = ""
         start_time = time.time()
         # clear stale input
-        try:
-            if hasattr(self._serial_port, "reset_input_buffer"):
-                self._serial_port.reset_input_buffer()
-            elif hasattr(self._serial_port, "flushInput"):
-                self._serial_port.flushInput()
-        except Exception:
-            pass
+        # try:
+        #     if hasattr(self._serial_port, "reset_input_buffer"):
+        #         self._serial_port.reset_input_buffer()
+        #     elif hasattr(self._serial_port, "flushInput"):
+        #         self._serial_port.flushInput()
+        # except Exception:
+        #     pass
+        self._clear_serial_buffer()
 
-        while time.time() - start_time < TOTAL_TIMEOUT:
+        while time.time() - start_time < timeout:
             try:
                 n = self._serial_port.inWaiting()
             except Exception:
@@ -246,6 +249,10 @@ class UltraArmP1:
                         )
                         if r is not None:
                             return r
+                    elif flag == "check_sd_card":
+                        r = self._parse_bracket_values(lower, "sdcard", str, single=True)
+                        if r is not None:
+                            return r
 
                     elif flag is None:
                         return -1
@@ -253,7 +260,7 @@ class UltraArmP1:
                 except Exception as e:
                     if self.debug:
                         print(f"{self._now()} DEBU [UltraArmP1] _error : serial read exception: {e}")
-            time.sleep(POLL_SLEEP)
+            time.sleep(0.001)
 
         if self.debug:
             print(
@@ -268,7 +275,7 @@ class UltraArmP1:
         Args:
             lower (str): lower-case received buffer
             keyword (str): keyword to search (lower-case)
-            value_type: int or float
+            value_type: int or float or str
             round_ndigits (int|None): rounding digits for float
             single (bool): return first value only
 
@@ -277,12 +284,12 @@ class UltraArmP1:
         """
         idx = lower.find(keyword)
         if idx == -1:
-            return -1
+            return None
 
         bracket_start = lower.find("[", idx)
         bracket_end = lower.find("]", idx)
         if bracket_start == -1 or bracket_end == -1 or bracket_end <= bracket_start:
-            return -1
+            return None
 
         try:
             sub = lower[bracket_start + 1: bracket_end]
@@ -297,7 +304,7 @@ class UltraArmP1:
 
             return values[0] if single else values
         except Exception:
-            return -1
+            return None
 
     def _send_command(self, command: str):
         """Send commands to serial port"""
@@ -305,6 +312,14 @@ class UltraArmP1:
         self._debug_write(command)
         self._serial_port.write(command.encode())
         self._serial_port.flush()
+
+    def _clear_serial_buffer(self):
+        """Clear the serial port buffer before sending commands."""
+        try:
+            if hasattr(self._serial_port, "reset_input_buffer"):
+                self._serial_port.reset_input_buffer()
+        except Exception:
+            pass
 
     # ---------------------- Control methods ----------------------
     def set_reboot(self):
@@ -355,6 +370,7 @@ class UltraArmP1:
         """
         self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS_MAX_SPEED
             if len(coords) > 0 and coords[0] is not None:
                 command += f" X{coords[0]}"
@@ -380,6 +396,7 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, coords=coords, speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS
             if len(coords) > 0 and coords[0] is not None:
                 command += f" X{coords[0]}"
@@ -405,6 +422,7 @@ class UltraArmP1:
         """
         self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS
             command += f" {coord_id}{coord}"
             command += f" F{speed}"
@@ -424,6 +442,7 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.SET_ANGLE_P1
             joint_map = {1: "A", 2: "B", 3: "C", 4: "D"}
             if joint_id in joint_map:
@@ -445,6 +464,7 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, angles=angles, speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.SET_ANGLES_P1
             if len(angles) > 0 and angles[0] is not None:
                 command += f" A{angles[0]}"
@@ -498,6 +518,7 @@ class UltraArmP1:
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
                                     jog_speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.SET_JOG_ANGLE_P1
             command += " J" + str(joint_id)
             command += " D" + str(direction)
@@ -519,6 +540,7 @@ class UltraArmP1:
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     jog_speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.SET_JOG_COORD_P1
             command += " J" + str(axis_id)
             command += " D" + str(direction)
@@ -537,6 +559,7 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.JOG_INCREMENT_ANGLE_P1
             command += " J" + str(joint_id)
             command += " T" + str(increment)
@@ -555,6 +578,7 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
         with self.lock:
+            self._clear_serial_buffer()
             command = ProtocolCode.JOG_INCREMENT_COORD_P1
             command += " J" + str(coord_id)
             command += " T" + str(increment)
@@ -964,8 +988,8 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=False)
 
-    def go_home(self):
-        self.set_angles([0, 0, 90, 0], 2000, _async=False)
+    def go_home(self, speed=2000, _async=True):
+        self.set_angles([0, 0, 90, 0], speed, _async=_async)
 
     def close(self):
         """Close the serial port."""
@@ -983,4 +1007,23 @@ class UltraArmP1:
             except Exception:
                 pass
 
+    def set_wifi_password(self, password):
+        """Set WiFi password
+
+        Args:
+            password (str) : WiFi password
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, password=password)
+        with self.lock:
+            command = ProtocolCode.SET_WIFI_PASSWORD
+            command += " P" + str(password)
+            self._send_command(command)
+            return self._response(_async=False)
+
+    def check_sd_card(self):
+        """Check if there is an SD card."""
+        with self.lock:
+            command = ProtocolCode.CHECK_SD_CARD
+            self._send_command(command)
+            return self._request("check_sd_card")
 

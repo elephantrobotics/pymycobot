@@ -545,9 +545,9 @@ class RobotLimit:
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z'],
             "jog_coord_id": [1, 2, 3, 4],
-            "angles_min": [-160, -20, 90, -360],
-            "angles_max": [160, 80, 200, 360],
+            "angles_min": [-160, -20, 90, -180],
+            "angles_max": [160, 85, 200, 180],
             "coords_min": [-301.7, -362.7, -157, -180],
-            "coords_max": [301.7, 362.7, 91, 180]
+            "coords_max": [362.7, 362.7, 91, 180]
         }
     }

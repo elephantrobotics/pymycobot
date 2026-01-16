@@ -78,7 +78,7 @@ from pymycobot import UltraArmP1
 
     <td>2</td>
 
-    <td>-20 ~ 80</td>
+    <td>-20 ~ 85</td>
 
     </tr>
 
@@ -149,7 +149,7 @@ from pymycobot import UltraArmP1
 
       <td text-align: center>X</td>
 
-      <td>-301.7 ~ 301.7</td>
+      <td>-301.7 ~ 362.7</td>
 
       </tr>
 
@@ -204,7 +204,7 @@ from pymycobot import UltraArmP1
 
       <td text-align: center>X</td>
 
-      <td>-301.7 ~ 301.7</td>
+      <td>-301.7 ~ 362.7</td>
 
       </tr>
 
@@ -590,3 +590,23 @@ from pymycobot import UltraArmP1
   - `filename`: Track file name
 
 - **Return Value:** None
+
+## 47 `set_wifi_password(password)`
+
+- **Function:** Sets the on-screen WiFi password.
+
+- **Parameter Description:**
+
+- `password`: (`str`) WiFi password string, length 8~15 characters.
+
+- **Return Value:** 1
+
+## 48 `check_sd_card()`
+
+- **Function:** Checks if an SD card is present.
+
+- **Return Value:** (`str`)
+
+  - `"yes"`: SD card present
+
+  - `"no"`: SD card not present

@@ -2227,6 +2227,11 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP1DataException(
                         f"Unsupported file format, please use .gcode, .ngc, or .nc, but received {value}"
                     )
+            elif parameter == "password":
+                check_value_type(parameter, value_type, ultraArmP1DataException, str)
+                if not (8 <= len(value) <= 15):
+                    raise ultraArmP1DataException(
+                        f"The parameter password length must be 8 to 15 characters, but received len {len(value)}")
 
 
 def restrict_serial_port(func):

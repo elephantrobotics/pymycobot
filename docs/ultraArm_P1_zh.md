@@ -61,7 +61,7 @@ from pymycobot import UltraArmP1
         </tr>
         <tr>
             <td>2</td>
-            <td>-20 ~ 80</td>
+            <td>-20 ~ 85</td>
         </tr>
         <tr>
             <td>3</td>
@@ -106,7 +106,7 @@ from pymycobot import UltraArmP1
         </tr>
         <tr>
             <td text-align: center>X</td>
-            <td>-301.7 ~ 301.7</td>
+            <td>-301.7 ~ 362.7</td>
         </tr>
         <tr>
             <td>Y</td>
@@ -139,7 +139,7 @@ from pymycobot import UltraArmP1
         </tr>
         <tr>
             <td text-align: center>X</td>
-            <td>-301.7 ~ 301.7</td>
+            <td>-301.7 ~ 362.7</td>
         </tr>
         <tr>
             <td>Y</td>
@@ -489,3 +489,17 @@ from pymycobot import UltraArmP1
 - **参数说明：**
   - `filename` ：轨迹文件名称
 - **返回值：** 无
+
+## 47 `set_wifi_password(password)`
+
+- **功能：** 设置屏幕WiFi密码。
+- **参数说明：**
+  - `password` ：(`str`) WiFi字符串密码，长度 8 ~ 15位。
+- **返回值：** 1
+
+## 48 `check_sd_card()`
+
+- **功能：** 检查是否有SD卡。
+- **返回值：** (`str`)
+  - `"yes"`: 有SD卡
+  - `"no`: 无SD卡
