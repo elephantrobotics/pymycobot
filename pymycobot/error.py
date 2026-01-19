@@ -1857,6 +1857,10 @@ def calibration_parameters(**kwargs):
                 if value not in allowed_types:
                     raise MyCobotPro450DataException(
                         f"motor_type {hex(value)} not allowed. Must be one of: {[hex(x) for x in allowed_types]}")
+            elif parameter in ["gripper_offset"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < -127 or value > 127:
+                    raise MyCobotPro450DataException("The parameter {} only supports -127 ~ 127, but received {}".format(parameter, value))
 
     elif class_name in ["ultraArmP340"]:
         for parameter in parameter_list[1:]:

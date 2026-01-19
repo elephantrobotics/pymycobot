@@ -232,6 +232,7 @@ class Pro450Client(Pro450CloseLoop):
             ProtocolCode.GET_COMMUNICATION_MODE,
             ProtocolCode.IS_MOTOR_PAUSE,
             ProtocolCode.IS_FREE_MODE,
+            ProtocolCode.GET_PRO_GRIPPER_OFFSET,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -1846,3 +1847,24 @@ class Pro450Client(Pro450CloseLoop):
 
         return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
 
+    def set_pro_gripper_offset(self, offset=2):
+        """Set the force control gripper offset.
+        When executing a teaching trajectory with gripper drag, the actual gripper angle will be reduced by the offset (default is 2).
+
+        Args:
+            offset (int): range -127 ~ 127
+        """
+
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_offset=offset)
+
+        return self._mesg(ProtocolCode.SET_PRO_GRIPPER_OFFSET, offset)
+
+    def get_pro_gripper_offset(self):
+        """Get the force control gripper offset.
+        When executing a teaching trajectory with gripper drag, the actual gripper angle will be reduced by the offset (default is 2).
+
+        Returns:
+            offset (int): range -127 ~ 127
+        """
+
+        return self._mesg(ProtocolCode.GET_PRO_GRIPPER_OFFSET)
