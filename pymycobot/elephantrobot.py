@@ -1778,6 +1778,9 @@ class ElephantRobot(object):
         Args:
             ID (int): (0 ~ 255)。
         """
+        if ID < 0 and ID > 255:
+            raise MyCobot630ProDataException(
+            "ID value range is 0-255{}".format(ID))
         value = bytearray([ID, 0x03, 0x04, 0x83, 0x00, 0x06])
         value += modbus_crc(value)
         byte_strs = [f"0x{b:02X}" for b in value]
