@@ -1870,9 +1870,9 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP340DataException(
                         "The axis_id not right, should be in [1, 2, 3], but received {}.".format(value))
             elif parameter == ["servo_restore", "set_motor_enabled"]:
-                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                if value not in [1, 2, 3, 4, 5, 6, 7, 254]:
                     raise MyCobotPro450DataException(
-                        "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
+                        "The joint_id should be in [1,2,3,4,5,6,7,254], but received {}".format(value))
             elif parameter in ['angle']:
                 joint_id = kwargs.get('joint_id', None)
                 index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1

@@ -461,37 +461,6 @@ class MercuryE1(E1CloseLoop):
             return 1
 
         return -1
-        # if not custom_mode:
-        #     if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
-        #         return -1
-        #     # The verification code must be 0x06 (write).
-        #     if recv[1] != 0x06:
-        #         return -1
-        #     # Verify that the register address is consistent to avoid consuming old data.
-        #     if recv[2] != (reg_addr >> 8) & 0xFF or recv[3] != (reg_addr & 0xFF):
-        #         return -1
-        #     # Determine the write return status
-        #     if recv[4] == 0x00 and recv[5] == 0x01:
-        #         return 1  # success
-        #     else:
-        #         return -1
-        # else:
-        #     if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
-        #         return -1
-        #
-        #     # The verification code must be 0x06 (write).
-        #     if recv[4] != 0x06:
-        #         return -1
-        #
-        #     # Verify that the register address is consistent to avoid consuming old data.
-        #     if recv[5] != (reg_addr >> 8) & 0xFF or recv[6] != (reg_addr & 0xFF):
-        #         return -1
-        #
-        #     # Determine the write return status
-        #     if recv[7] == 0x00 and recv[8] == 0x01:
-        #         return 1  # success
-        #     else:
-        #         return -1
 
     def _read_register(self, gripper_id, reg_addr):
         """Reads a register with command verification"""
@@ -508,88 +477,6 @@ class MercuryE1(E1CloseLoop):
                 return -1
 
         return -1
-    def _send_modbus_command_custom(self, gripper_id, func_code, reg_addr, value_high=None, value_low=None):
-        """
-        General Modbus command sending method
-
-        Args:
-            gripper_id: Device ID
-            func_code: Function code (0x03 = read, 0x06 = write)
-            reg_addr: Register address
-            value_high: High byte of the write data (can be None for read operations)
-            value_low: Low byte of the write data (can be None for read operations)
-        """
-        cmd = [0xFE,0XFE,0x08,gripper_id, func_code, (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
-        # cmd = [gripper_id, func_code, (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
-        if func_code == 0x06:
-            cmd.extend([value_high, value_low])
-        else:
-            cmd.extend([0x00, 0x00])
-        cmd.extend(self._modbus_crc(cmd, mode='big'))
-        recv = self.tool_serial_write_data(cmd)
-        if not recv:
-            return cmd, -1
-        return cmd, recv
-
-    def _write_and_check_custom(self, gripper_id, reg_addr, value,
-                         timeout=4.0, poll_interval=0.1):
-        """Write register and verify response robustly (support calibration delay)"""
-        self._check_gripper_id(gripper_id)
-        high, low = (value >> 8) & 0xFF, value & 0xFF
-        start_t = time.time()
-        # while time.time() - start_t < timeout:
-            # Continuously read the response packets, and send a read command to trigger feedback each time.
-        _, recv = self._send_modbus_command_custom(gripper_id, 0x06, reg_addr, high, low)
-
-        if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
-            time.sleep(poll_interval)
-            return -1
-
-        # The verification code must be 0x06 (write).
-        if recv[4] != 0x06:
-            return -1
-
-        # Verify that the register address is consistent to avoid consuming old data.
-        if recv[5] != (reg_addr >> 8) & 0xFF or recv[6] != (reg_addr & 0xFF):
-            return -1
-
-        # Determine the write return status
-        if recv[7] == 0x00 and recv[8] == 0x01:
-            return 1  # success
-        else:
-            return -1
-
-    def clear_socket_buffer(self):
-        with self.lock:  # 防止 read_thread 抢读
-            self.sock.setblocking(False)
-            try:
-                while True:
-                    try:
-                        data = self.sock.recv(4096)  # 更大
-                        if not data:
-                            break
-                    except BlockingIOError:
-                        break
-            finally:
-                self.sock.setblocking(True)
-
-    def debug_clear_socket(self):
-        total = 0
-        self.sock.setblocking(False)
-        try:
-            while True:
-                try:
-                    data = self.sock.recv(4096)
-                    if not data:
-                        break
-                    print("清空读取:", len(data), "bytes ->", data.hex(' '))
-                    total += len(data)
-                except BlockingIOError:
-                    break
-        finally:
-            self.sock.setblocking(True)
-
-        print("清空总计:", total, "bytes")
 
     def _joint_limit_init(self):
         max_joint = np.zeros(6)
@@ -683,16 +570,16 @@ class MercuryE1(E1CloseLoop):
     def close(self):
         self._serial_port.close()
 
-    # def set_motor_enabled(self, joint_id, state):
-    #     """Set the robot torque state.
-    #
-    #     Args:
-    #         joint_id: joint id 1-6, 254-all joints
-    #         state: 1 - enable, 0 - disable
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, set_motor_enabled=joint_id, state=state)
-    #     return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
+    def set_motor_enabled(self, joint_id, state):
+        """Set the robot torque state.
+
+        Args:
+            joint_id: joint id 1-7, 254-all joints
+            state: 1 - enable, 0 - disable
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, set_motor_enabled=joint_id, state=state)
+        return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
 
     def flash_tool_firmware(self, main_version, modified_version=0, _async=False):
         """Burn tool firmware
