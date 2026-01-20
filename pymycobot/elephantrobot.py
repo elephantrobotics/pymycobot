@@ -1786,6 +1786,8 @@ class ElephantRobot(object):
         byte_strs = [f"0x{b:02X}" for b in value]
         command = f"five_fingers_Get({','.join(byte_strs)})"
         recv_value =  self.send_command(command)
+        if recv_value == "":
+            return 255
         result = [round(x / 100, 2) for x in parse_modbus_data(recv_value)]
         if len(result) > 64:
             return 255
@@ -1821,7 +1823,7 @@ class ElephantRobot(object):
         elif angles[4] < 98.84 or  angles[4] > 174.86:
              raise MyCobot630ProDataException(
             "The Hand J5 value must be 98.84 ~ 174.86, but received {}".format(angles))
-        elif angles[5] <0 or  angles[4] > 90:
+        elif angles[5] <0 or  angles[5] > 90:
              raise MyCobot630ProDataException(
             "The Hand J6 value must be 0 ~ 90, but received {}".format(angles))
         if ID < 0 and ID > 255:
