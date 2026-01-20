@@ -22,9 +22,10 @@ Before using the Python API, please ensure that the following hardware and envir
   - Default port number: `4500`
   - **Note**: PC The local network card IP address must be set to the same network segment as the robot (e.g., 192.168.0.xxx, where xxx is a number between 2 and 254 and must not conflict with the robot).
   - Example:
-    - Robot IP: 192.168.0.232
-    - PC IP: 192.168.0.100
-    - Subnet mask: 255.255.255.0
+    - Robot IP: `192.168.0.232`
+    - PC IP: `192.168.0.100`
+    - Subnet mask: `255.255.255.0`
+    - DNS Service：`114.114.114.114`
 
   - **Verification**: After completing the network configuration, execute the following command on the PC terminal. If data packets are successfully returned, the network connection is normal:
 
@@ -333,9 +334,9 @@ print(mc.get_angles())
   - `coord`: coord value(`float`)
     | Coord Id | range |
     | ---- | ---- |
-    | x | -466 ~ 466 |
-    | y | -466 ~ 466 |
-    | z | -150 ~ 677 |
+    | x | -474 ~ 474 |
+    | y | -474 ~ 474 |
+    | z | -180 ~ 677 |
     | rx | -180 ~ 180 |
     | ry | -180 ~ 180 |
     | rz | -180 ~ 180 |
@@ -553,11 +554,11 @@ print(mc.get_angles())
 #### `drag_teach_save()`
 
 - **Function:** Start recording and dragging the teach point.
-- Note: For optimal motion performance, the recording time should not exceed 90 seconds.
+- Note: For optimal motion performance, the recording time should not exceed 120 seconds.
 
-<!-- #### `drag_teach_pause()`
+#### `drag_teach_pause()`
 
-- **Function:** Pause sampling -->
+- **Function:** Pause dragging the teach point
 
 #### `drag_teach_execute()`
 
