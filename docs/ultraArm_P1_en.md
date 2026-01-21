@@ -610,3 +610,15 @@ from pymycobot import UltraArmP1
   - `"yes"`: SD card present
 
   - `"no"`: SD card not present
+
+## 49 `download_firmware_sd(filename, show_progress=True)`
+
+- **Function:** Downloads firmware data to the SD card.
+
+- **Parameter Description:**
+
+  - `filename`: (`str`) The name of the firmware file, which must be a .bin file (It is recommended to use a fixed name to avoid storing too many files on the SD card.).
+
+  - `show_progress`: (`bool`) Whether to display the download progress; the default is to display it.
+
+- **Return Value:** If `show_progress=True`, the download progress is returned; otherwise, no value is returned.

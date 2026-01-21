@@ -503,3 +503,11 @@ from pymycobot import UltraArmP1
 - **返回值：** (`str`)
   - `"yes"`: 有SD卡
   - `"no`: 无SD卡
+
+## 49 `download_firmware_sd(filename, show_progress=True)`
+
+- **功能：** 下载固件数据到SD卡中。
+- **参数说明：**
+  - `filename` ：(`str`) 固件文件的名称，且必须是 .bin 文件（建议用一个固定名称，避免SD卡存过多文件）。
+  - `show_progress` ：(`bool`) 是否显示下载进度，默认显示。
+- **返回值：** 如果 `show_progress=True`，则返回下载进度，否则无返回值。

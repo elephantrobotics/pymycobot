@@ -29,8 +29,8 @@ class UltraArmP1:
 
         Args:
             port (str): Serial port name (e.g., 'COM3' or '/dev/ttyUSB0').
-            baudrate (int, optional): Communication baud rate. Defaults to 115200.
-            timeout (float, optional): Serial read timeout in seconds. Defaults to 0.1.
+            baudrate (int, optional): Communication baud rate. Defaults to 1000000.
+            timeout (float, optional): Serial read timeout in seconds. Defaults to 0.05.
             debug (bool, optional): Whether to print debug information. Defaults to False.
         """
         import serial
@@ -321,13 +321,14 @@ class UltraArmP1:
         except Exception:
             pass
 
-    def _fw_calc_crc(self, payload: bytes) -> int:
+    def _fw_calc_crc(self, payload: bytes):
         """
         CRC = sum(CMD + IDX_H + IDX_L + LEN_H + LEN_L + DATA) & 0xFF
         """
         return sum(payload) & 0xFF
 
-    def _fw_build_packet(self, idx: int, data: bytes) -> bytes:
+    def _fw_build_packet(self, idx: int, data: bytes):
+        """Build data packets"""
         frame = bytearray()
         frame += b'\xA5\x5A'  # Frame header
         frame += b'\x01'  # CMD: PC send data
@@ -340,6 +341,7 @@ class UltraArmP1:
         return bytes(frame)
 
     def _fw_read_ack(self, timeout=1.0):
+        """Read screen response data"""
         start = time.time()
         buf = bytearray()
 
@@ -348,7 +350,7 @@ class UltraArmP1:
             if n > 0:
                 buf += self._serial_port.read(n)
 
-                # 至少 8 字节才可能是 ACK
+                # At least 8 bytes are needed for an ACK.
                 while len(buf) >= 8:
                     if buf[0:2] != b'\xA5\x5A':
                         buf.pop(0)
@@ -356,7 +358,7 @@ class UltraArmP1:
 
                     frame = bytes(buf[:8])
                     buf[:] = buf[8:]
-                    self._debug_read(frame.hex(' '))
+                    self._debug_read(frame.hex(' ').upper())
                     cmd = frame[2]
                     idx = int.from_bytes(frame[3:5], 'big')
                     return cmd, idx
@@ -366,63 +368,18 @@ class UltraArmP1:
         return None
 
     def _fw_enter_upgrade(self, filename: str):
+        """Start downloading"""
         command = ProtocolCode.START_DOWNLOAD_FIRMWARE
         command += f" {filename}"
         self._send_command(command)
 
     def _fw_finish_upgrade(self):
+        """Download complete"""
         command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
         self._send_command(command)
 
-    def download_firmware_sd(self, filename, progress_cb=None):
-        """
-        Download firmware to the SD card via M450/M451 commands.
-
-        Args:
-            filename (str): name of the firmware file, and must be a .bin file
-            progress_cb (callable, optional): callback(percent:int) to report progress
-        """
-        with self.lock:
-            self._clear_serial_buffer()
-
-            # Entering upgrade mode.
-            self._fw_enter_upgrade(filename)
-            time.sleep(0.2)
-
-            # read bin
-            with open(filename, "rb") as f:
-                bin_data = f.read()
-
-            chunk_size = 512
-            total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
-
-            idx = 1
-            while idx <= total_packets:
-                offset = (idx - 1) * chunk_size
-                data = bin_data[offset: offset + chunk_size]
-
-                pkt = self._fw_build_packet(idx, data)
-                self._debug_write(pkt.hex(' '))
-                self._serial_port.write(pkt)
-                self._serial_port.flush()
-
-                ack = self._fw_read_ack(timeout=1.0)
-                if ack is None:
-                    continue  # timeout -> resend
-                cmd, next_idx = ack
-
-                if cmd == 2:  # success
-                    idx = next_idx
-                    if progress_cb:
-                        progress_cb(int((idx - 1) * 100 / total_packets))
-
-                elif cmd == 3:  # resend
-                    idx = next_idx
-                else:
-                    raise RuntimeError(f"Unknown ACK CMD: {cmd}")
-
-            # Finish
-            self._fw_finish_upgrade()
+    def _download_progress(self, percent):
+        print(f"Download progress: {percent}%")
 
     # ---------------------- Control methods ----------------------
     def set_reboot(self):
@@ -1130,3 +1087,58 @@ class UltraArmP1:
             self._send_command(command)
             return self._request("check_sd_card")
 
+    def download_firmware_sd(self, filename, show_progress=True):
+        """
+        Download firmware to the SD card via M450/M451 commands.
+
+        Args:
+            filename (str): name of the firmware file, and must be a .bin file
+            show_progress (bool): whether to show download progress
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, download_filename=filename)
+        if show_progress:
+            # callback(percent:int) to report progress
+            progress_cb = self._download_progress
+        else:
+            progress_cb = None
+        with self.lock:
+            self._clear_serial_buffer()
+
+            # Entering upgrade mode.
+            self._fw_enter_upgrade(filename)
+            time.sleep(0.2)
+
+            # read bin
+            with open(filename, "rb") as f:
+                bin_data = f.read()
+
+            chunk_size = 512
+            total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
+
+            idx = 1
+            while idx <= total_packets:
+                offset = (idx - 1) * chunk_size
+                data = bin_data[offset: offset + chunk_size]
+
+                pkt = self._fw_build_packet(idx, data)
+                self._debug_write(pkt.hex(' ').upper())
+                self._serial_port.write(pkt)
+                self._serial_port.flush()
+
+                ack = self._fw_read_ack(timeout=1.0)
+                if ack is None:
+                    continue  # timeout -> resend
+                cmd, next_idx = ack
+
+                if cmd == 2:  # success
+                    idx = next_idx
+                    if progress_cb:
+                        progress_cb(int((idx - 1) * 100 / total_packets))
+
+                elif cmd == 3:  # resend
+                    idx = next_idx
+                else:
+                    raise RuntimeError(f"Unknown ACK CMD: {cmd}")
+
+            # Finish
+            self._fw_finish_upgrade()

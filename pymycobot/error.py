@@ -2232,6 +2232,18 @@ def calibration_parameters(**kwargs):
                 if not (8 <= len(value) <= 15):
                     raise ultraArmP1DataException(
                         f"The parameter password length must be 8 to 15 characters, but received len {len(value)}")
+            elif parameter == "download_filename":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `download_filename` must be a string, but received {type(value)}")
+
+                if not os.path.isfile(value):
+                    raise ultraArmP1DataException(
+                        f"The file '{value}' does not exist")
+
+                if not value.lower().endswith((".bin")):
+                    raise ultraArmP1DataException(
+                        f"Unsupported file format, please use .bin, but received {value}")
 
 
 def restrict_serial_port(func):
