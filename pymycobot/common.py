@@ -569,6 +569,8 @@ class ProtocolCode(object):
     WIFI_OPEN_P1 = "M430"
     SET_WIFI_PASSWORD = "M431"
     CHECK_SD_CARD = "M440"
+    START_DOWNLOAD_FIRMWARE = "M450"
+    FINISH_DOWNLOAD_FIRMWARE = "M451"
 
 
 

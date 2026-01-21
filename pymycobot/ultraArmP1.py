@@ -321,6 +321,109 @@ class UltraArmP1:
         except Exception:
             pass
 
+    def _fw_calc_crc(self, payload: bytes) -> int:
+        """
+        CRC = sum(CMD + IDX_H + IDX_L + LEN_H + LEN_L + DATA) & 0xFF
+        """
+        return sum(payload) & 0xFF
+
+    def _fw_build_packet(self, idx: int, data: bytes) -> bytes:
+        frame = bytearray()
+        frame += b'\xA5\x5A'  # Frame header
+        frame += b'\x01'  # CMD: PC send data
+        frame += idx.to_bytes(2, 'big')  # Packet index
+        frame += len(data).to_bytes(2, 'big')
+        frame += data
+
+        crc = self._fw_calc_crc(frame[2:])  # exclude header
+        frame.append(crc)
+        return bytes(frame)
+
+    def _fw_read_ack(self, timeout=1.0):
+        start = time.time()
+        buf = bytearray()
+
+        while time.time() - start < timeout:
+            n = self._serial_in_waiting()
+            if n > 0:
+                buf += self._serial_port.read(n)
+
+                # 至少 8 字节才可能是 ACK
+                while len(buf) >= 8:
+                    if buf[0:2] != b'\xA5\x5A':
+                        buf.pop(0)
+                        continue
+
+                    frame = bytes(buf[:8])
+                    buf[:] = buf[8:]
+                    self._debug_read(frame.hex(' '))
+                    cmd = frame[2]
+                    idx = int.from_bytes(frame[3:5], 'big')
+                    return cmd, idx
+
+            time.sleep(0.002)
+
+        return None
+
+    def _fw_enter_upgrade(self, filename: str):
+        command = ProtocolCode.START_DOWNLOAD_FIRMWARE
+        command += f" {filename}"
+        self._send_command(command)
+
+    def _fw_finish_upgrade(self):
+        command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
+        self._send_command(command)
+
+    def download_firmware_sd(self, filename, progress_cb=None):
+        """
+        Download firmware to the SD card via M450/M451 commands.
+
+        Args:
+            filename (str): name of the firmware file, and must be a .bin file
+            progress_cb (callable, optional): callback(percent:int) to report progress
+        """
+        with self.lock:
+            self._clear_serial_buffer()
+
+            # Entering upgrade mode.
+            self._fw_enter_upgrade(filename)
+            time.sleep(0.2)
+
+            # read bin
+            with open(filename, "rb") as f:
+                bin_data = f.read()
+
+            chunk_size = 512
+            total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
+
+            idx = 1
+            while idx <= total_packets:
+                offset = (idx - 1) * chunk_size
+                data = bin_data[offset: offset + chunk_size]
+
+                pkt = self._fw_build_packet(idx, data)
+                self._debug_write(pkt.hex(' '))
+                self._serial_port.write(pkt)
+                self._serial_port.flush()
+
+                ack = self._fw_read_ack(timeout=1.0)
+                if ack is None:
+                    continue  # timeout -> resend
+                cmd, next_idx = ack
+
+                if cmd == 2:  # success
+                    idx = next_idx
+                    if progress_cb:
+                        progress_cb(int((idx - 1) * 100 / total_packets))
+
+                elif cmd == 3:  # resend
+                    idx = next_idx
+                else:
+                    raise RuntimeError(f"Unknown ACK CMD: {cmd}")
+
+            # Finish
+            self._fw_finish_upgrade()
+
     # ---------------------- Control methods ----------------------
     def set_reboot(self):
         """Reboot the robot controller board.(Internal Interface)"""
