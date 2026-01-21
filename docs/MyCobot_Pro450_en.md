@@ -574,13 +574,13 @@ print(mc.get_angles())
 
 - **Parameters:** `int`
 
-  - `offset`: Range -127 ~ 127, default 2
+  - `offset`: Range -5 ~ 5, default 2
 
 #### `get_pro_gripper_offset()`
 
 - **Function:** Gets the Pro force control gripper offset. When executing a teaching trajectory with gripper dragging, the actual gripper angle will be reduced by offset (default is 2).
 
-- **Return Value:** `int`, range -127 ~ 127
+- **Return Value:** `int`, range -5 ~ 5
 
 ### 10. Dynamics
 
