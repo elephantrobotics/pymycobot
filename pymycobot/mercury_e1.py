@@ -621,7 +621,7 @@ class MercuryE1(E1CloseLoop):
         """Read the number of communication exceptions
 
         Args:
-            joint_id (int): joint ID, 1 ~ 6
+            joint_id (int): joint ID, 1 ~ 7
 
         Returns:
              A list of length 4, such as [0, 0, 0, 0], represents:
@@ -977,7 +977,7 @@ class MercuryE1(E1CloseLoop):
         """Get single joint angle
 
         Args:
-            joint_id (int): 1 ~ 6.
+            joint_id (int): 1 ~ 7.
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id)

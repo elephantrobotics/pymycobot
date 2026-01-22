@@ -518,20 +518,23 @@ print(mc.get_angles())
 - **Parameters**:
   - `servo_id`: 1 - 7
 
+#### `set_servos_calibration()`
+
+- **function:** The current position of all joints of the robotic arm is calibrated to the zero angle point.
 <!-- #### `set_break（joint_id, value）`
 
 - **function:** Set break point
 - **Parameters**：
   - `joint_id`: int. joint id 1 - 6
   - `value`: int. 0 - disable, 1 - enable
-- **Return value:** 0 : faile; 1 : success
+- **Return value:** 0 : faile; 1 : success -->
 
-#### `set_motor_enabled(joint_id, state`
+#### `set_motor_enabled(joint_id, state)`
 
 - **function:** Set the robot torque state.(Release joint interface)
 - **Parameters**：
-  - `joint_id`: int. joint id 1 - 6, 254-all joints
-  - `state`: int. 0 - disable, 1 - enable -->
+  - `joint_id`: int. joint id 1 - 7, 254-all joints
+  - `state`: int. 0 - disable, 1 - enable
 
 ### 9. Drag Teach
 

@@ -106,20 +106,21 @@ class E1CloseLoop(DataProcessor):
 
         need_break = False
         data = None
-        if self.__class__.__name__ == "MercurySocket":
-            timeout = 1
-        elif self.__class__.__name__ == "Pro450Client":
-            if genre == ProtocolCode.SET_FRESH_MODE:
-                timeout = 4
-            elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
-                timeout = 5
-                wait_time = 4
-            else:
+        timeout = 0.5
+        if genre == ProtocolCode.SET_FRESH_MODE:
+            timeout = 4
+        elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
+            timeout = 5
+            wait_time = 4
+        elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+            if real_command[7] in [36, 13]:
                 timeout = 3
-        elif self.__class__.__name__ == "MercuryArmsSocket":
-            timeout = 1
+                wait_time = 10
+            else:
+                wait_time = 0.25
         else:
             timeout = 0.5
+
         interval_time = time.time()
         is_moving = 0
         check_is_moving_t = 1
@@ -779,7 +780,7 @@ class E1CloseLoop(DataProcessor):
         """The current position of the calibration joint actuator is the angle zero point, 
 
         Args:
-            joint_id: Serial number of articulated steering gear. Joint id 1 - 6
+            joint_id: Serial number of articulated steering gear. Joint id 1 - 7
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id)

@@ -500,20 +500,24 @@ print(mc.get_angles())
 - **参数**:
   - `servo_id`: 1 - 7
 
+#### `set_servos_calibration()`
+
+- **功能：** 校准机械臂全部关节的当前位置为角度零点
+  
 <!-- #### `set_break（joint_id, value）`
 
 - **功能：** 设置关节刹车
 - **参数**：
   - `joint_id`: int. 关节 id 1 - 6
   - `value`: int. 0 - 掉使能, 1 - 使能
-- **返回值:** 0 : 失败; 1 : 成功
+- **返回值:** 0 : 失败; 1 : 成功 -->
 
 #### `set_motor_enabled(joint_id, state`
 
 - **功能：** 设置机器人力矩状态。（释放关节接口）
 - **参数**：
-  - `joint_id`: int. 关节 id 1 - 6, 254-所有关节
-  - `state`: int. 0 - 掉使能, 1 - 使能 -->
+  - `joint_id`: int. 关节 id 1 - 7, 254-所有关节
+  - `state`: int. 0 - 掉使能, 1 - 使能
 
 ### 9. 拖动示教
 
