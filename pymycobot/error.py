@@ -1,5 +1,6 @@
 # coding=utf-8
 import functools
+import os
 import socket
 import traceback
 import re
@@ -69,6 +70,9 @@ class MyCobot630ProDataException(Exception):
 class MyCobotPro450DataException(Exception):
     pass
 
+class ultraArmP340DataException(Exception):
+    pass
+
 
 def check_boolean(b):
     if b != 0 and b != 1:
@@ -115,6 +119,21 @@ def check_coords(parameter_name, value, robot_limit, class_name, exception_class
     else:
         min_coord = robot_limit[class_name]["coords_min"]
         max_coord = robot_limit[class_name]["coords_max"]
+    for idx, coord in enumerate(value):
+        if not min_coord[idx] <= coord <= max_coord[idx]:
+            raise exception_class(
+                "Has invalid coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                    idx, min_coord[idx], max_coord[idx], coord))
+
+def check_world_tool_coords(parameter_name, value, exception_class):
+    if not isinstance(value, list):
+        raise exception_class("`{}` must be a list, but the received {}".format(parameter_name, type(value)))
+    if len(value) != 6:
+        raise exception_class(
+            "The length of `{}` must be 6, but the received length is {}".format(parameter_name, len(value)))
+
+    min_coord = [-1000, -1000, -1000, -180, -180, -180]
+    max_coord = [1000, 1000, 1000, 180, 180, 180]
     for idx, coord in enumerate(value):
         if not min_coord[idx] <= coord <= max_coord[idx]:
             raise exception_class(
@@ -285,7 +304,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             elif class_name in ["MyCobot320", "MyCobot320Socket"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, exception_class, int)
             elif class_name in ["MyCobot280", "MyCobot280Socket", "MechArm270", "MechArmSocket", "MyPalletizer260", "MyPalletizerSocket"]:
-                check_0_or_1(parameter, value, [19, 22, 23, 33], value_type, exception_class, int)
+                check_0_or_1(parameter, value, [19, 22, 23, 33, 39], value_type, exception_class, int)
         elif parameter == "pin_no_basic":
             if class_name in ["Mercury"]:
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, exception_class, int)
@@ -500,6 +519,11 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == 'id' and value not in robot_limit[class_name][parameter]:
                 check_id(value, robot_limit[class_name][parameter], MyCobot280DataException)
+            elif parameter in ['coord_id']:
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if value not in robot_limit[class_name][parameter]:
+                    raise MyCobot280DataException(
+                    "The coord_id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6], value))
             elif parameter == 'servo_data_id' and value not in [1, 2, 3, 4, 5, 6, 7]:
                 raise MyCobot280DataException(
                     "The id not right, should be in {0}, but received {1}.".format([1, 2, 3, 4, 5, 6, 7], value))
@@ -553,7 +577,7 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobot280DataException, str)
             elif parameter == 'coords':
                 check_coords(parameter, value, robot_limit, class_name, MyCobot280DataException)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobot280DataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MyCobot280DataException, int)
@@ -578,7 +602,6 @@ def calibration_parameters(**kwargs):
             elif parameter == 'coord':
                 id = kwargs.get('id', None)
                 index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
-
                 if value < robot_limit[class_name]["coords_min"][index] or value > \
                         robot_limit[class_name]["coords_max"][index]:
                     raise MyCobot280DataException(
@@ -588,6 +611,10 @@ def calibration_parameters(**kwargs):
                             value
                         )
                     )
+            elif parameter == 'encoder':
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if not 0 <= value <= 4096:
+                    raise MyCobot280DataException(f"The range of encoder is 0 ~ 4096, but the received value is {value}")
             elif parameter == 'encoders':
 
                 if len(value) != 6:
@@ -630,6 +657,26 @@ def calibration_parameters(**kwargs):
             elif parameter == 'is_torque':
                 if value is not None:
                     check_0_or_1(parameter, value, [0, 1], value_type, MyCobot280DataException, int)
+            elif parameter == 'increment_angle':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobot280DataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
+            elif parameter == 'increment_coord':
+                id = kwargs.get('id', None)
+                index = robot_limit[class_name]['id'][id - 1] - 1  # Get the index based on the ID
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobot280DataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MyCobot280DataException)
     elif class_name in ["MyCobot320", "MyCobot320Socket"]:
@@ -677,7 +724,7 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobot320DataException, str)
             elif parameter == 'coords':
                 check_coords(parameter, value, robot_limit, class_name, MyCobot320DataException)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobot320DataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MyCobot320DataException, int)
@@ -935,7 +982,7 @@ def calibration_parameters(**kwargs):
                         "The range of {} is 0 ~ 100, but the received value is {}".format(parameter, value))
             elif parameter in ['account', 'password']:
                 check_value_type(parameter, value_type, MechArmDataException, str)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MechArmDataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MechArmDataException, int)
@@ -972,6 +1019,10 @@ def calibration_parameters(**kwargs):
                             value
                         )
                     )
+            elif parameter == 'encoder':
+                check_value_type(parameter, value_type, MechArmDataException, int)
+                if not 0 <= value <= 4096:
+                    raise MechArmDataException(f"The range of encoder is 0 ~ 4096, but the received value is {value}")
             elif parameter == 'encoders':
                 if len(value) != 6:
                     raise MechArmDataException("The length of `encoders` must be 6.")
@@ -1199,7 +1250,7 @@ def calibration_parameters(**kwargs):
                         "The range of {} is 0 ~ 100, but the received value is {}".format(parameter, value))
             elif parameter in ['account', 'password']:
                 check_value_type(parameter, value_type, MyPalletizer260DataException, str)
-            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction']:
+            elif parameter in ['rftype', 'move_type', 'end', 'is_linear', 'status', 'mode', 'direction', 'position_id']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyPalletizer260DataException, int)
             elif parameter == 'acceleration':
                 check_value_type(parameter, value_type, MyPalletizer260DataException, int)
@@ -1591,19 +1642,47 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == "pin_no_base":
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value_type, MyCobotPro450DataException, int)
-            elif parameter == "pin_no":
+            elif parameter in ["pin_no", "communicate_mode"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, MyCobotPro450DataException, int)
-            elif parameter == ['pin_signal', 'value', 'state']:
+            elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration',
+                               'communication_mode', 'protocol_mode', 'state', 'damping']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MyCobotPro450DataException, int)
-            elif parameter == ['log_state']:
-                check_0_or_1(parameter, value, [0, 1, 2, 3, 4, 5, 6, 7], value_type, MyCobotPro450DataException, int)
-            elif parameter == 'joint_id':
+            elif parameter == "move_type":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value not in [0, 1, 2, 3, 4]:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter in ['log_state']:
+                check_0_or_1(parameter, value, list(range(0, 8)), value_type, MyCobotPro450DataException, int)
+            elif parameter in ['max_acc']:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                mode = kwargs.get('mode', None)
+                if mode == 0:
+                    if not (1 <= value <= 200):
+                        raise MyCobotPro450DataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 400):
+                        raise MyCobotPro450DataException(
+                            f"The parameter {parameter} only supports 1 ~ 400 (coord mode), but received {value}")
+            elif parameter in ['max_speed']:
+                mode = kwargs.get('mode', None)
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if mode == 0:
+                    if not (1 <= value <= 150):
+                        raise MyCobotPro450DataException(
+                            f"The parameter {parameter} only supports 1 ~ 150 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 200):
+                        raise MyCobotPro450DataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (coord mode), but received {value}")
+            elif parameter in['joint_id', 'coord_id']:
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MyCobotPro450DataException)
-            elif parameter == ["servo_restore", "set_motor_enabled"]:
-                    if value not in [1, 2, 3, 4, 5, 6, 254]:
-                        raise MyCobotPro450DataException(
-                            "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
+            elif parameter in ["servo_restore", "set_motor_enabled"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MyCobotPro450DataException(
+                        "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
             elif parameter in ['angle', 'degree']:
                 joint_id = kwargs.get('joint_id', None)
                 index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
@@ -1620,13 +1699,309 @@ def calibration_parameters(**kwargs):
                         "Coordinate value not right, should be {0} ~ {1}, but received {2}".format(
                             robot_limit[class_name]["coords_min"][index],robot_limit[class_name]["coords_max"][index], value))
             elif parameter == 'speed':
-                    if not 1 <= value <= 100:
-                        raise MyCobotPro450DataException(
-                            "speed value not right, should be 1 ~ 100, the error speed is {}".format(value))
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if not 1 <= value <= 100:
+                    raise MyCobotPro450DataException(
+                        "speed value not right, should be 1 ~ 100, the error speed is {}".format(value))
             elif parameter == "angles":
                 check_angles(value, robot_limit, class_name, MyCobotPro450DataException)
             elif parameter == 'coords':
                 check_coords(parameter, value, robot_limit, class_name, MyCobotPro450DataException)
+            elif parameter == "rank_mode":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 4:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "get_rank_mode":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 1 or value > 4:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "rank_mode_value":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 10000:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
+            elif parameter == 'rank':
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 1 or value > 5:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == 'rank_value':
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if not 1 <= value <= 255:
+                    raise MyCobotPro450DataException(
+                        "rank value not right, should be 1 ~ 255, the error speed is {}".format(value))
+            elif parameter == "axis":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value not in [1,2,3]:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1, 2, 3, but received {}".format(parameter, value))
+            elif parameter == 'increment_angle':
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobotPro450DataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
+            elif parameter == 'increment_coord':
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MyCobotPro450DataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+            elif parameter == "threshold_value":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 50 or value > 250:
+                    raise MyCobotPro450DataException("The parameter {} only supports 50 ~ 250, but received {}".format(parameter, value))
+            elif parameter == "comp_value":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 250:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 250, but received {}".format(parameter, value))
+            elif parameter == "trajectory":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value not in [0,1]:
+                    raise MyCobotPro450DataException("The parameter {} only supports [0,1], but received {}".format(parameter, value))
+            elif parameter == 'add':
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 62:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports 0 ~ 62, but received {}".format(parameter, value))
+            elif parameter == 'rgb':
+                check_rgb_value(value, MyCobotPro450DataException, class_name)
+            elif parameter in ["gripper_id", "target_id"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 1 or value > 254:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
+            elif parameter in ["gripper_angle", "gripper_torque"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 100:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+            elif parameter in ["pressure_value"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 254:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 254, but received {}".format(parameter, value))
+            elif parameter in ["current_value"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 100 or value > 300:
+                    raise MyCobotPro450DataException("The parameter {} only supports 100 ~ 300, but received {}".format(parameter, value))
+            elif parameter == "can_id":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 1 or value > 65535:
+                    raise MyCobotPro450DataException("The parameter {} only supports 1 ~ 65535, but received {}".format(parameter, value))
+            elif parameter in ["baud_rate"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+            elif parameter in ["can_data", "data_485"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, list)
+                if len(value) > 64:
+                    raise MyCobotPro450DataException(
+                        f"The parameter {parameter} list length exceeds 64, received {len(value)}")
+                for v in value:
+                    if not (0x00 <= v <= 0xFF):
+                        raise MyCobotPro450DataException(
+                            f"The parameter {parameter} value out of range (0x00~0xFF), received {hex(v)}")
+            elif parameter in ["tool_main_version"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, str)
+                if not re.fullmatch(r"\d+\.\d", str(value)):
+                    raise MyCobotPro450DataException(
+                        f"Invalid version format: '{value}', expected format like '1.1'")
+                if float(value) < 1.0:
+                    raise MyCobotPro450DataException(
+                        f"Version must be >= 1.0, but received '{value}'")
+            elif parameter in ["tool_modified_version"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 255:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
+            elif parameter in ["tool_coords", "world_coords"]:
+                check_world_tool_coords(parameter, value, MyCobotPro450DataException)
+            elif parameter in ["gripper_baud_rate"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 0 or value > 1:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports 0 ~ 1, but received {}".format(parameter, value))
+            elif parameter in ["end_485_baud_rate"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                baud_list = [115200, 1000000]
+                if value not in baud_list:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports {}, but received {}".format(parameter, baud_list, value))
+            elif parameter in ["timeout"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < 1 or value > 10000:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports 1 ~ 10000 ms, but received {}".format(parameter, value))
+            elif parameter in ["motor_type"]:
+                if isinstance(value, str):
+                    try:
+                        value = int(value, 16)  # 'A3C0' / 'a3c0' / '0xA3C0'
+                    except ValueError:
+                        raise MyCobotPro450DataException(f"motor_type '{value}' is not a valid hex string")
+                if not isinstance(value, int):
+                    raise MyCobotPro450DataException(
+                        f"motor_type must be int or hex string, got {type(value)}")
+                if not (0x0000 <= value <= 0xFFFF):
+                    raise MyCobotPro450DataException(f"motor_type out of range: {hex(value)} (must be 0x0000~0xFFFF)")
+                allowed_types = [0xA1C2, 0xA3C0]
+                if value not in allowed_types:
+                    raise MyCobotPro450DataException(
+                        f"motor_type {hex(value)} not allowed. Must be one of: {[hex(x) for x in allowed_types]}")
+
+    elif class_name in ["ultraArmP340"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter == "id":
+                check_0_or_1(parameter, value, [4, 7], value_type, ultraArmP340DataException, int)
+            elif parameter == "system_mode":
+                check_0_or_1(parameter, value, [1, 2], value_type, ultraArmP340DataException, int)
+            elif parameter == "speed_mode":
+                check_0_or_1(parameter, value, [0, 2], value_type, ultraArmP340DataException, int)
+            elif parameter in ['mode', 'state', 'direction']:
+                check_0_or_1(parameter, value, [0, 1], value_type, ultraArmP340DataException, int)
+            elif parameter == 'joint_id':
+                if value not in [1, 2, 3]:
+                    check_id(value, [1, 2, 3], ultraArmP340DataException)
+            elif parameter == 'axis_id':
+                if value not in [1, 2, 3]:
+                    raise ultraArmP340DataException(
+                        "The axis_id not right, should be in [1, 2, 3], but received {}.".format(value))
+            elif parameter == ["servo_restore", "set_motor_enabled"]:
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MyCobotPro450DataException(
+                        "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
+            elif parameter in ['angle']:
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                if value < min_angle[index] or value > max_angle[index]:
+                    raise ultraArmP340DataException(
+                        "angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            min_angle[index], max_angle[index],value))
+            elif parameter == 'coord':
+                coord_id = kwargs.get('coord_id', None)
+                coord_map = {"X": 0, "Y": 1, "Z": 2, "E": 3}
+                index = coord_map[coord_id]
+
+                min_val = robot_limit[class_name]["coords_min"][index]
+                max_val = robot_limit[class_name]["coords_max"][index]
+
+                if not (min_val <= value <= max_val):
+                    raise ultraArmP340DataException(
+                        f"Coordinate {coord_id} out of range: should be {min_val} ~ {max_val}, but received {value}")
+            elif parameter == 'coord_id':
+                check_value_type(parameter, value_type, ultraArmP340DataException, str)
+                if value not in ["X", "Y", "Z", "E"]:
+                    raise ultraArmP340DataException(
+                        f"coord_id must be 'X', 'Y', or 'Z' or 'E', but received {value}")
+            elif parameter == 'speed':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+
+                if not (1 <= value <= 200):
+                    raise ultraArmP340DataException(
+                        "Speed out of range, should be 1 ~ 200, but received {}".format(value))
+            elif parameter == 'wait_time':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 1 <= value <= 65535:
+                    raise ultraArmP340DataException(
+                        "wait time value not right, should be 1 ~ 65535, the error time is {}".format(value))
+            elif parameter == 'p_value':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 255:
+                    raise ultraArmP340DataException(
+                        "pwm value not right, should be 0 ~ 255, the error p_value is {}".format(value))
+            elif parameter == 'gripper_value':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 100:
+                    raise ultraArmP340DataException(
+                        "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
+            elif parameter == 'gripper_speed':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 1 <= value <= 1500:
+                    raise ultraArmP340DataException(
+                        "gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
+            elif parameter == 'address':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 7 <= value <= 69:
+                    raise ultraArmP340DataException(
+                        "address not right, should be 7 ~ 69, the error address is {}".format(value))
+            elif parameter == 'get_address':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 69:
+                    raise ultraArmP340DataException(
+                        "get address not right, should be 0 ~ 69, the error address is {}".format(value))
+            elif parameter == 'system_value':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 0 <= value <= 4096:
+                    raise ultraArmP340DataException(
+                        "system value not right, should be 0 ~ 4096, the error system value is {}".format(value))
+            elif parameter == "angles":
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException("`angles` must be a list, but the received {}".format(type(value)))
+                if len(value) not in [3, 4]:
+                    raise ultraArmP340DataException(
+                        "The length of `angles` must be 3 or 4, but received length is {}".format(len(value)))
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                for idx, angle in enumerate(value):
+                    if not min_angle[idx] <= angle <= max_angle[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid angle value, error on index {0}. Received {3} but angle should be {1} ~ {2}.".format(
+                                idx, min_angle[idx], max_angle[idx], angle))
+            elif parameter == "radians":
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException("`angles` must be a list, but the received {}".format(type(value)))
+                if len(value) not in [3, 4]:
+                    raise ultraArmP340DataException(
+                        "The length of `radians` must be 3 or 4, but received length is {}".format(len(value)))
+                min_radian = [-2.6179, -0.3490, -0.0872, -3.1241]
+                max_radian = [2.9670, 1.5707, 1.9198, 3.1241]
+                for idx, radian in enumerate(value):
+                    if not min_radian[idx] <= radian <= max_radian[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid radian value, error on index {0}. Received {3} but radian should be {1} ~ {2}.".format(
+                                idx, min_radian[idx], max_radian[idx], radian))
+            elif parameter == 'pose_coords':
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException(
+                        "`{}` must be a list, but the received {}".format(parameter, type(value)))
+                if len(value) not in [3, 4]:
+                    raise ultraArmP340DataException(
+                        "The length of `{}` must be 3 or 4, but the received length is {}".format(parameter, len(value)))
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                                idx, min_coord[idx], max_coord[idx], coord))
+            elif parameter == 'coords':
+                if not isinstance(value, list):
+                    raise ultraArmP340DataException(
+                        "`{}` must be a list, but the received {}".format(parameter, type(value)))
+                if len(value) not in [3, 4]:
+                    raise ultraArmP340DataException(
+                        "The length of `{}` must be 3 or 4, but the received length is {}".format(parameter, len(value)))
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise ultraArmP340DataException(
+                            "Has invalid coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                                idx, min_coord[idx], max_coord[idx], coord))
+            elif parameter == 'filename':
+                if not isinstance(value, str):
+                    raise ultraArmP340DataException(
+                        "Parameter `filename` must be a string, but received {}".format(type(value)))
+
+                if not os.path.isfile(value):
+                    raise ultraArmP340DataException("The file '{}' does not exist".format(value))
+
+                if not value.lower().endswith((".gcode", ".ngc", ".nc")):
+                    raise ultraArmP340DataException(
+                        "Unsupported file format, please use .gcode, .ngc, or .nc, but received {}".format(value))
 
 def restrict_serial_port(func):
     """

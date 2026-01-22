@@ -1,10 +1,10 @@
-# encoding=utf-8
-from __future__ import print_function
+"""Source code installation configuration file."""
+
 import sys
 
 PYTHON_VERSION = sys.version_info[:2]
-if (2, 7) != PYTHON_VERSION < (3, 5):
-    print("This mycobot version requires Python2.7, 3.5 or later.")
+if PYTHON_VERSION < (3, 5):
+    print("This project requires Python 3.5 and above.")
     sys.exit(1)
 
 import setuptools
@@ -76,9 +76,10 @@ setuptools.setup(
     url=pymycobot.__git_url__,
     packages=setuptools.find_packages(),
     include_package_data=True,  # Include non-Python files, like JSON files
-    package_data={"pymycobot": ["*.json"]},  # Specify the JSON file(s) to include
+    package_data={
+        "pymycobot": ["*.json"]
+    },  # Specify the JSON file(s) to include
     classifiers=[
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
@@ -89,5 +90,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=["pyserial"],
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*",
+    python_requires=">2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*",
 )

@@ -53,7 +53,7 @@ class ProtocolCode(enum.Enum):
     GET_BLUETOOTH_ADDRESS = 0x53
 
     SET_HANDLE_CONTROL_STATE = 0x3D
-    GET_HANDLE_CONTROL_STATE = 0x3F
+    GET_HANDLE_CONTROL_STATE = 0x3E
 
     def equal(self, other):
         if isinstance(other, ProtocolCode):
@@ -282,13 +282,15 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             return respond
 
         if ProtocolCode.GET_ROBOT_STATUS.equal(genre):
+            machine_states = [0] * 8
             machine_status = reply_data[0]
             if machine_status != 0:
-                machine_status = Utils.get_bits(machine_status)
+                for index in Utils.get_bits(machine_status):
+                    machine_states[index] = 1
 
             battery_voltage = round(reply_data[1] / 10, 2)
 
-            return machine_status, battery_voltage
+            return machine_states, battery_voltage
 
         if ProtocolCode.GET_AUTO_REPORT_MESSAGE.equal(genre):
             respond = []
@@ -504,12 +506,12 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """Pan the robot left
 
         Args:
-            speed(float): 0.01 ~ 1.00 m/s
+            speed(float): 0.01 ~ 1.50 m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0.01 <= speed <= 1.00:
+        if not 0.01 <= speed <= 1.50:
             raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
@@ -520,13 +522,13 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """Pan the robot right
 
         Args:
-            speed(float): 0.01 ~ 1.00m/s
+            speed(float): 0.01 ~ 1.50m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0.01 <= speed <= 1.00:
-            raise ValueError("Speed must be between 0.00 and 1.00")
+        if not 0.01 <= speed <= 1.50:
+            raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
@@ -624,7 +626,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             int: 1: Success, 0: Failed
         """
         if motor_id not in (1, 2, 3, 4, 254):
-            raise ValueError("Motor ID must be 0 or 1")
+            raise ValueError("Motor id must be in (1, 2, 3, 4, 254)")
 
         if state not in (0, 1):
             raise ValueError("State must be 0 or 1")
@@ -735,6 +737,9 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if any(map(lambda c: not 0 <= c <= 255, color)):
             raise ValueError("Color must be between 0 and 255")
+
+        if not isinstance(color, tuple):
+            raise ValueError("color must be a tuple")
 
         return self._merge(ProtocolCode.SET_LED_COLOR, position, brightness, *color)
 

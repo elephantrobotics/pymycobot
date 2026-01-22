@@ -52,6 +52,9 @@ class ProGripper(object):
     MODBUS_GET_MINI_PRESSURE = 0x1A
     MODBUS_SET_PROTECTION_CURRENT = 0x2B
     MODBUS_GET_PROTECTION_CURRENT = 0x2C
+    MODBUS_SET_MODE = 0x2F
+    MODBUS_GET_BAUD_RATE = 0x06
+    MODBUS_SET_BAUD_RATE = 0x05
 
 class MyHandGripper(object):
     GET_HAND_MAJOR_FIRMWARE_VERSION = 1
@@ -143,7 +146,6 @@ class ProtocolCode(object):
 
     CLEAR_ZERO_POS = 0x0A
     SET_MONITOR_STATE = 0x0A
-    SET_OVER_TIME = 0x0A
     SET_SERVO_CW = 0x0B
     GET_MONITOR_STATE = 0x0B
     GET_SERVO_CW = 0x0C
@@ -292,6 +294,7 @@ class ProtocolCode(object):
     GET_TORQUE_COMP = 0x78
     GET_VR_MODE = 0x79
     SET_VR_MODE = 0x7A
+    PRO450_GET_DIGITAL_INPUTS = 0x7B
     GET_MODEL_DIRECTION = 0x7C
     SET_MODEL_DIRECTION = 0x7D
     GET_FILTER_LEN = 0x7E
@@ -300,6 +303,9 @@ class ProtocolCode(object):
     # Set Debug Log for Pro450
     SET_DEBUG_LOG_MODE = 0x68
     GET_DEBUG_LOG_MODE = 0x69
+    SET_TOOL_SERIAL_TIMEOUT = 0xB9
+    SET_TOOL_485_BAUD_RATE = 0xB8
+    GET_TOOL_485_BAUD_RATE_TIMEOUT = 0xBA
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -355,12 +361,14 @@ class ProtocolCode(object):
     FOURIER_TRAJECTORIES = 0xF8
     GET_DYNAMIC_PARAMETERS = 0x98
     SET_DYNAMIC_PARAMETERS = 0x97
+    PARAMETER_IDENTIFY = 0x97
     SOLVE_INV_KINEMATICS = 0x8D
 
     # Impact checking
     SET_JOINT_CURRENT = 0x90
     GET_JOINT_CURRENT = 0x91
     SET_CURRENT_STATE = 0x92
+    PRO450_SET_MOTOR_TYPE = 0x92
     GET_POS_OVER = 0x94
     CLEAR_ENCODERS_ERROR = 0xEA
     GET_DOWN_ENCODERS = 0x96
@@ -395,6 +403,7 @@ class ProtocolCode(object):
     GET_TOQUE_GRIPPER = 0xE9
     SET_ERROR_DETECT_MODE = 0xE8
     GET_ERROR_DETECT_MODE = 0xE9
+    IS_MOTOR_PAUSE = 0xEC
 
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
@@ -468,6 +477,13 @@ class ProtocolCode(object):
     GET_ANGLES_PLAN = 0xF6
     GET_COORDS_PLAN = 0xF7
 
+    SET_COMMUNICATION_MODE = 0x6A
+    GET_COMMUNICATION_MODE = 0x6B
+    SET_BASE_EXTERNAL_CONFIG = 0x65
+    GET_BASE_EXTERNAL_CONFIG = 0x67
+    SET_BASE_EXTERNAL_CONTROL = 0x66
+    SET_COLOR_PRO450 = 0x0C
+
     # ultraArm
     END = "\r"
     COORDS_SET = "G0"
@@ -500,6 +516,17 @@ class ProtocolCode(object):
     GET_SYSTEM_VALUE = "M52"
     GET_SYSTEM_VERSION = "G6"
     GET_MODIFY_VERSION = "G7"
+
+    # ultraArm P1
+    SET_ANGLES_COORDS = 'G1'
+    GET_CURRENT_ANGLES_COORDS_INFO = '?'
+    SET_UNLOCK = '*2'
+    SET_REBOOT = '*5'
+    SET_JOINT_DISABLE = '*7'
+    SET_JOINT_ENABLE = '*8'
+
+    # MyArm M750
+    IS_SD_INSERT = 0xC4
 
 
 class DataProcessor(object):
@@ -1005,7 +1032,8 @@ def write(self, command, method=None):
             if isinstance(i, str):
                 log_command += i
             else:
-                log_command += hex(i)[2:] + " "
+                # log_command += hex(i)[2:] + " "
+                log_command += f"{i:02X} "
         self.log.debug("_write: {}".format(log_command))
 
         py_version = DataProcessor.check_python_version()
@@ -1183,6 +1211,9 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                 break
             elif len(datas) == 2:
                 data_len = struct.unpack("b", data)[0]
+                if data_len < 0 or data_len > 30:
+                    data_len = -1
+                    continue
                 datas += data
             elif len(datas) > 2 and data_len > 0:
                 datas += data

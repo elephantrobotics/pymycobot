@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+import asyncio
 from .myagvpro import MyAGVProCommandProtocolApi, ProtocolCode, PLAINTEXT_REPLY_PROTOCOL_CODE
 
 
 class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
     async def _match_protocol_data(self, genre, timeout=0.1):
-        for _ in range(20):
+        for _ in range(5):
             reply_data = await self.read()
 
             if len(reply_data) == 0:
@@ -145,33 +146,33 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """Pan the robot left
 
         Args:
-            speed(float): 0.01 ~ 1.00 m/s
+            speed(float): 0.01 ~ 1.50 m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0.01 <= speed <= 1.00:
+        if not 0.01 <= speed <= 1.50:
             raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
 
     async def move_right_lateral(self, speed):
         """Pan the robot right
 
         Args:
-            speed(float): 0.01 ~ 1.00m/s
+            speed(float): 0.01 ~ 1.50m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0.01 <= speed <= 1.00:
-            raise ValueError("Speed must be between 0.00 and 1.00")
+        if not 0.01 <= speed <= 1.50:
+            raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
 
     async def turn_left(self, speed):
         """Rotate to the left
@@ -197,7 +198,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * 1)])
+        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * 1), 0x00])
 
     async def stop(self):
         """Stop moving
@@ -261,7 +262,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             int: 1: Success, 0: Failed
         """
         if motor_id not in (1, 2, 3, 4, 254):
-            raise ValueError("Motor ID must be 0 or 1")
+            raise ValueError("Motor id must be 0 or 1")
 
         if state not in (0, 1):
             raise ValueError("State must be 0 or 1")
@@ -372,6 +373,9 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         if any(map(lambda c: not 0 <= c <= 255, color)):
             raise ValueError("Color must be between 0 and 255")
 
+        if not isinstance(color, tuple):
+            raise ValueError("color must be a tuple")
+
         return await self._merge(ProtocolCode.SET_LED_COLOR, position, brightness, *color)
 
     async def set_led_mode(self, mode):
@@ -411,14 +415,13 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """Get the input IO
 
         Args:
-            pin(int): 1, 2, 3, 4, 5, 6, 7, 8, 254
+            pin(int): 1 - 6
 
         Returns:
             int: 0: Low, 1: High, -1: There is no such pin
         """
-        supported_pins = [1, 2, 3, 4, 5, 6, 7, 8, 254]
-        if pin not in supported_pins:
-            raise ValueError(f"Pin must be in {supported_pins}")
+        if not 1 <= pin <= 6:
+            raise ValueError("Pin must be between 1 and 6")
         return await self._merge(ProtocolCode.GET_INPUT_IO, pin)
 
     def get_estop_state(self):
@@ -493,6 +496,7 @@ class MyAGVProBluetooth(MyAGVProCommandApi):
         self._service_uuid = service_uuid
         self._serial_filename = 'agvpro_bluetooth_serial.log'
         self._communication_mode = 2
+        self._queue = asyncio.Queue()
 
     # Async Context managers
     async def __aenter__(self):
@@ -503,6 +507,8 @@ class MyAGVProBluetooth(MyAGVProCommandApi):
         await self.disconnect()
 
     async def read(self, size=1):
+        if not self._queue.empty():
+            return self._queue.get_nowait()
         return await self._bluetooth.read_gatt_char(self._char_uuid, size=size)
 
     async def write(self, data):
@@ -510,10 +516,29 @@ class MyAGVProBluetooth(MyAGVProCommandApi):
 
     async def connect(self):
         await self._bluetooth.connect()
+        await self._bluetooth.start_notify(self._char_uuid, self._handle_notification)
+
+    async def _handle_notification(self, _, data):
+        await self._queue.put(data)
 
     async def disconnect(self):
+        await self._bluetooth.stop_notify(self._char_uuid)
         await self._bluetooth.disconnect()
 
     async def is_connected(self):
         return self._bluetooth.is_connected
 
+    @classmethod
+    async def connect_by_name(cls, name, service_uuid, char_uuid, debug=False, save_serial_log=False):
+        from bleak import BleakScanner
+        device = await BleakScanner.find_device_by_name(name=name)
+        if device is None:
+            return None
+
+        return cls(
+            address=device,
+            service_uuid=service_uuid,
+            char_uuid=char_uuid,
+            debug=debug,
+            save_serial_log=save_serial_log
+        )

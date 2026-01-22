@@ -150,12 +150,18 @@ class MyCobot280(CommandGenerator):
             data = self._read(genre)
         else:
             try_count = 0
+            expected_genre = genre
             while try_count < 3:
+                self._serial_port.reset_input_buffer()
                 self._write(self._flatten(real_command))
                 data = self._read(genre)
-                if data is not None and data != b'':
-                    break
-                try_count += 1
+                if not data or len(data) < 4:
+                    try_count += 1
+                    continue
+                if data[3] != expected_genre:
+                    try_count += 1
+                    continue
+                break
             else:
                 return -1
         if genre == ProtocolCode.SET_SSID_PWD:
@@ -391,7 +397,7 @@ class MyCobot280(CommandGenerator):
             direction (int): 1 - forward rotation, 0 - reverse rotation
             speed (int): 1 ~ 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, end_direction=end_direction, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed, _async=_async)
 
     def jog_increment_angle(self, joint_id, increment, speed, _async=False):
@@ -402,8 +408,10 @@ class MyCobot280(CommandGenerator):
             increment: Angle increment value
             speed: int (0 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, speed=speed)
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, _async=_async)
+        self.calibration_parameters(class_name=self.__class__.__name__, id=joint_id, increment_angle=increment, speed=speed)
+        scaled_increment = self._angle2int(increment)
+        scaled_increment = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, _async=_async)
 
     def jog_increment_coord(self, id, increment, speed, _async=False):
         """coord step mode
@@ -413,8 +421,12 @@ class MyCobot280(CommandGenerator):
             increment: Coord increment value
             speed: int (1 - 100)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, id=id, speed=speed)
-        value = self._coord2int(increment) if id <= 3 else self._angle2int(increment)
+        self.calibration_parameters(class_name=self.__class__.__name__, id=id, increment_coord=increment, speed=speed)
+        if id <= 3:
+            value = self._coord2int(increment)
+        else:
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, id, [value], speed, _async=_async)
 
     def set_HTS_gripper_torque(self, torque):
