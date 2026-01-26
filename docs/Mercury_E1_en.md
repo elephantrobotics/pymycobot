@@ -96,7 +96,7 @@ print(mc.get_angles())
 
 - **Return value:** `bool`: True if the robot is initialized for calibration, False otherwise
 
-<!-- #### `get_fresh_mode()`
+#### `get_fresh_mode()`
 
 - **function:** Query sports mode
 
@@ -110,7 +110,7 @@ print(mc.get_angles())
   
 - **Parameters:**
   - `1`: Always execute the latest command first.
-  - `0`: Execute instructions sequentially in the form of a queue. -->
+  - `0`: Execute instructions sequentially in the form of a queue
 
 #### `get_debug_state()`
 
@@ -200,9 +200,9 @@ print(mc.get_angles())
 
 - **Function:** Read robot error and safety status
 
-- **Return Value:** 0 - Normal. For example, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], Other - Robot abnormal
+- **Return Value:** 0 - Normal. For example, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], Other - Robot abnormal
 
-  - `[Joint collision, whether in motion, whether J1 exceeds limits, whether J2 exceeds limits, whether J3 exceeds limits, whether J4 exceeds limits, whether J5 exceeds limits, whether J6 exceeds limits, whether J1 has a motor hardware error, whether J2 has a motor hardware error, whether J3 has a motor hardware error, whether J4 has a motor hardware error, whether J5 has a motor hardware error, whether J6 has a motor hardware error, whether J7 has a motor hardware error, whether J1 has a software communication error, whether J2 has a software communication error, whether J3 has a software communication error, whether J4 has a software communication error, whether J5 has a software communication error, whether J6 has a software communication error, whether J7 has a software communication error]`
+  - `[Joint collision, whether in motion, whether J1 exceeds limits, whether J2 exceeds limits, whether J3 exceeds limits, whether J4 exceeds limits, whether J5 exceeds limits, whether J6 exceeds limits, whether J7 exceeds limits, whether J1 has a motor hardware error, whether J2 has a motor hardware error, whether J3 has a motor hardware error, whether J4 has a motor hardware error, whether J5 has a motor hardware error, whether J6 has a motor hardware error, whether J7 has a motor hardware error, whether J1 has a software communication error, whether J2 has a software communication error, whether J3 has a software communication error, whether J4 has a software communication error, whether J5 has a software communication error, whether J6 has a software communication error, whether J7 has a software communication error]`
 
 #### `servo_restore(joint_id)`
 
@@ -630,7 +630,7 @@ print(mc.get_angles())
 #### `get_servo_speeds()`
 
 - **function**：Get the movement speed of all joints
-- **Return value**： unit step/s
+- **Return value**： unit rpm
 
 #### `get_servo_currents()`
 
@@ -641,6 +641,12 @@ print(mc.get_angles())
 
 - **function**：Get the movement status of all joints
 - **Return value**： a value of 0 means no error
+
+#### `get_motor_temps()`
+
+- **Function**: Get motor temperature
+
+- **Return value**: A list, bits 1-7 represent coil temperature, bits 8-14 represent MOSFET temperature.
 
 ### 13. Robotic Arm End IO Control
 
@@ -862,10 +868,10 @@ print(mc.get_angles())
 - **Parameters:**
   - `move`: 1 - On, 0 - Off. -->
 
-<!-- #### `get_model_direction()`
+#### `get_model_direction()`
 
 - **Function:** Get the joint model direction
-- **Return value:** Model direction of joints 1-6
+- **Return value:** Model direction of joints 1-7
   - `1` - Same direction as the motor
   - `0` - Opposite direction from the motor
 
@@ -873,9 +879,10 @@ print(mc.get_angles())
 
 - **Function:** Set the joint model direction
 - **Parameters:**
-  - `joint_id (int)`: 1 to 6
+  - `joint_id (int)`: 1 to 7
   - `direction (int)`: `1` - Same direction as the motor. `0` - Opposite direction from the motor
 
+<!-- 
 #### `get_filter_len(rank)`
 
 - **Function:** Get filter parameters
