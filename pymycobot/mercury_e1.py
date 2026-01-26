@@ -91,6 +91,9 @@ class MercuryE1(E1CloseLoop):
             elif data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
                 res_list = [i for i in valid_data]
                 return res_list
+            elif data_len == 14 and genre == ProtocolCode.GET_MOTORS_TEMPERATURE:
+                res_list = [i for i in valid_data]
+                return res_list
             else:
                 for header_i in range(0, len(valid_data), 2):
                     one = valid_data[header_i : header_i + 2]
@@ -244,7 +247,7 @@ class MercuryE1(E1CloseLoop):
             ProtocolCode.IS_FREE_MODE,
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_SERVO_SPEED]:
             return [self._int2angle(angle) for angle in res]
         elif genre in [
             ProtocolCode.GET_COORDS,
@@ -940,24 +943,24 @@ class MercuryE1(E1CloseLoop):
         """
         return self._read_register(gripper_id, ProGripper.MODBUS_GET_PROTECTION_CURRENT)
 
-    # def set_fresh_mode(self, mode):
-    #     """Set command refresh mode
-    #
-    #     Args:
-    #         mode: int.
-    #             1 - Always execute the latest command first.
-    #             0 - Execute instructions sequentially in the form of a queue.
-    #     """
-    #     self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-    #     return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
-    #
-    # def get_fresh_mode(self):
-    #     """Query sports mode
-    #
-    #     Returns:
-    #         0 - interpolation mode, 1 - refresh mode
-    #     """
-    #     return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
+    def set_fresh_mode(self, mode):
+        """Set command refresh mode
+
+        Args:
+            mode: int.
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
+
+    def get_fresh_mode(self):
+        """Query sports mode
+
+        Returns:
+            0 - interpolation mode, 1 - refresh mode
+        """
+        return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
 
 
     def servo_restore(self, joint_id):
@@ -1032,9 +1035,9 @@ class MercuryE1(E1CloseLoop):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, direction=direction, speed=speed)
-        # msg = self._check_jog_allowed()
-        # if msg:
-        #     return msg
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
         return self._mesg(ProtocolCode.JOG_ANGLE, joint_id, direction, speed, _async=_async, has_reply=True)
 
     def jog_coord(self, coord_id, direction, speed, _async=True):
@@ -1052,9 +1055,9 @@ class MercuryE1(E1CloseLoop):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, coord_id=coord_id, direction=direction, speed=speed)
-        # msg = self._check_jog_allowed()
-        # if msg:
-        #     return msg
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, _async=_async, has_reply=True)
 
     # def jog_rpy(self, axis, direction, speed, _async=True):
@@ -1099,9 +1102,9 @@ class MercuryE1(E1CloseLoop):
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, speed=speed)
         scaled_increment = self._angle2int(increment)
         scaled_increment = max(min(scaled_increment, 32767), -32768)
-        # msg = self._check_jog_allowed()
-        # if msg:
-        #     return msg
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, has_reply=True, _async=_async)
 
     def jog_increment_coord(self, coord_id, increment, speed, _async=False):
@@ -1120,9 +1123,9 @@ class MercuryE1(E1CloseLoop):
         else:
             scaled_increment = self._angle2int(increment)
             value = max(min(scaled_increment, 32767), -32768)
-        # msg = self._check_jog_allowed()
-        # if msg:
-        #     return msg
+        msg = self._check_jog_allowed()
+        if msg:
+            return msg
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
     # def set_communication_mode(self, protocol_mode=0):
@@ -1537,4 +1540,11 @@ class MercuryE1(E1CloseLoop):
         low_byte = motor_type & 0xFF  # 0xC0
 
         return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
+
+    def get_motor_temps(self):
+        """Read motor temperature
+
+        Return: A list, bits 1-7 represent coil temperature, bits 8-14 represent MOSFET temperature.
+        """
+        return self._mesg(ProtocolCode.GET_MOTORS_TEMPERATURE)
 

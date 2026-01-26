@@ -106,7 +106,7 @@ __all__ = [
     "MercuryE1",
 ]
 
-__version__ = "4.0.4b15"
+__version__ = "4.0.4b19"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

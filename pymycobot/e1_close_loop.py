@@ -642,19 +642,19 @@ class E1CloseLoop(DataProcessor):
     #     self.calibration_parameters(class_name=self.__class__.__name__, vr_mode=mode)
     #     return self._mesg(ProtocolCode.SET_VR_MODE, mode)
     #
-    # def get_model_direction(self):
-    #     """Get the direction of the robot model
-    #     """
-    #     return self._mesg(ProtocolCode.GET_MODEL_DIRECTION)
-    #
-    # def set_model_direction(self, joint_id, direction):
-    #     """Set the direction of the robot model
-    #
-    #     Args:
-    #         joint_id (int): joint ID, 1 ~ 7.
-    #         direction (int): 1 - forward, 0 - backward
-    #     """
-    #     return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
+    def get_model_direction(self):
+        """Get the direction of the robot model
+        """
+        return self._mesg(ProtocolCode.GET_MODEL_DIRECTION)
+
+    def set_model_direction(self, joint_id, direction):
+        """Set the direction of the robot model
+
+        Args:
+            joint_id (int): joint ID, 1 ~ 7.
+            direction (int): 1 - forward, 0 - backward
+        """
+        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
 
     # def get_filter_len(self, rank):
     #     """Get the filter length
