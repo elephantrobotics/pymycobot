@@ -5,7 +5,7 @@ import logging
 import time
 import threading
 import serial
-from pymycobot.error import calibration_parameters
+from pymycobot.error import calibration_parameters, MyArmMControlException
 from pymycobot.common import ProtocolCode, DataProcessor, write, read
 
 
@@ -357,8 +357,7 @@ class MyArmMControl(MyArmMProcessor):
             direction (int): 1 - forward rotation, 0 - reverse rotation
             speed (int): 1 ~ 100
         """
-        self.calibration_parameters(direction=direction, speed=speed, end_direction=end_direction
-        )
+        self.calibration_parameters(direction=direction, speed=speed, end_direction=end_direction)
         return self._mesg(ProtocolCode.JOG_ABSOLUTE, end_direction, direction, speed)
 
     # JOG mode and operation
@@ -395,7 +394,7 @@ class MyArmMControl(MyArmMProcessor):
             speed(int): int (0 - 100)
         """
         if not isinstance(increment, (int, float)):
-            raise ValueError("increment must be int or float")
+            raise MyArmMControlException("increment must be int or float")
 
         self.calibration_parameters(joint_id=joint_id, angle=increment, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)

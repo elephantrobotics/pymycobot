@@ -5,7 +5,7 @@ import functools
 import threading
 import time
 from pymycobot.common import ProtocolCode, DataProcessor
-from pymycobot.error import calibration_parameters
+from pymycobot.error import calibration_parameters, MyArmMDataException, MyArmCDataException
 import serial
 
 
@@ -58,7 +58,7 @@ class MyArmMCProcessor(DataProcessor):
                 continue
 
             previous_frame = current_frame
-            if is_record is False:
+            if not is_record:
                 continue
 
             commands += current_frame
@@ -108,6 +108,8 @@ class MyArmMCProcessor(DataProcessor):
             self._write(self._flatten(real_command))
 
             if not has_reply:
+                if genre == ProtocolCode.SET_SERVO_MOTOR_CLOCKWISE:
+                    time.sleep(0.015)
                 return None
 
             data = self._read(genre)
@@ -209,7 +211,13 @@ class MyArmAPI(MyArmMCProcessor):
             status (int): 1 open; o close
         """
         if status not in [0, 1]:
-            raise ValueError("status must be 0 or 1")
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error("status must be 0 or 1")
         self._mesg(ProtocolCode.SET_ROBOT_ERROR_CHECK_STATE, status)
 
     def get_robot_err_check_state(self):
@@ -231,7 +239,15 @@ class MyArmAPI(MyArmMCProcessor):
 
     def set_recv_queue_max_len(self, max_len):
         """Set the total length of the receiving command queue"""
-        assert 0 < max_len <= 100, "queue size must be in range 1 - 100"
+        if not 0 < max_len <= 100:
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error('max_len must be between 0 and 100')
+
         self._mesg(ProtocolCode.SET_RECV_QUEUE_SIZE, max_len)
 
     def get_recv_queue_len(self):
@@ -345,7 +361,14 @@ class MyArmAPI(MyArmMCProcessor):
             data (int): 0-254
 
         """
-        assert 0 <= data <= 254, "data must be between 0 and 254"
+        if not 0 <= data <= 254:
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error("data must be between 0 and 254")
         self.calibration_parameters(servo_id=servo_id)
         self._mesg(ProtocolCode.SET_SERVO_P, servo_id, data)
 
@@ -365,7 +388,15 @@ class MyArmAPI(MyArmMCProcessor):
             servo_id (int): 0-254
             data (int): 0-254
         """
-        assert 0 <= data <= 254, "data must be between 0 and 254"
+        if not 0 <= data <= 254:
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error("data must be between 0 and 254")
+
         self.calibration_parameters(servo_id=servo_id)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, servo_id, data)
 
@@ -385,7 +416,15 @@ class MyArmAPI(MyArmMCProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 254
         """
-        assert 0 <= data <= 254, "data must be between 0 and 254"
+        if not 0 <= data <= 254:
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error("data must be between 0 and 254")
+
         self.calibration_parameters(servo_id=servo_id)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE, servo_id, data)
 
@@ -403,9 +442,25 @@ class MyArmAPI(MyArmMCProcessor):
         """
         self.calibration_parameters(servo_id=servo_id)
         if servo_id == 8:
-            assert 0 <= data <= 16, "data must be between 0 and 16"
+            if not 0 <= data <= 16:
+                if self.__class__.__name__ == 'MyArmM':
+                    error = MyArmMDataException
+                elif self.__class__.__name__ == 'MyArmC':
+                    error = MyArmCDataException
+                else:
+                    error = ValueError
+                raise error("data must be between 0 and 254")
+
         else:
-            assert 0 <= data <= 32, "data must be between 0 and 32"
+            if not 0 <= data <= 32:
+                if self.__class__.__name__ == 'MyArmM':
+                    error = MyArmMDataException
+                elif self.__class__.__name__ == 'MyArmC':
+                    error = MyArmCDataException
+                else:
+                    error = ValueError
+                raise error("data must be between 0 and 32")
+
         self._mesg(ProtocolCode.SET_SERVO_MOTOR_CLOCKWISE, servo_id, data)
 
     def get_servo_cw(self, servo_id):
@@ -426,9 +481,25 @@ class MyArmAPI(MyArmMCProcessor):
         """
         self.calibration_parameters(servo_id=servo_id)
         if servo_id == 8:
-            assert 0 <= data <= 16, "data must be between 0 and 16"
+            if not 0 <= data <= 16:
+                if self.__class__.__name__ == 'MyArmM':
+                    error = MyArmMDataException
+                elif self.__class__.__name__ == 'MyArmC':
+                    error = MyArmCDataException
+                else:
+                    error = ValueError
+                raise error("data must be between 0 and 16")
+
         else:
-            assert 0 <= data <= 32, "data must be between 0 and 32"
+            if not 0 <= data <= 32:
+                if self.__class__.__name__ == 'MyArmM':
+                    error = MyArmMDataException
+                elif self.__class__.__name__ == 'MyArmC':
+                    error = MyArmCDataException
+                else:
+                    error = ValueError
+                raise error("data must be between 0 and 32")
+
         return self._mesg(ProtocolCode.SET_SERVO_MOTOR_COUNTER_CLOCKWISE, servo_id, data)
 
     def get_servo_cww(self, servo_id):
@@ -449,11 +520,18 @@ class MyArmAPI(MyArmMCProcessor):
             data (int): 0 - 4096
             mode (int): 1 - data 1byte. 2 - data 2byte
         """
+        if self.__class__.__name__ == 'MyArmM':
+            error = MyArmMDataException
+        elif self.__class__.__name__ == 'MyArmC':
+            error = MyArmCDataException
+        else:
+            error = ValueError
+
         if mode not in (1, 2):
-            raise ValueError('mode must be 1 or 2')
+            raise error('mode must be 1 or 2')
 
         if data not in range(0, 4097):
-            raise ValueError('data must be between 0 and 4096')
+            raise error('data must be between 0 and 4096')
 
         self.calibration_parameters(servo_id=servo_id, servo_addr=addr)
         self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, [data], mode)
@@ -467,7 +545,13 @@ class MyArmAPI(MyArmMCProcessor):
             mode (int): 1 - data 1byte. 2 - data 2byte
         """
         if mode not in (1, 2):
-            raise ValueError('mode must be 1 or 2')
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error('mode must be 1 or 2')
         self.calibration_parameters(servo_id=servo_id)
         return self._mesg(ProtocolCode.GET_SERVO_MOTOR_CONFIG, servo_id, addr, mode, has_reply=True)
 
@@ -480,7 +564,13 @@ class MyArmAPI(MyArmMCProcessor):
 
         """
         if status not in (0, 1):
-            raise ValueError('status must be 0 or 1')
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error('status must be 0 or 1')
         self.calibration_parameters(pin_number=pin_number)
         self._mesg(ProtocolCode.SET_MASTER_PIN_STATUS, pin_number, status)
 
@@ -503,10 +593,18 @@ class MyArmAPI(MyArmMCProcessor):
             io_number (int): 1 - 2
             status: 0 or 1; 0: low; 1: high. default: 1
         """
+        if self.__class__.__name__ == 'MyArmM':
+            error = MyArmMDataException
+        elif self.__class__.__name__ == 'MyArmC':
+            error = MyArmCDataException
+        else:
+            error = ValueError
+
         if io_number not in (1, 2):
-            raise ValueError("io_number must be 1 or 2")
+            raise error("io_number must be 1 or 2")
+
         if status not in (0, 1):
-            raise ValueError("status must be 0 or 1")
+            raise error("status must be 0 or 1")
         self._mesg(ProtocolCode.SET_ATOM_PIN_STATUS, io_number, status)
 
     def get_tool_in_io_state(self, pin):
@@ -520,7 +618,13 @@ class MyArmAPI(MyArmMCProcessor):
 
         """
         if pin not in (1, 2):
-            raise ValueError("pin must be 1 or 2")
+            if self.__class__.__name__ == 'MyArmM':
+                error = MyArmMDataException
+            elif self.__class__.__name__ == 'MyArmC':
+                error = MyArmCDataException
+            else:
+                error = ValueError
+            raise error("pin must be 1 or 2")
 
         return self._mesg(ProtocolCode.GET_ATOM_PIN_STATUS, pin, has_reply=True)
 

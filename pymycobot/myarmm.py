@@ -4,6 +4,7 @@ from __future__ import division
 import time
 
 from pymycobot.common import ProtocolCode
+from pymycobot.error import MyArmMDataException
 from pymycobot.myarm_api import MyArmAPI
 
 
@@ -78,11 +79,11 @@ class MyArmM(MyArmAPI):
         """
         self.calibration_parameters(encoders=encoders)
         if len(encoders) != len(speeds):
-            raise ValueError("encoders and speeds must have the same length")
+            raise MyArmMDataException("encoders and speeds must have the same length")
 
         for sid, speed in enumerate(speeds):
             if not -10000 < speed < 1000:
-                raise ValueError(f"servo {sid} speed must be between -10000 and 1000")
+                raise MyArmMDataException(f"servo {sid} speed must be between -10000 and 1000")
 
         self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
 
@@ -136,10 +137,10 @@ class MyArmM(MyArmAPI):
                 0-release
         """
         if state not in (0, 1):
-            raise ValueError("state must be 0 or 1")
+            raise MyArmMDataException("state must be 0 or 1")
 
         if servo_id not in range(0, 255):
-            raise ValueError("servo_id must be between 0 and 254")
+            raise MyArmMDataException("servo_id must be between 0 and 254")
 
         self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, servo_id, state)
 

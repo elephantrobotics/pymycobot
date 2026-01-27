@@ -2,6 +2,7 @@
 
 from __future__ import division
 from pymycobot.common import ProtocolCode
+from pymycobot.error import MyArmCDataException
 from pymycobot.myarm_api import MyArmAPI
 
 
@@ -21,10 +22,10 @@ class MyArmC(MyArmAPI):
             list[int]: 0/1, 1: press, 0: no press
         """
         if not isinstance(mode, int):
-            raise TypeError('mode must be int')
+            raise MyArmCDataException('mode must be int')
 
         if mode not in [1, 2, 3, 254]:
-            raise ValueError('mode must be 1, 2, 3 or 254')
+            raise MyArmCDataException('mode must be 1, 2, 3 or 254')
 
         return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, mode, has_reply=True)
 
