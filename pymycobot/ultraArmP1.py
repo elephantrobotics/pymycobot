@@ -546,8 +546,9 @@ class UltraArmP1:
         Returns:
             (float) Firmware version
         """
-        self._send_command(ProtocolCode.GET_SYSTEM_VERSION_P1)
-        return self._request("system_version")
+        with self.lock:
+            self._send_command(ProtocolCode.GET_SYSTEM_VERSION_P1)
+            return self._request("system_version")
 
     def get_modify_version(self):
         """Get firmware modify version
@@ -555,8 +556,9 @@ class UltraArmP1:
         Returns:
             (int) modify version
         """
-        self._send_command(ProtocolCode.GET_MODIFY_VERSION_P1)
-        return self._request("modify_version")
+        with self.lock:
+            self._send_command(ProtocolCode.GET_MODIFY_VERSION_P1)
+            return self._request("modify_version")
 
     def stop(self):
         """Stop movement"""
@@ -648,8 +650,9 @@ class UltraArmP1:
 
     def get_error_information(self):
         """Read error message"""
-        self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
-        return self._request("error_information")
+        with self.lock:
+            self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
+            return self._request("error_information")
 
     def set_zero_calibration(self, joint_number):
         """Set zero-point calibration.
