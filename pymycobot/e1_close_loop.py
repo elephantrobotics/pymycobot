@@ -106,7 +106,7 @@ class E1CloseLoop(DataProcessor):
 
         need_break = False
         data = None
-        timeout = 0.5
+        timeout = 3
         if genre == ProtocolCode.SET_FRESH_MODE:
             timeout = 4
         elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
@@ -119,7 +119,7 @@ class E1CloseLoop(DataProcessor):
             else:
                 wait_time = 0.25
         else:
-            timeout = 0.5
+            timeout = 3
 
         interval_time = time.time()
         is_moving = 0

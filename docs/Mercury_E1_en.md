@@ -22,8 +22,6 @@ Before using the Python API, please ensure that the following hardware and envir
 
 API (Application Programming Interface), also known as Application Programming Interface functions, are predefined functions. When using the following function interfaces, please import our API library at the beginning by entering the following code, otherwise it will not run successfully:
 
-**Note:** Before use, please make sure that the MyCobot Pro 450 server is turned on and the PC and the robot are in the same network segment.
-
 ```python
 # Example
 from pymycobot import MercuryE1
@@ -52,7 +50,7 @@ print(mc.get_angles())
 
 - **function：** Detection robot model
 
-- **Return value：** Definition Rule: Actual machine model. For example, the MyCobot Pro 450 model is 4503
+- **Return value：** Definition Rule: Actual machine model. For example, the Mercury E1 model is 6500
 
 #### `get_atom_version()`
 
@@ -289,12 +287,12 @@ print(mc.get_angles())
     | Joint Id | range |
     | ---- | ---- |
     | 1 | -155 ~ 155 |
-    | 2 | -45 ~ 95 |
+    | 2 | -65 ~ 105 |
     | 3 | -160 ~ 160 |
-    | 4 | -130 ~ 30 |
-    | 5 | -155 ~ 155 |
-    | 6 | -125 ~ 110 |
-    | 6 | -155 ~ 155 |
+    | 4 | -135 ~ 18 |
+    | 5 | -160 ~ 160 |
+    | 6 | -100 ~ 117 |
+    | 6 | -135 ~ 135 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100
 
@@ -318,9 +316,9 @@ print(mc.get_angles())
   - `coord`: coord value(`float`)
     | Coord Id | range |
     | ---- | ---- |
-    | x | -474 ~ 474 |
-    | y | -474 ~ 474 |
-    | z | -180 ~ 677 |
+    | x | -623 ~ 623 |
+    | y | -623 ~ 623 |
+    | z | -172 ~ 846 |
     | rx | -180 ~ 180 |
     | ry | -180 ~ 180 |
     | rz | -180 ~ 180 |

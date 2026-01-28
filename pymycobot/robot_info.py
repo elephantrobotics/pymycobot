@@ -159,22 +159,13 @@ class RobotStatusE1Info(object):
         "zh_CN": {
             "joint_limit": {i: f"关节{i+1} 超限" for i in range(7)},
             "motor_error": {
-                0: "CAN总线错误，可使用异常恢复，无法恢复时，检查通信线路，修复后重新通电使能",
-                1: "短路，可使用异常恢复",
-                2: "无效设置数据",
-                3: "控制错误，可使用异常恢复",
-                4: "CAN通信错误，可使用异常恢复，无法恢复时，检查通信线路，修复后重新通电使能",
-                5: "反馈错误，可使用异常恢复",
-                6: "正限位开关激活",
-                7: "负限位开关激活",
-                8: "过流，可使用异常恢复",
-                9: "I2t保护，可使用异常恢复",
-                10: "过温，可使用异常恢复",
-                11: "驱动板过温，可使用异常恢复",
-                12: "过压，可使用异常恢复",
-                13: "欠压，可使用异常恢复",
-                14: "命令错误",
-                15: "启用处于非活动状态"
+                8: "过压",
+                9: "欠压",
+                10: "过流",
+                11: "MOS过温，可通过读温度接口查看",
+                12: "电机线圈过温",
+                13: "通讯丢失",
+                14: "过载",
             },
             "comm_error": {
                 0: "CAN初始化异常。需检查主控板，修复控制板异常后，掉电再上电。",
@@ -191,22 +182,13 @@ class RobotStatusE1Info(object):
         "en_US": {
             "joint_limit": {i: f"Joint {i+1} limit exceeded" for i in range(7)},
             "motor_error": {
-                0: "CAN bus error, can be recovered using exception recovery. If recovery fails, check the communication line, repair and then power on to enable.",
-                1: "Short circuit, can be recovered using exception recovery.",
-                2: "Invalid setting data.",
-                3: "Control error, can be recovered using exception recovery.",
-                4: "CAN communication error, can be recovered using exception recovery. If recovery fails, check the communication line, repair and then power on to enable.",
-                5: "Feedback error, can be recovered using exception recovery.",
-                6: "Positive limit switch activated.",
-                7: "Negative limit switch activated.",
-                8: "Overcurrent, can be recovered using exception recovery.",
-                9: "I2t protection, can be recovered using exception recovery.",
-                10: "Overtemperature, can be recovered using exception recovery.",
-                11: "Driver board overtemperature, can be recovered using exception recovery.",
-                12: "Overvoltage, can be recovered using exception recovery.",
-                13: "Undervoltage, can be recovered using exception recovery.",
-                14: "Command error.",
-                15: "Enabled inactive state."
+                8: "Overvoltage",
+                9: "Undervoltage",
+                10: "Overcurrent",
+                11: "MOS overtemperature, can be checked via temperature reading interface",
+                12: "Motor coil overtemperature",
+                13: "Communication lost",
+                14: "Overload",
             },
             "comm_error": {
                 0: "CAN initialization error. Check the main control board, repair the control board error, then power off and on again.",
@@ -613,9 +595,9 @@ class RobotLimit:
             "joint_id": [1, 2, 3, 4, 5, 6, 7],
             "servo_id": [1, 2, 3, 4, 5, 6, 7],
             "coord_id": (1, 2, 3, 4, 5, 6, 7),
-            "angles_min":  [-155, -45, -160, -130, -155, -125, -155],
-            "angles_max":  [155, 95, 160, 30, 155, 110, 155],
+            "angles_min":  [-155, -65, -160, -135, -160, -100, -135],
+            "angles_max":  [155, 105, 160, 18, 160, 117, 135],
             "coords_min": [-623, -623, -172, -180, -180, -180],
-            "coords_max": [623, 623, 876, 180, 180, 180]
+            "coords_max": [623, 623, 846, 180, 180, 180]
         },
     }

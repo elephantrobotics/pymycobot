@@ -106,7 +106,7 @@ class MercuryE1(E1CloseLoop):
             elif genre in [ProtocolCode.GET_ROBOT_ID]:
                 high, low = valid_data
                 motor_type = (high << 8) | low  # 组合成 16 位整数
-                return f"{motor_type:04X}"
+                return motor_type
             res.append(self._decode_int16(valid_data))
         elif data_len == 3:
             res.append(self._decode_int16(valid_data[1:]))
@@ -318,7 +318,6 @@ class MercuryE1(E1CloseLoop):
                     msg = '机器人正在运动' if self.language == "zh_CN" else 'Robot is moving'
                     print(f"⚠️ {msg}")
                     output_msgs.append(msg)
-
                 # Byte3-9: Joint over-limit
                 for i, val in enumerate(res[2:9]):
                     if val == 1:
@@ -332,14 +331,12 @@ class MercuryE1(E1CloseLoop):
                     low = res[9 + i * 2 + 1]
                     val = (high << 8) | low
                     if val != 0:
-                        bits = [bit for bit in range(16) if (val >> bit) & 1]
-                        for bit in bits:
-                            msg = info["motor_error"].get(bit,"未知错误" if self.language == "zh_CN" else "Unknown error")
-                            print(
-                                f"错误: 关节{i + 1} - {msg}" if self.language == "zh_CN" else f"Error: Joint{i + 1} - {msg}")
-                            output_msgs.append(f"J{i + 1} 电机异常: {msg}")
+                        msg = info["motor_error"].get(val,"未知错误" if self.language == "zh_CN" else "Unknown error")
+                        print(
+                            f"电机错误: 关节{i + 1} - {msg}" if self.language == "zh_CN" else f"Motor Error: Joint{i + 1} - {msg}")
+                        output_msgs.append(f"J{i + 1} 电机异常: {msg}")
 
-                # Byte22-34: Communication error
+                # Byte23-36: Communication error
                 for i in range(7):
                     high = res[23 + i * 2]
                     low = res[23 + i * 2 + 1]
@@ -349,8 +346,13 @@ class MercuryE1(E1CloseLoop):
                         for bit in bits:
                             msg = info["comm_error"].get(bit, "未知错误" if self.language == "zh_CN" else "Unknown error")
                             print(
-                                f"错误: 关节{i + 1} - {msg}" if self.language == "zh_CN" else f"Error: Joint{i + 1} - {msg}")
+                                f"通信错误: 关节{i + 1} - {msg}" if self.language == "zh_CN" else f"Communication Error: Joint{i + 1} - {msg}")
                             output_msgs.append(f"J{i + 1} 通信异常: {msg}")
+
+                if not output_msgs:
+                    msg = "机器人状态正常" if self.language == "zh_CN" else "Robot status is normal"
+                    print(f"✅ {msg}")
+                    output_msgs.append(msg)
 
                 return parsed
         elif genre == ProtocolCode.IS_INIT_CALIBRATION:
@@ -1524,22 +1526,22 @@ class MercuryE1(E1CloseLoop):
         print("Gripper Initialization Failed!")
         return False
 
-    def set_motor_type(self, motor_type):
-        """Set motor type.
-
-        Args:
-            motor_type (hex/int/str): motor type, can be 0xA1C2, 0xA3C0, or 'A1C2', 'a3c0'
-        """
-
-        self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
-
-        if isinstance(motor_type, str):
-            motor_type = int(motor_type, 16)
-
-        high_byte = (motor_type >> 8) & 0xFF  # 0xA3
-        low_byte = motor_type & 0xFF  # 0xC0
-
-        return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
+    # def set_motor_type(self, motor_type):
+    #     """Set motor type.
+    #
+    #     Args:
+    #         motor_type (hex/int/str): motor type, can be 0xA1C2, 0xA3C0, or 'A1C2', 'a3c0'
+    #     """
+    #
+    #     self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
+    #
+    #     if isinstance(motor_type, str):
+    #         motor_type = int(motor_type, 16)
+    #
+    #     high_byte = (motor_type >> 8) & 0xFF  # 0xA3
+    #     low_byte = motor_type & 0xFF  # 0xC0
+    #
+    #     return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
 
     def get_motor_temps(self):
         """Read motor temperature
