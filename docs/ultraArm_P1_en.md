@@ -255,7 +255,7 @@ from pymycobot import UltraArmP1
 
   - `joint_id`: Represents the joint of the robotic arm, ranging from 1 to 4.
 
-  - `direction`: Primarily controls the direction of the robotic arm's movement, 0 - positive movement, 1 - negative movement.
+  - `direction`: Primarily controls the direction of the robotic arm's movement, 1 - positive movement, 0 - negative movement.
 
   - `speed`: Speed ​​from 1 to 5700.
 
@@ -271,7 +271,7 @@ from pymycobot import UltraArmP1
 
   - `axis_id`: Represents the joint coordinates of the robotic arm, ranging from 1 to 4.
 
-  - `direction`: Primarily controls the direction of the robotic arm's movement, 0 - positive movement, 1 - negative movement.
+  - `direction`: Primarily controls the direction of the robotic arm's movement, 1 - positive movement, 0 - negative movement.
 
   - `speed`: Speed ​​1 to 5700.
 
@@ -622,3 +622,9 @@ from pymycobot import UltraArmP1
   - `show_progress`: (`bool`) Whether to display the download progress; the default is to display it.
 
 - **Return Value:** If `show_progress=True`, the download progress is returned; otherwise, no value is returned.
+
+## 50 `upgrade_restart()`
+
+- **Function:** Firmware upgrade and restart.
+
+- **Return value:** None

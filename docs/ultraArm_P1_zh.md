@@ -174,7 +174,7 @@ from pymycobot import UltraArmP1
 
   - `joint_id`: 代表机械臂的关节，范围 1 ~ 4
 
-  - `direction`: 主要控制机器臂移动的方向，0 - 正向移动，1 - 负向移动
+  - `direction`: 主要控制机器臂移动的方向，1 - 正向移动，0 - 负向移动
 
   - `speed`: 速度 1 ~ 5700。
 
@@ -190,7 +190,7 @@ from pymycobot import UltraArmP1
 
   - `axis_id`: 代表机械臂的关节坐标，范围 1 ~ 4
 
-  - `direction`: 主要控制机器臂移动的方向，0 - 正向移动，1 - 负向移动
+  - `direction`: 主要控制机器臂移动的方向，1 - 正向移动，0 - 负向移动
 
   - `speed`: 速度 1 ~ 5700 。
 
@@ -511,3 +511,8 @@ from pymycobot import UltraArmP1
   - `filename` ：(`str`) 固件文件的名称，且必须是 .bin 文件（建议用一个固定名称，避免SD卡存过多文件）。
   - `show_progress` ：(`bool`) 是否显示下载进度，默认显示。
 - **返回值：** 如果 `show_progress=True`，则返回下载进度，否则无返回值。
+
+## 50 `upgrade_restart()`
+
+- **功能：** 固件升级重启。
+- **返回值：** None

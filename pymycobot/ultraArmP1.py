@@ -10,7 +10,7 @@ Author: weijian.wang
 Date: 2025-11-25
 Description: None
 """
-
+import os
 import threading
 import time
 import datetime
@@ -573,8 +573,8 @@ class UltraArmP1:
             joint_id : 1 ~ 4
 
             direction :
-                1 : Negative motion
-                0 : Positive motion
+                0 : Negative motion
+                1 : Positive motion
             speed : (int) 1-5700
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
@@ -595,8 +595,8 @@ class UltraArmP1:
             axis_id(int) : axis 1-X, 2-Y, 3-Z, 4-RX
 
             direction:
-                1 : Negative motion
-                0 : Positive motion
+                0 : Negative motion
+                1 : Positive motion
             speed : (int) 1-5700
         """
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
@@ -1099,6 +1099,11 @@ class UltraArmP1:
             show_progress (bool): whether to show download progress
         """
         self.calibration_parameters(class_name=self.__class__.__name__, download_filename=filename)
+
+        local_path = filename  # For local use
+
+        fw_name = os.path.basename(filename)  # For protocol use (M450)
+
         if show_progress:
             # callback(percent:int) to report progress
             progress_cb = self._download_progress
@@ -1108,11 +1113,11 @@ class UltraArmP1:
             self._clear_serial_buffer()
 
             # Entering upgrade mode.
-            self._fw_enter_upgrade(filename)
+            self._fw_enter_upgrade(fw_name)
             time.sleep(0.2)
 
             # read bin
-            with open(filename, "rb") as f:
+            with open(local_path, "rb") as f:
                 bin_data = f.read()
 
             chunk_size = 512
@@ -1145,3 +1150,9 @@ class UltraArmP1:
 
             # Finish
             self._fw_finish_upgrade()
+
+    def upgrade_restart(self):
+        """Upgrade and restart"""
+        with self.lock:
+            self._send_command(ProtocolCode.UPGRADE_RESTART)
+            return self._response(_async=False)

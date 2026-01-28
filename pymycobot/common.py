@@ -554,6 +554,7 @@ class ProtocolCode(object):
     GET_MODIFY_VERSION_P1 = "G7"
     GET_ERROR_INFO_P1 = "G8"
     SET_REBOOT = 'G10'
+    UPGRADE_RESTART = 'G11'
     # ultraArm P1 Screen
     GET_SYSTEM_SCREEN_VERSION_P1 = "M401"
     GET_MODIFY_SCREEN_VERSION_P1 = "M402"
