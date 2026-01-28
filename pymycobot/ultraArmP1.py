@@ -10,11 +10,12 @@ Author: weijian.wang
 Date: 2025-11-25
 Description: None
 """
+import logging
 import os
 import threading
 import time
 import datetime
-
+from pymycobot.log import setup_logging
 from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
 
@@ -43,6 +44,8 @@ class UltraArmP1:
         self._serial_port.dtr = True
         self._serial_port.open()
         self.debug = debug
+        setup_logging(self.debug)
+        self.log = logging.getLogger(__name__)
         self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
         time.sleep(0.5)
@@ -54,11 +57,12 @@ class UltraArmP1:
 
     def _debug_write(self, data: str):
         if self.debug:
-            print(f"{self._now()} DEBU [UltraArmP1] _write: {data}")
+            self.log.debug("_write: {}".format(data))
+            # print(f"{self._now()} DEBU [UltraArmP1] _write: {data}")
 
     def _debug_read(self, data: str):
         if self.debug:
-            print(f"{self._now()} DEBU [UltraArmP1] _read : {data}")
+            self.log.debug("_read: {}".format(data))
 
     # ---------------------- Serial helpers ----------------------
     def _serial_in_waiting(self):
@@ -127,9 +131,9 @@ class UltraArmP1:
         # Timeout
         if self.debug:
             try:
-                print(f"{self._now()} DEBU [UltraArmP1] _timeout : {received_data}")
+                self.log.error(f"_timeout: {received_data}")
             except Exception:
-                print(f"{self._now()} DEBU [UltraArmP1] _timeout : <binary>")
+                self.log.error(f"_timeout received data")
 
         return False
 
@@ -263,13 +267,11 @@ class UltraArmP1:
 
                 except Exception as e:
                     if self.debug:
-                        print(f"{self._now()} DEBU [UltraArmP1] _error : serial read exception: {e}")
+                        self.log.error(f"serial read exception: {e}")
             time.sleep(0.001)
 
         if self.debug:
-            print(
-                f"{self._now()} DEBU [UltraArmP1] _warn : request timeout, received buffer: {raw_data!r}"
-            )
+            self.log.warning(f"request timeout, received buffer: {raw_data}")
         return -1
 
     def _parse_bracket_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
