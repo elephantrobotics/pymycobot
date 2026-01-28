@@ -628,3 +628,29 @@ from pymycobot import UltraArmP1
 - **Function:** Firmware upgrade and restart.
 
 - **Return value:** None
+
+## 51 `get_motor_enable_status()`
+
+- **Function:** Reads the motor enable status.
+
+- **Return Value:** `list`, 5 motor enable statuses.
+
+## 52 `clear_zero_calibration_status(joint_id)`
+
+- **Function:** Clears the joint zero-position calibration status.
+
+- **Parameter Description:**
+
+  - `joint_id`: (`int`) Joint ID, range 1 ~ 4.
+
+- **Return Value:** 1
+
+## 53 `set_status_light_color(color_id)`
+
+- **Function:** Sets the light status color.
+
+- **Parameter Description:**
+
+  - `color_id`: (`int`) Color ID, range 1 ~ 4. 1-Red, 2-Green, 3-Yellow, 4-Blue.
+
+- **Return Value:** 1

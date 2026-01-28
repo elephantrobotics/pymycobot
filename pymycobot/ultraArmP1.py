@@ -253,6 +253,10 @@ class UltraArmP1:
                         r = self._parse_bracket_values(lower, "sdcard", str, single=True)
                         if r is not None:
                             return r
+                    elif flag == "get_motor_enable_status":
+                        r = self._parse_bracket_values(lower, "motorenable", int, single=True)
+                        if r is not None:
+                            return r
 
                     elif flag is None:
                         return -1
@@ -1155,4 +1159,40 @@ class UltraArmP1:
         """Upgrade and restart"""
         with self.lock:
             self._send_command(ProtocolCode.UPGRADE_RESTART)
+            return self._response(_async=False)
+
+    def get_motor_enable_status(self):
+        """Retrieve motor enable status"""
+        with self.lock:
+            self._send_command(ProtocolCode.GET_MOTOR_ENABLE_STATUS)
+            return self._request('get_motor_enable_status')
+
+    def clear_zero_calibration_status(self, joint_id):
+        """Clear zero calibration status
+
+        Args:
+            joint_id (int): joint ID, range is 1 ~ 4
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
+        with self.lock:
+            command = ProtocolCode.CLEAR_ZERO_CALIBRATION_STATUS
+            command += " J" + str(joint_id)
+            self._send_command(command)
+            return self._response(_async=False)
+
+    def set_status_light_color(self, color_id):
+        """Set status light color
+
+        Args:
+            color_id (int): color ID, range is 1 ~ 4
+                1: red
+                2: green
+                3: yellow
+                4: blue
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, color_id=color_id)
+        with self.lock:
+            command = ProtocolCode.SET_STATUS_LIGHTS_COLOR
+            command += " J" + str(color_id)
+            self._send_command(command)
             return self._response(_async=False)

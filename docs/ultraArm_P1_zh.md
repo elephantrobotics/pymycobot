@@ -516,3 +516,24 @@ from pymycobot import UltraArmP1
 
 - **功能：** 固件升级重启。
 - **返回值：** None
+
+## 51 `get_motor_enable_status()`
+
+- **功能：** 读取电机使能状态。
+
+- **返回值：** `list`，5个电机使能状态。
+
+## 52 `clear_zero_calibration_status(joint_id)`
+
+- **功能：** 清除关节零位校准状态。
+- **参数说明：**
+  - `joint_id` ：(`int`) 关节ID，范围 1 ~ 4 。
+- **返回值：** 1
+
+## 53 `set_status_light_color(color_id)`
+
+- **功能：** 设置灯状态颜色
+- **参数说明：**
+  - `color_id` ：(`int`) 颜色ID，范围 1 ~ 4 。1-红色，2-绿色，3-黄色，4-蓝色。
+  
+- **返回值：** 1
