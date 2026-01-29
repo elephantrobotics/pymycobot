@@ -27,5 +27,6 @@ class MyArmC(MyArmAPI):
         if mode not in [1, 2, 3, 254]:
             raise MyArmCDataException('mode must be 1, 2, 3 or 254')
 
+        self.calibration_parameters(tool_btn_click_mode=mode)
         return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, mode, has_reply=True)
 

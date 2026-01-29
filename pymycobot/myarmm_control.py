@@ -1,11 +1,10 @@
 # coding=utf-8
 import functools
-import sys
 import logging
 import time
 import threading
 import serial
-from pymycobot.error import calibration_parameters, MyArmMControlException
+from pymycobot.error import calibration_parameters
 from pymycobot.common import ProtocolCode, DataProcessor, write, read
 
 
@@ -393,9 +392,6 @@ class MyArmMControl(MyArmMProcessor):
             increment(int): incremental
             speed(int): int (0 - 100)
         """
-        if not isinstance(increment, (int, float)):
-            raise MyArmMControlException("increment must be int or float")
-
         self.calibration_parameters(joint_id=joint_id, angle=increment, speed=speed)
         return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed)
 
