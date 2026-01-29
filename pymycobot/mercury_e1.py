@@ -245,6 +245,7 @@ class MercuryE1(E1CloseLoop):
             ProtocolCode.GET_COMMUNICATION_MODE,
             ProtocolCode.IS_MOTOR_PAUSE,
             ProtocolCode.IS_FREE_MODE,
+            ProtocolCode.GET_FRESH_SPEED_MODE,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_SERVO_SPEED]:
@@ -1550,3 +1551,27 @@ class MercuryE1(E1CloseLoop):
         """
         return self._mesg(ProtocolCode.GET_MOTORS_TEMPERATURE)
 
+    def set_fresh_speed_mode(self, mode):
+        """Set refresh speed mode - fastest 286°/s, default 150°/s, will not save settings upon power failure.
+        (Note: Interpolation mode cannot be used to set high-speed motion mode; it is only applicable to refresh mode.)
+
+        Args:
+            mode: int.
+                1 - High speed.
+                0 - Low speed.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        if self.get_fresh_mode() != 1:
+            if self.language == "en_US":
+                return 'Warning: High-speed motion mode cannot be set in interpolation mode. Please switch to refresh mode.'
+            else:
+                return '警告：插补模式无法设置高速运动模式，请切换刷新模式使用'
+        return self._mesg(ProtocolCode.SET_FRESH_SPEED_MODE, mode)
+
+    def get_fresh_speed_mode(self):
+        """Read refresh rate mode
+
+        Returns:
+            0 - Low speed, 1 - High speed.
+        """
+        return self._mesg(ProtocolCode.GET_FRESH_SPEED_MODE, has_reply=True)

@@ -376,6 +376,9 @@ class ProtocolCode(object):
 
     GET_MOTORS_RUN_ERR = 0x9C
 
+    SET_FRESH_SPEED_MODE = 0x9D
+    GET_FRESH_SPEED_MODE = 0x9E
+
     # planning speed
     GET_PLAN_SPEED = 0xD0
     GET_PLAN_ACCELERATION = 0xD1

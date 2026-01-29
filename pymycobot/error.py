@@ -2026,9 +2026,9 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MercuryE1DataException, int)
                 mode = kwargs.get('mode', None)
                 if mode == 0:
-                    if not (1 <= value <= 200):
+                    if not (1 <= value <= 400):
                         raise MercuryE1DataException(
-                            f"The parameter {parameter} only supports 1 ~ 200 (angle mode), but received {value}")
+                            f"The parameter {parameter} only supports 1 ~ 400 (angle mode), but received {value}")
                 elif mode == 1:
                     if not (1 <= value <= 400):
                         raise MercuryE1DataException(

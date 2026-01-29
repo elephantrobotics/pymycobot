@@ -860,7 +860,7 @@ class E1CloseLoop(DataProcessor):
 
         Args:
             mode (int): 0 - angle acceleration. 1 - coord acceleration.
-            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 200°/s. Coordinate acceleration range is 1 ~ 400mm/s
+            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 400°/s. Coordinate acceleration range is 1 ~ 400mm/s
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, mode=mode, max_acc=max_acc)
