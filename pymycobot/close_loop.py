@@ -1066,7 +1066,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 3 : Joint velocity fusion filter
                 4 : Coordinate velocity fusion filter
                 5 : Drag teaching sampling period
-            value (int): Filter length, range is 1 ~ 255
+            value (int): Filter length, range is 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
         return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
@@ -1349,7 +1349,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
+        res = self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
+        self.max_joint = 0
+        self.min_joint = 0
+        return res
 
     def set_joint_min_angle(self, joint_id, degree):
         """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
@@ -1363,7 +1366,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
+        res = self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
+        self.max_joint = 0
+        self.min_joint = 0
+        return res
 
     def is_servo_enable(self, joint_id):
         """To detect the connection state of a single joint

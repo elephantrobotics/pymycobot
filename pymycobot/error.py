@@ -470,8 +470,8 @@ def calibration_parameters(**kwargs):
                     raise MercuryDataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
             elif parameter == 'rank_value':
                 check_value_type(parameter, value_type, MercuryDataException, int)
-                if not 1 <= value <= 255:
-                    raise MercuryDataException("rank value not right, should be 1 ~ 255, the error rank value is {}".format(value))
+                if not 1 <= value <= 100:
+                    raise MercuryDataException("rank value not right, should be 1 ~ 100, the error rank value is {}".format(value))
             elif parameter == "move_type":
                 if value not in [0, 1, 2, 3, 4]:
                     raise MercuryDataException("The parameter {} only supports 0 or 4, but received {}".format(parameter, value))
