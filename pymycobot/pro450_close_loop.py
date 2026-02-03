@@ -474,21 +474,6 @@ class Pro450CloseLoop(DataProcessor):
         """
         return self._mesg(ProtocolCode.MERCURY_DRAG_TEACH_CLEAN)
 
-    def get_comm_error_counts(self, joint_id, _type):
-        """Read the number of communication exceptions
-
-        Args:
-            joint_id (int): joint ID
-            _type (int): Error type to be read, 1 ~ 4.
-                1-The number of exceptions sent by the joint
-                2-The number of exceptions obtained by the joint
-                3-The number of exceptions sent by the end
-                4-The number of exceptions read by the end
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, _type=_type)
-        return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id, _type)
-
     def stop(self, deceleration=0, _async=False):
         """Robot stops moving
 
@@ -527,17 +512,6 @@ class Pro450CloseLoop(DataProcessor):
     def get_modified_version(self):
         return self._mesg(ProtocolCode.ROBOT_VERSION)
 
-    def set_control_mode(self, mode):
-        """Set robot motion mode
-
-        Args:
-            mode (int): 0 - location mode, 1 - torque mode
-
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
-
     def get_control_mode(self):
         """Get robot motion mode
 
@@ -573,12 +547,6 @@ class Pro450CloseLoop(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_COLLISION_THRESHOLD)
 
-    def get_torque_comp(self):
-        """Get joint torque compensation
-        """
-        return self._mesg(ProtocolCode.GET_TORQUE_COMP)
-
-
     def get_vr_mode(self):
         """Check if the robot is in VR mode
         """
@@ -598,15 +566,6 @@ class Pro450CloseLoop(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_MODEL_DIRECTION)
 
-    def set_model_direction(self, joint_id, direction):
-        """Set the direction of the robot model
-
-        Args:
-            joint_id (int): joint ID, 1 ~ 7.
-            direction (int): 0 - forward, 1 - backward
-        """
-        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
-
     def get_filter_len(self, rank):
         """Get the filter length
 
@@ -621,107 +580,9 @@ class Pro450CloseLoop(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, rank=rank)
         return self._mesg(ProtocolCode.GET_FILTER_LEN, rank)
 
-    def set_filter_len(self, rank, value=120):
-        """Set the filter length
-
-        Args:
-            rank (int): 
-                1 : Drag teaching sampling filter
-                2 : Drag teaching execution filter
-                3 : Joint velocity fusion filter
-                4 : Coordinate velocity fusion filter
-                5 : Drag teaching sampling period
-            value (int): Filter length, range is 1 ~ 255
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
-        return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
-
-    def clear_zero_pos(self):
-        return self._mesg(ProtocolCode.CLEAR_ZERO_POS)
-
     def clear_error_information(self):
         """Clear robot error message"""
         return self._mesg(ProtocolCode.CLEAR_ERROR_INFO)
-
-    def get_error_information(self):
-        """Obtaining robot error information
-
-        Return:
-            0: No error message.
-            1 ~ 6: The corresponding joint exceeds the limit position.
-            16 ~ 19: Collision protection.
-            32: Kinematics inverse solution has no solution.
-            33 ~ 34: Linear motion has no adjacent solution.
-        """
-        return self._mesg(ProtocolCode.GET_ERROR_INFO)
-
-    def send_angles(self, angles, speed, _async=False):
-        """Send the angles of all joints to robot arm.
-
-        Args:
-            angles: a list of angle values(List[float]). len 7.
-            speed : (int) 1 ~ 100
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, angles=angles, speed=speed)
-        angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True, _async=_async)
-
-    def send_angle(self, joint_id, angle, speed, _async=False):
-        """Send one angle of joint to robot arm.
-
-        Args:
-            joint_id : Joint id(genre.Angle)， int 1-7.
-            angle : angle value(float).
-            speed : (int) 1 ~ 100
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, joint_id, [self._angle2int(angle)], speed, has_reply=True,
-                          _async=_async)
-
-    def send_coord(self, coord_id, coord, speed, _async=False):
-        """Send one coord to robot arm.
-
-        Args:
-            coord_id (int): coord id, range 1 ~ 6
-            coord (float): coord value.
-                The coord range of `X` is -351.11 ~ 566.92.
-                The coord range of `Y` is -645.91 ~ 272.12.
-                The coord range of `Y` is -262.91 ~ 655.13.
-                The coord range of `RX` is -180 ~ 180.
-                The coord range of `RY` is -180 ~ 180.
-                The coord range of `RZ` is -180 ~ 180.
-            speed (int): 1 ~ 100
-        """
-
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
-        value = self._coord2int(
-            coord) if coord_id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
-
-    def send_coords(self, coords, speed, _async=False):
-        """Send all coords to robot arm.
-
-        Args:
-            coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
-                The coord range of `X` is -351.11 ~ 566.92.
-                The coord range of `Y` is -645.91 ~ 272.12.
-                The coord range of `Y` is -262.91 ~ 655.13.
-                The coord range of `RX` is -180 ~ 180.
-                The coord range of `RY` is -180 ~ 180.
-                The coord range of `RZ` is -180 ~ 180.
-            speed : (int) 1 ~ 100
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords, speed=speed)
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
 
     def resume(self):
         """Recovery movement"""
@@ -738,8 +599,8 @@ class Pro450CloseLoop(DataProcessor):
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, joint_id)
 
     def set_servos_calibration(self):
-        for id in range(1, 8):
-            self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, id)
+        for joint_id in range(1, 7):
+            self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, joint_id)
 
     def is_in_position(self, data, mode=0):
         """Judge whether in the position.
@@ -806,17 +667,6 @@ class Pro450CloseLoop(DataProcessor):
             class_name=self.__class__.__name__, mode=mode, max_speed=max_speed)
         return self._mesg(ProtocolCode.SET_SPEED, mode, [max_speed])
 
-    def set_max_acc(self, mode, max_acc):
-        """Set maximum acceleration
-
-        Args:
-            mode (int): 0 - angle acceleration. 1 - coord acceleration.
-            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 150°/s. Coordinate acceleration range is 1 ~ 400mm/s
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, mode=mode, max_acc=max_acc)
-        return self._mesg(ProtocolCode.SET_MAX_ACC, mode, [max_acc])
-
     def get_max_acc(self, mode):
         """Get maximum acceleration
 
@@ -825,60 +675,6 @@ class Pro450CloseLoop(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.GET_MAX_ACC, mode)
-
-    def get_joint_min_angle(self, joint_id):
-        """Gets the minimum movement angle of the specified joint
-
-        Args: 
-            joint_id: Joint id 1 - 6 or 11 ~ 12
-
-        Return:
-            angle value(float)
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id)
-        return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id)
-
-    def get_joint_max_angle(self, joint_id):
-        """Gets the maximum movement angle of the specified joint
-
-        Args:
-            joint_id: Joint id 1 - 6 or 11 ~ 12
-
-        Return:
-            angle value(float)
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id)
-        return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id)
-
-    def set_joint_max_angle(self, joint_id, degree):
-        """Set the maximum angle of the joint (must not exceed the maximum angle specified for the joint)
-
-        Args:
-            joint_id (int): Joint id 1 - 6  or 11 ~ 12
-            degree: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
-
-        Return:
-            1 - success
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
-
-    def set_joint_min_angle(self, joint_id, degree):
-        """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
-
-        Args:
-            joint_id (int): Joint id 1 - 6.
-            degree: The angle range of joint 1 is -165 ~ 165. The angle range of joint 2 is -55 ~ 95. The angle range of joint 3 is -173 ~ 5. The angle range of joint 4 is -165 ~ 165. The angle range of joint 5 is -20 ~ 265. The angle range of joint 6 is -180 ~ 180. The angle range of joint 11 is -60 ~ 0. The angle range of joint 12 is -138 ~ 188.
-
-        Return:
-            1 - success
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
 
     def get_servo_speeds(self):
         """Get joint speed
@@ -1027,56 +823,6 @@ class Pro450CloseLoop(DataProcessor):
     def get_servo_encoders(self):
         return self._mesg(ProtocolCode.GET_ENCODERS)
 
-    def set_base_io_output(self, pin_no, pin_signal):
-        """Set the base output IO status
-
-        Args:
-            pin_no: pin port number. range 1 ~ 6
-            pin_signal: 0 - low. 1 - high.
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
-        return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
-
-    def get_base_io_input(self, pin_no):
-        """Get the input IO status of the base
-
-        Args:
-            pin_no: (int) pin port number. range 1 ~ 6
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, pin_no=pin_no)
-        return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
-
-
-    def set_identify_mode(self, mode):
-        """Set the kinetic parameter identification mode
-
-        Args:
-            mode (int): 0 - open. 1 - close
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_IDENTIFY_MODE, mode)
-
-    def get_identify_mode(self):
-        """Obtaining kinetic parameter identification mode"""
-        return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
-
-    def fourier_trajectories(self, trajectory):
-        """Execute dynamic identification trajectory
-
-        Args:
-            trajectory (int): 0 ~ 4
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, trajectory=trajectory)
-        return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
-
-    def identify_print(self):
-        res = self.all_debug_data
-        self.all_debug_data = []
-        return res
-
     def get_motors_run_err(self):
         return self._mesg(ProtocolCode.GET_MOTORS_RUN_ERR)
 
@@ -1096,13 +842,6 @@ class Pro450CloseLoop(DataProcessor):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, get_rank_mode=rank_mode)
         return self._mesg(ProtocolCode.GET_FUSION_PARAMETERS, rank_mode)
-
-    def set_fusion_parameters(self, rank_mode, value):
-        """
-        rank_mode: 1 ~ 4
-        value: 0 ~ 10000
-        """
-        return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
 
     def get_system_version(self):
         """get system version"""

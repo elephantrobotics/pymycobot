@@ -553,6 +553,17 @@ print(mc.get_angles())
 
 - **功能：** 清除采样点。
 
+#### `set_pro_gripper_offset(offset=2)`
+
+- **功能：** 设置Pro力控夹爪偏移。执行带夹爪拖动示教轨迹时，实际执行的夹爪角度会减去offset（默认为2）
+- **参数**： `int`
+  - `offset`: 范围 -5 ~ 5，默认2
+
+#### `get_pro_gripper_offset()`
+
+- **功能：** 获取Pro力控夹爪偏移。执行带夹爪拖动示教轨迹时，实际执行的夹爪角度会减去offset（默认为2）
+- **返回值**： `int`，范围 -5 ~ 5
+
 ### 10. 动力学
 
 #### `get_collision_mode()`
