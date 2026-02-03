@@ -1902,16 +1902,27 @@ def calibration_parameters(**kwargs):
                 if value < 0 or value > 4:
                     raise MyCobotPro450DataException(
                         "The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+                rank_mode_value = kwargs.get('rank_mode_value', None)
+                if value == 0 and rank_mode_value is not None:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} restores default parameters and does not require 'value', but received {}".format(
+                            parameter, rank_mode_value))
             elif parameter == "get_rank_mode":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 1 or value > 4:
                     raise MyCobotPro450DataException(
                         "The parameter {} only supports 1 ~ 4, but received {}".format(parameter, value))
             elif parameter == "rank_mode_value":
-                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if value < 0 or value > 10000:
-                    raise MyCobotPro450DataException(
-                        "The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
+                rank_mode = kwargs.get('rank_mode', None)
+                if rank_mode == 0:
+                    return
+                if value is None:
+                    raise MyCobotPro450DataException("value is required when rank_mode is not 0")
+                else:
+                    check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                    if value < 0 or value > 10000:
+                        raise MyCobotPro450DataException(
+                            "The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
             elif parameter == 'rank':
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 1 or value > 5:
@@ -2055,6 +2066,11 @@ def calibration_parameters(**kwargs):
                 if value not in allowed_types:
                     raise MyCobotPro450DataException(
                         f"motor_type {hex(value)} not allowed. Must be one of: {[hex(x) for x in allowed_types]}")
+            elif parameter in ["gripper_offset"]:
+                check_value_type(parameter, value_type, MyCobotPro450DataException, int)
+                if value < -5 or value > 5:
+                    raise MyCobotPro450DataException(
+                        "The parameter {} only supports -5 ~ 5, but received {}".format(parameter, value))
 
     elif class_name in ["ultraArmP340"]:
         for parameter in parameter_list[1:]:
