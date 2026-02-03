@@ -1528,8 +1528,12 @@ def calibration_parameters(**kwargs):
             elif parameter == "assist_io_number" and value not in range(1, 7):
                 raise Error(f"io number value not right, should be 1 ~ 6, the received value is {value}")
 
-            elif parameter == "tool_btn_click_mode" and value not in (1, 2, 3, 254):
-                raise Error('mode must be 1, 2, 3 or 254')
+            elif parameter == "tool_btn_click_mode":
+                if not isinstance(value, int):
+                    raise Error(f"mode not right, should be in {value}")
+
+                if value not in (1, 2, 3, 254):
+                    raise Error('mode must be 1, 2, 3 or 254')
 
     elif class_name in ["Pro630", "Pro630Client"]:
         limit_info = robot_limit[class_name]

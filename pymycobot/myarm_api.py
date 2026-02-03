@@ -5,7 +5,7 @@ import functools
 import threading
 import time
 from pymycobot.common import ProtocolCode, DataProcessor
-from pymycobot.error import calibration_parameters, MyArmMDataException, MyArmCDataException
+from pymycobot.error import calibration_parameters
 import serial
 
 
