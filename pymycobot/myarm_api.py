@@ -58,7 +58,7 @@ class MyArmMCProcessor(DataProcessor):
                 continue
 
             previous_frame = current_frame
-            if is_record is False:
+            if not is_record:
                 continue
 
             commands += current_frame
@@ -108,6 +108,8 @@ class MyArmMCProcessor(DataProcessor):
             self._write(self._flatten(real_command))
 
             if not has_reply:
+                if genre == ProtocolCode.SET_SERVO_MOTOR_CLOCKWISE:
+                    time.sleep(0.015)
                 return None
 
             data = self._read(genre)
@@ -208,8 +210,7 @@ class MyArmAPI(MyArmMCProcessor):
         Args:
             status (int): 1 open; o close
         """
-        if status not in [0, 1]:
-            raise ValueError("status must be 0 or 1")
+        self.calibration_parameters(status=status)
         self._mesg(ProtocolCode.SET_ROBOT_ERROR_CHECK_STATE, status)
 
     def get_robot_err_check_state(self):
@@ -231,7 +232,7 @@ class MyArmAPI(MyArmMCProcessor):
 
     def set_recv_queue_max_len(self, max_len):
         """Set the total length of the receiving command queue"""
-        assert 0 < max_len <= 100, "queue size must be in range 1 - 100"
+        self.calibration_parameters(maximum_queue_length=max_len)
         self._mesg(ProtocolCode.SET_RECV_QUEUE_SIZE, max_len)
 
     def get_recv_queue_len(self):
@@ -341,19 +342,18 @@ class MyArmAPI(MyArmMCProcessor):
         """Sets the proportionality factor of the position loop P of the specified servo motor
 
         Args:
-            servo_id (int): 0-254
+            servo_id (int): 0 - 8
             data (int): 0-254
 
         """
-        assert 0 <= data <= 254, "data must be between 0 and 254"
-        self.calibration_parameters(servo_id=servo_id)
+        self.calibration_parameters(servo_id=servo_id, P=data)
         self._mesg(ProtocolCode.SET_SERVO_P, servo_id, data)
 
     def get_servo_p(self, servo_id):
         """Reads the position loop P scale factor of the specified servo motor
 
         Args:
-            servo_id (int): 0-254
+            servo_id (int): 0 - 8
         """
         self.calibration_parameters(servo_id=servo_id)
         return self._mesg(ProtocolCode.GET_SERVO_P, servo_id, has_reply=True)
@@ -362,18 +362,17 @@ class MyArmAPI(MyArmMCProcessor):
         """Sets the proportional factor for the position ring D of the specified servo motor
 
         Args:
-            servo_id (int): 0-254
+            servo_id (int): 0 - 8
             data (int): 0-254
         """
-        assert 0 <= data <= 254, "data must be between 0 and 254"
-        self.calibration_parameters(servo_id=servo_id)
+        self.calibration_parameters(servo_id=servo_id, D=data)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, servo_id, data)
 
     def get_servo_d(self, servo_id):
         """Reads the position ring D scale factor for the specified servo motor
 
         Args:
-            servo_id (int): 0-254
+            servo_id (int): 0 - 8
         """
         self.calibration_parameters(servo_id=servo_id)
         return self._mesg(ProtocolCode.GET_SERVO_D, servo_id, has_reply=True, timeout=0.1)
@@ -382,11 +381,10 @@ class MyArmAPI(MyArmMCProcessor):
         """Set the proportional factor of the position ring I of the specified servo motor
 
         Args:
-            servo_id (int): 0 - 254
+            servo_id (int): 0 - 8
             data (int): 0 - 254
         """
-        assert 0 <= data <= 254, "data must be between 0 and 254"
-        self.calibration_parameters(servo_id=servo_id)
+        self.calibration_parameters(servo_id=servo_id, I=data)
         self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE, servo_id, data)
 
     def get_servo_i(self, servo_id):
@@ -398,14 +396,10 @@ class MyArmAPI(MyArmMCProcessor):
         """Sets the clockwise insensitivity zone of the encoder for the specified servo motor
 
         Args:
-            servo_id (int): 0 - 254
+            servo_id (int): 0 - 8
             data (int): 0 - 32
         """
-        self.calibration_parameters(servo_id=servo_id)
-        if servo_id == 8:
-            assert 0 <= data <= 16, "data must be between 0 and 16"
-        else:
-            assert 0 <= data <= 32, "data must be between 0 and 32"
+        self.calibration_parameters(servo_id=servo_id, cw=data)
         self._mesg(ProtocolCode.SET_SERVO_MOTOR_CLOCKWISE, servo_id, data)
 
     def get_servo_cw(self, servo_id):
@@ -424,11 +418,7 @@ class MyArmAPI(MyArmMCProcessor):
             servo_id (int): 0 - 254
             data (int): 0 - 32
         """
-        self.calibration_parameters(servo_id=servo_id)
-        if servo_id == 8:
-            assert 0 <= data <= 16, "data must be between 0 and 16"
-        else:
-            assert 0 <= data <= 32, "data must be between 0 and 32"
+        self.calibration_parameters(servo_id=servo_id, cww=data)
         return self._mesg(ProtocolCode.SET_SERVO_MOTOR_COUNTER_CLOCKWISE, servo_id, data)
 
     def get_servo_cww(self, servo_id):
@@ -449,13 +439,7 @@ class MyArmAPI(MyArmMCProcessor):
             data (int): 0 - 4096
             mode (int): 1 - data 1byte. 2 - data 2byte
         """
-        if mode not in (1, 2):
-            raise ValueError('mode must be 1 or 2')
-
-        if data not in range(0, 4097):
-            raise ValueError('data must be between 0 and 4096')
-
-        self.calibration_parameters(servo_id=servo_id, servo_addr=addr)
+        self.calibration_parameters(servo_id=servo_id, servo_addr=addr, servo_mode=mode, servo_data=data)
         self._mesg(ProtocolCode.SET_SERVO_MOTOR_CONFIG, servo_id, addr, [data], mode)
 
     def get_servo_system_data(self, servo_id, addr, mode):
@@ -466,9 +450,7 @@ class MyArmAPI(MyArmMCProcessor):
             addr (int):
             mode (int): 1 - data 1byte. 2 - data 2byte
         """
-        if mode not in (1, 2):
-            raise ValueError('mode must be 1 or 2')
-        self.calibration_parameters(servo_id=servo_id)
+        self.calibration_parameters(servo_id=servo_id, servo_data=addr, servo_mode=mode)
         return self._mesg(ProtocolCode.GET_SERVO_MOTOR_CONFIG, servo_id, addr, mode, has_reply=True)
 
     def set_master_out_io_state(self, pin_number, status=1):
@@ -479,9 +461,7 @@ class MyArmAPI(MyArmMCProcessor):
             status: 0/1; 0: low; 1: high. default: 1
 
         """
-        if status not in (0, 1):
-            raise ValueError('status must be 0 or 1')
-        self.calibration_parameters(pin_number=pin_number)
+        self.calibration_parameters(pin_number=pin_number, status=status)
         self._mesg(ProtocolCode.SET_MASTER_PIN_STATUS, pin_number, status)
 
     def get_master_in_io_state(self, pin_number):
@@ -496,18 +476,15 @@ class MyArmAPI(MyArmMCProcessor):
         self.calibration_parameters(pin_number=pin_number)
         return self._mesg(ProtocolCode.GET_MASTER_PIN_STATUS, pin_number, has_reply=True)
 
-    def set_tool_out_io_state(self, io_number, status=1):
+    def set_tool_out_io_state(self, pin, status=1):
         """Set the Atom pin status
 
         Args:
-            io_number (int): 1 - 2
+            pin (int): 1 - 2
             status: 0 or 1; 0: low; 1: high. default: 1
         """
-        if io_number not in (1, 2):
-            raise ValueError("io_number must be 1 or 2")
-        if status not in (0, 1):
-            raise ValueError("status must be 0 or 1")
-        self._mesg(ProtocolCode.SET_ATOM_PIN_STATUS, io_number, status)
+        self.calibration_parameters(tool_pin_number=pin, status=status)
+        self._mesg(ProtocolCode.SET_ATOM_PIN_STATUS, pin, status)
 
     def get_tool_in_io_state(self, pin):
         """Get the Atom pin status
@@ -519,9 +496,7 @@ class MyArmAPI(MyArmMCProcessor):
             0 or 1. 1: high 0: low
 
         """
-        if pin not in (1, 2):
-            raise ValueError("pin must be 1 or 2")
-
+        self.calibration_parameters(tool_pin_number=pin)
         return self._mesg(ProtocolCode.GET_ATOM_PIN_STATUS, pin, has_reply=True)
 
     def set_tool_led_color(self, r, g, b):
@@ -533,6 +508,7 @@ class MyArmAPI(MyArmMCProcessor):
             b: 0-255
 
         """
+        self.calibration_parameters(color=(r, g, b))
         return self._mesg(ProtocolCode.GET_ATOM_LED_COLOR, r, g, b)
 
     def restore_servo_system_param(self, servo_id):
