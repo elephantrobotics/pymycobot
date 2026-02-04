@@ -146,33 +146,33 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """Pan the robot left
 
         Args:
-            speed(float): 0.01 ~ 1.00 m/s
+            speed(float): 0.01 ~ 1.50 m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0.01 <= speed <= 1.00:
+        if not 0.01 <= speed <= 1.50:
             raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
 
     async def move_right_lateral(self, speed):
         """Pan the robot right
 
         Args:
-            speed(float): 0.01 ~ 1.00m/s
+            speed(float): 0.01 ~ 1.50m/s
 
         Returns:
             int: 1: Success, 0: Failed
         """
-        if not 0.01 <= speed <= 1.00:
-            raise ValueError("Speed must be between 0.00 and 1.00")
+        if not 0.01 <= speed <= 1.50:
+            raise ValueError("Speed must be between 0.01 and 1.00")
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
 
     async def turn_left(self, speed):
         """Rotate to the left
@@ -372,6 +372,9 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if any(map(lambda c: not 0 <= c <= 255, color)):
             raise ValueError("Color must be between 0 and 255")
+
+        if not isinstance(color, tuple):
+            raise ValueError("color must be a tuple")
 
         return await self._merge(ProtocolCode.SET_LED_COLOR, position, brightness, *color)
 

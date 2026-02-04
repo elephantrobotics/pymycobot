@@ -1,8 +1,5 @@
 # coding=utf-8
 from __future__ import division
-
-import time
-
 from pymycobot.common import ProtocolCode
 from pymycobot.myarm_api import MyArmAPI
 
@@ -76,14 +73,7 @@ class MyArmM(MyArmAPI):
             encoders (list[int * 8]): 0 - 4095:
             speeds (list[int * 8]): -10000 - 10000:
         """
-        self.calibration_parameters(encoders=encoders)
-        if len(encoders) != len(speeds):
-            raise ValueError("encoders and speeds must have the same length")
-
-        for sid, speed in enumerate(speeds):
-            if not -10000 < speed < 1000:
-                raise ValueError(f"servo {sid} speed must be between -10000 and 1000")
-
+        self.calibration_parameters(encoders=encoders, drag_speeds=speeds)
         self._mesg(ProtocolCode.SET_ENCODERS_DRAG, encoders, speeds)
 
     def set_assist_out_io_state(self, io_number, status=1):
@@ -94,6 +84,7 @@ class MyArmM(MyArmAPI):
             status: 0/1; 0: low; 1: high. default: 1
 
         """
+        self.calibration_parameters(assist_io_number=io_number, status=status)
         self._mesg(ProtocolCode.SET_AUXILIARY_PIN_STATUS, io_number, status)
 
     def get_assist_in_io_state(self, io_number):
@@ -106,6 +97,7 @@ class MyArmM(MyArmAPI):
             0 or 1. 1: high 0: low
 
         """
+        self.calibration_parameters(assist_io_number=io_number)
         return self._mesg(ProtocolCode.GET_AUXILIARY_PIN_STATUS, io_number, has_reply=True)
 
     def get_robot_power_status(self):
@@ -127,21 +119,16 @@ class MyArmM(MyArmAPI):
         """Clear the robot abnormality Ignore the error joint and continue to move"""
         self._mesg(ProtocolCode.CLEAR_ROBOT_ERROR)
 
-    def set_servo_enabled(self, servo_id, state):
+    def set_servo_enabled(self, servo_id, status):
         """Set the servo motor torque switch
         Args:
             servo_id (int): 0-254 254-all
-            state: 0/1
+            status: 0/1
                 1-focus
                 0-release
         """
-        if state not in (0, 1):
-            raise ValueError("state must be 0 or 1")
-
-        if servo_id not in range(0, 255):
-            raise ValueError("servo_id must be between 0 and 254")
-
-        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, servo_id, state)
+        self.calibration_parameters(status=status, servo_id=servo_id)
+        self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, servo_id, status)
 
     def get_joints_max(self):
         """Read the maximum angle of all joints"""
@@ -162,3 +149,11 @@ class MyArmM(MyArmAPI):
     def clear_recv_queue(self):
         """Clear the queue for receiving commands"""
         self._mesg(ProtocolCode.CLEAR_RECV_QUEUE)
+
+    def is_sd_insert(self):
+        """Check if the SD card is inserted
+
+        Returns:
+            int: 0/1, 1: insert, 0: no insert
+        """
+        return self._mesg(ProtocolCode.IS_SD_INSERT, has_reply=True)
