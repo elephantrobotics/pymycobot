@@ -247,7 +247,7 @@ class Pro450CloseLoop(DataProcessor):
         valid_data = data[data_pos: data_pos + data_len]
         return (valid_data, data_len)
 
-    def read_thread(self, method=None):
+    def read_thread_old(self, method=None):
         all_data = b''
         while True:
             try:
@@ -285,7 +285,7 @@ class Pro450CloseLoop(DataProcessor):
                 pass
             # time.sleep(0.0001)
 
-    def _process_received(self, data):
+    def _process_received_old(self, data):
         if not data:
             return []
 
@@ -302,6 +302,66 @@ class Pro450CloseLoop(DataProcessor):
             header_j += 1
         else:
             return []
+
+    def read_thread(self, method=None):
+        self.buffer = bytearray()
+
+        while True:
+            try:
+                if method is not None:
+                    try:
+                        self.sock.settimeout(0.5)
+                        data = self.sock.recv(1024)
+                    except:
+                        data = b""
+
+                    if not data:
+                        continue
+
+                    # spliced into cache
+                    self.buffer.extend(data)
+
+                    # parse the complete frame
+                    while True:
+                        frames, remain = self._process_received(self.buffer)
+                        if not frames:
+                            self.buffer = remain
+                            break  # No complete frame found, waiting for next data.
+
+                        # update buffer
+                        self.buffer = remain
+                        # Process complete frames
+                        for frame in frames:
+                            command_log = " ".join("{:02X}".format(b) for b in frame)
+                            self.log.debug("_read : {}".format(command_log))
+
+                            with self.lock:
+                                self.read_command.append([frame, time.time()])
+                        self.event.set()
+
+            except Exception as e:
+                pass
+
+    def _process_received(self, buffer):
+        frames = []
+        i = 0
+        while i < len(buffer) - 4:
+            if buffer[i] == 0xFE and buffer[i + 1] == 0xFE:  # Frame header
+                frame_len = buffer[i + 2]  # len
+                total_len = frame_len + 3  # FE FE + len + payload (+ CRC if applicable)
+                if i + total_len <= len(buffer):  # The buffer is sufficient for a complete data frame.
+                    frame = buffer[i:i + total_len]
+                    cmd_id = frame[3]
+
+                    if cmd_id in self.write_command or cmd_id == 0x5B:
+                        frames.append(frame)
+                    i += total_len
+                else:
+                    break  # Half a frame, waiting to be completed next time.
+            else:
+                i += 1
+
+        return frames, buffer[i:]
 
     def bytes4_to_int(self, bytes4):
         i = 0

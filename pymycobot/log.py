@@ -2,6 +2,7 @@
 
 import logging
 import logging.handlers
+from datetime import datetime
 
 
 def setup_logging(debug=False):
@@ -13,15 +14,18 @@ def setup_logging(debug=False):
 
     debug_fomatter = logging.Formatter(
         fmt="%(asctime)s.%(msecs)03d %(levelname).4s [%(name)s] %(message)s",
-        datefmt="%H:%M:%S",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     logger_handle = logging.StreamHandler()
     logger_handle.setFormatter(debug_fomatter)
     if debug:
         logger_handle.setLevel(logging.DEBUG)
+
+        log_name = datetime.now().strftime("python_debug_%Y%m%d.log")
+
         # 100M日志
         save = logging.handlers.RotatingFileHandler(
-        "python_debug.log", maxBytes=100*1024*1024, backupCount=1)
+        log_name, maxBytes=100*1024*1024, backupCount=5)
         save.setFormatter(debug_fomatter)
         root_logger.addHandler(save)
         root_logger.setLevel(logging.DEBUG)
