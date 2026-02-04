@@ -20,11 +20,6 @@ class MyArmC(MyArmAPI):
         Returns:
             list[int]: 0/1, 1: press, 0: no press
         """
-        if not isinstance(mode, int):
-            raise TypeError('mode must be int')
-
-        if mode not in [1, 2, 3, 254]:
-            raise ValueError('mode must be 1, 2, 3 or 254')
-
+        self.calibration_parameters(tool_btn_click_mode=mode)
         return self._mesg(ProtocolCode.GET_ATOM_PRESS_STATUS, mode, has_reply=True)
 
