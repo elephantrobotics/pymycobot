@@ -153,6 +153,56 @@ class RobotStatusPro450Info(object):
         }
     }
 
+class RobotStatusL1Info(object):
+    error_info = {
+        "zh_CN": {
+            "joint_limit": {i: f"关节{i+1} 超限" for i in range(7)},
+            "motor_error": {
+                8: "过压",
+                9: "欠压",
+                10: "过流",
+                11: "MOS过温，可通过读温度接口查看",
+                12: "电机线圈过温",
+                13: "通讯丢失",
+                14: "过载",
+            },
+            "comm_error": {
+                0: "CAN初始化异常。需检查主控板，修复控制板异常后，掉电再上电。",
+                1: "电机初始化异常，需检查电机通信线路等修复异常后，掉电再上电。",
+                2: "电机发送异常，需检查电机通信线路等，可使用异常恢复清除。",
+                3: "电机接收异常，需检查电机通信线路等，可正常控制机器",
+                4: "位置超差，需检查电机编码器等，可使用异常恢复清除。",
+                5: "末端发送异常，需检查末端通信线路等，可使用异常恢复清除。",
+                6: "末端接收异常，需检查末端通信线路等，可正常控制机器",
+                7: "电机编码器报错，编码器报错时，不可运动，需要清除编码器报错。",
+                8: "掉使能，运动前机器必须是使能状态"
+            }
+        },
+        "en_US": {
+            "joint_limit": {i: f"Joint {i+1} limit exceeded" for i in range(7)},
+            "motor_error": {
+                8: "Overvoltage",
+                9: "Undervoltage",
+                10: "Overcurrent",
+                11: "MOS overtemperature, can be checked via temperature reading interface",
+                12: "Motor coil overtemperature",
+                13: "Communication lost",
+                14: "Overload",
+            },
+            "comm_error": {
+                0: "CAN initialization error. Check the main control board, repair the control board error, then power off and on again.",
+                1: "Motor initialization error. Check the motor communication lines, repair the error, then power off and on again.",
+                2: "Motor transmission error. Check the motor communication lines, etc. Error recovery can be used to clear this.",
+                3: "Motor reception error. Check the motor communication lines, etc. Machine can be controlled normally now.",
+                4: "Position out of tolerance. Check the motor encoder, etc. Error recovery can be used to clear this.",
+                5: "End-point transmission error. Check the end-point communication lines, etc. Error recovery can be used to clear this.",
+                6: "End-point reception error. Check the end-point communication lines, etc. Machine can be controlled normally now.",
+                7: "Motor encoder error. When the encoder reports an error, do not move. Clear the encoder error.",
+                8: "Enabled down. The machine must be enabled before movement."
+            }
+        }
+    }
+
 # coding=utf-8
 
 def _interpret_status_code(language, status_code):
@@ -539,5 +589,14 @@ class RobotLimit:
             "angles_max": [170, 90, 110, 179],
             "coords_min": [-360, -365.55, -140, -180],
             "coords_max": [366.55, 365.55, 130, 180]
-        }
+        },
+        "MercuryL1": {
+            "joint_id": [1, 2, 3, 4, 5, 6, 7],
+            "servo_id": [1, 2, 3, 4, 5, 6, 7],
+            "coord_id": [1, 2, 3, 4, 5, 6, 7],
+            "angles_min": [-155, -55, -160, -135, -160, -100, -135],
+            "angles_max": [155, 105, 160, 18, 160, 117, 135],
+            "coords_min": [-623, -623, -172, -180, -180, -180],
+            "coords_max": [623, 623, 846, 180, 180, 180]
+        },
     }

@@ -375,6 +375,8 @@ class ProtocolCode(object):
     WRITE_MOVE_C_R = 0x99
 
     GET_MOTORS_RUN_ERR = 0x9C
+    SET_FRESH_SPEED_MODE = 0x9D
+    GET_FRESH_SPEED_MODE = 0x9E
 
     # planning speed
     GET_PLAN_SPEED = 0xD0
@@ -404,6 +406,7 @@ class ProtocolCode(object):
     SET_ERROR_DETECT_MODE = 0xE8
     GET_ERROR_DETECT_MODE = 0xE9
     IS_MOTOR_PAUSE = 0xEC
+    GET_MOTORS_TEMPERATURE = 0xED
 
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
@@ -532,7 +535,7 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
-    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client"]
+    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client", "MercuryL1"]
 
     def __init__(self, debug=False):
         """
