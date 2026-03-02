@@ -2121,9 +2121,14 @@ def calibration_parameters(**kwargs):
                     if not (1 <= value <= 200):
                         raise MercuryE1DataException(
                             f"The parameter {parameter} only supports 1 ~ 200 (coord mode), but received {value}")
-            elif parameter in['joint_id', 'coord_id']:
+            elif parameter in['joint_id']:
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryE1DataException)
+            elif parameter in['coord_id']:
+                if value not in robot_limit[class_name][parameter]:
+                    raise MercuryE1DataException(
+                        "The coord_id not right, should be in {0}, but received {1}.".format(
+                            robot_limit[class_name][parameter], value))
             elif parameter in ["servo_restore", "set_motor_enabled"]:
                 check_value_type(parameter, value_type, MercuryE1DataException, int)
                 if value not in [1, 2, 3, 4, 5, 6, 7, 254]:
