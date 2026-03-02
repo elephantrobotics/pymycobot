@@ -1601,7 +1601,7 @@ class Pro450Client(Pro450CloseLoop):
         Args:
             joint_id (int): joint ID， range 1 ~ 6
             damping (int): damping  0-close 1-open
-            comp_value (int): Compensation value, range is 0 ~ 250, default is 0, The smaller the value, the harder it is to drag the joint
+            comp_value (int): Compensation value, range is 0 ~ 50, default is 0, The smaller the value, the harder it is to drag the joint
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, comp_value=comp_value, damping=damping)

@@ -1831,8 +1831,8 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 50 ~ 250, but received {}".format(parameter, value))
             elif parameter == "comp_value":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if value < 0 or value > 250:
-                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 250, but received {}".format(parameter, value))
+                if value < 0 or value > 50:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 50, but received {}".format(parameter, value))
             elif parameter == "trajectory":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value not in [0,1]:
