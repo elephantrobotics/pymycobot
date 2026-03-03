@@ -536,7 +536,7 @@ print(mc.get_angles())
 
 ### 9. Drag Teach
 
-<!-- #### `drag_teach_save()`
+#### `drag_teach_save()`
 
 - **Function:** Start recording and dragging the teach point.
 - Note: For optimal motion performance, the recording time should not exceed 120 seconds.
@@ -551,7 +551,7 @@ print(mc.get_angles())
 
 #### `drag_teach_clean()`
 
-- **Function:** Clear the sampling point. -->
+- **Function:** Clear the sampling point.
 
 ### 10. Dynamics
 

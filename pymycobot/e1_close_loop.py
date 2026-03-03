@@ -466,17 +466,22 @@ class E1CloseLoop(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ANGLES)
 
-    # def drag_teach_save(self):
-    #     """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 120 seconds."""
-    #     return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE)
-    #
-    # def drag_teach_execute(self):
-    #     """Start dragging the teaching point and only execute it once."""
-    #     return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, has_reply=True)
-    #
-    # def drag_teach_pause(self):
-    #     """Pause recording of dragging teaching point"""
-    #     return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
+    def drag_teach_save(self):
+        """Start recording the dragging teaching point. In order to show the best sports effect, the recording time should not exceed 120 seconds."""
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_SAVE)
+
+    def drag_teach_execute(self):
+        """Start dragging the teaching point and only execute it once."""
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, has_reply=True)
+
+    def drag_teach_pause(self):
+        """Pause recording of dragging teaching point"""
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_PAUSE)
+
+    def drag_teach_clean(self):
+        """clear sample
+        """
+        return self._mesg(ProtocolCode.MERCURY_DRAG_TEACH_CLEAN)
 
     def tool_serial_write_data(self, command):
         """End 485 sends data， Data length range is 1 ~ 45 bytes
@@ -538,11 +543,6 @@ class E1CloseLoop(DataProcessor):
         """Return to zero when the joint is over the limit
         """
         return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO, has_reply=True)
-
-    # def drag_teach_clean(self):
-    #     """clear sample
-    #     """
-    #     return self._mesg(ProtocolCode.MERCURY_DRAG_TEACH_CLEAN)
 
     def stop(self, deceleration=0, _async=False):
         """Robot stops moving
