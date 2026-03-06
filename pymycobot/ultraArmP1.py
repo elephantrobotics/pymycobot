@@ -116,6 +116,32 @@ class UltraArmP1:
                     text = str(received_data)
                 self._debug_read(text)
 
+                # ---------------- Error detect ----------------
+                text_lower = text.lower()
+                # Limit error
+                if "limiterror" in text_lower:
+                    import re
+                    match = re.search(r"limiterror\[(\d+)\]", text_lower)
+                    if match:
+                        err_code = int(match.group(1))
+
+                        if err_code == 6:
+                            return "J2/J3 joint coupling limit."
+
+                        elif err_code == 7:
+                            return "Target position exceeds limit."
+
+                        else:
+                            return f"LimitError[{err_code}]."
+
+                # Collision detection
+                if "collisiondetectionerror" in text_lower:
+                    import re
+                    match = re.search(r"collisiondetectionerror\[(\d+)\]", text_lower)
+                    if match:
+                        joint = int(match.group(1))
+                        return f"Joint{joint} Collision Detection Error."
+
                 try:
                     if text.lower().count(keyword.decode()) >= 1:
                         return 'ok'
@@ -193,6 +219,21 @@ class UltraArmP1:
                     elif flag == "error_information":
                         r = self._parse_bracket_values(lower, "error", int)
                         if r is not None:
+                            error_desc = [
+                                "Joint1 motor limit exceeded.",
+                                "Joint2 motor limit exceeded.",
+                                "Joint3 motor limit exceeded.",
+                                "Reserved",
+                                "Reserved",
+                                "Reserved",
+                                "Reserved",
+                                "Reserved"
+                            ]
+
+                            for i, val in enumerate(r):
+                                if val == 1:
+                                    print(f"[Robot Error] {error_desc[i]}")
+
                             return r
 
                     elif flag == "get_gripper_angle":
@@ -228,7 +269,7 @@ class UltraArmP1:
 
                     elif flag == "get_screen_modify_version":
                         r = self._parse_bracket_values(
-                            lower, "getscreenmodifyversion", float, 1, single=True
+                            lower, "getscreenmodifyversion", int, single=True
                         )
                         if r is not None:
                             return r
@@ -258,7 +299,7 @@ class UltraArmP1:
                         if r is not None:
                             return r
                     elif flag == "get_motor_enable_status":
-                        r = self._parse_bracket_values(lower, "motorenable", int, single=True)
+                        r = self._parse_bracket_values(lower, "motorenable", int)
                         if r is not None:
                             return r
 
@@ -307,7 +348,6 @@ class UltraArmP1:
                 if value_type is float and round_ndigits is not None:
                     v = round(v, round_ndigits)
                 values.append(v)
-
             return values[0] if single else values
         except Exception:
             return None
