@@ -716,7 +716,7 @@ class UltraArmP1:
             command = ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1
             command += " J" + str(joint_number)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, timeout=240)
 
     def get_zero_calibration_state(self):
         """Read zero-point calibration status.
