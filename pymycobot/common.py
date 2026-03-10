@@ -524,7 +524,7 @@ class ProtocolCode(object):
     SET_COORDS = 'G1'
     OPEN_LASER = 'M3'
     CLOSE_LASER = 'M5'
-    SET_ANGLES_P1 = 'G1'
+    SET_ANGLES_P1 = 'G0'
     SET_ANGLE_P1 = 'G1'
     GET_JOINT_ANGLES_COORDS = 'M12'
     # GET_JOINT_ANGLES_COORDS = '?'
