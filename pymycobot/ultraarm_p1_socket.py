@@ -2,53 +2,53 @@
 # -*- coding: utf-8 -*-
 
 """
-ultraArmP1.py
+ultraarm_p1_socket.py
 
-Python interface for the ultraArmP1 robotic arm.
+Python socket interface for the ultraArmP1 robotic arm.
 
 Author: weijian.wang
-Date: 2025-11-25
-Description: None
+Date: 2026-03-11
 """
 import logging
 import os
+import socket
 import threading
 import time
 import datetime
+import select
+
 from pymycobot.log import setup_logging
 from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
 
 
-class UltraArmP1:
-    """Class for controlling the ultraArmP1 robotic arm via serial communication.
+class UltraArmP1Socket:
+    """Socket communication interface for ultraArmP1."""
 
-    """
-
-    def __init__(self, port, baudrate=1000000, timeout=0.05, debug=False):
+    def __init__(self, ip, netport=9000, timeout=0.05, debug=False):
         """Initialize the ultraArmP1 robot communication.
 
         Args:
-            port (str): Serial port name (e.g., 'COM3' or '/dev/ttyUSB0').
-            baudrate (int, optional): Communication baud rate. Defaults to 1000000.
+            ip     : Server IP address
+            netport : Socket port number, default is 9000
             timeout (float, optional): Serial read timeout in seconds. Defaults to 0.05.
             debug (bool, optional): Whether to print debug information. Defaults to False.
         """
-        import serial
-
-        self._serial_port = serial.Serial()
-        self._serial_port.port = port
-        self._serial_port.baudrate = baudrate
-        self._serial_port.timeout = timeout
-        self._serial_port.rts = False
-        self._serial_port.dtr = True
-        self._serial_port.open()
+        self.SERVER_IP = ip
+        self.SERVER_PORT = netport
+        self.sock = self.connect_socket()
+        self.sock.settimeout(timeout)
         self.debug = debug
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
         self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
         time.sleep(0.5)
+
+    def connect_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((self.SERVER_IP, self.SERVER_PORT))
+        return sock
 
     # ---------------------- Debug / time helpers ----------------------
     def _now(self):
@@ -58,28 +58,28 @@ class UltraArmP1:
     def _debug_write(self, data: str):
         if self.debug:
             self.log.debug("_write: {}".format(data))
-            # print(f"{self._now()} DEBU [UltraArmP1] _write: {data}")
 
     def _debug_read(self, data: str):
         if self.debug:
             self.log.debug("_read: {}".format(data))
 
-    # ---------------------- Serial helpers ----------------------
-    def _serial_in_waiting(self):
-        try:
-            return int(self._serial_port.in_waiting)
-        except Exception:
-            try:
-                return int(self._serial_port.inWaiting())
-            except Exception:
-                return 0
+    # ---------------------- Socket helpers ----------------------
+
+    def _socket_in_waiting(self):
+
+        ready = select.select([self.sock], [], [], 0)
+        if ready[0]:
+            return 1
+        return 0
 
     def _read_available_bytes(self):
-        n = self._serial_in_waiting()
-        if n <= 0:
+
+        if not self._socket_in_waiting():
             return b""
+
         try:
-            return self._serial_port.read(n)
+            data = self.sock.recv(1024)
+            return data
         except Exception:
             return b""
 
@@ -129,7 +129,7 @@ class UltraArmP1:
                         elif err_code == 1:
                             return "J1 joint over-limit"
                         else:
-                            return f"LimitError[{err_code}]."
+                            return f"LimitError[{err_code}]"
 
                 # Collision detection
                 if "collisiondetectionerror" in text_lower:
@@ -167,24 +167,21 @@ class UltraArmP1:
         - accumulate chunks
         - parse by flag until success or timeout
         """
-        timeout = 0.3
+        timeout = 1
         if flag == "check_sd_card":
             timeout = 3
 
         raw_data = ""
         start_time = time.time()
 
-        self._clear_serial_buffer()
-
         while time.time() - start_time < timeout:
             try:
-                n = self._serial_port.inWaiting()
+                chunk = self._read_available_bytes()
             except Exception:
-                n = 0
+                chunk = b""
 
-            if n > 0:
+            if chunk:
                 try:
-                    chunk = self._serial_port.read(n)
                     chunk_str = chunk.decode(errors="ignore")
                     raw_data += chunk_str
                     lower = raw_data.lower()
@@ -348,16 +345,10 @@ class UltraArmP1:
         """Send commands to serial port"""
         command += ProtocolCode.END
         self._debug_write(command)
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
-
-    def _clear_serial_buffer(self):
-        """Clear the serial port buffer before sending commands."""
         try:
-            if hasattr(self._serial_port, "reset_input_buffer"):
-                self._serial_port.reset_input_buffer()
-        except Exception:
-            pass
+            self.sock.sendall(command.encode())
+        except Exception as e:
+            self.log.error(f"socket send error: {e}")
 
     def _fw_calc_crc(self, payload: bytes):
         """
@@ -384,10 +375,9 @@ class UltraArmP1:
         buf = bytearray()
 
         while time.time() - start < timeout:
-            n = self._serial_in_waiting()
-            if n > 0:
-                buf += self._serial_port.read(n)
-
+            chunk = self._read_available_bytes()
+            if chunk:
+                buf += chunk
                 # At least 8 bytes are needed for an ACK.
                 while len(buf) >= 8:
                     if buf[0:2] != b'\xA5\x5A':
@@ -415,7 +405,6 @@ class UltraArmP1:
         """Download complete"""
         command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
         self._send_command(command)
-        return self._response(_async=False)
 
     def _download_progress(self, percent):
         print(f"Download progress: {percent}%")
@@ -469,7 +458,6 @@ class UltraArmP1:
         """
         self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS_MAX_SPEED
             if len(coords) > 0 and coords[0] is not None:
                 command += f" X{coords[0]}"
@@ -495,7 +483,6 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, coords=coords, speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS
             if len(coords) > 0 and coords[0] is not None:
                 command += f" X{coords[0]}"
@@ -521,7 +508,6 @@ class UltraArmP1:
         """
         self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS
             command += f" {coord_id}{coord}"
             command += f" F{speed}"
@@ -541,7 +527,6 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.SET_ANGLE_P1
             joint_map = {1: "A", 2: "B", 3: "C", 4: "D"}
             if joint_id in joint_map:
@@ -563,7 +548,6 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, angles=angles, speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.SET_ANGLES_P1
             if len(angles) > 0 and angles[0] is not None:
                 command += f" A{angles[0]}"
@@ -619,7 +603,6 @@ class UltraArmP1:
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
                                     jog_speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.SET_JOG_ANGLE_P1
             command += " J" + str(joint_id)
             command += " D" + str(direction)
@@ -641,7 +624,6 @@ class UltraArmP1:
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     jog_speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.SET_JOG_COORD_P1
             command += " J" + str(axis_id)
             command += " D" + str(direction)
@@ -660,7 +642,6 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.JOG_INCREMENT_ANGLE_P1
             command += " J" + str(joint_id)
             command += " T" + str(increment)
@@ -679,7 +660,6 @@ class UltraArmP1:
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
         with self.lock:
-            self._clear_serial_buffer()
             command = ProtocolCode.JOG_INCREMENT_COORD_P1
             command += " J" + str(coord_id)
             command += " T" + str(increment)
@@ -973,8 +953,7 @@ class UltraArmP1:
 
                 command = line + ProtocolCode.END
 
-                self._serial_port.write(command.encode())
-                self._serial_port.flush()
+                self.sock.sendall(command.encode())
                 time.sleep(0.02)
                 self._debug_write(command)
 
@@ -1091,13 +1070,13 @@ class UltraArmP1:
             return self._response(_async=False)
 
     def go_home(self, speed=2000, _async=True):
-        self.set_angles([0, 0, 90, 0], speed, _async=_async)
+        return self.set_angles([0, 0, 90, 0], speed, _async=_async)
 
     def close(self):
         """Close the serial port."""
         with self.lock:
             try:
-                self._serial_port.close()
+                self.sock.close()
             except Exception:
                 pass
 
@@ -1105,7 +1084,7 @@ class UltraArmP1:
         """Open the serial port."""
         with self.lock:
             try:
-                self._serial_port.open()
+                self.sock = self.connect_socket()
             except Exception:
                 pass
 
@@ -1129,66 +1108,66 @@ class UltraArmP1:
             self._send_command(command)
             return self._request("check_sd_card")
 
-    def download_firmware_sd(self, filename, show_progress=True):
-        """
-        Download firmware to the SD card via M450/M451 commands.
-
-        Args:
-            filename (str): name of the firmware file, and must be a .bin file
-            show_progress (bool): whether to show download progress
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, download_filename=filename)
-
-        local_path = filename  # For local use
-
-        fw_name = os.path.basename(filename)  # For protocol use (M450)
-
-        if show_progress:
-            # callback(percent:int) to report progress
-            progress_cb = self._download_progress
-        else:
-            progress_cb = None
-        with self.lock:
-            self._clear_serial_buffer()
-
-            # Entering upgrade mode.
-            self._fw_enter_upgrade(fw_name)
-            time.sleep(0.2)
-
-            # read bin
-            with open(local_path, "rb") as f:
-                bin_data = f.read()
-
-            chunk_size = 512
-            total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
-
-            idx = 1
-            while idx <= total_packets:
-                offset = (idx - 1) * chunk_size
-                data = bin_data[offset: offset + chunk_size]
-
-                pkt = self._fw_build_packet(idx, data)
-                self._debug_write(pkt.hex(' ').upper())
-                self._serial_port.write(pkt)
-                self._serial_port.flush()
-
-                ack = self._fw_read_ack(timeout=1.0)
-                if ack is None:
-                    continue  # timeout -> resend
-                cmd, next_idx = ack
-
-                if cmd == 2:  # success
-                    idx = next_idx
-                    if progress_cb:
-                        progress_cb(int((idx - 1) * 100 / total_packets))
-
-                elif cmd == 3:  # resend
-                    idx = next_idx
-                else:
-                    raise RuntimeError(f"Unknown ACK CMD: {cmd}")
-
-            # Finish
-            self.finish_firmware_upgrade()
+    # def download_firmware_sd(self, filename, show_progress=True):
+    #     """
+    #     Download firmware to the SD card via M450/M451 commands.
+    #
+    #     Args:
+    #         filename (str): name of the firmware file, and must be a .bin file
+    #         show_progress (bool): whether to show download progress
+    #     """
+    #     self.calibration_parameters(class_name=self.__class__.__name__, download_filename=filename)
+    #
+    #     local_path = filename  # For local use
+    #
+    #     fw_name = os.path.basename(filename)  # For protocol use (M450)
+    #
+    #     if show_progress:
+    #         # callback(percent:int) to report progress
+    #         progress_cb = self._download_progress
+    #     else:
+    #         progress_cb = None
+    #     with self.lock:
+    #
+    #         # Entering upgrade mode.
+    #         self._fw_enter_upgrade(fw_name)
+    #         time.sleep(0.2)
+    #
+    #         # read bin
+    #         with open(local_path, "rb") as f:
+    #             bin_data = f.read()
+    #
+    #         chunk_size = 512
+    #         total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
+    #
+    #         idx = 1
+    #         while idx <= total_packets:
+    #             offset = (idx - 1) * chunk_size
+    #             data = bin_data[offset: offset + chunk_size]
+    #
+    #             pkt = self._fw_build_packet(idx, data)
+    #             self._debug_write(pkt.hex(' ').upper())
+    #             # self._serial_port.write(pkt)
+    #             self.sock.sendall(pkt)
+    #             # self._serial_port.flush()
+    #
+    #             ack = self._fw_read_ack(timeout=1.0)
+    #             if ack is None:
+    #                 continue  # timeout -> resend
+    #             cmd, next_idx = ack
+    #
+    #             if cmd == 2:  # success
+    #                 idx = next_idx
+    #                 if progress_cb:
+    #                     progress_cb(int((idx - 1) * 100 / total_packets))
+    #
+    #             elif cmd == 3:  # resend
+    #                 idx = next_idx
+    #             else:
+    #                 raise RuntimeError(f"Unknown ACK CMD: {cmd}")
+    #
+    #         # Finish
+    #         self.finish_firmware_upgrade()
 
     def upgrade_restart(self):
         """Upgrade and restart"""
