@@ -100,13 +100,9 @@ class UltraArmP1:
             keyword = b"start"
         else:  # _async=True
             keyword = b"end"
-        no_data_timeout = 1
-        last_data_time = time.time()
+
         while time.time() - start_time < timeout:
             chunk = self._read_available_bytes()
-            # print('chunk:', chunk)
-            # if not chunk:
-            #     return -1
             if chunk:
                 received_data += chunk
                 # try decode for debug
@@ -170,20 +166,13 @@ class UltraArmP1:
         - accumulate chunks
         - parse by flag until success or timeout
         """
-        timeout = 0.1
+        timeout = 0.3
         if flag == "check_sd_card":
             timeout = 3
 
         raw_data = ""
         start_time = time.time()
-        # clear stale input
-        # try:
-        #     if hasattr(self._serial_port, "reset_input_buffer"):
-        #         self._serial_port.reset_input_buffer()
-        #     elif hasattr(self._serial_port, "flushInput"):
-        #         self._serial_port.flushInput()
-        # except Exception:
-        #     pass
+
         self._clear_serial_buffer()
 
         while time.time() - start_time < timeout:
@@ -197,16 +186,18 @@ class UltraArmP1:
                     chunk = self._serial_port.read(n)
                     chunk_str = chunk.decode(errors="ignore")
                     raw_data += chunk_str
-                    if self.debug:
-                        display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
-                        self._debug_read(display)
                     lower = raw_data.lower()
+                    if self.debug:
+                        if flag in ["angle", 'coord']:
+                            self._debug_read(f"{lower}")
+                        else:
+                            display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
+                            self._debug_read(display)
                     # common error
                     if "error: command not recognized" in lower:
                         return -1
                     # -------- dispatch by flag --------
                     if flag == "angle":
-                        start_time = time.time()
                         r = self._parse_bracket_values(lower, "angles", float, 2)
                         if r is not None:
                             return r
@@ -419,7 +410,7 @@ class UltraArmP1:
         command += f" {filename}"
         self._send_command(command)
 
-    def _fw_finish_upgrade(self):
+    def finish_firmware_upgrade(self):
         """Download complete"""
         command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
         self._send_command(command)
@@ -1195,7 +1186,7 @@ class UltraArmP1:
                     raise RuntimeError(f"Unknown ACK CMD: {cmd}")
 
             # Finish
-            self._fw_finish_upgrade()
+            self.finish_firmware_upgrade()
 
     def upgrade_restart(self):
         """Upgrade and restart"""
