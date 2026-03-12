@@ -1,4 +1,6 @@
-# API 方法详细说明
+# ultraArm P1 API 方法详细说明
+
+## USB串口通信
 
 [toc]
 
@@ -10,40 +12,40 @@ from pymycobot import UltraArmP1
 
 **注意：** 若没有安装我们的API库，请参考 [README.md](../README.md) 文档进行安装。
 
-## 1 `set_reboot()`
+### 1 `set_reboot()`
 
 - **功能：** 设置机械臂开发板重启。
 - **返回值：** 无
 
-## 2 `set_joint_release()`
+### 2 `set_joint_release()`
 
 - **功能：** 放松关节
 - **返回值：** 无
 
-## 3 `set_joint_enable()`
+### 3 `set_joint_enable()`
 
 - **功能：** 锁紧关节
 
 - **返回值：** 无
 
-## 4 `get_system_version()`
+### 4 `get_system_version()`
 
 - **功能：** 读取固件主版本号
 
 - **返回值：** `float`, 更正版本号
 
-## 5 `get_modify_version()`
+### 5 `get_modify_version()`
 
 - **功能：** 读取固件更正版本号
 
 - **返回值：** `int`, 更正版本号
 
-## 6 `get_angles_info()`
+### 6 `get_angles_info()`
 
 - **功能：** 获取机械臂当前角度。
 - **返回值：** `list`一个浮点值的列表，表示所有关节的角度. [J1, J2, J3, J4]
 
-## 7 `set_angle(id, angle, speed, _async=True)`
+### 7 `set_angle(id, angle, speed, _async=True)`
 
 - **功能：** 发送指定的单个关节运动至指定的角度
 - **参数说明：**
@@ -79,7 +81,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 8 `set_angles(angles, speed, _async=True)`
+### 8 `set_angles(angles, speed, _async=True)`
 
 - **功能：**  发送所有角度给机械臂所有关节
 - **参数说明：**
@@ -88,12 +90,12 @@ from pymycobot import UltraArmP1
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 9 `get_coords_info()`
+### 9 `get_coords_info()`
 
 - **功能：** 获取机械臂当前坐标。
 - **返回值：** `list`包含坐标的列表, 长度为 4，依次为 `[x, y, z, rx]`
 
-## 10 `set_coords_max_speed(coords, _async=True)`
+### 10 `set_coords_max_speed(coords, _async=True)`
 
 - **功能：** 以最大速度发送坐标运动
 - **参数说明：**
@@ -126,7 +128,7 @@ from pymycobot import UltraArmP1
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 11 `set_coords(coords, speed, _async=True)`
+### 11 `set_coords(coords, speed, _async=True)`
 
 - **功能：** 发送整体坐标,让机械臂头部从原来点移动到您指定点。
 - **参数说明：**
@@ -160,13 +162,13 @@ from pymycobot import UltraArmP1
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 12 `stop()`
+### 12 `stop()`
 
 - **功能：** 机械臂停止运动
 
 - **返回值：** 1
 
-## 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
+### 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG角度运动
 
@@ -182,7 +184,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
+### 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG坐标运动。
 
@@ -198,7 +200,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
+### 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
 
 - **功能：** 设置角度步进运动
 
@@ -214,7 +216,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
+### 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
 
 - **功能：** 设置坐标步进运动。
 
@@ -230,13 +232,13 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-## 17 `get_error_information()`	
+### 17 `get_error_information()`	
 
 - **功能：** 读取错误信息
 
 - **返回值：** 错误信息
 
-## 18 `set_pwm(p_value)` 
+### 18 `set_pwm(p_value)` 
 
 - **功能：** 设置PWM控制
 
@@ -244,7 +246,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 19 `set_zero_calibration(joint_number)` 
+### 19 `set_zero_calibration(joint_number)` 
 
 - **功能：** 设置零位校准
 
@@ -258,31 +260,31 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 19 `get_zero_calibration_state(joint_number)` 
+### 19 `get_zero_calibration_state(joint_number)` 
 
 - **功能：** 读取零位校准状态
 
 - **返回值：**  `list` [1, 1, 1, 1]
 
-## 20 `get_run_status()` 
+### 20 `get_run_status()` 
 
 - **功能：** 读取运行状态
 
 - **返回值：**  运行状态
 
-## 21 `open_laser()`
+### 21 `open_laser()`
 
 - **功能：** 打开激光
 
 - **返回值：** 1
 
-## 22 `close_laser()`
+### 22 `close_laser()`
 
 - **功能：** 关闭激光
 
 - **返回值：** 1
 
-## 23 `set_gripper_angle(gripper_angle, gripper_speed)`
+### 23 `set_gripper_angle(gripper_angle, gripper_speed)`
 
 - **功能：** 设置夹爪运动角度
 
@@ -293,13 +295,13 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 24 `get_gripper_angle()`
+### 24 `get_gripper_angle()`
 
 - **功能：** 读取夹爪角度
 
 - **返回值：** 夹爪角度，1 ~ 100
 
-## 25 `set_gripper_parameter(addr, mode, parameter_value)`
+### 25 `set_gripper_parameter(addr, mode, parameter_value)`
 
 - **功能：** 设置夹爪参数
 
@@ -313,7 +315,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 26 `get_gripper_parameter(addr, mode)`
+### 26 `get_gripper_parameter(addr, mode)`
 
 - **功能：** 读取夹爪参数
 
@@ -326,7 +328,7 @@ from pymycobot import UltraArmP1
   - `模式为1`：0 ~ 255
   - `模式为2`： 大于255
 
-## 27 `set_gripper_enable_status(state):`
+### 27 `set_gripper_enable_status(state):`
 
 - **功能：** 设置夹爪参数
 
@@ -337,13 +339,13 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 28 `set_gripper_zero()`
+### 28 `set_gripper_zero()`
 
 - **功能：** 设置夹爪零位
 
 - **返回值：** 1
 
-## 29 `set_pump_state(pump_state)`
+### 29 `set_pump_state(pump_state)`
 
 - **功能：** 设置吸泵状态
 
@@ -355,7 +357,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 30 `set_basic_io_output(pin_no, pin_signal)`
+### 30 `set_basic_io_output(pin_no, pin_signal)`
 
 - **功能：** 设置底座IO引脚输出状态
 
@@ -367,7 +369,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 31 `set_digital_io_output(pin_no, pin_signal)`
+### 31 `set_digital_io_output(pin_no, pin_signal)`
 
 - **功能：** 设置末端IO引脚输出状态
 
@@ -379,7 +381,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 32 `set_outer_shaft(shaft_state, speed)`
+### 32 `set_outer_shaft(shaft_state, speed)`
 
 - **功能：** 设置外部轴
 
@@ -391,7 +393,7 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 33 `set_i2c_data(data_state, data_addr, data_len, data_value)`
+### 33 `set_i2c_data(data_state, data_addr, data_len, data_value)`
 
 - **功能：** 设置i2c数据
 
@@ -408,61 +410,61 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 34 `drag_teach_start()`
+### 34 `drag_teach_start()`
 
 - **功能：** 拖动示教开始
 
 - **返回值：** 1
 
-## 35 `drag_teach_save()`
+### 35 `drag_teach_save()`
 
 - **功能：** 拖动示教保存
 
 - **返回值：** 1
 
-## 36 `drag_teach_pause()`
+### 36 `drag_teach_pause()`
 
 - **功能：** 拖动示教暂停
 
 - **返回值：** 1
 
-## 37 `drag_teach_resume()`
+### 37 `drag_teach_resume()`
 
 - **功能：** 拖动示教恢复
 
 - **返回值：** 1
 
-## 38 `drag_teach_stop()`
+### 38 `drag_teach_stop()`
 
 - **功能：** 拖动示教停止
 
 - **返回值：** 1
 
-## 39 `drag_teach_execute()`
+### 39 `drag_teach_execute()`
 
 - **功能：** 拖动示教执行
 
 - **返回值：** 1
 
-## 40 `wifi_open()`
+### 40 `wifi_open()`
 
 - **功能：** WIFI开启
 
 - **返回值：** 1
 
-## 41 `get_system_screen_version()`
+### 41 `get_system_screen_version()`
 
 - **功能：** 读取屏幕固件主版本号
 
 - **返回值：** 主版本号
 
-## 42 `get_modify_screen_version()`
+### 42 `get_modify_screen_version()`
 
 - **功能：** 读取屏幕固件更正版本号
 
 - **返回值：** 更正版本号
 
-## 43 `set_communication_baud_rate(baud_rate)`
+### 43 `set_communication_baud_rate(baud_rate)`
 
 - **功能：** 设置通信波特率
 
@@ -471,40 +473,40 @@ from pymycobot import UltraArmP1
 
 - **返回值：** 1
 
-## 44 `update_stm_firmware()`
+### 44 `update_stm_firmware()`
 
 - **功能：** 更新STM32固件
 
 - **返回值：** 1
 
-## 45 `receive_485_data()`
+### 45 `receive_485_data()`
 
 - **功能：** 接收485数据
 
 - **返回值：** 485数据
 
-## 46 `play_gcode_file(filename)`
+### 46 `play_gcode_file(filename)`
 
 - **功能：** 播放导入的轨迹文件。
 - **参数说明：**
   - `filename` ：轨迹文件名称
 - **返回值：** 无
 
-## 47 `set_wifi_password(password)`
+### 47 `set_wifi_password(password)`
 
 - **功能：** 设置屏幕WiFi密码。
 - **参数说明：**
   - `password` ：(`str`) WiFi字符串密码，长度 8 ~ 15位。
 - **返回值：** 1
 
-## 48 `check_sd_card()`
+### 48 `check_sd_card()`
 
 - **功能：** 检查是否有SD卡。
 - **返回值：** (`str`)
   - `"yes"`: 有SD卡
   - `"no`: 无SD卡
 
-## 49 `download_firmware_sd(filename, show_progress=True)`
+### 49 `download_firmware_sd(filename, show_progress=True)`
 
 - **功能：** 下载固件数据到SD卡中。
 - **参数说明：**
@@ -512,28 +514,61 @@ from pymycobot import UltraArmP1
   - `show_progress` ：(`bool`) 是否显示下载进度，默认显示。
 - **返回值：** 如果 `show_progress=True`，则返回下载进度，否则无返回值。
 
-## 50 `upgrade_restart()`
+### 50 `upgrade_restart()`
 
 - **功能：** 固件升级重启。
 - **返回值：** None
 
-## 51 `get_motor_enable_status()`
+### 51 `get_motor_enable_status()`
 
 - **功能：** 读取电机使能状态。
 
 - **返回值：** `list`，5个电机使能状态。
 
-## 52 `clear_zero_calibration_status(joint_id)`
+### 52 `clear_zero_calibration_status(joint_id)`
 
 - **功能：** 清除关节零位校准状态。
 - **参数说明：**
   - `joint_id` ：(`int`) 关节ID，范围 1 ~ 4 。
 - **返回值：** 1
 
-## 53 `set_status_light_color(color_id)`
+### 53 `set_status_light_color(color_id)`
 
 - **功能：** 设置灯状态颜色
 - **参数说明：**
   - `color_id` ：(`int`) 颜色ID，范围 1 ~ 4 。1-红色，2-绿色，3-黄色，4-蓝色。
   
 - **返回值：** 1
+
+### 54 `finish_firmware_upgrade()`
+
+- **功能：** 结束下载固件数据到SD卡中。（下载升级固件到SD卡的过程中，可以中途结束升级）
+
+- **返回值：** 1。
+
+---
+
+## TCP Socket 通信
+
+使用TCP/IP控制机械臂。
+
+### 服务端
+
+需要在机械臂底座小屏幕把连接方式切换为 **WLAN** 连接模式，并且连接无线WiFi网络，WiFi连接成功之后，则服务器开启成功，此时屏幕会显示服务端的IP地址和端口号。
+
+### 客户端
+
+>> 注意：<br>1. 这里的IP地址和端口号由服务端提供。<br>2. 并且PC端的网络需要与服务端网络同一网段。<br>3. socket 通信的接口名称和使用方法与串口通信相同。
+
+```python
+# 示例
+from pymycobot import UltraArmP1Socket
+# 默认使用端口 9000
+ua = UltraArmP1Socket("192.168.10.10",9000)
+
+res = ua.get_angles_info()
+print(res)
+
+mc.set_angles([0, 0, 90, 0],2500)
+...
+```

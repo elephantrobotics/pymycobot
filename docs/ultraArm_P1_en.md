@@ -1,4 +1,6 @@
-# API Method Details
+# UltraArm P1 API Method Details
+
+## USB Serial Communication
 
 [toc]
 
@@ -10,43 +12,43 @@ from pymycobot import UltraArmP1
 
 **Note:** If our API library is not installed, please refer to the [README.md](../README.md) document for installation instructions.
 
-## 1 `set_reboot()`
+### 1 `set_reboot()`
 
 - **Function:** Sets the robotic arm development board to restart.
 
 - **Return Value:** None
 
-## 2 `set_joint_release()`
+### 2 `set_joint_release()`
 
 - **Function:** Releases the joint
 
 - **Return Value:** None
 
-## 3 `set_joint_enable()`
+### 3 `set_joint_enable()`
 
 - **Function:** Locks the joint
 
 - **Return Value:** None
 
-## 4 `get_system_version()`
+### 4 `get_system_version()`
 
 - **Function:** Reads the firmware major version number
 
 - **Return Value:** `float`, the correction version number
 
-## 5 `get_modify_version()`
+### 5 `get_modify_version()`
 
 - **Function:** Reads the firmware correction version number
 
 - **Return Value:** `int`, the correction version number
 
-## 6 `get_angles_info()`
+### 6 `get_angles_info()`
 
 - **Function:** Gets the current angle of the robotic arm.
 
 - **Return Value:** `list` is a list of floating-point values ​​representing the angles of all joints. [J1, J2, J3, J4]
 
-## 7 `set_angle(id, angle, speed, _async=True)`
+### 7 `set_angle(id, angle, speed, _async=True)`
 
 - **Function:** Sends the specified single joint to the specified angle.
 
@@ -107,7 +109,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** Returns "ok" in closed-loop mode, 1 in open-loop mode.
 
-## 8 `set_angles(angles, speed, _async=True)`
+### 8 `set_angles(angles, speed, _async=True)`
 
 - **Function:** Sends all angles to all joints of the robotic arm.
 
@@ -121,13 +123,13 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** Returns "ok" in closed-loop mode, 1 in open-loop mode.
 
-## 9 `get_coords_info()`
+### 9 `get_coords_info()`
 
 - **Function:** Gets the current coordinates of the robotic arm.
 
 - **Return Value:** A list of coordinates, with a length of 4, in the format [x, y, z, rx].
 
-## 10 `set_coords_max_speed(coords, _async=True)`
+### 10 `set_coords_max_speed(coords, _async=True)`
 
 - **Function:** Sends coordinate motion at maximum speed.
 
@@ -182,7 +184,7 @@ from pymycobot import UltraArmP1
 
 - **Return value:** Closed-loop returns "ok", open-loop returns 1
 
-## 11 `set_coords(coords, speed, _async=True)`
+### 11 `set_coords(coords, speed, _async=True)`
 
 - **Function:** Sends global coordinates, allowing the robotic arm head to move from its original point to a specified point.
 
@@ -241,13 +243,13 @@ from pymycobot import UltraArmP1
 
 - **Return value:** Closed-loop returns "ok", open-loop returns 1.
 
-## 12 `stop()`
+### 12 `stop()`
 
 - **Function:** Stops the robotic arm's movement.
 
 - **Return value:** 1
 
-## 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
+### 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
 - **Function:** Sets the JOG angle.
 
@@ -263,7 +265,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-## 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
+### 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
 
 - **Function:** Sets the JOG coordinate motion.
 
@@ -279,7 +281,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-## 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
+### 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
 
 - **Function:** Sets the angle step motion
 
@@ -295,7 +297,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-## 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
+### 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
 
 - **Function:** Sets the coordinate stepping motion.
 
@@ -311,13 +313,13 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-## 17 `get_error_information()`
+### 17 `get_error_information()`
 
 - **Function:** Reads error information
 
 - **Return Value:** Error information
 
-## 18 `set_pwm(p_value)`
+### 18 `set_pwm(p_value)`
 
 - **Function:** Sets PWM control
 
@@ -325,37 +327,37 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-## 19 `set_zero_calibration()`
+### 19 `set_zero_calibration()`
 
 - **Function:** Sets zero-point calibration
 
 - **Return Value:** 1
 
-## 19 `get_zero_calibration_state()`
+### 19 `get_zero_calibration_state()`
 
 - **Function:** Reads zero-point calibration status
 
 - **Return Value:** `list` [1, 1, 1, 1]
 
-## 20 `get_run_status()`
+### 20 `get_run_status()`
 
 - **Function:** Read Running Status
 
 - **Return Value:** Running Status
 
-## 21 `open_laser()`
+### 21 `open_laser()`
 
 - **Function:** Turns on the laser
 
 - **Return Value:** 1
 
-## 22 `close_laser()`
+### 22 `close_laser()`
 
 - **Function:** Turns off the laser
 
 - **Return Value:** 1
 
-## 23 `set_gripper_angle(gripper_angle, gripper_speed)`
+### 23 `set_gripper_angle(gripper_angle, gripper_speed)`
 
 - **Function:** Sets the gripper's movement angle
 
@@ -367,13 +369,13 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-## 24 `get_gripper_angle()`
+### 24 `get_gripper_angle()`
 
 - **Function:** Reads the gripper angle
 
 - **Return value:** Gripper angle, 1 ~ 100
 
-## 25 `set_gripper_parameter(addr, mode, parameter_value)`
+### 25 `set_gripper_parameter(addr, mode, parameter_value)`
 
 - **Function:** Sets the gripper parameter
 
@@ -389,7 +391,7 @@ from pymycobot import UltraArmP1
     - `Mode 2:` Greater than 255
 - **Return value:** 1
 
-## 26 `get_gripper_parameter(addr, mode)`
+### 26 `get_gripper_parameter(addr, mode)`
 
 - **Function:** Reads the gripper parameter
 - **Parameter description:**
@@ -401,7 +403,7 @@ from pymycobot import UltraArmP1
 
     - `Mode 2:` Greater than 255
 
-## 27 `set_gripper_enable_status(state):`
+### 27 `set_gripper_enable_status(state):`
 
 - **Function:** Sets the gripper parameters
 
@@ -415,13 +417,13 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-## 28 `set_gripper_zero()`
+### 28 `set_gripper_zero()`
 
 - **Function:** Sets the gripper to zero position
 
 - **Return Value:** 1
 
-## 29 `set_pump_state(pump_state)`
+### 29 `set_pump_state(pump_state)`
 
 - **Function:** Sets the pump status
 
@@ -437,7 +439,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-## 30 `set_basic_io_output(pin_no, pin_signal)`
+### 30 `set_basic_io_output(pin_no, pin_signal)`
 
 - **Function:** Sets the base IO pin output status
 
@@ -453,7 +455,7 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-## 31 `set_digital_io_output(pin_no, pin_signal)`
+### 31 `set_digital_io_output(pin_no, pin_signal)`
 
 - **Function:** Sets the output state of the final I/O pin
 
@@ -469,7 +471,7 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-## 32 `set_outer_shaft(shaft_state, speed)`
+### 32 `set_outer_shaft(shaft_state, speed)`
 
 - **Function:** Sets the external axis
 
@@ -485,7 +487,7 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-## 33 `set_i2c_data(data_state, data_addr, data_len, data_value)`
+### 33 `set_i2c_data(data_state, data_addr, data_len, data_value)`
 
 - **Function:** Sets I2C data
 
@@ -505,61 +507,61 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-## 34 `drag_teach_start()`
+### 34 `drag_teach_start()`
 
 - **Function:** Starts drag-and-drop teaching
 
 - **Return value:** 1
 
-## 35 `drag_teach_save()`
+### 35 `drag_teach_save()`
 
 - **Function:** save drag-and-drop teaching
 
 - **Return Value:** 1
 
-## 36 `drag_teach_pause()`
+### 36 `drag_teach_pause()`
 
 - **Function:** Pause drag-and-drop teaching
 
 - **Return Value:** 1
 
-## 37 `drag_teach_resume()`
+### 37 `drag_teach_resume()`
 
 - **Function:** Resume drag-and-drop teaching
 
 - **Return Value:** 1
 
-## 38 `drag_teach_stop()`
+### 38 `drag_teach_stop()`
 
 - **Function:** Stop drag-and-drop teaching
 
 - **Return Value:** 1
 
-## 39 `drag_teach_execute()`
+### 39 `drag_teach_execute()`
 
 - **Function:** Execute drag-and-drop teaching
 
 - **Return Value:** 1
 
-## 40 `wifi_open()`
+### 40 `wifi_open()`
 
 - **Function:** Turn on Wi-Fi
 
 - **Return Value:** 1
 
-## 41 `get_system_screen_version()`
+### 41 `get_system_screen_version()`
 
 - **Function:** Reads the screen firmware major version number
 
 - **Return Value:** Major version number
 
-## 42 `get_modify_screen_version()`
+### 42 `get_modify_screen_version()`
 
 - **Function:** Reads the screen firmware correction version number
 
 - **Return Value:** Correction version number
 
-## 43 `set_communication_baud_rate(baud_rate)`
+### 43 `set_communication_baud_rate(baud_rate)`
 
 - **Function:** Sets the communication baud rate
 
@@ -569,19 +571,19 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-## 44 `update_stm_firmware()`
+### 44 `update_stm_firmware()`
 
 - **Function:** Updates the STM32 firmware
 
 - **Return Value:** 1
 
-## 45 `receive_485_data()`
+### 45 `receive_485_data()`
 
 - **Function:** Receives 485 data
 
 - **Return Value:** 485 data
 
-## 46 `play_gcode_file(filename)`
+### 46 `play_gcode_file(filename)`
 
 - **Function:** Plays the imported track file.
 
@@ -591,7 +593,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** None
 
-## 47 `set_wifi_password(password)`
+### 47 `set_wifi_password(password)`
 
 - **Function:** Sets the on-screen WiFi password.
 
@@ -601,7 +603,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-## 48 `check_sd_card()`
+### 48 `check_sd_card()`
 
 - **Function:** Checks if an SD card is present.
 
@@ -611,7 +613,7 @@ from pymycobot import UltraArmP1
 
   - `"no"`: SD card not present
 
-## 49 `download_firmware_sd(filename, show_progress=True)`
+### 49 `download_firmware_sd(filename, show_progress=True)`
 
 - **Function:** Downloads firmware data to the SD card.
 
@@ -623,19 +625,19 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** If `show_progress=True`, the download progress is returned; otherwise, no value is returned.
 
-## 50 `upgrade_restart()`
+### 50 `upgrade_restart()`
 
 - **Function:** Firmware upgrade and restart.
 
 - **Return value:** None
 
-## 51 `get_motor_enable_status()`
+### 51 `get_motor_enable_status()`
 
 - **Function:** Reads the motor enable status.
 
 - **Return Value:** `list`, 5 motor enable statuses.
 
-## 52 `clear_zero_calibration_status(joint_id)`
+### 52 `clear_zero_calibration_status(joint_id)`
 
 - **Function:** Clears the joint zero-position calibration status.
 
@@ -645,7 +647,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-## 53 `set_status_light_color(color_id)`
+### 53 `set_status_light_color(color_id)`
 
 - **Function:** Sets the light status color.
 
@@ -654,3 +656,41 @@ from pymycobot import UltraArmP1
   - `color_id`: (`int`) Color ID, range 1 ~ 4. 1-Red, 2-Green, 3-Yellow, 4-Blue.
 
 - **Return Value:** 1
+
+### 54 `finish_firmware_upgrade()`
+
+- **Function:** Ends the download of firmware data to the SD card. (The upgrade can be terminated midway through the firmware download process.)
+
+- **Return Value:** 1.
+
+---
+
+## TCP Socket Communication
+
+Uses TCP/IP to control the robotic arm.
+
+### Server-Side
+
+The connection mode needs to be switched to **WLAN** on the small screen on the robotic arm base, and a wireless WiFi network needs to be connected. Once the WiFi connection is successful, the server is successfully started, and the screen will display the server's IP address and port number.
+
+### Client-Side
+
+>> Note:<br>1. The IP address and port number are provided by the server.<br>2. The PC's network needs to be on the same network segment as the server's network.<br>3. The interface name and usage method for socket communication are the same as for serial communication.
+
+```python
+
+# Example
+from pymycobot import UltraArmP1Socket
+
+# Default port 9000
+
+ua = UltraArmP1Socket("192.168.10.10",9000)
+
+res = ua.get_angles_info()
+
+print(res)
+
+mc.set_angles([0, 0, 90, 0],2500)
+
+...
+```
