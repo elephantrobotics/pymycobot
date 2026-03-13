@@ -694,3 +694,34 @@ mc.set_angles([0, 0, 90, 0],2500)
 
 ...
 ```
+
+---
+
+## BLE Bluetooth Communication
+
+Use the BLE GATT Bluetooth communication service to control the robotic arm.
+
+### Server-Side
+
+The connection mode needs to be switched to **Bluetooth** on the small screen on the robotic arm base, and the Bluetooth service needs to be enabled. After enabling Bluetooth, the screen will display the Bluetooth **connection status**, **Bluetooth name**, and **Bluetooth MAC address**.
+
+### Client-Side
+
+>> Note:<br>1. The **Bluetooth address** can only be obtained after Bluetooth is enabled on the robotic arm screen.<br>2. After successfully connecting via Bluetooth, the Bluetooth connection status on the robotic arm's small screen will display **Connected**.<br>3. The interface name and usage method for Bluetooth communication are the same as for serial communication.
+
+```python
+
+# Example
+from pymycobot import UltraArmP1Bluetooth
+
+# Modify the Bluetooth address according to the actual situation
+ua = UltraArmP1Bluetooth("10:51:DB:40:2C:11")
+
+res = ua.get_angles_info()
+
+print(res)
+
+mc.set_angles([0, 0, 90, 0],2500)
+
+...
+```

@@ -2082,7 +2082,7 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP340DataException(
                         "Unsupported file format, please use .gcode, .ngc, or .nc, but received {}".format(value))
 
-    elif class_name in ["UltraArmP1"]:
+    elif class_name in ["UltraArmP1", "UltraArmP1Socket", "UltraArmP1Bluetooth"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
             value_type = type(value)

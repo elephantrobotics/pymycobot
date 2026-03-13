@@ -1,58 +1,92 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
-ultraarm_p1_socket.py
+ultraarm_p1_bluetooth.py
+This module controls the robotic arm movements.
 
-Python socket interface for the ultraArmP1 robotic arm.
-
-Author: weijian.wang
-Date: 2026-03-11
+Author: Wang Weijian
+Date: 2026-03-12
 """
+import asyncio
 import logging
-import os
-import socket
 import threading
 import time
 import datetime
-import select
+
+from bleak import BleakClient
 
 from pymycobot.log import setup_logging
 from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
 
 
-class UltraArmP1Socket:
-    """Socket communication interface for ultraArmP1."""
+class UltraArmP1Bluetooth:
+    """Bluetooth communication interface for ultraArmP1."""
 
-    def __init__(self, ip, netport=9000, timeout=0.05, debug=False):
-        """Initialize the ultraArmP1 robot communication.
+    def __init__(self, address, timeout=0.05, debug=False):
 
-        Args:
-            ip     : Server IP address
-            netport : Socket port number, default is 9000
-            timeout (float, optional): Serial read timeout in seconds. Defaults to 0.05.
-            debug (bool, optional): Whether to print debug information. Defaults to False.
-        """
-        self.SERVER_IP = ip
-        self.SERVER_PORT = netport
-        self.sock = self.connect_socket()
-        self.sock.settimeout(timeout)
+        self.address = address
+        self.timeout = timeout
         self.debug = debug
+
         setup_logging(self.debug)
         self.log = logging.getLogger(__name__)
+
+        logging.getLogger("bleak").setLevel(logging.WARNING)
+        logging.getLogger("asyncio").setLevel(logging.WARNING)
+
         self.calibration_parameters = calibration_parameters
+
         self.lock = threading.Lock()
+        self.recv_lock = threading.Lock()
+
+        self.recv_buffer = bytearray()
+
+        # BLE event loop thread
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(target=self._run_loop, daemon=True)
+        self.thread.start()
+
+        self._connect_ble()
+
         time.sleep(0.5)
 
-    def connect_socket(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.SERVER_IP, self.SERVER_PORT))
-        return sock
+    # ---------------- BLE connection ----------------
 
-    # ---------------------- Debug / time helpers ----------------------
+    def _run_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+
+    def _connect_ble(self):
+        future = asyncio.run_coroutine_threadsafe(
+            self._connect_async(), self.loop
+        )
+        future.result()
+
+    async def _connect_async(self):
+
+        self.client = BleakClient(self.address)
+
+        await self.client.connect()
+
+        if self.debug:
+            self.log.info("BLE connected")
+
+        # 自动查找 characteristic
+        for service in self.client.services:
+            for char in service.characteristics:
+                if "write" in char.properties and "notify" in char.properties:
+                    self.handle = char.handle
+                    self.char_uuid = char.uuid
+
+        await self.client.start_notify(self.handle, self._notification_handler)
+
+    def _notification_handler(self, sender, data):
+
+        with self.recv_lock:
+            self.recv_buffer += data
+
+    # ---------------- Debug helpers ----------------
+
     def _now(self):
-        """Return timestamp string with millisecond precision."""
         return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
     def _debug_write(self, data: str):
@@ -63,56 +97,47 @@ class UltraArmP1Socket:
         if self.debug:
             self.log.debug("_read: {}".format(data))
 
-    # ---------------------- Socket helpers ----------------------
-
-    def _socket_in_waiting(self):
-
-        ready = select.select([self.sock], [], [], 0)
-        if ready[0]:
-            return 1
-        return 0
+    # ---------------- BLE read helpers ----------------
 
     def _read_available_bytes(self):
 
-        if not self._socket_in_waiting():
+        if len(self.recv_buffer) == 0:
             return b""
 
-        try:
-            data = self.sock.recv(1024)
-            return data
-        except Exception:
-            return b""
+        data = bytes(self.recv_buffer)
+        self.recv_buffer.clear()
+        return data
 
-    # ---------------------- Response waiting & parsing ----------------------
+    # ---------------- Response waiting ----------------
+
     def _response(self, timeout=90, _async=True, _gcode=False):
-        """Wait for device response from the serial buffer.
 
-        Returns 'ok' when keyword is found, False on timeout.
-        """
         if _gcode:
             _async = False
 
         if not _async and not _gcode:
             return 1
+
         start_time = time.time()
         received_data = b""
+
         if _gcode:
             keyword = b"start"
-        else:  # _async=True
+        else:
             keyword = b"end"
 
         while time.time() - start_time < timeout:
             chunk = self._read_available_bytes()
             if chunk:
                 received_data += chunk
-                # try decode for debug
+
                 try:
                     text = received_data.decode(errors='ignore')
                 except Exception:
                     text = str(received_data)
+
                 self._debug_read(text)
 
-                # ---------------- Error detect ----------------
                 text_lower = text.lower()
                 # Limit error
                 if "limiterror" in text_lower:
@@ -139,34 +164,22 @@ class UltraArmP1Socket:
                         joint = int(match.group(1))
                         return f"Joint{joint} Collision Detection Error."
 
-                try:
-                    if text.lower().count(keyword.decode()) >= 1:
-                        return 'ok'
-                except Exception:
-                    # fallback to raw bytes check
-                    if received_data.lower().count(keyword) >= 1:
-                        return 'ok'
-            # else:
-                # print('no data')
-            #     if time.time() - last_data_time > no_data_timeout:
-            #         return -1
+                # if keyword in received_data.lower():
+                #     return 'ok'
+                if text_lower.count(keyword.decode()) >= 1:
+                    return 'ok'
+
             time.sleep(0.01)
-        # Timeout
+
         if self.debug:
-            try:
-                self.log.error(f"_timeout: {received_data}")
-            except Exception:
-                self.log.error(f"_timeout received data")
+            self.log.error(f"_timeout: {received_data}")
 
         return False
 
+    # ---------------- request ----------------
+
     def _request(self, flag=""):
-        """
-        Improved request handler:
-        - clear input before reading
-        - accumulate chunks
-        - parse by flag until success or timeout
-        """
+
         timeout = 1
         if flag == "check_sd_card":
             timeout = 3
@@ -175,11 +188,8 @@ class UltraArmP1Socket:
         start_time = time.time()
 
         while time.time() - start_time < timeout:
-            try:
-                chunk = self._read_available_bytes()
-            except Exception:
-                chunk = b""
 
+            chunk = self._read_available_bytes()
             if chunk:
                 try:
                     chunk_str = chunk.decode(errors="ignore")
@@ -191,10 +201,7 @@ class UltraArmP1Socket:
                         else:
                             display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
                             self._debug_read(display)
-                    # common error
-                    if "error: command not recognized" in lower:
-                        return -1
-                    # -------- dispatch by flag --------
+
                     if flag == "angle":
                         r = self._parse_bracket_values(lower, "angles", float, 2)
                         if r is not None:
@@ -294,17 +301,18 @@ class UltraArmP1Socket:
 
                     elif flag is None:
                         return -1
-
                 except Exception as e:
                     if self.debug:
-                        self.log.error(f"serial read exception: {e}")
+                        self.log.error(f"bluetooth read exception: {e}")
             time.sleep(0.001)
 
         if self.debug:
-            self.log.warning(f"request timeout, received buffer: {raw_data}")
+            self.log.warning(f"read request timeout, received buffer: {raw_data}")
         return -1
 
-    def _parse_bracket_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
+    # ---------------- parser ----------------
+
+    def _parse_bracket_values(self, lower, keyword, value_type=float, round_ndigits=None, single=False):
         """
         Parse keyword[...] values from lower string.
 
@@ -324,7 +332,8 @@ class UltraArmP1Socket:
 
         bracket_start = lower.find("[", idx)
         bracket_end = lower.find("]", idx)
-        if bracket_start == -1 or bracket_end == -1 or bracket_end <= bracket_start:
+
+        if bracket_start == -1 or bracket_end == -1:
             return None
 
         try:
@@ -332,84 +341,63 @@ class UltraArmP1Socket:
             items = [x.strip() for x in sub.split(",") if x.strip() != ""]
 
             values = []
+
             for x in items:
                 v = value_type(x)
                 if value_type is float and round_ndigits is not None:
                     v = round(v, round_ndigits)
                 values.append(v)
+
             return values[0] if single else values
+
         except Exception:
             return None
 
+    def _clear_recv_buffer(self):
+        with self.lock:
+            self.recv_buffer.clear()
+
+    # ---------------- send command ----------------
+
     def _send_command(self, command: str):
-        """Send commands to serial port"""
+        """Send commands to bluetooth server"""
+        self.recv_buffer.clear()
         command += ProtocolCode.END
         self._debug_write(command)
-        try:
-            self.sock.sendall(command.encode())
-        except Exception as e:
-            self.log.error(f"socket send error: {e}")
+        future = asyncio.run_coroutine_threadsafe(
+            self.client.write_gatt_char(self.handle,command.encode(), response=False), self.loop)
 
-    def _fw_calc_crc(self, payload: bytes):
-        """
-        CRC = sum(CMD + IDX_H + IDX_L + LEN_H + LEN_L + DATA) & 0xFF
-        """
-        return sum(payload) & 0xFF
+        future.result()
 
-    def _fw_build_packet(self, idx: int, data: bytes):
-        """Build data packets"""
-        frame = bytearray()
-        frame += b'\xA5\x5A'  # Frame header
-        frame += b'\x01'  # CMD: PC send data
-        frame += idx.to_bytes(2, 'big')  # Packet index
-        frame += len(data).to_bytes(2, 'big')
-        frame += data
+    # ---------------- Control methods ----------------
 
-        crc = self._fw_calc_crc(frame[2:])  # exclude header
-        frame.append(crc)
-        return bytes(frame)
+    def open(self):
+        """Open BLE connection."""
+        with self.lock:
+            if self.client and self.client.is_connected:
+                return
 
-    def _fw_read_ack(self, timeout=1.0):
-        """Read screen response data"""
-        start = time.time()
-        buf = bytearray()
+            future = asyncio.run_coroutine_threadsafe(
+                self._connect_async(),
+                self.loop
+            )
 
-        while time.time() - start < timeout:
-            chunk = self._read_available_bytes()
-            if chunk:
-                buf += chunk
-                # At least 8 bytes are needed for an ACK.
-                while len(buf) >= 8:
-                    if buf[0:2] != b'\xA5\x5A':
-                        buf.pop(0)
-                        continue
+            future.result()
 
-                    frame = bytes(buf[:8])
-                    buf[:] = buf[8:]
-                    self._debug_read(frame.hex(' ').upper())
-                    cmd = frame[2]
-                    idx = int.from_bytes(frame[3:5], 'big')
-                    return cmd, idx
+    def close(self):
+        """Close BLE connection."""
+        with self.lock:
+            try:
+                if self.client and self.client.is_connected:
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.client.disconnect(),
+                        self.loop
+                    )
+                    future.result()
 
-            time.sleep(0.002)
+            except Exception:
+                pass
 
-        return None
-
-    def _fw_enter_upgrade(self, filename: str):
-        """Start downloading"""
-        command = ProtocolCode.START_DOWNLOAD_FIRMWARE
-        command += f" {filename}"
-        self._send_command(command)
-
-    def finish_firmware_upgrade(self):
-        """Download complete"""
-        command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
-        self._send_command(command)
-
-    def _download_progress(self, percent):
-        print(f"Download progress: {percent}%")
-
-    # ---------------------- Control methods ----------------------
     def set_reboot(self):
         """Reboot the robot controller board.(Internal Interface)"""
         with self.lock:
@@ -1072,22 +1060,6 @@ class UltraArmP1Socket:
     def go_home(self, speed=2000, _async=True):
         return self.set_angles([0, 0, 90, 0], speed, _async=_async)
 
-    def close(self):
-        """Close the socket connect."""
-        with self.lock:
-            try:
-                self.sock.close()
-            except Exception:
-                pass
-
-    def open(self):
-        """Open the socket connect."""
-        with self.lock:
-            try:
-                self.sock = self.connect_socket()
-            except Exception:
-                pass
-
     def set_wifi_password(self, password):
         """Set WiFi password
 
@@ -1107,67 +1079,6 @@ class UltraArmP1Socket:
             command = ProtocolCode.CHECK_SD_CARD
             self._send_command(command)
             return self._request("check_sd_card")
-
-    # def download_firmware_sd(self, filename, show_progress=True):
-    #     """
-    #     Download firmware to the SD card via M450/M451 commands.
-    #
-    #     Args:
-    #         filename (str): name of the firmware file, and must be a .bin file
-    #         show_progress (bool): whether to show download progress
-    #     """
-    #     self.calibration_parameters(class_name=self.__class__.__name__, download_filename=filename)
-    #
-    #     local_path = filename  # For local use
-    #
-    #     fw_name = os.path.basename(filename)  # For protocol use (M450)
-    #
-    #     if show_progress:
-    #         # callback(percent:int) to report progress
-    #         progress_cb = self._download_progress
-    #     else:
-    #         progress_cb = None
-    #     with self.lock:
-    #
-    #         # Entering upgrade mode.
-    #         self._fw_enter_upgrade(fw_name)
-    #         time.sleep(0.2)
-    #
-    #         # read bin
-    #         with open(local_path, "rb") as f:
-    #             bin_data = f.read()
-    #
-    #         chunk_size = 512
-    #         total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
-    #
-    #         idx = 1
-    #         while idx <= total_packets:
-    #             offset = (idx - 1) * chunk_size
-    #             data = bin_data[offset: offset + chunk_size]
-    #
-    #             pkt = self._fw_build_packet(idx, data)
-    #             self._debug_write(pkt.hex(' ').upper())
-    #             # self._serial_port.write(pkt)
-    #             self.sock.sendall(pkt)
-    #             # self._serial_port.flush()
-    #
-    #             ack = self._fw_read_ack(timeout=1.0)
-    #             if ack is None:
-    #                 continue  # timeout -> resend
-    #             cmd, next_idx = ack
-    #
-    #             if cmd == 2:  # success
-    #                 idx = next_idx
-    #                 if progress_cb:
-    #                     progress_cb(int((idx - 1) * 100 / total_packets))
-    #
-    #             elif cmd == 3:  # resend
-    #                 idx = next_idx
-    #             else:
-    #                 raise RuntimeError(f"Unknown ACK CMD: {cmd}")
-    #
-    #         # Finish
-    #         self.finish_firmware_upgrade()
 
     def upgrade_restart(self):
         """Upgrade and restart"""

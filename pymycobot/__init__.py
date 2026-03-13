@@ -53,6 +53,7 @@ from pymycobot.exoskeletonsocket import ExoskeletonSocket
 from pymycobot.mybuddyemoticon import MyBuddyEmoticon
 from pymycobot.Pro320_Modbus import Pro320Modbus
 from pymycobot.ultraarm_p1_socket import UltraArmP1Socket
+from pymycobot.ultraarm_p1_bluetooth import UltraArmP1Bluetooth
 
 
 __all__ = [
@@ -105,7 +106,8 @@ __all__ = [
     "Pro450Client",
     "UltraArmP1",
     "Pro320Modbus",
-    "UltraArmP1Socket"
+    "UltraArmP1Socket",
+    "UltraArmP1Bluetooth"
 ]
 
 __version__ = "4.0.5b7"
