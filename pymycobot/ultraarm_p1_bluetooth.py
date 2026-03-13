@@ -62,6 +62,8 @@ class UltraArmP1Bluetooth:
         future.result()
 
     async def _connect_async(self):
+        if self.debug:
+            self.log.info("BLE Connecting")
 
         self.client = BleakClient(self.address)
 
