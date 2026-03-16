@@ -125,6 +125,8 @@ class E1CloseLoop(DataProcessor):
         is_moving = 0
         check_is_moving_t = 1
 
+        is_moving_fail_count = 0
+
         while True and time.time() - t < wait_time:
             # self.event.wait(0.05)
             # self.event.clear()
@@ -198,7 +200,14 @@ class E1CloseLoop(DataProcessor):
             if is_in_position and time.time() - interval_time > check_is_moving_t and wait_time == 300:
                 interval_time = time.time()
                 moving = self.is_moving()
-                if isinstance(moving, int) and moving == 0:
+                if moving == -1:
+                    is_moving_fail_count += 1
+                    if is_moving_fail_count >= 3:
+                        return -1
+                else:
+                    is_moving_fail_count = 0
+
+                if isinstance(moving, int) and moving == 0 and genre != ProtocolCode.MERCURY_DRAG_TECH_EXECUTE:
                     # print("停止运动，退出")
                     is_moving += 1
                     if is_moving == 1:
