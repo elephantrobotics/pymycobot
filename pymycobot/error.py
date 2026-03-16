@@ -2233,7 +2233,7 @@ def calibration_parameters(**kwargs):
                 if not (1 <= value <= 69):
                     raise ultraArmP1DataException(
                         f"The parameter {parameter} only supports 1 ~ 69, but received {value}")
-            elif parameter in ["gripper_mode"]:
+            elif parameter in ["gripper_mode", "pwm_id"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if value not in [1, 2]:
                     raise ultraArmP1DataException(
@@ -2270,9 +2270,9 @@ def calibration_parameters(**kwargs):
                         f"The parameter {parameter} only supports 1 ~ 10, but received {value}")
             elif parameter in ["p_value"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
-                if not (0 <= value <= 5):
+                if not (0 <= value <= 255):
                     raise ultraArmP1DataException(
-                        f"The parameter {parameter} only supports 0 ~ 5, but received {value}")
+                        f"The parameter {parameter} only supports 0 ~ 255, but received {value}")
             elif parameter in ["baud_rate"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if value not in [115200, 1000000]:

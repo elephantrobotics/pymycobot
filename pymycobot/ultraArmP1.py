@@ -909,17 +909,19 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=False)
 
-    def set_pwm(self, p_value):
+    def set_pwm(self, pwm_id, p_value):
         """PWM control.
 
         Args:
-            p_value (int) : Duty cycle 0 ~ 5;
+            pwm_id (int) : 1 ~ 2
+            p_value (int) : Duty cycle 0 ~ 255;
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, p_value=p_value)
+            class_name=self.__class__.__name__, pwm_id=pwm_id, p_value=p_value)
         with self.lock:
             command = ProtocolCode.SET_PWM_VALUE_P1
-            command += " P" + str(p_value)
+            command += " P" + str(pwm_id)
+            command += " S" + str(p_value)
             self._send_command(command)
             return self._response(_async=False)
 
