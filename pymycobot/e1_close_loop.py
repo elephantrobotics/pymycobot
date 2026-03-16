@@ -481,6 +481,9 @@ class E1CloseLoop(DataProcessor):
 
     def drag_teach_execute(self):
         """Start dragging the teaching point and only execute it once."""
+        if self.get_drag_fifo_len() == 0:
+            return_value = 'There is currently no trajectory path. Please record first!'
+            return return_value
         return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, has_reply=True)
 
     def drag_teach_pause(self):
@@ -1159,3 +1162,11 @@ class E1CloseLoop(DataProcessor):
         if isinstance(res, list) and res[1] == 0:
             self.sync_mode = False
         return res
+
+    def get_drag_fifo_len(self):
+        """Get the length or number of remaining points in the drag-and-drop teaching.
+
+        Returns:
+            int: Point length.
+        """
+        return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN)
