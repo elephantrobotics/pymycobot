@@ -1,5 +1,11 @@
 # ChangeLog for pymycobot
 
+## v4.0.4  (2026-2-3)
+
+- release v4.0.4
+- Fix bugs
+- Add 630 interfaces for five-finger dexterity hands
+
 ## v4.0.3 (2025-11-6)
 
 - release v4.0.3
