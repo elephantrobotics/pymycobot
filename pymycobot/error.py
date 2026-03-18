@@ -2272,7 +2272,7 @@ def calibration_parameters(**kwargs):
                 if float(value) < 1.0:
                     raise MercuryE1DataException(
                         f"Version must be >= 1.0, but received '{value}'")
-            elif parameter in ["tool_modified_version"]:
+            elif parameter in ["tool_modified_version", "five_hand_id", "target_five_hand_id"]:
                 check_value_type(parameter, value_type, MercuryE1DataException, int)
                 if value < 0 or value > 255:
                     raise MercuryE1DataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
@@ -2309,6 +2309,32 @@ def calibration_parameters(**kwargs):
                 if value not in allowed_types:
                     raise MercuryE1DataException(
                         f"motor_type {hex(value)} not allowed. Must be one of: {[hex(x) for x in allowed_types]}")
+            elif parameter in ["five_fingers_angles"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, list)
+                if len(value) not in [6]:
+                    raise MercuryE1DataException("The length of `fingers_angles` must be 6.")
+                for idx, angle in enumerate(value):
+                    joint_id = idx + 1
+                    angle_min = robot_limit[class_name]["five_fingers_angles_min"][idx]
+                    angle_max = robot_limit[class_name]["five_fingers_angles_max"][idx]
+                    if angle < angle_min or angle > angle_max:
+                        raise MercuryE1DataException(
+                            "Joint {} fingers angle value of {} exceeds the limit, with a limit range of {} ~ {}.".format(
+                                joint_id, angle, angle_min, angle_max)
+                        )
+            elif parameter in ["finger_id"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 6:
+                    raise MercuryE1DataException("The parameter {} only supports 1 ~ 6, but received {}".format(parameter, value))
+
+            elif parameter in ['five_finger_angle']:
+                finger_id = kwargs.get('finger_id', None)
+                index = robot_limit[class_name]['finger_id'][finger_id - 1] - 1
+                angle_min = robot_limit[class_name]["five_fingers_angles_min"][index]
+                angle_max = robot_limit[class_name]["five_fingers_angles_max"][index]
+                if value < angle_min or value > angle_max:
+                    raise MercuryE1DataException(
+                        "five fingers angle value not right, should be {0} ~ {1}, but received {2}".format(angle_min, angle_max, value))
 
 def restrict_serial_port(func):
     """

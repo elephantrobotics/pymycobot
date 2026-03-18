@@ -1214,4 +1214,127 @@ print(mc.get_angles())
   - `True` - Success
 
   - `False` - Failure
-  
+
+### 21. Proud Five-Finger Dexterity
+
+#### `get_five_fingers_angles(hand_id=2)`
+
+- **Function**: Reads all joint angles of the five-finger dexterity hand
+
+- **Parameters**:
+
+  - `hand_id`: (`int`) The device ID of the five fingers, default 2, value range 0 ~ 254.
+
+- **Return Value**: (`list[float]`) All joint angles of the five fingers, for example `[33.54, 173.83, 171.68, 172.1, 174.71, 1.0]` represents `[thumb flexion, index finger, middle finger, ring finger, little finger, thumb rotation]` respectively.
+
+#### `get_five_fingers_angles(finger_id, hand_id=2)`
+
+- **Function**: Reads the angle of a single joint in each of the five fingers.
+
+- **Parameters**:
+
+  - `finger_id` (`int`): Range 1 ~ 6.
+
+    - `1`: Thumb flexion
+
+    - `2`: Index finger
+
+    - `3`: Middle finger
+
+    - `4`: Ring finger
+
+    - `5`: Little finger
+
+    - `6`: Thumb rotation
+
+  - `hand_id`: (`int`) The device ID for each finger, default 2, range 0 ~ 254.
+
+- **Return Value**: (`float`) Angle value.
+
+#### `set_five_fingers_angles(fingers_angles, hand_id=2)`
+
+- **Function**: Sets the angles of all five finger joints.
+
+- **Parameters**:
+
+  - `fingers_angles (list)`: A list of length 6, J1-J6 represent `[thumb flexion, index finger, middle finger, ring finger, little finger, thumb rotation]`
+
+    - `J1`: 2.26° ~ 36.76°
+
+    - `J2`: 100.22° ~ 178.37°
+
+    - `J3`: 97.81° ~ 176.06°
+
+    - `J4`: 101.38° ~ 176.54°
+
+    - `J5`: 98.84° ~ 174.86°
+
+    - `J6`: 0° ~ 90°
+
+  - `hand_id`: (`int`) Five-finger device ID, default 2, value range 0 ~ 254.
+
+#### `set_five_fingers_angle(finger_id, finger_angle, hand_id=2)`
+
+- **Function**: Sets the angle of a single joint of each of the five fingers.
+
+- **Parameters**:
+
+  - `finger_id` (`int`): Range 1 ~ 6.
+
+    - `1`: Thumb flexion
+
+    - `2`: Index finger
+
+    - `3`: Middle finger
+
+    - `4`: Ring finger
+
+    - `5`: Little finger
+
+    - `6`: Thumb rotation
+
+  - `finger_angle (int or float)`: Angle value.
+
+    - `J1`: 2.26° ~ 36.76°
+
+    - `J2`: 100.22° ~ 178.37°
+
+    - `J3`: 97.81° ~ 176.06°
+
+    - `J4`: 101.38° ~ 176.54°
+
+    - `J5`: 98.84° ~ 174.86°
+
+    - `J6`: 0° ~ 90°
+
+  - `hand_id`: (`int`) Five-finger device ID, default 2, value range 0 ~ 254.
+
+#### `get_five_fingers_version(hand_id=2)`
+
+- **Function**: Reads the major and minor version numbers of the five-finger dexterity hand firmware
+
+- **Parameters**:
+
+  - `hand_id`: (`int`) Five-finger device ID, default 2, value range 0 ~ 254.
+
+- **Return Value**: (`float]`) Firmware major and minor version numbers, e.g., `3.1`.
+
+#### `get_five_fingers_hand_id(hand_id=2)`
+
+- **Function**: Reads the device ID of the five-finger dexterity hand.
+
+- **Parameters**:
+
+  - `hand_id`: (`int`) The device ID of the five-finger hand, default 2, value range 0 ~ 254.
+
+- **Return Value**: (`int`) The device ID value of the five-finger hand.
+
+#### `set_five_fingers_hand_id(target_hand_id, hand_id=2)`
+
+- **Function**: Sets the device ID of the five-finger dexterity hand.
+
+- **Parameters**:
+
+  - `target_hand_id`: (`int`) The new device ID to be set, value range 0 ~ 254.
+
+  - `hand_id`: (`int`) The device ID for the five fingers, defaults to 2, and has a value range of 0 ~ 254.

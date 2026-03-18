@@ -119,7 +119,7 @@ class MercuryE1(E1CloseLoop):
             else:
                 for i in range(1,4):
                     res.append(valid_data[i])
-        elif data_len == 7:
+        elif data_len in [7, 17, 22, 27]:  # 17, 22, 27 is five fingers
             error_list = [i for i in valid_data]
             if genre == ProtocolCode.IS_INIT_CALIBRATION:
                 res = error_list
@@ -571,6 +571,126 @@ class MercuryE1(E1CloseLoop):
                 return '错误：刷新模式无法使用JOG运动，请切换插补模式使用'
         return None
 
+    def _five_fingers_modbus_read(self, slave_id, start_reg, reg_count, retry=3):
+        """Aoyi Five-Finger Dexterity Hand Universal Modbus Read Holding Register Interface
+
+        Args:
+            slave_id (int): Device ID (your dexterity hand is 0x02)
+            start_reg (int): Starting register address
+            reg_count (int): Number of registers to read
+            retry (int): Number of retries
+
+        Returns:
+            list[int] or -1
+        """
+        for attempt in range(retry):
+            cmd = [
+                slave_id,
+                0x03,  # Read register
+                (start_reg >> 8) & 0xFF,
+                start_reg & 0xFF,
+                (reg_count >> 8) & 0xFF,
+                reg_count & 0xFF
+            ]
+            self._serial_port.reset_input_buffer()
+            # CRC
+            cmd += list(self._modbus_crc(bytes(cmd)))
+            recv = self.tool_serial_write_data(cmd)
+            if not recv or recv== -1 or len(recv) < 5:
+                # print("Modbus no response:", recv)
+                continue
+
+            # Find the Modbus starting point
+            start = None
+            for i in range(len(recv) - 1):
+                if recv[i] == slave_id and recv[i + 1] == 0x03:
+                    start = i
+                    break
+
+            if start is None:
+                # print("Modbus header not found:", recv)
+                continue
+
+            recv = recv[start:]
+
+            # Length check
+            if len(recv) < 3:
+                continue
+            byte_count = recv[2]
+            expected_len = 3 + byte_count + 2
+
+            if len(recv) < expected_len:
+                # print("Incomplete frame:", recv)
+                continue
+            recv = recv[:expected_len]
+
+            # CRC check
+            data = recv[:-2]
+            crc_recv = recv[-2:]
+
+            if self._modbus_crc(bytes(data)) != bytes(crc_recv):
+                continue
+
+            # Data Analysis Format: [addr, func, byte_count, data..., crc_l, crc_h]
+            data_bytes = recv[3:3 + byte_count]
+
+            values = []
+            for i in range(0, len(data_bytes), 2):
+                val = (data_bytes[i] << 8) | data_bytes[i + 1]
+                values.append(val)
+
+            return values
+        return -1
+
+    def _five_fingers_modbus_write(self, slave_id, start_reg, values):
+        reg_count = len(values)
+        byte_count = reg_count * 2
+
+        cmd = [
+            slave_id,
+            0x10,
+            (start_reg >> 8) & 0xFF,
+            start_reg & 0xFF,
+            (reg_count >> 8) & 0xFF,
+            reg_count & 0xFF,
+            byte_count
+        ]
+
+        for v in values:
+            high = (v >> 8) & 0xFF
+            low = v & 0xFF
+            cmd.extend([high, low])
+
+        cmd += list(self._modbus_crc(bytes(cmd)))
+
+        recv = self.tool_serial_write_data(cmd)
+
+        if recv is None or recv == -1:
+            return -1
+
+        # Find the starting address for verification
+        start = None
+        for i in range(len(recv) - 1):
+            if recv[i] == slave_id and recv[i + 1] == 0x10:
+                start = i
+                break
+
+        if start is None:
+            return -1
+
+        recv = recv[start:]
+
+        if len(recv) < 8:
+            return -1
+
+        data = recv[:-2]
+        crc_recv = recv[-2:]
+
+        if self._modbus_crc(bytes(data)) != bytes(crc_recv):
+            return -1
+
+        return 1
+
     def open(self):
         self._serial_port.open()
         
@@ -587,6 +707,7 @@ class MercuryE1(E1CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, set_motor_enabled=joint_id, state=state)
         return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, joint_id, state)
+
 
     def flash_tool_firmware(self, main_version, modified_version=0, _async=False):
         """Burn tool firmware
@@ -1576,3 +1697,184 @@ class MercuryE1(E1CloseLoop):
             0 - Low speed, 1 - High speed.
         """
         return self._mesg(ProtocolCode.GET_FRESH_SPEED_MODE, has_reply=True)
+
+    def get_five_fingers_angles(self, hand_id=2):
+        """Read the angle of the five fingers (unit: degrees)
+
+        Args:
+            hand_id (int): Hand ID, range 0 ~ 255, default 2
+
+        Returns:
+            list[float]: For example, [33.54, 173.83, 171.68, 172.1, 174.71, 1.0] represent
+                        [thumb bending, index finger, middle finger, ring finger, little finger, and thumb rotation], respectively.
+        """
+
+        start_reg = 0x0483
+        reg_count = 0x06
+        self.calibration_parameters(class_name=self.__class__.__name__, five_hand_id=hand_id)
+
+        raw = self._five_fingers_modbus_read(hand_id, start_reg, reg_count)
+
+        if not raw or raw==-1:
+            return -1
+        if not isinstance(raw, list):
+            return -1
+        angles = [round(v / 100.0, 2) for v in raw]
+
+        return angles
+
+    def get_five_fingers_angle(self, finger_id, hand_id=2):
+        """Read the angle of a single joint of the five fingers
+
+        Args:
+            finger_id (int): 1 ~ 6
+                    1 - thumb bending
+                    2 - index finger
+                    3 - middle finger
+                    4 - ring finger
+                    5 - little finger
+                    6 - thumb rotation
+            hand_id (int): Hand ID, range 0 ~ 255, default 2
+
+        Returns:
+            float: angle value
+        """
+
+        self.calibration_parameters(class_name=self.__class__.__name__, finger_id=finger_id, five_hand_id=hand_id)
+        start_reg = 1155 + (finger_id - 1)
+        raw = self._five_fingers_modbus_read(hand_id, start_reg, 1)
+
+        if not raw or raw==-1:
+            return -1
+        if not isinstance(raw, list):
+            return -1
+
+        angle = raw[0] / 100.0
+
+        return angle
+
+    def set_five_fingers_angles(self, fingers_angles, hand_id=2):
+        """Set all finger angles.
+
+        Args:
+            fingers_angles (list): A list of length 6, where J1-J6 represent [thumb bending, index finger, middle finger, ring finger, little finger, thumb rotation] respectively.
+                           J1:2.26° ~ 36.76
+                           J2:100.22°~178.37°
+                           J3:97.81° ~ 176.06°
+                           J4:101.38° ~ 176.54°
+                           J5:98.84° ~ 174.86°
+                           J6:0° ~ 90°
+            hand_id (int): Five-finger device ID, range 0 ~ 255, default 2
+
+        Returns:
+            int
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, five_fingers_angles=fingers_angles, five_hand_id=hand_id)
+        values = [int(a * 100 + 1e-8) for a in fingers_angles]
+
+        return self._five_fingers_modbus_write(hand_id, 0x0483, values)
+
+    def set_five_fingers_angle(self, finger_id, finger_angle, hand_id=2):
+        """Set single finger angles
+
+        Args:
+            finger_id (int): 1 ~ 6
+                    1 - thumb bending
+                    2 - index finger
+                    3 - middle finger
+                    4 - ring finger
+                    5 - little finger
+                    6 - thumb rotation
+            finger_angle (int or float) : angle value
+                            J1:2.26° ~ 36.76
+                            J2:100.22°~178.37°
+                            J3:97.81° ~ 176.06°
+                            J4:101.38° ~ 176.54°
+                            J5:98.84° ~ 174.86°
+                            J6:0° ~ 90°
+            hand_id (int): Five-finger device ID, range 0 ~ 255, default 2
+        """
+
+        self.calibration_parameters(class_name=self.__class__.__name__, finger_id=finger_id,
+                                    five_finger_angle=finger_angle, five_hand_id=hand_id)
+
+        reg = 1155 + (finger_id - 1)
+
+        value = int(finger_angle * 100)
+
+        return self._five_fingers_modbus_write(hand_id, reg, [value])
+
+    def get_five_fingers_version(self, hand_id=2):
+        """Read the firmware major and minor version numbers of the five fingers
+
+        Args:
+            hand_id (int): Hand ID, range 0 ~ 255, default 2
+
+        Returns:
+            float: Major and minor version numbers, such as 3.1
+        """
+        raw = self._five_fingers_modbus_read(hand_id, 1001, 1)
+        if raw == -1:
+            return -1
+
+        if not isinstance(raw, list) or len(raw) < 1:
+            return -1
+
+        val = raw[0]
+
+        major = (val >> 8) & 0xFF
+        minor = val & 0xFF
+
+        version = f"{major}.{minor}"
+        return version
+
+    def get_five_fingers_modified_version(self, hand_id=2):
+        """Read firmware and modify version number of the five fingers
+
+        Args:
+            hand_id (int): Hand ID, range 0 ~ 255, default 2
+
+        Returns:
+            int: modified version numbers, such as 79
+        """
+        raw = self._five_fingers_modbus_read(hand_id, 1002, 1)
+        if raw == -1:
+            return -1
+
+        if not isinstance(raw, list) or len(raw) < 1:
+            return -1
+        val = raw[0]
+        return val
+
+    def get_five_fingers_hand_id(self, hand_id=2):
+        """Read hand id of the five fingers
+
+        Args:
+            hand_id (int): Hand ID, range 0 ~ 255, default 2
+
+        Returns:
+            int: hand ID, such as 2
+        """
+        raw = self._five_fingers_modbus_read(hand_id, 1005, 1)
+        if raw == -1:
+            return -1
+
+        if not isinstance(raw, list) or len(raw) < 1:
+            return -1
+
+        val = raw[0]
+
+        roh_hand_id = val & 0xFF
+
+        return roh_hand_id
+
+    def set_five_fingers_hand_id(self, target_hand_id, hand_id=2):
+        """Set hand id of the five fingers
+
+        Args:
+            target_hand_id (int): Hand ID, range 0 ~ 255, default 2
+            hand_id (int): Hand ID, range 0 ~ 255, default 2
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, target_five_hand_id=target_hand_id)
+
+        return self._five_fingers_modbus_write(hand_id, 1005, [target_hand_id])
