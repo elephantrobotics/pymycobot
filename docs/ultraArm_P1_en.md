@@ -103,7 +103,7 @@ from pymycobot import UltraArmP1
     </table>
 
 
-  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 5700.
+  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 20000.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -117,7 +117,7 @@ from pymycobot import UltraArmP1
 
   - `degrees`: (List[float]) Contains the angles of all joints. A four-axis robot has four joints, so the length is 4, represented as [20,20,90, 20].
 
-  - `speed`: Represents the speed of the robotic arm, ranging from 1 to 5700.
+  - `speed`: Represents the speed of the robotic arm, ranging from 1 to 20000.
 
   - `_async`: Provides feedback on movement position, enabled by default.
 
@@ -237,7 +237,7 @@ from pymycobot import UltraArmP1
     </table>
 
 
-  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 5700.
+  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 20000.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -259,7 +259,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: Primarily controls the direction of the robotic arm's movement, 1 - positive movement, 0 - negative movement.
 
-  - `speed`: Speed ​​from 1 to 5700.
+  - `speed`: Speed ​​from 1 to 20000.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -275,7 +275,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: Primarily controls the direction of the robotic arm's movement, 1 - positive movement, 0 - negative movement.
 
-  - `speed`: Speed ​​1 to 5700.
+  - `speed`: Speed ​​1 to 20000.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -291,7 +291,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: Angle increment value.
 
-  - `speed`: Speed ​​1 ~ 5700.
+  - `speed`: Speed ​​1 ~ 20000.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -307,7 +307,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: The coordinate increment value.
 
-  - `speed`: Speed, ranging from 1 to 5700.
+  - `speed`: Speed, ranging from 1 to 20000.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -483,7 +483,7 @@ from pymycobot import UltraArmP1
 
     `1`: On
 
-  - `speed`: `int` 1 ~ 5700
+  - `speed`: `int` 1 ~ 20000
 
 - **Return value:** 1
 

@@ -488,7 +488,7 @@ class UltraArmP1:
 
         Args:
             coords (list[float]): Coordinates [X, Y, Z].
-            speed (int): Movement speed (1~5700).
+            speed (int): Movement speed (1~20000).
             _async: (bool): Closed-loop switch
             _gcode: (bool): GCode switch
         """
@@ -505,7 +505,7 @@ class UltraArmP1:
                 command += f" Z{coords[2]}"
             if len(coords) > 3 and coords[3] is not None:
                 command += f" R{coords[3]}"
-            if speed is not None and 1 <= speed <= 5700:
+            if speed is not None and 1 <= speed <= 20000:
                 command += f" F{speed}"
 
             self._send_command(command)
@@ -517,7 +517,7 @@ class UltraArmP1:
         Args:
             coord_id (str): 'X', 'Y', 'Z', 'R'
             coord (float): coordinate value
-            speed (int): movement speed 1 ~ 5700
+            speed (int): movement speed 1 ~ 20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
         with self.lock:
@@ -534,7 +534,7 @@ class UltraArmP1:
         Args:
             joint_id (int): Joint number (1~4).
             angle (float): Angle value.
-            speed (int): Movement speed (1~5700).
+            speed (int): Movement speed (1~20000).
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
@@ -556,7 +556,7 @@ class UltraArmP1:
 
         Args:
             angles (list[float]): Joint angles [J1, J2, J3, J4].
-            speed (int): Movement speed (1~5700).
+            speed (int): Movement speed (1~20000).
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
@@ -573,7 +573,7 @@ class UltraArmP1:
                 command += f" C{angles[2]}"
             if len(angles) > 3 and angles[3] is not None:
                 command += f" D{angles[3]}"
-            if speed is not None and 1 <= speed <= 5700:
+            if speed is not None and 1 <= speed <= 20000:
                 command += f" F{speed}"
 
             self._send_command(command)
@@ -614,7 +614,7 @@ class UltraArmP1:
             direction :
                 0 : Negative motion
                 1 : Positive motion
-            speed : (int) 1-5700
+            speed : (int) 1-20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
                                     jog_speed=speed)
@@ -636,7 +636,7 @@ class UltraArmP1:
             direction:
                 0 : Negative motion
                 1 : Positive motion
-            speed : (int) 1-5700
+            speed : (int) 1-20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     jog_speed=speed)
@@ -655,7 +655,7 @@ class UltraArmP1:
         Args:
             joint_id: Joint id 1 - 4
             increment: Angle increment value
-            speed: int (1 - 5700)
+            speed: int (1 - 20000)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
@@ -674,7 +674,7 @@ class UltraArmP1:
         Args:
             coord_id: axis id 1 - 4.
             increment: Coord increment value
-            speed: int (1 - 5700)
+            speed: int (1 - 20000)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
@@ -899,7 +899,7 @@ class UltraArmP1:
             shaft_state (int) : 0 ~ 1
                 0 - close
                 1 - open
-            speed (int) : 1 ~ 5700
+            speed (int) : 1 ~ 20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__, shaft_state=shaft_state, speed=speed)
         with self.lock:

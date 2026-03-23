@@ -545,7 +545,7 @@ class RobotLimit:
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z'],
             "jog_coord_id": [1, 2, 3, 4],
-            "angles_min": [-158, -18, 90, -180],
+            "angles_min": [-158, -18, 89, -180],
             "angles_max": [158, 80, 190, 180],
             "coords_min": [-301.7, -362.7, -157, -180],
             "coords_max": [362.7, 362.7, 91, 180]
@@ -555,7 +555,7 @@ class RobotLimit:
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z'],
             "jog_coord_id": [1, 2, 3, 4],
-            "angles_min": [-158, -18, 90, -180],
+            "angles_min": [-158, -18, 89, -180],
             "angles_max": [158, 80, 190, 180],
             "coords_min": [-301.7, -362.7, -157, -180],
             "coords_max": [362.7, 362.7, 91, 180]
@@ -565,7 +565,7 @@ class RobotLimit:
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z'],
             "jog_coord_id": [1, 2, 3, 4],
-            "angles_min": [-158, -18, 90, -180],
+            "angles_min": [-158, -18, 89, -180],
             "angles_max": [158, 80, 190, 180],
             "coords_min": [-301.7, -362.7, -157, -180],
             "coords_max": [362.7, 362.7, 91, 180]

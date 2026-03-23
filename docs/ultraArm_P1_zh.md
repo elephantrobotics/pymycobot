@@ -76,7 +76,7 @@ from pymycobot import UltraArmP1
 
     </table>
 
-  - `speed`：表示机械臂运动的速度，范围 1~5700 。
+  - `speed`：表示机械臂运动的速度，范围 1~20000 。
   - `_async`: 运动到位反馈，默认开启。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
@@ -86,7 +86,7 @@ from pymycobot import UltraArmP1
 - **功能：**  发送所有角度给机械臂所有关节
 - **参数说明：**
   - `degrees`: (List[float])包含所有关节的角度 ,四轴机器人有四个关节，所以长度为4，表示方法为：[20,20,90, 20]
-  - `speed`: 表示机械臂运动的速度，取值范围是1~5700。
+  - `speed`: 表示机械臂运动的速度，取值范围是1~20000。
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
@@ -158,7 +158,7 @@ from pymycobot import UltraArmP1
 
       </table>
 
-  - `speed`: 表示机械臂运动的速度，范围是1-5700。
+  - `speed`: 表示机械臂运动的速度，范围是1-20000。
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
@@ -178,7 +178,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: 主要控制机器臂移动的方向，1 - 正向移动，0 - 负向移动
 
-  - `speed`: 速度 1 ~ 5700。
+  - `speed`: 速度 1 ~ 20000。
 
   - `_async`: 运动到位反馈，默认打开。
 
@@ -194,7 +194,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: 主要控制机器臂移动的方向，1 - 正向移动，0 - 负向移动
 
-  - `speed`: 速度 1 ~ 5700 。
+  - `speed`: 速度 1 ~ 20000 。
 
   - `_async`: 运动到位反馈，默认打开。
 
@@ -210,7 +210,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: 角度增量值。
 
-  - `speed`: 速度 1 ~ 5700。
+  - `speed`: 速度 1 ~ 20000。
 
   - `_async`: 运动到位反馈，默认打开。
 
@@ -226,7 +226,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: 坐标增量值。
 
-  - `speed`: 速度 1 ~ 5700 。
+  - `speed`: 速度 1 ~ 20000 。
 
   - `_async`: 运动到位反馈，默认打开。
 
@@ -389,7 +389,7 @@ from pymycobot import UltraArmP1
   - `shaft_state`： `int`
     - `0`: 关闭
     - `1`: 打开
-  - `speed`： `int` 1 ~ 5700
+  - `speed`： `int` 1 ~ 20000
 
 - **返回值：** 1
 
