@@ -294,6 +294,14 @@ class UltraArmP1:
                         r = self._parse_bracket_values(lower, "motorenable", int)
                         if r is not None:
                             return r
+                    elif flag == "get_base_io_state":
+                        r = self._parse_bracket_values(lower, "io", int)
+                        if r is not None:
+                            return r[:10]
+                    elif flag == "get_end_io_state":
+                        r = self._parse_bracket_values(lower, "io", int)
+                        if r is not None:
+                            return r[10:]
 
                     elif flag is None:
                         return -1
@@ -858,19 +866,23 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=False)
 
-    def set_basic_io_output(self, pin_no, pin_signal):
+    def set_base_io_output(self, pin_no, pin_status, pin_signal):
         """Set the status of the base output pin.
 
         Args:
             pin_no (int) : 1 ~ 10
+            pin_status (int) : 0 ~ 1
+                0 - input
+                1 - output
             pin_signal (int) : 0 ~ 1
                 0 - Low level
                 1 - High level
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no, basic_pin_status=pin_no, pin_signal=pin_signal)
         with self.lock:
             command = ProtocolCode.SET_BASIC_OUTPUT_P1
             command += " P" + str(pin_no)
+            command += " K" + str(pin_status)
             command += " S" + str(pin_signal)
             self._send_command(command)
             return self._response(_async=False)
@@ -1093,7 +1105,7 @@ class UltraArmP1:
             return self._response(_async=False)
 
     def go_home(self, speed=2000, _async=True):
-        self.set_angles([0, 0, 90, 0], speed, _async=_async)
+        return self.set_angles([0, 0, 90, 0], speed, _async=_async)
 
     def close(self):
         """Close the serial port."""
@@ -1231,5 +1243,71 @@ class UltraArmP1:
         with self.lock:
             command = ProtocolCode.SET_STATUS_LIGHTS_COLOR
             command += " J" + str(color_id)
+            self._send_command(command)
+            return self._response(_async=False)
+
+    def get_base_io_state(self):
+        """Get bottom I/O pin status.
+
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 10
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_BASE_END_IO_STATE_P1)
+            return self._request('get_base_io_state')
+
+    def get_end_io_state(self):
+        """Get end I/O pin status.
+
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 4
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_BASE_END_IO_STATE_P1)
+            return self._request('get_end_io_state')
+
+    def set_button_disable(self):
+        """Disable the settings button."""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_BUTTON_DISABLE)
+            return self._response(_async=False)
+
+    def set_button_enable(self):
+        """Enable the settings button."""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_BUTTON_ENABLE)
+            return self._response(_async=False)
+
+    def forced_reset_zero(self):
+        """Forced reset to zero."""
+        with self.lock:
+            self._send_command(ProtocolCode.FORCED_RESET_ZERO)
+            return self._response(_async=False)
+
+    def set_conveyor_control(self, state, direction, speed, distance):
+        """Conveyor belt control.
+
+        Args:
+            state (int): 0 ~ 1, Conveyor belt state, 0 - close; 1 - open
+            direction (int): 0 ~ 1, Conveyor belt direction, 0 - forward; 1 - backward
+            speed (int): Conveyor belt speed (50~500000)
+            distance (int): Conveyor belt distance (1~500000)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state, direction=direction,
+                                    conveyor_speed=speed, conveyor_distance=distance)
+        with self.lock:
+            command = ProtocolCode.CONVEYOR_BELT_CONTROL
+            command += " J" + str(state)
+            command += " K" + str(direction)
+            command += " L" + str(speed)
+            command += " S" + str(distance)
             self._send_command(command)
             return self._response(_async=False)

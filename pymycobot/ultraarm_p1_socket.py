@@ -291,6 +291,14 @@ class UltraArmP1Socket:
                         r = self._parse_bracket_values(lower, "motorenable", int)
                         if r is not None:
                             return r
+                    elif flag == "get_base_io_state":
+                        r = self._parse_bracket_values(lower, "io", int)
+                        if r is not None:
+                            return r[:10]
+                    elif flag == "get_end_io_state":
+                        r = self._parse_bracket_values(lower, "io", int)
+                        if r is not None:
+                            return r[10:]
 
                     elif flag is None:
                         return -1
@@ -476,7 +484,7 @@ class UltraArmP1Socket:
 
         Args:
             coords (list[float]): Coordinates [X, Y, Z].
-            speed (int): Movement speed (1~5700).
+            speed (int): Movement speed (1~20000).
             _async: (bool): Closed-loop switch
             _gcode: (bool): GCode switch
         """
@@ -492,7 +500,7 @@ class UltraArmP1Socket:
                 command += f" Z{coords[2]}"
             if len(coords) > 3 and coords[3] is not None:
                 command += f" R{coords[3]}"
-            if speed is not None and 1 <= speed <= 5700:
+            if speed is not None and 1 <= speed <= 20000:
                 command += f" F{speed}"
 
             self._send_command(command)
@@ -504,7 +512,7 @@ class UltraArmP1Socket:
         Args:
             coord_id (str): 'X', 'Y', 'Z', 'R'
             coord (float): coordinate value
-            speed (int): movement speed 1 ~ 5700
+            speed (int): movement speed 1 ~ 20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
         with self.lock:
@@ -520,7 +528,7 @@ class UltraArmP1Socket:
         Args:
             joint_id (int): Joint number (1~4).
             angle (float): Angle value.
-            speed (int): Movement speed (1~5700).
+            speed (int): Movement speed (1~20000).
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
@@ -541,7 +549,7 @@ class UltraArmP1Socket:
 
         Args:
             angles (list[float]): Joint angles [J1, J2, J3, J4].
-            speed (int): Movement speed (1~5700).
+            speed (int): Movement speed (1~20000).
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
@@ -557,7 +565,7 @@ class UltraArmP1Socket:
                 command += f" C{angles[2]}"
             if len(angles) > 3 and angles[3] is not None:
                 command += f" D{angles[3]}"
-            if speed is not None and 1 <= speed <= 5700:
+            if speed is not None and 1 <= speed <= 20000:
                 command += f" F{speed}"
 
             self._send_command(command)
@@ -598,7 +606,7 @@ class UltraArmP1Socket:
             direction :
                 0 : Negative motion
                 1 : Positive motion
-            speed : (int) 1-5700
+            speed : (int) 1-20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
                                     jog_speed=speed)
@@ -619,7 +627,7 @@ class UltraArmP1Socket:
             direction:
                 0 : Negative motion
                 1 : Positive motion
-            speed : (int) 1-5700
+            speed : (int) 1-20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     jog_speed=speed)
@@ -637,7 +645,7 @@ class UltraArmP1Socket:
         Args:
             joint_id: Joint id 1 - 4
             increment: Angle increment value
-            speed: int (1 - 5700)
+            speed: int (1 - 20000)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
@@ -655,7 +663,7 @@ class UltraArmP1Socket:
         Args:
             coord_id: axis id 1 - 4.
             increment: Coord increment value
-            speed: int (1 - 5700)
+            speed: int (1 - 20000)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
@@ -838,19 +846,23 @@ class UltraArmP1Socket:
             self._send_command(command)
             return self._response(_async=False)
 
-    def set_basic_io_output(self, pin_no, pin_signal):
+    def set_base_io_output(self, pin_no, pin_status, pin_signal):
         """Set the status of the base output pin.
 
         Args:
             pin_no (int) : 1 ~ 10
+            pin_status (int) : 0 ~ 1
+                0 - input
+                1 - output
             pin_signal (int) : 0 ~ 1
                 0 - Low level
                 1 - High level
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no, basic_pin_status=pin_no, pin_signal=pin_signal)
         with self.lock:
             command = ProtocolCode.SET_BASIC_OUTPUT_P1
             command += " P" + str(pin_no)
+            command += " K" + str(pin_status)
             command += " S" + str(pin_signal)
             self._send_command(command)
             return self._response(_async=False)
@@ -879,7 +891,7 @@ class UltraArmP1Socket:
             shaft_state (int) : 0 ~ 1
                 0 - close
                 1 - open
-            speed (int) : 1 ~ 5700
+            speed (int) : 1 ~ 20000
         """
         self.calibration_parameters(class_name=self.__class__.__name__, shaft_state=shaft_state, speed=speed)
         with self.lock:
@@ -1208,5 +1220,69 @@ class UltraArmP1Socket:
         with self.lock:
             command = ProtocolCode.SET_STATUS_LIGHTS_COLOR
             command += " J" + str(color_id)
+            self._send_command(command)
+            return self._response(_async=False)
+
+    def get_base_io_state(self):
+        """Get bottom I/O pin status.
+
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 10
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_BASE_END_IO_STATE_P1)
+            return self._request('get_base_io_state')
+
+    def get_end_io_state(self):
+        """Get end I/O pin status.
+
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 4
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_BASE_END_IO_STATE_P1)
+            return self._request('get_end_io_state')
+
+    def set_button_disable(self):
+        """Disable the settings button."""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_BUTTON_DISABLE)
+            return self._response(_async=False)
+
+    def set_button_enable(self):
+        """Enable the settings button."""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_BUTTON_ENABLE)
+            return self._response(_async=False)
+
+    def forced_reset_zero(self):
+        """Forced reset to zero."""
+        with self.lock:
+            self._send_command(ProtocolCode.FORCED_RESET_ZERO)
+            return self._response(_async=False)
+
+    def set_conveyor_control(self, state, direction, speed, distance):
+        """Conveyor belt control.
+
+        Args:
+            state (int): 0 ~ 1, Conveyor belt state, 0 - close; 1 - open
+            direction (int): 0 ~ 1, Conveyor belt direction, 0 - forward; 1 - backward
+            speed (int): Conveyor belt speed (50~500000)
+            distance (int): Conveyor belt distance (1~500000)
+        """
+        with self.lock:
+            command = ProtocolCode.CONVEYOR_BELT_CONTROL
+            command += " J" + str(state)
+            command += " K" + str(direction)
+            command += " L" + str(speed)
+            command += " S" + str(distance)
             self._send_command(command)
             return self._response(_async=False)

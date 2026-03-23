@@ -439,13 +439,19 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-### 30 `set_basic_io_output(pin_no, pin_signal)`
+### 30 `set_base_io_output(pin_no, pin_status, pin_signal)`
 
 - **Function:** Sets the base IO pin output status
 
 - **Parameter Description:**
 
   - `pin_no`: `int` 1 ~ 10
+
+  - `pin_status`: `int`
+
+    - `0`: input
+
+    - `1`: output
 
   - `pin_signal`: `int`
 
@@ -662,6 +668,56 @@ from pymycobot import UltraArmP1
 - **Function:** Ends the download of firmware data to the SD card. (The upgrade can be terminated midway through the firmware download process.)
 
 - **Return Value:** 1.
+
+### 55 `get_base_io_state()`
+
+- **Function:** Get the state of the base IO pins
+  
+- **Return Value:** `list` with values in the range 0-3, length is 10
+
+  - `0`: Input, level = 0 (low level)
+  - `1`: Input, level = 1 (high level)
+  - `2`: Output, level = 0 (low level)
+  - `3`: Output, level = 1 (high level)
+
+### 56 `get_end_io_state()`
+
+- **Function:** Get the state of the end IO pins
+
+- **Return Value:** `list` with values in the range 0-3, length is 4
+
+  - `0`: Input, level = 0 (low level)
+  - `1`: Input, level = 1 (high level)
+  - `2`: Output, level = 0 (low level)
+  - `3`: Output, level = 1 (high level)
+
+### 57 `set_button_enable()`
+
+- **Function:** Enable the button
+  
+- **Return Value:** 1
+
+### 58 `set_button_disable()`
+
+- **Function:** Disable the button
+
+- **Return Value:** 1
+
+### 59 `forced_reset_zero()`
+
+- **Function:** Set forced homing (reset to zero)
+  
+- **Return Value:** 1
+
+### 60 `set_conveyor_control(state, direction, speed, distance)`
+
+- **Function:** Conveyor belt control
+- **Parameter Description:**
+  - `state`: (`int`) 0~1, conveyor state: 0 - off; 1 - on
+  - `direction`: (`int`) 0~1, conveyor direction: 0 - forward; 1 - backward
+  - `speed`: (`int`) conveyor speed, range 50~500000
+  - `distance`: (`int`) conveyor distance, range 1~500000
+- **Return Value:** 1
 
 ---
 
