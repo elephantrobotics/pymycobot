@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import locale
+import numpy as np
 
 from pymycobot.error import restrict_serial_port
 from pymycobot.common import ProtocolCode, FingerGripper
@@ -11,10 +12,6 @@ from pymycobot.close_loop import CloseLoop
 class MercuryCommandGenerator(CloseLoop):
     def __init__(self, debug=False):
         super(MercuryCommandGenerator, self).__init__(debug)
-        try:
-            import numpy as np
-        except ImportError:
-            raise ImportError("Please install numpy")
         # 同步模式
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
@@ -419,7 +416,10 @@ class MercuryCommandGenerator(CloseLoop):
         elif genre == ProtocolCode.GET_ANGLES:
             return [self._int3angle(angle) for angle in res]
         elif genre == ProtocolCode.SOLVE_INV_KINEMATICS:
-            return [self._int2angle(angle) for angle in res]
+            # return [self._int2angle(angle) for angle in res]
+            if res == [-572957] * 7:
+                return 'No solution for conversion'
+            return [self._int3angle(angle) for angle in res]
         elif genre == ProtocolCode.COBOTX_GET_ANGLE:
             return self._int2angle(res[0])
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
@@ -523,6 +523,8 @@ class MercuryCommandGenerator(CloseLoop):
             51: Motor encoder error
             52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coord_id=axis, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.MERCURY_JOG_BASE_COORD, axis, direction, speed, _async=_async, has_reply=True)
 
     @restrict_serial_port
@@ -563,7 +565,7 @@ class MercuryCommandGenerator(CloseLoop):
 
         Args:
             axis_id (int): axis id, range 1 ~ 6 corresponds to [x,y,z,rx,ry,rz]
-            increment (float): Incremental value
+            increment (float): Base coord incremental value
             speed (int): speed
 
         Return:
@@ -577,13 +579,13 @@ class MercuryCommandGenerator(CloseLoop):
             52: Not reaching the designated location or not reaching the designated location for more than 5 minutes (only J11, J12 available)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=axis_id, speed=speed)
-        coord_list = []
-        if axis_id < 4:
-            coord_list.append(self._coord2int(increment))
+            class_name=self.__class__.__name__, coord_id=axis_id, base_increment_coord=increment, speed=speed, serial_port=self._serial_port.port)
+        if axis_id <= 3:
+            value = self._coord2int(increment)
         else:
-            coord_list.append(self._angle2int(increment))
-        return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, coord_list, speed, has_reply=True,
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_BASE_INCREMENT_COORD, axis_id, [value], speed, has_reply=True,
                           _async=_async)
         
     def is_in_position(self, data, mode=0):
@@ -598,7 +600,11 @@ class MercuryCommandGenerator(CloseLoop):
             0 - False\n
             -1 - Error
         """
-        if mode in [1,2]:
+        self.calibration_parameters(class_name=self.__class__.__name__, position_mode=mode)
+        if mode == 0:
+            self.calibration_parameters(class_name=self.__class__.__name__, angles=data)
+            data_list = [self._angle2int(i) for i in data]
+        else:
             if mode == 2:
                 self.calibration_parameters(class_name=self.__class__.__name__, base_coords=data, serial_port=self._serial_port.port)
             else:
@@ -608,11 +614,6 @@ class MercuryCommandGenerator(CloseLoop):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
                 data_list.append(self._angle2int(data[idx]))
-        elif mode == 0:
-            self.calibration_parameters(class_name=self.__class__.__name__, angles=data)
-            data_list = [self._angle2int(i) for i in data]
-        else:
-            raise Exception("mode is not right, please input 0 or 1 or 2")
         return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
     
     def write_waist_sync(self, current_angle, target_angle, speed):

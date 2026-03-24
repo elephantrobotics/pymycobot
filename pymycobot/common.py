@@ -123,6 +123,7 @@ class FingerGripper(object):
     GET_HAND_ALL_ANGLES = 0x32
     SET_HAND_GRIPPER_PINCH_ACTION = 0x33
     SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT = 0x34
+    GET_HAND_GRIPPER_MODEL = 0x35
 
 
 class ProtocolCode(object):
@@ -143,6 +144,7 @@ class ProtocolCode(object):
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
+    GET_ATOM_MODIFY_VERSION = 0x06
 
     CLEAR_ZERO_POS = 0x0A
     SET_MONITOR_STATE = 0x0A
@@ -413,6 +415,7 @@ class ProtocolCode(object):
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
     JOG_RPY = 0xF5
+    JOG_BASE_RPY = 0xEB
 
     GET_MONITOR_MODE = 0xFB
     SET_MONITOR_MODE = 0xFC
