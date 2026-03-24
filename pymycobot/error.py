@@ -210,6 +210,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     "The data supported by parameter {} is 0 or 1 or 2, but the received value is {}".format(parameter,
                                                                                                              value))
         elif parameter == 'pin_signal':
+            print('22222')
             check_0_or_1(parameter, value, [0, 1], value_type, exception_class, int)
         elif parameter == 'speed':
             check_value_type(parameter, value_type, exception_class, int)
@@ -314,7 +315,7 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
             check_0_or_1(parameter, value, [1, 2, 3], value_type, exception_class, int)
         elif parameter == "pin_no":
             if class_name in ["Mercury"]:
-                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, exception_class, int)
+                check_0_or_1(parameter, value, [1, 2], value_type, exception_class, int)
             elif class_name in ["MyCobot320", "MyCobot320Socket"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, exception_class, int)
             elif class_name in ["MyCobot280", "MyCobot280Socket", "MechArm270", "MechArmSocket", "MyPalletizer260", "MyPalletizerSocket"]:
@@ -336,10 +337,11 @@ def calibration_parameters(**kwargs):
     if class_name in ["Mercury", "MercurySocket"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
+            value_type = type(value)
             if parameter == 'joint_id':
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryDataException)
-            elif parameter == 'angle':
+            elif parameter in ['angle', 'degree']:
                 joint_id = kwargs.get('joint_id', None)
                 if joint_id in [11,12,13]:
                     index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
@@ -353,8 +355,9 @@ def calibration_parameters(**kwargs):
                         )
                     )
             elif parameter == 'angles':
-                if len(value) not in [7, 10]:
-                    raise MercuryDataException("The length of `angles` must be 7 or 10.")
+                check_value_type(parameter, value_type, MercuryDataException, list)
+                if len(value) not in [7]:
+                    raise MercuryDataException("The length of `angles` must be 7.")
                 for idx, angle in enumerate(value):
                     joint_id = idx+1
                     angle_min = robot_limit[class_name]["angles_min"][idx]
@@ -367,12 +370,22 @@ def calibration_parameters(**kwargs):
             elif parameter == 'coord':
                 
                 index = kwargs.get('coord_id', None) - 1
-                if value < robot_limit[class_name]["coords_min"][index] or value > robot_limit[class_name]["coords_max"][index]:
+
+                serial_port = kwargs.get('serial_port', None)
+                print('serial_port:', serial_port)
+                if serial_port == '/dev/left_arm':
+                    min_coord = robot_limit[class_name]["left_coords_min"][index]
+                    max_coord = robot_limit[class_name]["left_coords_max"][index]
+                elif serial_port == "/dev/right_arm":
+                    min_coord = robot_limit[class_name]["right_coords_min"][index]
+                    max_coord = robot_limit[class_name]["right_coords_max"][index]
+                else:
+                    min_coord = robot_limit[class_name]["coords_min"][index]
+                    max_coord = robot_limit[class_name]["coords_max"][index]
+
+                if value < min_coord or value > max_coord:
                     raise MercuryDataException(
-                        "The `coord` value of {} exceeds the limit, and the limit range is {} ~ {}".format(
-                            value, robot_limit[class_name]["coords_min"][index], robot_limit[class_name]["coords_max"][index]
-                        )
-                    )
+                        "The `coord` value of {} exceeds the limit, and the limit range is {} ~ {}".format(value, min_coord, max_coord))
             elif parameter == 'base_coord':
                 coord_id = kwargs.get('coord_id', None)
                 
@@ -411,7 +424,9 @@ def calibration_parameters(**kwargs):
             elif parameter in ['direction', 'flag', 'value']:
                 if value not in [0, 1]:
                     raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
-
+            elif parameter in ['position_mode']:
+                if value not in [0, 1, 2]:
+                    raise MercuryDataException("{} only supports 0 or 1 or 2, but received {}".format(parameter, value))
             elif parameter == 'coord_id':
                 if value < 1 or value > 6:
                     raise MercuryDataException("coord_id only supports 1 ~ 6, but received {}".format(value))
@@ -464,8 +479,13 @@ def calibration_parameters(**kwargs):
                 if value < 0 or value > 655.5:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 655.5, but received {}".format(parameter, value))
             elif parameter == "rank":
-                if value not in [0,1,2]:
-                    raise MercuryDataException("The parameter {} only supports 0 or 1 or 2, but received {}".format(parameter, value))
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 1 or value > 5:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == 'rank_value':
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if not 1 <= value <= 100:
+                    raise MercuryDataException("rank value not right, should be 1 ~ 100, the error rank value is {}".format(value))
             elif parameter == "move_type":
                 if value not in [0, 1, 2, 3, 4]:
                     raise MercuryDataException("The parameter {} only supports 0 or 4, but received {}".format(parameter, value))
@@ -475,15 +495,92 @@ def calibration_parameters(**kwargs):
             elif parameter in ["gripper_id", "new_hand_id"]:
                 if value < 1 or value > 254:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
-            elif parameter == "gripper_address":
-                if value < 1 or value > 44 or value in [15,17,19]:
-                    raise MercuryDataException("The parameter {} only supports 1 ~ 44 (except 15, 17, and 19), but received {}".format(parameter, value))
+            elif parameter == "get_gripper_address":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                invalid_addresses = [3, 5, 7, 8, 9, 10, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 30, 31, 32, 36, 37,
+                                     38, 39, 41, 43]
+                if value < 1 or value > 44:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 44, but received {}".format(parameter, value))
+                if value in invalid_addresses:
+                    raise MercuryDataException(
+                        "'address' in {} cannot be one of the following values: {}, but the received value is {}".format(
+                            parameter, invalid_addresses, value))
+            elif parameter == "set_gripper_address":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                invalid_addresses = [1, 2, 4, 6, 7, 8, 9, 12, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 33, 34, 35,
+                                     40, 42, 44]
+                if value < 1 or value > 44:
+                    raise MercuryDataException("The parameter {} only supports 1 ~ 44, but received {}".format(parameter, value))
+                if value in invalid_addresses:
+                    raise MercuryDataException(
+                        "'address' in {} cannot be one of the following values: {}, but the received value is {}".format(
+                            parameter, invalid_addresses, value))
+            elif parameter == "gripper_address_value":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                address_id = kwargs.get('set_gripper_address', None)
+                if address_id in [3]:
+                    if value < 1 or value > 254:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
+                elif address_id in [5]:
+                    if value < 0 or value > 5:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 5, but received {}".format(parameter, value))
+                elif address_id in [10]:
+                    if value not in [0, 1]:
+                        raise MercuryDataException("{} only supports 0 or 1, but received {}".format(parameter, value))
+                elif address_id in [11, 27, 30, 31, 36, 41]:
+                    if value < 0 or value > 100:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+                elif address_id in [13]:
+                    if value != 0:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0, but received {}".format(parameter, value))
+                elif address_id in [21, 23]:
+                    if value < 0 or value > 16:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 16, but received {}".format(parameter, value))
+                elif address_id in [25]:
+                    if value < 0 or value > 254:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 ~ 254, but received {}".format(parameter, value))
+                elif address_id in [29]:
+                    if value not in [0, 1, 16, 17]:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 0 or 1 or 16 or 17, but received {}".format(parameter, value))
+                elif address_id in [32]:
+                    if value < 1 or value > 100:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 1 ~ 100, but received {}".format(parameter, value))
+                elif address_id in [43]:
+                    if value < 100 or value > 300:
+                        raise MercuryDataException(
+                            "The parameter {} only supports 100 ~ 300, but received {}".format(parameter, value))
             elif parameter == "gripper_angle":
                 if value < 0 or value > 100:
                     raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+            elif parameter == "gripper_angles":
+                check_value_type(parameter, value_type, MercuryDataException, list)
+                if len(value) != 6:
+                    raise MercuryDataException("{}: 'gripper_angles' must contain exactly 6 values, but received {}.".format(class_name, len(value)))
+
+                for i, angle in enumerate(value):
+                    if not isinstance(angle, int):
+                        raise MercuryDataException("{}: Value at position {} in 'gripper_angles' must be an integer, but received {}.".format(class_name, i + 1, angle))
+                    if angle < 0 or angle > 100:
+                        raise MercuryDataException("{}: Value {} at position {} in 'gripper_angles' is out of range (0 ~ 100).".format(class_name, angle, i + 1))
+            elif parameter in ["min_pressure", "gripper_i", "gripper_p", "gripper_d"]:
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 0 or value > 254:
+                    raise MercuryDataException("The range of 'value' in {} is 0 ~ 254, but the received value is {}".format(parameter, value))
+            elif parameter == "clockwise":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 0 or value > 16:
+                    raise MercuryDataException("The range of 'value' in {} is 0 ~ 16, but the received value is {}".format(parameter, value))
             elif parameter == "torque":
-                if value < 1 or value > 100:
-                    raise MercuryDataException("The parameter {} only supports 1 ~ 100, but received {}".format(parameter, value))
+                if value < 0 or value > 100:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
             elif parameter == "hand_id":
                 if value < 1 or value > 6:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 6, but received {}".format(parameter, value))
@@ -498,6 +595,61 @@ def calibration_parameters(**kwargs):
             elif parameter == "idle_flag":
                 if value != 1:
                     raise MercuryDataException("The parameter {} only supports 1, but received {}".format(parameter, value))
+            elif parameter in ['max_acc']:
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                mode = kwargs.get('mode', None)
+                if mode == 0:
+                    if not (1 <= value <= 200):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 400):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 400 (coord mode), but received {value}")
+            elif parameter in ['max_speed']:
+                mode = kwargs.get('mode', None)
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if mode == 0:
+                    if not (1 <= value <= 150):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 150 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 200):
+                        raise MercuryDataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (coord mode), but received {value}")
+            elif parameter == "pin_no":
+                check_0_or_1(parameter, value, [1, 2], value_type, MercuryDataException, int)
+            elif parameter == "pin_no_base":
+                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6], value_type, MercuryDataException, int)
+            elif parameter == 'increment_angle':
+                joint_id = kwargs.get('joint_id', None)
+                if joint_id in [11,12,13]:
+                    index = robot_limit[class_name]['joint_id'][joint_id-4] - 4
+                else:
+                    index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryDataException("increment angle value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+
+            elif parameter in ['increment_coord', 'base_increment_coord']:
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                serial_port = kwargs.get('serial_port', None)
+                if serial_port == "/dev/left_arm":
+                    span = abs(robot_limit[class_name]["left_coords_max"][index] - robot_limit[class_name]["left_coords_min"][index])
+                elif serial_port == "/dev/right_arm":
+                    span = abs(robot_limit[class_name]["right_coords_max"][index] - robot_limit[class_name]["right_coords_min"][index])
+                else:
+                    span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryDataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
