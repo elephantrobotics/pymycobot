@@ -20,7 +20,9 @@ def setup_logging(debug=False):
     logger_handle.setFormatter(debug_fomatter)
     if debug:
         logger_handle.setLevel(logging.DEBUG)
+
         log_name = datetime.now().strftime("python_debug_%Y%m%d.log")
+
         # 100M日志
         save = logging.handlers.RotatingFileHandler(
         log_name, maxBytes=100*1024*1024, backupCount=3)
