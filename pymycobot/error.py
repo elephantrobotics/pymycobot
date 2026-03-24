@@ -2488,6 +2488,12 @@ def calibration_parameters(**kwargs):
                     raise MercuryE1DataException(
                         "five fingers angle value not right, should be {0} ~ {1}, but received {2}".format(angle_min, angle_max, value))
 
+            elif parameter in ["kp_value"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 65535:
+                    raise MercuryE1DataException(
+                        "The parameter {} only supports 1 ~ 65535, but received {}".format(parameter, value))
+
 def restrict_serial_port(func):
     """
     装饰器，用于限制特定串口号、socket的函数调用。

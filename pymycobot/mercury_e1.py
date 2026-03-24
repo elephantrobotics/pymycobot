@@ -1878,3 +1878,25 @@ class MercuryE1(E1CloseLoop):
         self.calibration_parameters(class_name=self.__class__.__name__, target_five_hand_id=target_hand_id)
 
         return self._five_fingers_modbus_write(hand_id, 1005, [target_hand_id])
+
+    def get_dm_pid(self, joint_id, mode):
+        """Read DM Motor Kp Parameter
+
+        Args:
+            joint_id (int): joint ID, range 1 ~ 7
+            mode (int): 0 ~ 1, Motor Kp Parameter mode, 0 - speed; 1 - pos
+        Returns: Kp parameter value
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, mode=mode)
+        return self._mesg(ProtocolCode.GET_DM_PID, joint_id, mode, has_reply=True)
+
+    def set_dm_pid(self, joint_id, mode, kp_value):
+        """Set the Kp parameter for the DM motor.
+
+        Args:
+            joint_id (int): joint ID, range 1 ~ 7
+            mode (int): 0 ~ 1, 1 - pos; 0 - speed.
+            kp_value (int): Kp parameter value, range 0 ~ 65535
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, mode=mode, kp_value=kp_value)
+        return self._mesg(ProtocolCode.SET_DM_PID, joint_id, mode, [kp_value])

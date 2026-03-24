@@ -167,6 +167,8 @@ class ProtocolCode(object):
     SetGripperProtectCurrent = 0x39
     GET_FUSION_PARAMETERS = 0x4e
     SET_FUSION_PARAMETERS = 0x4f
+    GET_DM_PID = 0xEE
+    SET_DM_PID = 0xEF
 
     # Overall status
     POWER_ON = 0x10
