@@ -128,6 +128,9 @@ def check_coords(parameter_name, value, robot_limit, class_name, exception_class
         elif serial_port == "/dev/right_arm":
             min_coord = robot_limit[class_name]["right_coords_min"]
             max_coord = robot_limit[class_name]["right_coords_max"]
+        else:
+            min_coord = robot_limit[class_name]["coords_min"]
+            max_coord = robot_limit[class_name]["coords_max"]
     else:
         min_coord = robot_limit[class_name]["coords_min"]
         max_coord = robot_limit[class_name]["coords_max"]
