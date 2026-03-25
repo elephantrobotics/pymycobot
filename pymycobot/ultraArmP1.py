@@ -396,17 +396,39 @@ class UltraArmP1:
             if n > 0:
                 buf += self._serial_port.read(n)
 
-                # At least 8 bytes are needed for an ACK.
-                while len(buf) >= 8:
-                    if buf[0:2] != b'\xA5\x5A':
+                while True:
+                    # At least 8 bytes
+                    if len(buf) < 8:
+                        break
+
+                    # Search for Frame Header
+                    if buf[0] != 0xA5 or buf[1] != 0x5A:
                         buf.pop(0)
                         continue
 
                     frame = bytes(buf[:8])
+
+                    # ✅ CRC Check
+                    payload = frame[2:7]  # CMD + IDX + LEN?
+                    crc = frame[7]
+                    calc_crc = sum(payload) & 0xFF
+
+                    if crc != calc_crc:
+                        # ❌ CRC error: Discarding 1 byte and continuing the search.
+                        buf.pop(0)
+                        continue
+
+                    # ✅ Valid Frame
                     buf[:] = buf[8:]
                     self._debug_read(frame.hex(' ').upper())
+
                     cmd = frame[2]
                     idx = int.from_bytes(frame[3:5], 'big')
+
+                    # ✅ Legal Range Filtering (Very Important)
+                    if cmd not in (2, 3):
+                        continue
+
                     return cmd, idx
 
             time.sleep(0.002)
@@ -1192,6 +1214,8 @@ class UltraArmP1:
                 cmd, next_idx = ack
 
                 if cmd == 2:  # success
+                    if next_idx < 1 or next_idx > total_packets + 1:
+                        continue
                     idx = next_idx
                     if progress_cb:
                         progress_cb(int((idx - 1) * 100 / total_packets))
@@ -1199,6 +1223,7 @@ class UltraArmP1:
                 elif cmd == 3:  # resend
                     idx = next_idx
                 else:
+                    self.finish_firmware_upgrade()
                     raise RuntimeError(f"Unknown ACK CMD: {cmd}")
 
             # Finish
