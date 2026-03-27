@@ -26,7 +26,8 @@ class L1CloseLoop(DataProcessor):
 
     def _send_command(self, genre, real_command):
         self.write_command.append(genre)
-        if "Socket" in self.__class__.__name__ or "Client" in self.__class__.__name__:
+        cls_name = self.__class__.__name__
+        if any(k in cls_name for k in ("Socket", "Client")):
             self._write(self._flatten(real_command), method="socket")
         else:
             self._write(self._flatten(real_command))
@@ -239,7 +240,6 @@ class L1CloseLoop(DataProcessor):
 
     def read_thread(self, method=None):
         self.buffer = bytearray()
-
         while True:
             try:
                 if method is not None:
@@ -297,7 +297,7 @@ class L1CloseLoop(DataProcessor):
 
         return frames, buffer[i:]
 
-    def bytes4_to_int(self, bytes4):
+    def _bytes4_to_int(self, bytes4):
         i = 0
         res = []
         data_len = len(bytes4)
@@ -315,6 +315,14 @@ class L1CloseLoop(DataProcessor):
                     bytes4[i:i+4], byteorder='big', signed=True)
             i += 4
             res.append(byte_value)
+        return res
+
+    def _encode_coords(self, coords):
+        res = []
+        for i in range(3):
+            res.append(self._coord2int(coords[i]))
+        for i in range(3, 6):
+            res.append(self._angle2int(coords[i]))
         return res
 
     def get_atom_version(self):
@@ -639,7 +647,7 @@ class L1CloseLoop(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ERROR_INFO)
 
-    def send_angles(self, arm_id, angles, speed, _async=False):
+    def send_angles(self, arm_id, left_angles, right_angles, speed, _async=False):
         """Send the angles of all joints to robot arm.
 
         Args:
@@ -647,26 +655,31 @@ class L1CloseLoop(DataProcessor):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
-            angles: a list of angle values(List[float]). len 17.
+            left_angles (list): a list of angle values(List[float]). len 8.
+            right_angles (list): a list of angle values(List[float]). len 9.
             speed : (int) 1 ~ 100
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, angles=angles, speed=speed)
-        angles = [self._angle2int(angle) for angle in angles]
-        if arm_id == 0:
-            return self._mesg(ProtocolCode.SEND_ANGLES, arm_id, angles, speed, has_reply=True, _async=_async)
-        elif arm_id == 1:
-            left_angles = angles[:8]
-            right_angles = [0] * 9
-            angles = left_angles + right_angles
-            return self._mesg(ProtocolCode.SEND_ANGLES, arm_id, angles, speed, has_reply=True, _async=_async)
-        elif arm_id == 2:
-            left_angles = [0] * 8
-            right_angles = angles[8:]
-            angles = left_angles + right_angles
-            return self._mesg(ProtocolCode.SEND_ANGLES, arm_id, angles, speed, has_reply=True, _async=_async)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        all_angles = []
 
-    def send_angle(self, arm_id, joint_id, angle, speed, _async=False):
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, arm_id=arm_id, left_angles=left_angles,
+                right_angles=right_angles, speed=speed)
+            all_angles = left_angles + right_angles
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, arm_id=arm_id, left_angles=left_angles, speed=speed)
+            all_angles = left_angles + [0] * 9
+        elif arm_id == 2:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, arm_id=arm_id, right_angles=right_angles, speed=speed)
+            all_angles = [0] * 8 + right_angles
+
+        angles = [self._angle2int(angle) for angle in all_angles]
+        return self._mesg(ProtocolCode.SEND_ANGLES, arm_id, angles, speed, has_reply=True, _async=_async)
+
+    def send_angle(self, arm_id, joint_id, left_angle, right_angle, speed, _async=False):
         """Send one angle of joint to robot arm.
 
         Args:
@@ -674,16 +687,29 @@ class L1CloseLoop(DataProcessor):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
-            joint_id : Joint id(genre.Angle)， int 1-7.
-            angle : angle value(float).
+            joint_id : Joint id(genre.Angle)， int left:1-8, right:1-9.
+            left_angle : left angle value(float).
+            right_angle : right angle value(float).
             speed : (int) 1 ~ 100
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id,joint_id=joint_id, angle=angle, speed=speed)
-        return self._mesg(ProtocolCode.SEND_ANGLE, arm_id, joint_id, [self._angle2int(angle)], speed, has_reply=True,
-                          _async=_async)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        if arm_id == 0:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,joint_id=joint_id,
+                                        left_angle=left_angle, right_angle=right_angle, speed=speed)
+        elif arm_id == 1:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id,
+                                        left_angle=left_angle, speed=speed)
+            right_angle = 0
 
-    def send_coord(self, arm_id, coord_id, coord, speed, _async=False):
+        elif arm_id == 2:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id,
+                                        right_angle=right_angle, speed=speed)
+            left_angle = 0
+        left_angle = self._angle2int(left_angle)
+        right_angle = self._angle2int(right_angle)
+        return self._mesg(ProtocolCode.SEND_ANGLE, arm_id, joint_id, [left_angle], [right_angle], speed, has_reply=True, _async=_async)
+
+    def send_coord(self, arm_id, coord_id, left_coord, right_coord, speed, _async=False):
         """Send one coord to robot arm.
 
         Args:
@@ -692,23 +718,41 @@ class L1CloseLoop(DataProcessor):
                 1 - left arm
                 2 - right arm
             coord_id (int): coord id, range 1 ~ 6
-            coord (float): coord value.
+            left_coord (float): coord value.
                 The coord range of `X` is -351.11 ~ 566.92.
                 The coord range of `Y` is -645.91 ~ 272.12.
                 The coord range of `Y` is -262.91 ~ 655.13.
                 The coord range of `RX` is -180 ~ 180.
                 The coord range of `RY` is -180 ~ 180.
                 The coord range of `RZ` is -180 ~ 180.
+            right_coord (float): coord value.
             speed (int): 1 ~ 100
         """
 
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id, coord=coord, speed=speed)
-        value = self._coord2int(
-            coord) if coord_id <= 3 else self._angle2int(coord)
-        return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        if arm_id == 0:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id,
+                                        left_coord=left_coord, right_coord=right_coord, speed=speed)
+        elif arm_id == 1:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
+                                        coord_id=coord_id, left_coord=left_coord, speed=speed)
+            right_coord = 0
+        elif arm_id == 2:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
+                                        coord_id=coord_id, right_coord=right_coord, speed=speed)
+            left_coord = 0
 
-    def send_coords(self, arm_id, coords, speed, _async=False):
+        is_xyz = coord_id <= 3
+        if is_xyz:
+            left_value = self._coord2int(left_coord)
+            right_value = self._coord2int(right_coord)
+        else:
+            left_value = self._angle2int(left_coord)
+            right_value = self._angle2int(right_coord)
+        return self._mesg(ProtocolCode.SEND_COORD, arm_id, coord_id, [left_value],
+                          [right_value], speed, has_reply=True, _async=_async)
+
+    def send_coords(self, arm_id, left_coords, right_coords, speed, _async=False):
         """Send all coords to robot arm.
 
         Args:
@@ -716,50 +760,32 @@ class L1CloseLoop(DataProcessor):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
-            coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
+            left_coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
                 The coord range of `X` is -351.11 ~ 566.92.
                 The coord range of `Y` is -645.91 ~ 272.12.
                 The coord range of `Y` is -262.91 ~ 655.13.
                 The coord range of `RX` is -180 ~ 180.
                 The coord range of `RY` is -180 ~ 180.
                 The coord range of `RZ` is -180 ~ 180.
+            right_coords: a list of coords value(List[float]). len 6
             speed : (int) 1 ~ 100
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, coords=coords, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
         coord_list = []
-        left_coord = []
-        right_coord = []
         if arm_id == 0:
-            coords_left = coords[:6]
-            coords_right = coords[6:]
-            for idx in range(3):
-                left_coord.append(self._coord2int(coords_left[idx]))
-                right_coord.append(self._coord2int(coords_right[idx]))
-            for angle in coords_left[3:]:
-                left_coord.append(self._angle2int(angle))
-            for angle in coords_right[3:]:
-                right_coord.append(self._angle2int(angle))
-            coord_list = left_coord + right_coord
-            return self._mesg(ProtocolCode.SEND_COORDS, arm_id, coord_list, speed, has_reply=True, _async=_async)
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
+                                        left_coords=left_coords, right_coords=right_coords, speed=speed)
+            coord_list = self._encode_coords(left_coords) + self._encode_coords(right_coords)
         elif arm_id == 1:
-            coords_left = coords[:6]
-            right_coord = [0] * 6
-            for idx in range(3):
-                left_coord.append(self._coord2int(coords_left[idx]))
-            for angle in coords_left[3:]:
-                left_coord.append(self._angle2int(angle))
-            coord_list = left_coord + right_coord
-            return self._mesg(ProtocolCode.SEND_COORDS, arm_id, coord_list, speed, has_reply=True, _async=_async)
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
+                                        left_coords=left_coords, speed=speed)
+            coord_list = self._encode_coords(left_coords) + [0] * 6
         elif arm_id == 2:
-            left_coord = [0] * 6
-            coords_right = coords[6:]
-            for idx in range(3):
-                right_coord.append(self._coord2int(coords_right[idx]))
-            for angle in coords_right[3:]:
-                right_coord.append(self._angle2int(angle))
-            coord_list = left_coord + right_coord
-            return self._mesg(ProtocolCode.SEND_COORDS, arm_id, coord_list, speed, has_reply=True, _async=_async)
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
+                                        right_coords=right_coords, speed=speed)
+            coord_list = [0] * 6 + self._encode_coords(right_coords)
+
+        return self._mesg(ProtocolCode.SEND_COORDS, arm_id, coord_list, speed, has_reply=True, _async=_async)
 
     def resume(self, arm_id):
         """Recovery movement

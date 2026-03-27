@@ -85,6 +85,9 @@ class MyCobotPro450DataException(Exception):
 class ultraArmP340DataException(Exception):
     pass
 
+class MercuryL1ClientDataException(Exception):
+    pass
+
 
 def check_boolean(b):
     if b != 0 and b != 1:
@@ -166,6 +169,99 @@ def check_angles(angle_value, robot_limit, class_name, exception_class):
                 "Has invalid angle value, error on index {0}. Received {3} but angle should be {1} ~ {2}.".format(
                     idx, robot_limit[class_name]["angles_min"][idx], robot_limit[class_name]["angles_max"][idx], angle))
 
+def build_l1_angle_limits(robot_limit, class_name):
+
+    cfg = robot_limit[class_name]
+
+    arm_min = cfg["angles_min"]
+    arm_max = cfg["angles_max"]
+
+    extra_min = cfg["extra_min"]
+    extra_max = cfg["extra_max"]
+
+    min_list = []
+    max_list = []
+
+    # ===== 左臂 7 =====
+    min_list += arm_min
+    max_list += arm_max
+
+    # ===== 腰 =====
+    min_list += [extra_min["waist"]]
+    max_list += [extra_max["waist"]]
+
+    # ===== 右臂 7 =====
+    min_list += arm_min
+    max_list += arm_max
+
+    # ===== 颈 + 头 =====
+    min_list += [extra_min["neck"], extra_min["head"]]
+    max_list += [extra_max["neck"], extra_max["head"]]
+
+    return min_list, max_list
+
+def l1_check_angles(angle_value, robot_limit, class_name, exception_class, arm_id):
+
+    if not isinstance(angle_value, list):
+        raise exception_class("angles must be list")
+    if len(angle_value) != 17:
+        raise exception_class(
+            f"angles length must be 17, got {len(angle_value)}"
+        )
+    min_list, max_list = build_l1_angle_limits(robot_limit, class_name)
+    if arm_id == 0:
+        index_map = range(17)
+    elif arm_id == 1:
+        index_map = range(0, 8)
+    elif arm_id == 2:
+        index_map = range(8, 17)
+    else:
+        raise exception_class("invalid arm_id")
+
+    # 范围检查
+    for i, global_idx in enumerate(index_map):
+        v = angle_value[i]
+
+        if not (min_list[global_idx] <= v <= max_list[global_idx]):
+            raise exception_class('Has invalid angle value, error on index {0}. Received {1} but angle should be {2} ~ {3}'
+                                  .format(i, v, min_list[global_idx], max_list[global_idx]))
+
+def get_global_joint_index(arm_id, joint_id):
+
+    # 左臂：1-8
+    if arm_id == 1:
+        if not (1 <= joint_id <= 8):
+            raise ValueError("left joint_id must be 1-8")
+
+        # 0-7
+        return joint_id - 1
+
+    # 右臂：1-9
+    elif arm_id == 2:
+        if not (1 <= joint_id <= 9):
+            raise ValueError("right joint_id must be 1-9")
+
+        # 8-16
+        return 7 + joint_id
+
+    else:
+        raise ValueError("invalid arm_id")
+
+def check_single_angle(value, robot_limit, class_name, arm_id, joint_id, exception_class):
+
+    min_list, max_list = build_l1_angle_limits(robot_limit, class_name)
+
+    global_idx = get_global_joint_index(arm_id, joint_id)
+
+    # 取限位
+    min_v = min_list[global_idx]
+    max_v = max_list[global_idx]
+
+    if not (min_v <= value <= max_v):
+        raise exception_class(
+            f"joint {joint_id} (global {global_idx}) "
+            f"angle {value} out of range {min_v} ~ {max_v}"
+        )
 
 def check_0_or_1(parameter, value, range_data, value_type, exception_class, _type):
     check_value_type(parameter, value_type, exception_class, _type)
@@ -2231,6 +2327,193 @@ def calibration_parameters(**kwargs):
                 if not value.lower().endswith((".gcode", ".ngc", ".nc")):
                     raise ultraArmP340DataException(
                         "Unsupported file format, please use .gcode, .ngc, or .nc, but received {}".format(value))
+
+    elif class_name in ["MercuryL1Client"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter == "pin_no_base":
+                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value_type, MyCobotPro450DataException, int)
+            elif parameter in ["pin_no", "communicate_mode"]:
+                check_0_or_1(parameter, value, [1, 2], value_type, MercuryL1ClientDataException, int)
+            elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration',
+                               'communication_mode', 'protocol_mode', 'state', 'damping']:
+                check_0_or_1(parameter, value, [0, 1], value_type, MercuryL1ClientDataException, int)
+            elif parameter == "move_type":
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value not in [0, 1, 2, 3, 4]:
+                    raise MercuryL1ClientDataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter in ['log_state']:
+                check_0_or_1(parameter, value, list(range(0, 8)), value_type, MercuryL1ClientDataException, int)
+            elif parameter in ['max_acc']:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                mode = kwargs.get('mode', None)
+                if mode == 0:
+                    if not (1 <= value <= 200):
+                        raise MercuryL1ClientDataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 400):
+                        raise MercuryL1ClientDataException(
+                            f"The parameter {parameter} only supports 1 ~ 400 (coord mode), but received {value}")
+            elif parameter in ['max_speed']:
+                mode = kwargs.get('mode', None)
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if mode == 0:
+                    if not (1 <= value <= 150):
+                        raise MercuryL1ClientDataException(
+                            f"The parameter {parameter} only supports 1 ~ 150 (angle mode), but received {value}")
+                elif mode == 1:
+                    if not (1 <= value <= 200):
+                        raise MercuryL1ClientDataException(
+                            f"The parameter {parameter} only supports 1 ~ 200 (coord mode), but received {value}")
+            elif parameter in['coord_id']:
+                if value not in robot_limit[class_name][parameter]:
+                    check_id(value, robot_limit[class_name][parameter], MercuryL1ClientDataException)
+            elif parameter in['joint_id']:
+                arm_id = kwargs.get('arm_id', None)
+                if arm_id == 0:
+                    parameter = 'all_joint_id'
+                elif arm_id == 1:
+                    parameter = 'left_joint_id'
+                else:
+                    parameter = 'right_joint_id'
+                if value not in robot_limit[class_name][parameter]:
+                    check_id(value, robot_limit[class_name][parameter], MercuryL1ClientDataException)
+            elif parameter in ["servo_restore", "set_motor_enabled"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MercuryL1ClientDataException(
+                        "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
+            elif parameter in ['left_angle']:
+                joint_id = kwargs.get('joint_id', None)
+                if joint_id == 9:
+                    pass
+                else:
+                    index = robot_limit[class_name]['left_joint_id'][joint_id - 1] - 1
+                    angles_min = robot_limit[class_name]["left_angles_min"][index]
+                    angles_max = robot_limit[class_name]["left_angles_max"][index]
+                    if value < angles_min or value > angles_max:
+                        raise MercuryL1ClientDataException(
+                            "left angle value not right, should be {0} ~ {1}, but received {2}".format(
+                                angles_min, angles_max, value))
+            elif parameter in ['right_angle']:
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['right_joint_id'][joint_id - 1] - 1
+                angles_min = robot_limit[class_name]["right_angles_min"][index]
+                angles_max = robot_limit[class_name]["right_angles_max"][index]
+                if value < angles_min or value > angles_max:
+                    raise MercuryL1ClientDataException(
+                        "right angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            angles_min, angles_max, value))
+            elif parameter == 'left_coord':
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be {} or {}, but the received {}".format(parameter, int, float, value_type))
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                coord_min = robot_limit[class_name]["coords_min"][index]
+                coord_max = robot_limit[class_name]["coords_max"][index]
+                if value < coord_min or value > coord_max:
+                    raise MercuryL1ClientDataException(
+                        "Left coordinate value not right, should be {0} ~ {1}, but received {2}".format(
+                            coord_min,coord_max, value))
+            elif parameter == 'right_coord':
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be {} or {}, but the received {}".format(parameter, int, float, value_type))
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                coord_min = robot_limit[class_name]["coords_min"][index]
+                coord_max = robot_limit[class_name]["coords_max"][index]
+                if value < coord_min or value > coord_max:
+                    raise MercuryL1ClientDataException(
+                        "Right coordinate value not right, should be {0} ~ {1}, but received {2}".format(
+                            coord_min,coord_max, value))
+            elif parameter == 'speed':
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if not 1 <= value <= 100:
+                    raise MercuryL1ClientDataException(
+                        "speed value not right, should be 1 ~ 100, the error speed is {}".format(value))
+            elif parameter in ["arm_id"]:
+                check_0_or_1(parameter, value, [0, 1, 2], value_type, MercuryL1ClientDataException, int)
+            elif parameter == "left_angles":
+                if not isinstance(value, list):
+                    raise MercuryL1ClientDataException("`angles` must be a list, but the received {}".format(type(value)))
+                # Check angles
+                if len(value) != 8:
+                    raise MercuryL1ClientDataException(
+                        "The length of `angles` must be 8, but received length is {}".format(len(value)))
+                # Check each angle type
+                for idx, angle in enumerate(value):
+                    if not isinstance(angle, (int, float)):
+                        raise MercuryL1ClientDataException(
+                            f"The left angle at index {idx} must be int or float, but got {type(angle)}")
+                for idx, angle in enumerate(value):
+                    angles_min = robot_limit[class_name]["left_angles_min"][idx]
+                    angles_max = robot_limit[class_name]["left_angles_max"][idx]
+                    if not angles_min <= angle <= angles_max:
+                        raise MercuryL1ClientDataException(
+                            "Has invalid left angle value, error on index {0}. Received {3} but angle should be {1} ~ {2}.".format(
+                                idx, angles_min, angles_max, angle))
+            elif parameter == "right_angles":
+                if not isinstance(value, list):
+                    raise MercuryL1ClientDataException("`angles` must be a list, but the received {}".format(type(value)))
+                # Check angles
+                if len(value) != 9:
+                    raise MercuryL1ClientDataException(
+                        "The length of `angles` must be 9, but received length is {}".format(len(value)))
+                # Check each angle type
+                for idx, angle in enumerate(value):
+                    if not isinstance(angle, (int, float)):
+                        raise MercuryL1ClientDataException(
+                            f"The right angle at index {idx} must be int or float, but got {type(angle)}")
+                for idx, angle in enumerate(value):
+                    angles_min = robot_limit[class_name]["right_angles_min"][idx]
+                    angles_max = robot_limit[class_name]["right_angles_max"][idx]
+                    if not angles_min <= angle <= angles_max:
+                        raise MercuryL1ClientDataException(
+                            "Has invalid right angle value, error on index {0}. Received {3} but angle should be {1} ~ {2}.".format(
+                                idx, angles_min, angles_max, angle))
+
+            elif parameter == 'left_coords':
+                if not isinstance(value, list):
+                    raise MercuryL1ClientDataException(
+                        "`{}` must be a list, but the received {}".format(parameter, type(value)))
+                if len(value) != 6:
+                    raise MercuryL1ClientDataException(
+                        "The left length of `{}` must be 6, but the received length is {}".format(parameter, len(value)))
+                # Check each coord type
+                for idx, coord in enumerate(value):
+                    if not isinstance(coord, (int, float)):
+                        raise MercuryL1ClientDataException(
+                            f"The left coord at index {idx} must be int or float, but got {type(coord)}")
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise MercuryL1ClientDataException(
+                            "Has invalid left coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                                idx, min_coord[idx], max_coord[idx], coord))
+            elif parameter == 'right_coords':
+                if not isinstance(value, list):
+                    raise MercuryL1ClientDataException(
+                        "`{}` must be a list, but the received {}".format(parameter, type(value)))
+                if len(value) != 6:
+                    raise MercuryL1ClientDataException(
+                        "The right length of `{}` must be 6, but the received length is {}".format(parameter, len(value)))
+                # Check each coord type
+                for idx, coord in enumerate(value):
+                    if not isinstance(coord, (int, float)):
+                        raise MercuryL1ClientDataException(
+                            f"The right coord at index {idx} must be int or float, but got {type(coord)}")
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise MercuryL1ClientDataException(
+                            "Has invalid right coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
+                                idx, min_coord[idx], max_coord[idx], coord))
 
 def restrict_serial_port(func):
     """

@@ -538,7 +538,7 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
-    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client", "MercuryL1"]
+    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client", "MercuryL1Client"]
 
     def __init__(self, debug=False):
         """
@@ -1007,7 +1007,7 @@ class DataProcessor(object):
             return combined_value
 
     def _parse_bytes_to_int(self, data):
-        """将多个字节组合为一个整数（大端）"""
+        """Combine multiple bytes into an integer (Big-Endian)"""
         value = 0
         for byte in data:
             value = (value << 8) | byte
@@ -1016,8 +1016,8 @@ class DataProcessor(object):
     def _split_joint_and_speed(self, data):
         if all(x == 0 for x in data):
             return -1
-        joints = data[::2]  # 偶数索引：关节角度
-        speeds = data[1::2]  # 奇数索引：对应速度
+        joints = data[::2]  # Even Indices: Joint Angles
+        speeds = data[1::2]  # Odd Indices: Correspond to Speed
         return [joints, speeds]
 
     @staticmethod
@@ -1046,7 +1046,7 @@ def write(self, command, method=None):
 
         py_version = DataProcessor.check_python_version()
         if py_version == 2:
-            # 检查套接字是否有效
+            # Check if the socket is valid.
             if not self.sock or self.sock.fileno() == -1:
                 return
 
@@ -1080,7 +1080,7 @@ def write(self, command, method=None):
                 command_log += data + " "
         self.log.debug("_write: {}".format(command_log))
         try:
-            # 检查串口是否打开
+            # Check if the serial port is open.
             if not self._serial_port.isOpen():
                 return
 

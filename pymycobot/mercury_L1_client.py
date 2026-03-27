@@ -1,26 +1,25 @@
 # coding=utf-8
 import locale
-import time
-import threading
 import socket
+import threading
+import time
 
 import numpy as np
-import serial
-from pymycobot.mercury_api import MercuryCommandGenerator
+
 from pymycobot.L1_close_loop import L1CloseLoop
-from pymycobot.robot_info import _interpret_status_code, RobotStatusL1Info
 from pymycobot.common import ProtocolCode, ProGripper
+from pymycobot.robot_info import _interpret_status_code, RobotStatusL1Info
 
 
-class MercuryL1(L1CloseLoop):
-    def __init__(self, ip='192.168.0.232', netport=6500, debug=False, save_serial_log=False):
+class MercuryL1Client(L1CloseLoop):
+    def __init__(self, ip='192.168.0.232', netport=6501, debug=False, save_serial_log=False):
         """
         Args:
             ip     : Server IP address, default '192.168.0.232'
-            netport : Socket port number, default is 6500
+            netport : Socket port number, default is 6501
             debug    : whether show debug info
         """
-        super(MercuryL1, self).__init__(debug)
+        super(MercuryL1Client, self).__init__(debug)
         self.save_serial_log = save_serial_log
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
@@ -28,7 +27,7 @@ class MercuryL1(L1CloseLoop):
         self.lock = threading.Lock()
         self.is_stop = False
         self.sync_mode = True
-        self.read_threading = threading.Thread(target=self.read_thread)
+        self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
         self.read_threading.daemon = True
         self.read_threading.start()
         self.language, _ = locale.getdefaultlocale()
@@ -42,7 +41,7 @@ class MercuryL1(L1CloseLoop):
         return sock
 
     def _mesg(self, genre, *args, **kwargs):
-        read_data = super(MercuryL1, self)._mesg(genre, *args, **kwargs)
+        read_data = super(MercuryL1Client, self)._mesg(genre, *args, **kwargs)
         if read_data is None:
             return -1
         elif read_data == 1:
@@ -63,6 +62,7 @@ class MercuryL1(L1CloseLoop):
         else:
             return -1
         res = []
+        # print('data_len:', data_len, valid_data)
         if genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
             res = [i for i in valid_data]
         elif data_len in [8, 12, 14, 16, 26, 60]:
@@ -73,7 +73,7 @@ class MercuryL1(L1CloseLoop):
                 for v in range(1, n):
                     res.append(valid_data[v])
             elif data_len == 8 and genre == ProtocolCode.GET_DOWN_ENCODERS:
-                res = self.bytes4_to_int(valid_data)
+                res = self._bytes4_to_int(valid_data)
             elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES,
                                              ProtocolCode.GET_SERVO_CURRENTS]:
                 for i in range(data_len):
@@ -102,7 +102,7 @@ class MercuryL1(L1CloseLoop):
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
             if genre == ProtocolCode.COBOTX_GET_ANGLE:
-                res = self.bytes4_to_int(valid_data)
+                res = self._bytes4_to_int(valid_data)
             elif genre == ProtocolCode.PRO450_GET_DIGITAL_INPUTS:
                 for i in range(4):
                     res.append(valid_data[i])
@@ -115,22 +115,17 @@ class MercuryL1(L1CloseLoop):
                 res = error_list
             else:
                 return error_list
-            # for i in error_list:
-            #     if i in range(16,23):
-            #         res.append(1)
-            #     elif i in range(23,29):
-            #         res.append(2)
-            #     elif i in range(32,112):
-            #         res.append(3)
-            #     else:
-            #         res.append(i)
+        elif data_len == 34:
+            for i in range(0, data_len, 2):
+                res.append(self._decode_int16(valid_data[i:i + 2]))
+
         elif data_len == 24:
-            res = self.bytes4_to_int(valid_data)
+            res = self._bytes4_to_int(valid_data)
         elif data_len == 40:
             i = 0
             while i < data_len:
                 if i < 28:
-                    res += self.bytes4_to_int(valid_data)
+                    res += self._bytes4_to_int(valid_data)
                     i += 4
                 else:
                     one = valid_data[i: i + 2]
@@ -238,8 +233,13 @@ class MercuryL1(L1CloseLoop):
             ProtocolCode.GET_FRESH_SPEED_MODE,
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_SERVO_SPEED]:
+        elif genre in [ProtocolCode.GET_SERVO_SPEED]:
             return [self._int2angle(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_ANGLES]:
+            angles = [self._int2angle(angle) for angle in res]
+            left_angles = angles[:8]
+            right_angles = angles[8:]
+            return [left_angles, right_angles]
         elif genre in [
             ProtocolCode.GET_COORDS,
             ProtocolCode.MERCURY_GET_BASE_COORDS,
@@ -477,14 +477,14 @@ class MercuryL1(L1CloseLoop):
         return -1
 
     def _joint_limit_init(self):
-        max_joint = np.zeros(6)
-        min_joint = np.zeros(6)
-        for i in range(6):
+        max_joint = np.zeros(7)
+        min_joint = np.zeros(7)
+        for i in range(7):
             max_joint[i] = self.get_joint_max_angle(i + 1)
             min_joint[i] = self.get_joint_min_angle(i + 1)
         return max_joint, min_joint
 
-    def _joint_limit_judge(self, angles):
+    def _joint_limit_judge_old(self, angles):
         offset = 3
         try:
             for i in range(6):
@@ -497,6 +497,29 @@ class MercuryL1(L1CloseLoop):
         except TypeError:
             return "joint limit error"
         return "over limit error {}".format(angles)
+
+    def _joint_limit_judge(self, angles):
+        offset = 3
+
+        try:
+            left_angles, right_angles = angles
+
+            for i in range(len(left_angles)):
+                if not (self.min_joint[i] + offset < left_angles[i] < self.max_joint[i] - offset):
+                    if self.language == "zh_CN":
+                        return f"左臂关节{i + 1} 当前角度为{left_angles[i]}, 范围：{self.min_joint[i]} ~ {self.max_joint[i]}"
+                    return f"Left joint {i + 1} = {left_angles[i]}, limit {self.min_joint[i]} ~ {self.max_joint[i]}"
+
+            for i in range(len(right_angles)):
+                if not (self.min_joint[i] + offset < right_angles[i] < self.max_joint[i] - offset):
+                    if self.language == "zh_CN":
+                        return f"右臂关节{i + 1} 当前角度为{right_angles[i]}, 范围：{self.min_joint[i]} ~ {self.max_joint[i]}"
+                    return f"Right joint {i + 1} = {right_angles[i]}, limit {self.min_joint[i]} ~ {self.max_joint[i]}"
+
+        except Exception as e:
+            return f"joint limit error: {str(e)}"
+
+        return ""
 
     def _Singularity(self, angles):
         try:
@@ -563,10 +586,10 @@ class MercuryL1(L1CloseLoop):
         return None
 
     def open(self):
-        self._serial_port.open()
+        self.sock = self.connect_socket()
 
     def close(self):
-        self._serial_port.close()
+        self.sock.close()
 
     def set_motor_enabled(self, arm_id, joint_id, state):
         """Set the robot torque state.
@@ -1312,7 +1335,9 @@ class MercuryL1(L1CloseLoop):
             1 : All motors return to zero position.
             0 : failed.
         """
-        return self.send_angles(arm_id, [0]*17, speed, _async=_async)
+        left_angles = [0] * 8
+        right_angles = [0] * 9
+        return self.send_angles(arm_id, left_angles, right_angles, speed, _async=_async)
 
     def get_digital_inputs(self):
         """Read the status of all pins at the end,
