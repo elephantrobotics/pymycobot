@@ -102,7 +102,8 @@ class MercuryL1Client(L1CloseLoop):
             res.append(self._decode_int16(valid_data[1:]))
         elif data_len == 4:
             if genre == ProtocolCode.COBOTX_GET_ANGLE:
-                res = self._bytes4_to_int(valid_data)
+                for i in range(0, data_len, 2):
+                    res.append(self._decode_int16(valid_data[i:i + 2]))
             elif genre == ProtocolCode.PRO450_GET_DIGITAL_INPUTS:
                 for i in range(4):
                     res.append(valid_data[i])
@@ -288,9 +289,11 @@ class MercuryL1Client(L1CloseLoop):
                         if res[i] == 1:
                             r.append(i)
             return r
-        elif genre in [ProtocolCode.COBOTX_GET_ANGLE, ProtocolCode.COBOTX_GET_SOLUTION_ANGLES,
+        elif genre in [ProtocolCode.COBOTX_GET_SOLUTION_ANGLES,
                        ProtocolCode.GET_POS_OVER]:
             return self._int2angle(res[0])
+        elif genre in [ProtocolCode.COBOTX_GET_ANGLE]:
+            return [self._int2angle(angle) for angle in res]
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
             if len(res) == 37:
                 parsed = res[:9]
@@ -1014,10 +1017,12 @@ class MercuryL1Client(L1CloseLoop):
         """Get single joint angle
 
         Args:
-            joint_id (int): 1 ~ 7.
+            joint_id (int): 1 ~ 9.
+
+        Returns:
+            (float) left and right angle, eg: [left, right]
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
 
     def set_debug_state(self, log_state):
