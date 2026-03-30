@@ -325,13 +325,17 @@ class L1CloseLoop(DataProcessor):
             res.append(self._angle2int(coords[i]))
         return res
 
-    def get_atom_version(self):
+    def get_atom_version(self, arm_id):
         """Get atom firmware version.
+
+        Args:
+            arm_id (int): 1 - left arm, 2 - right arm
 
         Returns:
             float: version number.
         """
-        return self._mesg(ProtocolCode.GET_ATOM_VERSION)
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id)
+        return self._mesg(ProtocolCode.GET_ATOM_VERSION, arm_id)
 
     def is_power_on(self):
         """Adjust robot arm status
@@ -415,7 +419,6 @@ class L1CloseLoop(DataProcessor):
 
         Args:
             arm_id (int):
-                0 - left and right arm
                 1 - left arm
                 2 - right arm
             command (list) : data instructions
@@ -424,7 +427,7 @@ class L1CloseLoop(DataProcessor):
             number of bytes received
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id)
+            class_name=self.__class__.__name__, tool_arm_id=arm_id)
         return self._mesg(ProtocolCode.TOOL_SERIAL_WRITE_DATA, arm_id, command)
 
     def get_robot_status(self):
@@ -807,15 +810,24 @@ class L1CloseLoop(DataProcessor):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
-            joint_id: Serial number of articulated steering gear. Joint id 1 - 7
+            joint_id: Serial number of articulated steering gear. Joint id 1 - 9
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id)
         return self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, arm_id, joint_id)
 
-    def set_servos_calibration(self):
-        for id in range(1, 8):
-            self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, id)
+    def set_servos_calibration(self, arm_id):
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, arm_id=arm_id)
+        if arm_id == 0:
+            for joint_id in range(1, 10):
+                self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, arm_id, joint_id)
+        elif arm_id == 1:
+            for joint_id in range(1, 9):
+                self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, arm_id, joint_id)
+        elif arm_id == 2:
+            for joint_id in range(1, 10):
+                self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, arm_id, joint_id)
 
     def is_in_position(self, data, mode=0):
         """Judge whether in the position.

@@ -2334,7 +2334,7 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == "pin_no_base":
                 check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value_type, MyCobotPro450DataException, int)
-            elif parameter in ["pin_no", "communicate_mode"]:
+            elif parameter in ["pin_no", "communicate_mode", "tool_arm_id"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, MercuryL1ClientDataException, int)
             elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration',
                                'communication_mode', 'protocol_mode', 'state', 'damping']:

@@ -387,11 +387,12 @@ class MercuryL1Client(L1CloseLoop):
                     crc >>= 1
         return crc.to_bytes(2, byteorder=mode)
 
-    def _send_modbus_command(self, gripper_id, func_code, reg_addr, value_high=None, value_low=None, custom_mode=False):
+    def _send_modbus_command(self, arm_id, gripper_id, func_code, reg_addr, value_high=None, value_low=None, custom_mode=False):
         """
         General Modbus command sending method
 
         Args:
+            arm_id: 1-left arm, 2-right arm
             gripper_id: Device ID
             func_code: Function code (0x03 = read, 0x06 = write)
             reg_addr: Register address
@@ -418,21 +419,21 @@ class MercuryL1Client(L1CloseLoop):
             # LEN = payload length + CRC length (2)，即 6+2 = 8
             cmd = [0xFE, 0xFE, 0x08] + payload
             cmd.extend(self._modbus_crc(cmd, mode='big'))
-        recv = self.tool_serial_write_data(cmd)
+        recv = self.tool_serial_write_data(arm_id, cmd)
         if not recv:
             return cmd, -1
         return cmd, recv
 
-    def _check_gripper_id(self, gripper_id):
+    def _check_gripper_id(self, gripper_id, arm_id):
 
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id, tool_arm_id=arm_id)
 
-    def _write_and_check(self, gripper_id, reg_addr, value, custom_mode=False):
+    def _write_and_check(self, arm_id, gripper_id, reg_addr, value, custom_mode=False):
         """Write register and verify response robustly (support calibration delay)"""
-        self._check_gripper_id(gripper_id)
+        self._check_gripper_id(gripper_id, arm_id)
         high, low = (value >> 8) & 0xFF, value & 0xFF
         # Continuously read the response packets, and send a read command to trigger feedback each time.
-        _, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low, custom_mode)
+        _, recv = self._send_modbus_command(arm_id, gripper_id, 0x06, reg_addr, high, low, custom_mode)
 
         # Basic validity check
         if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
@@ -463,11 +464,11 @@ class MercuryL1Client(L1CloseLoop):
 
         return -1
 
-    def _read_register(self, gripper_id, reg_addr):
+    def _read_register(self, arm_id, gripper_id, reg_addr):
         """Reads a register with command verification"""
-        self._check_gripper_id(gripper_id)
+        self._check_gripper_id(gripper_id, arm_id)
 
-        cmd, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
+        cmd, recv = self._send_modbus_command(arm_id, gripper_id, 0x03, reg_addr)
 
         if isinstance(recv, (list, bytearray)) and len(recv) >= 6:
             recv_func = recv[1]
@@ -614,7 +615,6 @@ class MercuryL1Client(L1CloseLoop):
 
         Args:
             arm_id (int):
-                0 - left and right arm
                 1 - left arm
                 2 - right arm
             main_version (str): Tool firmware version (format: 'x.y')
@@ -624,7 +624,7 @@ class MercuryL1Client(L1CloseLoop):
 
         """
         wait_time = 45
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, tool_main_version=main_version,
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id, tool_main_version=main_version,
                                     tool_modified_version=modified_version)
         main_version = int(float(main_version) * 10)
         if _async:
@@ -637,8 +637,8 @@ class MercuryL1Client(L1CloseLoop):
             time.sleep(wait_time)
 
             for _ in range(5):
-                tool_main_version = self.get_atom_version()
-                tool_modify_version = self.get_tool_modify_version()
+                tool_main_version = self.get_atom_version(arm_id)
+                tool_modify_version = self.get_tool_modify_version(arm_id)
 
                 if tool_main_version != -1 and tool_modify_version != -1:
                     version_str = f"v{tool_main_version}.{tool_modify_version}"
@@ -686,39 +686,46 @@ class MercuryL1Client(L1CloseLoop):
     #         class_name=self.__class__.__name__, joint_id=joint_id, value=value)
     #     return self._mesg(ProtocolCode.SET_BREAK, joint_id, value)
 
-    def get_tool_modify_version(self):
+    def get_tool_modify_version(self, arm_id):
         """Read end correction version number
-        """
-        return self._mesg(ProtocolCode.GET_TOOL_MODIFY_VERSION)
 
-    def get_pro_gripper_firmware_version(self, gripper_id=14):
+        Args:
+            arm_id (int): 1 - left arm, 2 - right arm
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id)
+        return self._mesg(ProtocolCode.GET_TOOL_MODIFY_VERSION, arm_id)
+
+    def get_pro_gripper_firmware_version(self, arm_id, gripper_id=14):
         """ Read the firmware major and minor version numbers
 
         Args:
+            arm_id (int):  1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             version number (float): x.x
         """
-        val = self._read_register(gripper_id, ProGripper.MODBUS_GET_FIRMWARE_VERSION)
+        val = self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_FIRMWARE_VERSION)
         return val / 10.0 if val >= 0 else -1
 
-    def get_pro_gripper_firmware_modified_version(self, gripper_id=14):
+    def get_pro_gripper_firmware_modified_version(self, arm_id, gripper_id=14):
         """ Read the firmware revision number
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             version number (int)
         """
-        val = self._read_register(gripper_id, ProGripper.MODBUS_GET_FIRMWARE_MODIFY_VERSION)
+        val = self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_FIRMWARE_MODIFY_VERSION)
         return val if val >= 0 else -1
 
-    def set_pro_gripper_id(self, target_id, gripper_id=14):
+    def set_pro_gripper_id(self, arm_id, target_id, gripper_id=14):
         """ Set the gripper ID
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             target_id (int): Target ID, 1 ~ 254
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -726,23 +733,25 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, target_id=target_id)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ID, target_id)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_ID, target_id)
 
-    def get_pro_gripper_id(self, gripper_id=14):
+    def get_pro_gripper_id(self, arm_id, gripper_id=14):
         """ Read the gripper ID
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             gripper_id (int): 1 ~ 254
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_ID)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_ID)
 
-    def set_pro_gripper_angle(self, gripper_angle, gripper_id=14):
+    def set_pro_gripper_angle(self, arm_id, gripper_angle, gripper_id=14):
         """ Set the gripper angle
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_angle (int): 0 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -750,56 +759,61 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ANGLE, gripper_angle)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_ANGLE, gripper_angle)
 
-    def get_pro_gripper_angle(self, gripper_id=14):
+    def get_pro_gripper_angle(self, arm_id, gripper_id=14):
         """ Get the gripper angle
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             gripper_angle (int): 0 ~ 100
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_ANGLE)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_ANGLE)
 
-    def set_pro_gripper_open(self, gripper_id=14):
+    def set_pro_gripper_open(self, arm_id, gripper_id=14):
         """ Open the gripper
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             1 - success, 0 - failed
         """
-        return self.set_pro_gripper_angle(100, gripper_id)
+        return self.set_pro_gripper_angle(arm_id, 100, gripper_id)
 
-    def set_pro_gripper_close(self, gripper_id=14):
+    def set_pro_gripper_close(self, arm_id, gripper_id=14):
         """ Close the gripper
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             1 - success, 0 - failed
         """
-        return self.set_pro_gripper_angle(0, gripper_id)
+        return self.set_pro_gripper_angle(arm_id, 0, gripper_id)
 
-    def set_pro_gripper_calibration(self, gripper_id=14):
+    def set_pro_gripper_calibration(self, arm_id, gripper_id=14):
         """ Set the gripper zero position
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             1 - success, 0 - failed
         """
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_CALIBRATION, 0)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_CALIBRATION, 0)
 
-    def get_pro_gripper_status(self, gripper_id=14):
+    def get_pro_gripper_status(self, arm_id, gripper_id=14):
         """ Get the gripper status
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
@@ -808,12 +822,13 @@ class MercuryL1Client(L1CloseLoop):
             2 - Stopped moving, clamping detected
             3 - After clamping detected, the object fell
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_STATUS)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_STATUS)
 
-    def set_pro_gripper_enabled(self, state, gripper_id=14):
+    def set_pro_gripper_enabled(self, arm_id, state, gripper_id=14):
         """ Set the gripper enable state
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             state (bool): 0 or 1, 0 - Disable 1 - Enable
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -821,12 +836,13 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ENABLED, state)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_ENABLED, state)
 
-    def set_pro_gripper_torque(self, gripper_torque, gripper_id=14):
+    def set_pro_gripper_torque(self, arm_id, gripper_torque, gripper_id=14):
         """ Set the gripper torque
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_torque (int): 0 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -834,23 +850,25 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_torque=gripper_torque)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_TORQUE, gripper_torque)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_TORQUE, gripper_torque)
 
-    def get_pro_gripper_torque(self, gripper_id=14):
+    def get_pro_gripper_torque(self, arm_id, gripper_id=14):
         """ Set the gripper torque
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             gripper_torque (int): 0 ~ 100
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_TORQUE)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_TORQUE)
 
-    def set_pro_gripper_speed(self, speed, gripper_id=14):
+    def set_pro_gripper_speed(self, arm_id, speed, gripper_id=14):
         """ Set the gripper torque
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             speed (int): 1 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -858,33 +876,36 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_SPEED, speed)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_SPEED, speed)
 
-    def get_pro_gripper_speed(self, gripper_id=14):
+    def get_pro_gripper_speed(self, arm_id, gripper_id=14):
         """ Get the gripper speed
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Return:
             speed (int): 1 ~ 100
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_SPEED)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_SPEED)
 
-    def set_pro_gripper_abs_angle(self, gripper_angle, gripper_id=14):
+    def set_pro_gripper_abs_angle(self, arm_id, gripper_angle, gripper_id=14):
         """ Set the gripper absolute angle
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_angle (int): 0 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ABS_ANGLE, gripper_angle)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_ABS_ANGLE, gripper_angle)
 
-    def set_pro_gripper_io_open_angle(self, gripper_angle, gripper_id=14):
+    def set_pro_gripper_io_open_angle(self, arm_id, gripper_angle, gripper_id=14):
         """ Set the gripper IO open angle
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_angle (int): 0 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -892,23 +913,25 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_OPEN_ANGLE, gripper_angle)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_IO_OPEN_ANGLE, gripper_angle)
 
-    def get_pro_gripper_io_open_angle(self, gripper_id=14):
+    def get_pro_gripper_io_open_angle(self, arm_id, gripper_id=14):
         """ Get the gripper IO open angle
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             angle (int): 0 ~ 100
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_IO_OPEN_ANGLE)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_IO_OPEN_ANGLE)
 
-    def set_pro_gripper_io_close_angle(self, gripper_angle, gripper_id=14):
+    def set_pro_gripper_io_close_angle(self, arm_id, gripper_angle, gripper_id=14):
         """ Set the gripper IO close angle
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_angle (int): 0 ~ 100
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -916,23 +939,25 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_CLOSE_ANGLE, gripper_angle)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_IO_CLOSE_ANGLE, gripper_angle)
 
-    def get_pro_gripper_io_close_angle(self, gripper_id=14):
+    def get_pro_gripper_io_close_angle(self, arm_id, gripper_id=14):
         """ Get the gripper IO close angle
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             angle (int): 0 ~ 100
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_IO_CLOSE_ANGLE)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_IO_CLOSE_ANGLE)
 
-    def set_pro_gripper_mini_pressure(self, pressure_value, gripper_id=14):
+    def set_pro_gripper_mini_pressure(self, arm_id, pressure_value, gripper_id=14):
         """ Set the gripper mini pressure
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             pressure_value (int): 0 ~ 254
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -940,23 +965,25 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, pressure_value=pressure_value)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MINI_PRESSURE, pressure_value)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_MINI_PRESSURE, pressure_value)
 
-    def get_pro_gripper_mini_pressure(self, gripper_id=14):
+    def get_pro_gripper_mini_pressure(self, arm_id, gripper_id=14):
         """ Get the gripper mini pressure
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             mini pressure (int): 0 ~ 254
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_MINI_PRESSURE)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_MINI_PRESSURE)
 
-    def set_pro_gripper_protection_current(self, current_value, gripper_id=14):
+    def set_pro_gripper_protection_current(self, arm_id, current_value, gripper_id=14):
         """ Set the gripper protection current
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             current_value (int): 100 ~ 300
             gripper_id (int): 1 ~ 254, defaults to 14
 
@@ -964,18 +991,19 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, current_value=current_value)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_PROTECTION_CURRENT, current_value)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_PROTECTION_CURRENT, current_value)
 
-    def get_pro_gripper_protection_current(self, gripper_id=14):
+    def get_pro_gripper_protection_current(self, arm_id, gripper_id=14):
         """ Get the gripper protection current
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
             current_value (int): 100 ~ 300
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_PROTECTION_CURRENT)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_PROTECTION_CURRENT)
 
     def set_fresh_mode(self, mode):
         """Set command refresh mode
@@ -1394,10 +1422,11 @@ class MercuryL1Client(L1CloseLoop):
         """
         return self._mesg(ProtocolCode.IS_MOTOR_PAUSE)
 
-    def set_pro_gripper_modbus(self, state, custom_mode=False, gripper_id=14):
+    def set_pro_gripper_modbus(self, arm_id, state, custom_mode=False, gripper_id=14):
         """ Set the gripper modbus mode
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             state (int): 0 or 1, 0 - close modbus 1 - open modbus
             custom_mode (bool):
             gripper_id (int): 1 ~ 254, defaults to 14
@@ -1407,14 +1436,15 @@ class MercuryL1Client(L1CloseLoop):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         if custom_mode:
-            return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MODE, state, custom_mode=custom_mode)
+            return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_MODE, state, custom_mode=custom_mode)
         else:
-            return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MODE, state)
+            return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_MODE, state)
 
-    def set_pro_gripper_baud(self, baud_rate=0, gripper_id=14):
+    def set_pro_gripper_baud(self, arm_id, baud_rate=0, gripper_id=14):
         """ Set the gripper baud rate
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             baud_rate (int): 0 ~ 5, defaults to 0 - 115200
                 0 - 115200
                 1 - 1000000
@@ -1428,12 +1458,13 @@ class MercuryL1Client(L1CloseLoop):
             1 - success, 0 - failed
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_baud_rate=baud_rate)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_BAUD_RATE, baud_rate)
+        return self._write_and_check(arm_id, gripper_id, ProGripper.MODBUS_SET_BAUD_RATE, baud_rate)
 
-    def get_pro_gripper_baud(self, gripper_id=14):
+    def get_pro_gripper_baud(self, arm_id, gripper_id=14):
         """ Set the gripper baud rate
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): 1 ~ 254, defaults to 14
 
         Returns:
@@ -1445,20 +1476,19 @@ class MercuryL1Client(L1CloseLoop):
                 4 - 9600
                 5 - 4800
         """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_BAUD_RATE)
+        return self._read_register(arm_id, gripper_id, ProGripper.MODBUS_GET_BAUD_RATE)
 
     def set_tool_serial_baud_rate(self, arm_id, baud_rate=115200):
         """ Set the end 485 baud rate
 
             Args:
                 arm_id (int):
-                    0 - left and right arm
                     1 - left arm
                     2 - right arm
                 baud_rate (int): Standard baud rates, such as 115200, 1000000, 57600, 19200, 9600, 4800.
                                 defaults to 115200
             """
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, end_485_baud_rate=baud_rate)
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id, end_485_baud_rate=baud_rate)
         data = bytearray()
         data += baud_rate.to_bytes(4, 'big')
         return self._mesg(ProtocolCode.SET_TOOL_485_BAUD_RATE, arm_id, *data)
@@ -1469,24 +1499,27 @@ class MercuryL1Client(L1CloseLoop):
 
         Args:
             arm_id (int):
-                0 - left and right arm
                 1 - left arm
                 2 - right arm
             timeout (int): Timeout period, in ms, range 0 ~ 10000 ms, defaults to 10000
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, timeout=timeout)
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id, timeout=timeout)
 
         high_byte = (timeout >> 8) & 0xFF
         low_byte = timeout & 0xFF
 
         return self._mesg(ProtocolCode.SET_TOOL_SERIAL_TIMEOUT, arm_id, high_byte, low_byte)
 
-    def get_tool_config(self):
+    def get_tool_config(self, arm_id):
         """ Get the end 485 baud rate and timeout
 
-            Returns: (list) [baud_rate, timeout]
-            """
-        return self._mesg(ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT)
+        Args:
+            arm_id (int): 1 - left arm, 2 - right arm
+
+        Returns: (list) [baud_rate, timeout]
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id)
+        return self._mesg(ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT, arm_id)
 
     def set_free_move_mode(self, arm_id, mode):
         """ Set the free move mode
@@ -1504,7 +1537,7 @@ class MercuryL1Client(L1CloseLoop):
         """ Set the free move mode"""
         return self._mesg(ProtocolCode.IS_FREE_MODE)
 
-    def set_pro_gripper_init(self, gripper_id=14):
+    def set_pro_gripper_init(self, arm_id, gripper_id=14):
         """
         Initialize the Pro450 gripper and automatically recover communication.
 
@@ -1530,6 +1563,7 @@ class MercuryL1Client(L1CloseLoop):
           - Tool serial port baudrate is restored to 115200
 
         Args:
+            arm_id (int): 1 - left arm, 2 - right arm
             gripper_id (int): Modbus ID of the gripper, range 1–254.
                 Defaults to 14.
 
@@ -1541,58 +1575,58 @@ class MercuryL1Client(L1CloseLoop):
 
         print("The gripper is initializing, please wait...")
 
-        self.set_tool_serial_timeout(250)
+        self.set_tool_serial_timeout(arm_id, 250)
 
-        test = self.get_pro_gripper_angle(gripper_id=gripper_id)
+        test = self.get_pro_gripper_angle(arm_id, gripper_id=gripper_id)
         if test != -1:
-            self.set_pro_gripper_modbus(1, gripper_id=gripper_id)  # ensure normal modbus mode
+            self.set_pro_gripper_modbus(arm_id, 1, gripper_id=gripper_id)  # ensure normal modbus mode
 
-            self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # gripper -> 115200
+            self.set_pro_gripper_baud(arm_id, 0, gripper_id=gripper_id)  # gripper -> 115200
 
-            self.set_tool_serial_baud_rate(115200)  # end -> 115200
-            self.set_tool_serial_timeout(10000)
+            self.set_tool_serial_baud_rate(arm_id, 115200)  # end -> 115200
+            self.set_tool_serial_timeout(arm_id, 10000)
 
             print("Gripper Initialization Successful!")
             return True
 
         for baud in try_bauds:
             # print(f"\n👉 Try the end baud rate: {baud}")
-            self.set_tool_serial_baud_rate(baud_rate=baud)
+            self.set_tool_serial_baud_rate(arm_id, baud_rate=baud)
 
             cfg = self.get_tool_config()
             # print(f"   485 current config: {cfg}")
 
             # Read the angle again, applicable to: Baud rate = Correct, Mode = Modbus
-            test = self.get_pro_gripper_angle(gripper_id=gripper_id)
+            test = self.get_pro_gripper_angle(arm_id, gripper_id=gripper_id)
             # print(f"🔁 Test Modbus to read angle return: {test}")
 
             if test != -1:
-                self.set_pro_gripper_baud(0, gripper_id=gripper_id)
-                self.set_tool_serial_baud_rate(115200)
-                self.set_tool_serial_timeout(10000)
+                self.set_pro_gripper_baud(arm_id, 0, gripper_id=gripper_id)
+                self.set_tool_serial_baud_rate(arm_id, 115200)
+                self.set_tool_serial_timeout(arm_id, 10000)
                 print("Gripper Initialization Successful!")
                 return True
 
             # print(f"\n👉 Try the end baud rate again: {baud}")
-            self.set_tool_serial_baud_rate(baud_rate=baud)
+            self.set_tool_serial_baud_rate(arm_id, baud_rate=baud)
             cfg = self.get_tool_config()
             # print(f"   485 current config: {cfg}")
-            ret = self.set_pro_gripper_modbus(1, True, gripper_id=gripper_id)
+            ret = self.set_pro_gripper_modbus(arm_id, 1, True, gripper_id=gripper_id)
             # print(f"   set_modbus(custom) ret={ret}")
 
             if ret == 1:
                 for i in range(3):
-                    t = self.get_pro_gripper_angle(gripper_id=gripper_id)
+                    t = self.get_pro_gripper_angle(arm_id, gripper_id=gripper_id)
                     # print(f" 🔧 Test angle read[{i}] -> {t}")
                     if t != -1:
                         break
                     time.sleep(0.1)
 
                 if t != -1:
-                    self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # change gripper → 115200
+                    self.set_pro_gripper_baud(arm_id, 0, gripper_id=gripper_id)  # change gripper → 115200
 
-                    self.set_tool_serial_baud_rate(115200)  # end back → 115200
-                    self.set_tool_serial_timeout(10000)
+                    self.set_tool_serial_baud_rate(arm_id, 115200)  # end back → 115200
+                    self.set_tool_serial_timeout(arm_id, 10000)
 
                     print("Gripper Initialization Successful!")
                     return True
