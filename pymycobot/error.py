@@ -211,7 +211,6 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     "The data supported by parameter {} is 0 or 1 or 2, but the received value is {}".format(parameter,
                                                                                                              value))
         elif parameter == 'pin_signal':
-            print('22222')
             check_0_or_1(parameter, value, [0, 1], value_type, exception_class, int)
         elif parameter == 'speed':
             check_value_type(parameter, value_type, exception_class, int)
@@ -483,6 +482,10 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MercuryDataException, int)
                 if value < 1 or value > 5:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == "move_rank":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value not in [0,1,2]:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 2, but received {}".format(parameter, value))
             elif parameter == 'rank_value':
                 check_value_type(parameter, value_type, MercuryDataException, int)
                 if not 1 <= value <= 100:
@@ -651,6 +654,17 @@ def calibration_parameters(**kwargs):
                 if value < increment_min or value > increment_max:
                     raise MercuryDataException(
                         "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+            elif parameter == "get_rank_mode":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 1 or value > 4:
+                    raise MercuryDataException(
+                        "The parameter {} only supports 1 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "set_fusion_rank_mode":
+                if value < 0 or value > 4:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "set_fusion_value":
+                if value < 0 or value > 10000:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
