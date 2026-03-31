@@ -4,9 +4,10 @@ import time
 
 from pymycobot.common import ProtocolCode, write, read, DataProcessor, FingerGripper
 from pymycobot.error import calibration_parameters
+from pymycobot.end_control import FiveFingerGripper, L1ForceGripper
 
 
-class L1CloseLoop(DataProcessor):
+class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
     _write = write
     _read = read
 
@@ -112,11 +113,11 @@ class L1CloseLoop(DataProcessor):
             timeout = 5
             wait_time = 4
         elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
-            if real_command[7] in [36, 13]:
+            if real_command[8] in [36, 13]:
                 timeout = 3
                 wait_time = 10
             else:
-                wait_time = 0.25
+                wait_time = 0.3
         else:
             timeout = 3
         interval_time = time.time()
@@ -1038,14 +1039,13 @@ class L1CloseLoop(DataProcessor):
 
         Args:
             arm_id (int):
-                0 - left and right arm
                 1 - left arm
                 2 - right arm
             pin_no (int): 1 or 2
             pin_signal (int): 0 / 1
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, pin_no=pin_no, pin_signal=pin_signal)
+            class_name=self.__class__.__name__, tool_arm_id=arm_id, pin_no=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
     def get_digital_input(self, pin_no):

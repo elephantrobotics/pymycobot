@@ -2382,9 +2382,9 @@ def calibration_parameters(**kwargs):
                     check_id(value, robot_limit[class_name][parameter], MercuryL1ClientDataException)
             elif parameter in ["servo_restore", "set_motor_enabled"]:
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
-                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                if value not in [1, 2, 3, 4, 5, 6, 7, 8, 9, 254]:
                     raise MercuryL1ClientDataException(
-                        "The joint_id should be in [1,2,3,4,5,6,254], but received {}".format(value))
+                        "The joint_id should be in [1,2,3,4,5,6,7,8,9,254], but received {}".format(value))
             elif parameter in ['left_angle']:
                 joint_id = kwargs.get('joint_id', None)
                 if joint_id == 9:
@@ -2514,6 +2514,132 @@ def calibration_parameters(**kwargs):
                         raise MercuryL1ClientDataException(
                             "Has invalid right coord value, error on index {0}, received {3}, but coord should be {1} ~ {2}.".format(
                                 idx, min_coord[idx], max_coord[idx], coord))
+            elif parameter in ["tool_main_version"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, str)
+                if not re.fullmatch(r"\d+\.\d", str(value)):
+                    raise MercuryL1ClientDataException(
+                        f"Invalid version format: '{value}', expected format like '1.1'")
+                if float(value) < 1.0:
+                    raise MercuryL1ClientDataException(
+                        f"Version must be >= 1.0, but received '{value}'")
+            elif parameter in ["tool_modified_version", "five_hand_id", "target_five_hand_id"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 255:
+                    raise MercuryL1ClientDataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
+            elif parameter in ["five_fingers_angles"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, list)
+                if len(value) not in [6]:
+                    raise MercuryL1ClientDataException("The length of `fingers_angles` must be 6.")
+                for idx, angle in enumerate(value):
+                    joint_id = idx + 1
+                    angle_min = robot_limit[class_name]["five_fingers_angles_min"][idx]
+                    angle_max = robot_limit[class_name]["five_fingers_angles_max"][idx]
+                    if angle < angle_min or angle > angle_max:
+                        raise MercuryL1ClientDataException(
+                            "Joint {} fingers angle value of {} exceeds the limit, with a limit range of {} ~ {}.".format(
+                                joint_id, angle, angle_min, angle_max)
+                        )
+            elif parameter in ["finger_id"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 1 or value > 6:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 1 ~ 6, but received {}".format(parameter, value))
+
+            elif parameter in ['five_finger_angle']:
+                finger_id = kwargs.get('finger_id', None)
+                index = robot_limit[class_name]['finger_id'][finger_id - 1] - 1
+                angle_min = robot_limit[class_name]["five_fingers_angles_min"][index]
+                angle_max = robot_limit[class_name]["five_fingers_angles_max"][index]
+                if value < angle_min or value > angle_max:
+                    raise MercuryL1ClientDataException(
+                        "five fingers angle value not right, should be {0} ~ {1}, but received {2}".format(angle_min, angle_max, value))
+            elif parameter in ["gripper_id", "target_id"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 1 or value > 254:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 1 ~ 254, but received {}".format(parameter, value))
+            elif parameter in ["gripper_angle", "gripper_torque"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 100:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 0 ~ 100, but received {}".format(parameter, value))
+            elif parameter in ["pressure_value"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 254:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 0 ~ 254, but received {}".format(parameter, value))
+            elif parameter in ["current_value"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 100 or value > 300:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 100 ~ 300, but received {}".format(parameter, value))
+
+            elif parameter in ["tool_coords", "world_coords"]:
+                check_world_tool_coords(parameter, value, MercuryL1ClientDataException)
+            elif parameter in ["gripper_baud_rate"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 1:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 0 ~ 1, but received {}".format(parameter, value))
+            elif parameter in ["end_485_baud_rate"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                baud_list = [115200, 1000000]
+                if value not in baud_list:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports {}, but received {}".format(parameter, baud_list, value))
+            elif parameter in ["timeout"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 1 or value > 10000:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 1 ~ 10000 ms, but received {}".format(parameter, value))
+
+            elif parameter == 'increment_angle':
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryL1ClientDataException(
+                        "increment angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            increment_min, increment_max, value))
+            elif parameter == 'increment_coord':
+                coord_id = kwargs.get('coord_id', None)
+                index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
+                span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise MercuryL1ClientDataException(
+                        "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(
+                            increment_min, increment_max, value))
+            elif parameter == "rank_mode":
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 4:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "get_rank_mode":
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 1 or value > 4:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 1 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "rank_mode_value":
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 10000:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
+            elif parameter == 'rank':
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 1 or value > 5:
+                    raise MercuryL1ClientDataException(
+                        "The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == 'rank_value':
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if not 1 <= value <= 255:
+                    raise MercuryL1ClientDataException(
+                        "rank value not right, should be 1 ~ 255, the error speed is {}".format(value))
 
 def restrict_serial_port(func):
     """
