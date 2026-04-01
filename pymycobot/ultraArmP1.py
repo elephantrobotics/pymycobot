@@ -297,11 +297,11 @@ class UltraArmP1:
                     elif flag == "get_base_io_state":
                         r = self._parse_bracket_values(lower, "io", int)
                         if r is not None:
-                            return r[:10]
+                            return r
                     elif flag == "get_end_io_state":
                         r = self._parse_bracket_values(lower, "io", int)
                         if r is not None:
-                            return r[10:]
+                            return r
 
                     elif flag is None:
                         return -1
@@ -635,7 +635,7 @@ class UltraArmP1:
             self._send_command(ProtocolCode.SET_STOP_P1)
             return self._response(_async=False)
 
-    def set_jog_angle(self, joint_id, direction, speed, _async=True, _gcode=False):
+    def set_jog_angle(self, joint_id, direction, speed, _async=False, _gcode=False):
         """Start jog movement with angle
 
         Args:
@@ -657,7 +657,7 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
-    def set_jog_coord(self, axis_id, direction, speed, _async=True, _gcode=False):
+    def set_jog_coord(self, axis_id, direction, speed, _async=False, _gcode=False):
         """Start jog movement with coord
 
         Args:
@@ -801,19 +801,21 @@ class UltraArmP1:
             self._send_command(ProtocolCode.GET_GRIPPER_ANGLE_P1)
             return self._request("get_gripper_angle")
 
-    def set_gripper_parameter(self, addr, mode, parameter_value):
+    def set_gripper_parameter(self, addr, parameter_value):
         """Set gripper parameter
 
         Args:
             addr (int) : 1 ~ 69
-            mode (int) : 1 - 2
             parameter_value (int) :
                 mode is 1: 0 ~ 255
                 mode is 2: > 255
 
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr,
-                                    gripper_mode=mode, parameter_value=parameter_value)
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr, parameter_value=parameter_value)
+        if 0 < parameter_value < 255:
+            mode = 1
+        else:
+            mode = 2
         with self.lock:
             command = ProtocolCode.SET_GRIPPER_PARAMETER_P1
             command += " J" + str(addr)
@@ -900,7 +902,8 @@ class UltraArmP1:
                 0 - Low level
                 1 - High level
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no, basic_pin_status=pin_no, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no,
+                                    basic_pin_status=pin_status, pin_signal=pin_signal)
         with self.lock:
             command = ProtocolCode.SET_BASIC_OUTPUT_P1
             command += " P" + str(pin_no)
@@ -1271,8 +1274,8 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=False)
 
-    def get_base_io_state(self):
-        """Get bottom I/O pin status.
+    def get_all_base_io_states(self):
+        """Get All bottom I/O pin status.
 
         Returns:
             pin_status (list) : List of numbers in the range 0 to 3, len is 10
@@ -1282,10 +1285,30 @@ class UltraArmP1:
                 3: Output, level = 1 (high level)
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_BASE_END_IO_STATE_P1)
+            self._send_command(ProtocolCode.GET_BASE_IO_STATE_P1)
             return self._request('get_base_io_state')
 
-    def get_end_io_state(self):
+    def get_base_io_state(self, pin_no):
+        """Get bottom I/O pin status.
+
+        Args:
+            pin_no (int): bottom pin number, range is 1 ~ 10
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 10
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no)
+        with self.lock:
+            self._send_command(ProtocolCode.GET_BASE_IO_STATE_P1)
+            res_data = self._request('get_base_io_state')
+            if isinstance(res_data, list):
+                return res_data[pin_no - 1]
+            return -1
+
+    def get_all_end_io_states(self):
         """Get end I/O pin status.
 
         Returns:
@@ -1296,8 +1319,28 @@ class UltraArmP1:
                 3: Output, level = 1 (high level)
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_BASE_END_IO_STATE_P1)
+            self._send_command(ProtocolCode.GET_END_IO_STATE_P1)
             return self._request('get_end_io_state')
+
+    def get_end_io_state(self, pin_no):
+        """Get end I/O pin status.
+
+        Args:
+            pin_no (int): end pin number, range is 1 ~ 4
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 4
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, end_pin_no=pin_no)
+        with self.lock:
+            self._send_command(ProtocolCode.GET_END_IO_STATE_P1)
+            res_data = self._request('get_end_io_state')
+            if isinstance(res_data, list):
+                return res_data[pin_no - 1]
+            return -1
 
     def set_button_disable(self):
         """Disable the settings button."""
@@ -1334,5 +1377,22 @@ class UltraArmP1:
             command += " K" + str(direction)
             command += " L" + str(speed)
             command += " S" + str(distance)
+            self._send_command(command)
+            return self._response(_async=False)
+
+    def set_color(self, r, g, b):
+        """Set the color of the RGB light panel
+
+        Args:
+            r (int): Red color, range is 0 ~ 255
+            g (int): Green color, range is 0 ~ 255
+            b (int): Blue color, range is 0 ~ 255
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, rgb=[r, g, b])
+        with self.lock:
+            command = ProtocolCode.SET_RGB_COLOR
+            command += " R" + str(r)
+            command += " G" + str(g)
+            command += " B" + str(b)
             self._send_command(command)
             return self._response(_async=False)

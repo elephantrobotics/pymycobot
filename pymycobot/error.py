@@ -2485,6 +2485,8 @@ def calibration_parameters(**kwargs):
                 if not (1 <= value <= 500000):
                     raise ultraArmP1DataException(
                         f"Speed out of range, should be 1 ~ 500000, but received {value}")
+            elif parameter == 'rgb':
+                check_rgb_value(value, ultraArmP1DataException, class_name)
 
 
 def restrict_serial_port(func):
