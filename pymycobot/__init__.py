@@ -52,6 +52,7 @@ from pymycobot.exoskeleton import Exoskeleton
 from pymycobot.exoskeletonsocket import ExoskeletonSocket
 from pymycobot.mybuddyemoticon import MyBuddyEmoticon
 from pymycobot.mercury_L1_client import MercuryL1Client
+from pymycobot.mercury_L1_chassis import MercuryL1Chassis
 
 
 __all__ = [
@@ -104,6 +105,7 @@ __all__ = [
     "Pro450Client",
     "UltraArmP1",
     "MercuryL1Client",
+    "MercuryL1Chassis",
 ]
 
 __version__ = "4.0.5b12"
