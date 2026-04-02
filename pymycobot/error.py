@@ -2415,6 +2415,11 @@ def calibration_parameters(**kwargs):
                 if value not in [1, 2, 3, 4]:
                     raise ultraArmP1DataException(
                         f"The parameter {parameter} only supports 1 ~ 4, but received {value}")
+            elif parameter in ["set_end_pin_no"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 4, but received {value}")
             elif parameter in ["basic_pin_no"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if not (1 <= value <= 10):

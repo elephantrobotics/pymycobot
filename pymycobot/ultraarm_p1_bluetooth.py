@@ -112,7 +112,7 @@ class UltraArmP1Bluetooth:
 
     # ---------------- Response waiting ----------------
 
-    def _response(self, timeout=90, _async=True, _gcode=False):
+    def _response(self, timeout=90, _async=True, _gcode=False, is_set=False):
 
         if _gcode:
             _async = False
@@ -141,13 +141,17 @@ class UltraArmP1Bluetooth:
                 self._debug_read(text)
 
                 text_lower = text.lower()
+                if is_set:
+                    if "ok" in text_lower:
+                        return 'ok'
+                    if "error:" in text_lower:
+                        r = self._parse_colon_values(text_lower, "error", int)
+                        return r if r is not None else "error"
                 # Limit error
                 if "limiterror" in text_lower:
-                    import re
-                    match = re.search(r"limiterror\[(\d+)\]", text_lower)
-                    if match:
-                        err_code = int(match.group(1))
-
+                    r = self._parse_colon_values(text_lower, "limiterror", int, single=True)
+                    if r is not None:
+                        err_code = r
                         if err_code == 6:
                             return "J2/J3 joint coupling limit."
 
@@ -156,14 +160,13 @@ class UltraArmP1Bluetooth:
                         elif err_code == 1:
                             return "J1 joint over-limit"
                         else:
-                            return f"LimitError[{err_code}]"
+                            return f"ErrorCode {err_code}"
 
                 # Collision detection
                 if "collisiondetectionerror" in text_lower:
-                    import re
-                    match = re.search(r"collisiondetectionerror\[(\d+)\]", text_lower)
-                    if match:
-                        joint = int(match.group(1))
+                    r = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
+                    if r is not None:
+                        joint = r
                         return f"Joint{joint} Collision Detection Error."
 
                 # if keyword in received_data.lower():
@@ -205,17 +208,17 @@ class UltraArmP1Bluetooth:
                             self._debug_read(display)
 
                     if flag == "angle":
-                        r = self._parse_bracket_values(lower, "angles", float, 2)
+                        r = self._parse_colon_values(lower, "angles", float, 2)
                         if r is not None:
                             return r
 
                     elif flag == "coord":
-                        r = self._parse_bracket_values(lower, "coords", float, 2)
+                        r = self._parse_colon_values(lower, "coords", float, 2)
                         if r is not None:
                             return r
 
                     elif flag == "error_information":
-                        r = self._parse_bracket_values(lower, "error", int)
+                        r = self._parse_colon_values(lower, "error", int)
                         if r is not None:
                             error_desc = [
                                 "Joint1 motor limit exceeded.",
@@ -235,79 +238,79 @@ class UltraArmP1Bluetooth:
                             return r
 
                     elif flag == "get_gripper_angle":
-                        r = self._parse_bracket_values(lower, "gripperangle", int, single=True)
+                        r = self._parse_colon_values(lower, "gripperangle", int, single=True)
                         if r is not None:
                             return r
 
                     elif flag == "zero_calibration_state":
-                        r = self._parse_bracket_values(lower, "zero state", int)
+                        r = self._parse_colon_values(lower, "zero state", int)
                         if r is not None:
                             return r
 
                     elif flag == "system_version":
-                        r = self._parse_bracket_values(
+                        r = self._parse_colon_values(
                             lower, "getsystemversion", float, 1, single=True
                         )
                         if r is not None:
                             return r / 10
 
                     elif flag == "modify_version":
-                        r = self._parse_bracket_values(
+                        r = self._parse_colon_values(
                             lower, "getmodifyversion", int, single=True
                         )
                         if r is not None:
                             return r
 
                     elif flag == "get_screen_version":
-                        r = self._parse_bracket_values(
+                        r = self._parse_colon_values(
                             lower, "getscreenversion", float, 1, single=True
                         )
                         if r is not None:
                             return r
 
                     elif flag == "get_screen_modify_version":
-                        r = self._parse_bracket_values(
+                        r = self._parse_colon_values(
                             lower, "getscreenmodifyversion", int, single=True
                         )
                         if r is not None:
                             return r
 
                     elif flag == "run_status":
-                        r = self._parse_bracket_values(
+                        r = self._parse_colon_values(
                             lower, "mainmoving", int, single=True
                         )
                         if r is not None:
                             return r
 
                     elif flag == "get_gripper_run_status":
-                        r = self._parse_bracket_values(
+                        r = self._parse_colon_values(
                             lower, "motionstate", int, single=True
                         )
                         if r is not None:
                             return r
 
                     elif flag == "get_gripper_parameter":
-                        r = self._parse_bracket_values(
+                        r = self._parse_colon_values(
                             lower, "gripperparameters", int, single=True
                         )
                         if r is not None:
                             return r
                     elif flag == "check_sd_card":
-                        r = self._parse_bracket_values(lower, "sdcard", str, single=True)
+                        r = self._parse_colon_values(lower, "sdcard", str, single=True)
                         if r is not None:
                             return r
                     elif flag == "get_motor_enable_status":
-                        r = self._parse_bracket_values(lower, "motorenable", int)
+                        r = self._parse_colon_values(lower, "motorenable", int)
                         if r is not None:
                             return r
                     elif flag == "get_base_io_state":
-                        r = self._parse_bracket_values(lower, "io", int)
+                        r = self._parse_colon_values(lower, "io", int)
                         if r is not None:
-                            return r[:10]
+                            return r
                     elif flag == "get_end_io_state":
-                        r = self._parse_bracket_values(lower, "io", int)
+                        r = self._parse_colon_values(lower, "io", int)
                         if r is not None:
-                            return r[10:]
+                            return r
 
                     elif flag is None:
                         return -1
@@ -363,6 +366,49 @@ class UltraArmP1Bluetooth:
         except Exception:
             return None
 
+    def _parse_colon_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
+        """
+        Parse keyword:value1,value2,... format
+        Args:
+            lower (str): lower-case received buffer
+            keyword (str): keyword to search (lower-case)
+            value_type: int or float or str
+            round_ndigits (int|None): rounding digits for float
+            single (bool): return first value only
+        Returns:
+            list | int | float | None
+        Example:
+            angles:0.00,0.00,89.90,0.20
+        """
+        idx = lower.find(keyword)
+        if idx == -1:
+            return None
+
+        colon_idx = lower.find(":", idx)
+        if colon_idx == -1:
+            return None
+
+        end_idx = lower.find("\n", colon_idx)
+        if end_idx == -1:
+            end_idx = len(lower)
+
+        try:
+            sub = lower[colon_idx + 1:end_idx].strip()
+            items = [x.strip() for x in sub.split(",") if x.strip() != ""]
+
+            values = []
+            for x in items:
+                v = value_type(x)
+                if value_type is float and round_ndigits is not None:
+                    v = round(v, round_ndigits)
+                values.append(v)
+
+            return values[0] if single else values
+        except Exception as e:
+            if self.debug:
+                self.log.error(f"bluetooth read exception: {e}")
+            return None
+
     def _clear_recv_buffer(self):
         with self.lock:
             self.recv_buffer.clear()
@@ -412,19 +458,19 @@ class UltraArmP1Bluetooth:
         """Reboot the robot controller board.(Internal Interface)"""
         with self.lock:
             self._send_command(ProtocolCode.SET_REBOOT)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_joint_release(self):
         """release the robot joints."""
         with self.lock:
             self._send_command(ProtocolCode.SET_JOINT_DISABLE)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_joint_enable(self):
         """Enable the robot joints."""
         with self.lock:
             self._send_command(ProtocolCode.SET_JOINT_ENABLE)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def get_angles_info(self):
         """Get the current joint angles of the robot.
@@ -585,7 +631,7 @@ class UltraArmP1Bluetooth:
         """Stop movement"""
         with self.lock:
             self._send_command(ProtocolCode.SET_STOP_P1)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_jog_angle(self, joint_id, direction, speed, _async=False, _gcode=False):
         """Start jog movement with angle
@@ -703,7 +749,7 @@ class UltraArmP1Bluetooth:
         """Set the 730 encoder calibration for J1.(Internal Interface)"""
         with self.lock:
             self._send_command(ProtocolCode.SET_J1_ENCODER_CALIBRATION_P1)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def get_run_status(self):
         """Read running status."""
@@ -715,13 +761,13 @@ class UltraArmP1Bluetooth:
         """Open laser"""
         with self.lock:
             self._send_command(ProtocolCode.OPEN_LASER)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def close_laser(self):
         """Close laser"""
         with self.lock:
             self._send_command(ProtocolCode.CLOSE_LASER)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_gripper_angle(self, gripper_angle, gripper_speed):
         """Set gripper angle.
@@ -738,7 +784,7 @@ class UltraArmP1Bluetooth:
             command += " P" + str(gripper_angle)
             command += " F" + str(gripper_speed)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def get_gripper_angle(self):
         """Read gripper angle.
@@ -770,7 +816,7 @@ class UltraArmP1Bluetooth:
             command += " K" + str(mode)
             command += " L" + str(parameter_value)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def get_gripper_parameter(self, addr, mode):
         """Get gripper parameter.
@@ -813,14 +859,14 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.SET_GRIPPER_ENABLE_STATUS_P1
             command += " S" + str(state)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_gripper_zero(self):
         """Set gripper zero."""
         with self.lock:
             command = ProtocolCode.SET_GRIPPER_ZERO_P1
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_pump_state(self, pump_state):
         """Set the suction pump's on/off state.
@@ -836,7 +882,7 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.SET_PUMP_STATE_P1
             command += " S" + str(pump_state)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_base_io_output(self, pin_no, pin_status, pin_signal):
         """Set the status of the base output pin.
@@ -857,24 +903,24 @@ class UltraArmP1Bluetooth:
             command += " K" + str(pin_status)
             command += " S" + str(pin_signal)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_digital_io_output(self, pin_no, pin_signal):
         """Set the state of the end output pin.
 
         Args:
-            pin_no (int) : 1 ~ 4
+            pin_no (int) : 3 ~ 4
             pin_signal (int) : 0 ~ 1
                 0 - Low level
                 1 - High level
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, end_pin_no=pin_no, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, set_end_pin_no=pin_no, pin_signal=pin_signal)
         with self.lock:
             command = ProtocolCode.SET_DIGITAL_OUTPUT_P1
             command += " P" + str(pin_no)
             command += " S" + str(pin_signal)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_outer_shaft(self, shaft_state, speed):
         """Set the state of the end output pin.
@@ -891,7 +937,7 @@ class UltraArmP1Bluetooth:
             command += " S" + str(shaft_state)
             command += " F" + str(speed)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_pwm(self, p_value):
         """PWM control.
@@ -905,7 +951,7 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.SET_PWM_VALUE_P1
             command += " P" + str(p_value)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_i2c_data(self, data_state, data_addr, data_len, data_value):
         """Set i2c data.
@@ -927,7 +973,7 @@ class UltraArmP1Bluetooth:
             command += " N" + str(data_len)
             command += " M" + str(data_value)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def play_gcode_file(self, filename):
         """Play the imported track file
@@ -979,20 +1025,20 @@ class UltraArmP1Bluetooth:
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_START_P1
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def drag_teach_save(self):
         """Drag teach save"""
         with self.lock:
             self._send_command(ProtocolCode.DRAG_TEACH_SAVE_P1)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def drag_teach_pause(self):
         """Drag teach pause"""
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_PAUSE_P1
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def drag_teach_resume(self, number_data):
         """Drag teach resume
@@ -1005,28 +1051,28 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.DRAG_TEACH_PAUSE_P1
             command += " B" + str(number_data)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def drag_teach_stop(self):
         """Drag teach stop"""
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_STOP_P1
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def drag_teach_execute(self):
         """Drag teach execute"""
         with self.lock:
             command = ProtocolCode.DRAG_TEACH_EXECUTE_P1
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def wifi_open(self):
         """wifi open"""
         with self.lock:
             command = ProtocolCode.WIFI_OPEN_P1
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def get_system_screen_version(self):
         """Read system screen version.
@@ -1057,21 +1103,21 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.SET_COMMUNICATION_BAUD_RATE_P1
             command += " B" + str(baud_rate)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def update_stm_firmware(self):
         """update stm firmware"""
         with self.lock:
             command = ProtocolCode.UPDATE_STM32_FIRMWARE
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def receive_485_data(self):
         """receive 485 data"""
         with self.lock:
             command = ProtocolCode.RECEIVE_485_DATA_P1
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def go_home(self, speed=2000, _async=True):
         return self.set_angles([0, 0, 90, 0], speed, _async=_async)
@@ -1087,7 +1133,7 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.SET_WIFI_PASSWORD
             command += " P" + str(password)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def check_sd_card(self):
         """Check if there is an SD card."""
@@ -1100,7 +1146,7 @@ class UltraArmP1Bluetooth:
         """Upgrade and restart"""
         with self.lock:
             self._send_command(ProtocolCode.UPGRADE_RESTART)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def get_motor_enable_status(self):
         """Retrieve motor enable status"""
@@ -1119,7 +1165,7 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.CLEAR_ZERO_CALIBRATION_STATUS
             command += " J" + str(joint_id)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_status_light_color(self, color_id):
         """Set status light color
@@ -1136,7 +1182,7 @@ class UltraArmP1Bluetooth:
             command = ProtocolCode.SET_STATUS_LIGHTS_COLOR
             command += " J" + str(color_id)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def get_all_base_io_states(self):
         """Get All bottom I/O pin status.
@@ -1210,19 +1256,19 @@ class UltraArmP1Bluetooth:
         """Disable the settings button."""
         with self.lock:
             self._send_command(ProtocolCode.SET_BUTTON_DISABLE)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_button_enable(self):
         """Enable the settings button."""
         with self.lock:
             self._send_command(ProtocolCode.SET_BUTTON_ENABLE)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def forced_reset_zero(self):
         """Forced reset to zero."""
         with self.lock:
             self._send_command(ProtocolCode.FORCED_RESET_ZERO)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_conveyor_control(self, state, direction, speed, distance):
         """Conveyor belt control.
@@ -1240,7 +1286,7 @@ class UltraArmP1Bluetooth:
             command += " L" + str(speed)
             command += " S" + str(distance)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
 
     def set_color(self, r, g, b):
         """Set the color of the RGB light panel
@@ -1257,4 +1303,4 @@ class UltraArmP1Bluetooth:
             command += " G" + str(g)
             command += " B" + str(b)
             self._send_command(command)
-            return self._response(_async=False)
+            return self._response(_async=True, is_set=True)
