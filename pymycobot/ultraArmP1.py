@@ -118,7 +118,7 @@ class UltraArmP1:
                         return 'ok'
                     if "error:" in text_lower:
                         r = self._parse_colon_values(text_lower, "error", int)
-                        return r if r is not None else "error"
+                        return r[0] if r is not None else "error"
                 # Limit error
                 if "limiterror" in text_lower:
                     r = self._parse_colon_values(text_lower, "limiterror", int, single=True)
@@ -148,7 +148,7 @@ class UltraArmP1:
                     # fallback to raw bytes check
                     if received_data.lower().count(keyword) >= 1:
                         return 'ok'
-            time.sleep(0.01)
+            # time.sleep(0.01)
         # Timeout
         if self.debug:
             try:
@@ -179,7 +179,6 @@ class UltraArmP1:
                 n = self._serial_port.inWaiting()
             except Exception:
                 n = 0
-
             if n > 0:
                 try:
                     chunk = self._serial_port.read(n)
@@ -188,7 +187,14 @@ class UltraArmP1:
                     lower = raw_data.lower()
                     if self.debug:
                         if flag in ["angle", 'coord']:
-                            self._debug_read(f"{raw_data}")
+                            if flag == "angle":
+                                r = self._parse_bracket_values(lower, "angles", float, 3)
+                                if r is not None:
+                                    self._debug_read(f"angles{r}")
+                            if flag == "coord":
+                                r = self._parse_bracket_values(lower, "coords", float, 3)
+                                if r is not None:
+                                    self._debug_read(f"coords{r}")
                         else:
                             display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
                             self._debug_read(display)
@@ -234,9 +240,7 @@ class UltraArmP1:
                             return r
 
                     elif flag == "system_version":
-                        r = self._parse_colon_values(
-                            lower, "getsystemversion", float, 1, single=True
-                        )
+                        r = self._parse_colon_values(lower, "getsystemversion", float, 1, single=True)
                         if r is not None:
                             return r / 10
 
@@ -282,9 +286,10 @@ class UltraArmP1:
                         if r is not None:
                             return r
                     elif flag == "check_sd_card":
-                        r = self._parse_colon_values(lower, "sdcard", str, single=True)
-                        if r is not None:
-                            return r
+                        return lower
+                        # r = self._parse_colon_values(lower, "sdcard", str, single=True)
+                        # if r is not None:
+                        #     return r
                     elif flag == "get_motor_enable_status":
                         r = self._parse_colon_values(lower, "motorenable", int)
                         if r is not None:
@@ -297,6 +302,10 @@ class UltraArmP1:
                         r = self._parse_colon_values(lower, "io", int)
                         if r is not None:
                             return r
+                    elif flag == "get_sd_space":
+                        r = self._parse_colon_values(lower, "space", int)
+                        if r is not None:
+                            return r
 
                     elif flag is None:
                         return -1
@@ -304,7 +313,7 @@ class UltraArmP1:
                 except Exception as e:
                     if self.debug:
                         self.log.error(f"serial read exception: {e}")
-            time.sleep(0.001)
+            # time.sleep(0.0001)
 
         if self.debug:
             self.log.warning(f"request timeout, received buffer: {raw_data}")
@@ -470,7 +479,6 @@ class UltraArmP1:
                     return cmd, idx
 
             time.sleep(0.002)
-
         return None
 
     def _fw_enter_upgrade(self, filename: str):
@@ -478,6 +486,7 @@ class UltraArmP1:
         command = ProtocolCode.START_DOWNLOAD_FIRMWARE
         command += f" {filename}"
         self._send_command(command)
+        return self._response(_async=True, is_set=True)
 
     def finish_firmware_upgrade(self):
         """Download complete"""
@@ -801,17 +810,59 @@ class UltraArmP1:
             self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1)
             return self._request("run_status")
 
-    def open_laser(self):
-        """Open laser"""
+    def quick_off_laser(self, state):
+        """Quick turn off laser
+
+        Args:
+            state (int): 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         with self.lock:
-            self._send_command(ProtocolCode.OPEN_LASER)
+            command = ProtocolCode.QUICK_OFF_LASER
+            command += " K" + str(state)
+            self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def close_laser(self):
-        """Close laser"""
+    def set_pwm_laser(self, p_value):
+        """Set PWM Level - Laser
+
+        Args:
+            p_value (int) : Duty cycle 0 ~ 255;
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,  p_value=p_value)
         with self.lock:
-            self._send_command(ProtocolCode.CLOSE_LASER)
-            return self._response(_async=False)
+            command = ProtocolCode.SET_PWM_LASER
+            command += " S" + str(p_value)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def quick_off_custom_pwm(self, state):
+        """Quick turn off custom PWM
+
+        Args:
+            state (int): 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.QUICK_OFF_CUSTOM_PWM
+            command += " K" + str(state)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_pwm_custom(self, p_value):
+        """Set PWM Level - Custom
+
+        Args:
+            p_value (int) : Duty cycle 0 ~ 255;
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,  p_value=p_value)
+        with self.lock:
+            command = ProtocolCode.SET_PWM_CUSTOM
+            command += " S" + str(p_value)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
 
     def set_gripper_angle(self, gripper_angle, gripper_speed):
         """Set gripper angle.
@@ -967,39 +1018,6 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def set_outer_shaft(self, shaft_state, speed):
-        """Set the state of the end output pin.
-
-        Args:
-            shaft_state (int) : 0 ~ 1
-                0 - close
-                1 - open
-            speed (int) : 1 ~ 20000
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, shaft_state=shaft_state, speed=speed)
-        with self.lock:
-            command = ProtocolCode.SET_OUTER_SHAFT_P1
-            command += " S" + str(shaft_state)
-            command += " F" + str(speed)
-            self._send_command(command)
-            return self._response(_async=True, is_set=True)
-
-    def set_pwm(self, pwm_id, p_value):
-        """PWM control.
-
-        Args:
-            pwm_id (int) : 1 ~ 2
-            p_value (int) : Duty cycle 0 ~ 255;
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, pwm_id=pwm_id, p_value=p_value)
-        with self.lock:
-            command = ProtocolCode.SET_PWM_VALUE_P1
-            command += " P" + str(pwm_id)
-            command += " S" + str(p_value)
-            self._send_command(command)
-            return self._response(_async=True, is_set=True)
-
     def set_i2c_data(self, data_state, data_addr, data_len, data_value):
         """Set i2c data.
 
@@ -1014,7 +1032,7 @@ class UltraArmP1:
         self.calibration_parameters(class_name=self.__class__.__name__, data_state=data_state,
                                     data_addr=data_addr, data_len=data_len, data_value=data_value)
         with self.lock:
-            command = ProtocolCode.SET_OUTER_SHAFT_P1
+            command = ProtocolCode.SET_I2C_P1
             command += " S" + str(data_state)
             command += " L" + str(data_addr)
             command += " N" + str(data_len)
@@ -1068,60 +1086,6 @@ class UltraArmP1:
 
         return " ".join(tokens)
 
-    def drag_teach_start(self):
-        """Drag teach start"""
-        with self.lock:
-            command = ProtocolCode.DRAG_TEACH_START_P1
-            self._send_command(command)
-            return self._response(_async=False)
-
-    def drag_teach_save(self):
-        """Drag teach save"""
-        with self.lock:
-            self._send_command(ProtocolCode.DRAG_TEACH_SAVE_P1)
-            return self._response(_async=False)
-
-    def drag_teach_pause(self):
-        """Drag teach pause"""
-        with self.lock:
-            command = ProtocolCode.DRAG_TEACH_PAUSE_P1
-            self._send_command(command)
-            return self._response(_async=False)
-
-    def drag_teach_resume(self, number_data):
-        """Drag teach resume
-
-        Args:
-            number_data (int) : 0 ~ 49
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, number_data=number_data)
-        with self.lock:
-            command = ProtocolCode.DRAG_TEACH_PAUSE_P1
-            command += " B" + str(number_data)
-            self._send_command(command)
-            return self._response(_async=False)
-
-    def drag_teach_stop(self):
-        """Drag teach stop"""
-        with self.lock:
-            command = ProtocolCode.DRAG_TEACH_STOP_P1
-            self._send_command(command)
-            return self._response(_async=False)
-
-    def drag_teach_execute(self):
-        """Drag teach execute"""
-        with self.lock:
-            command = ProtocolCode.DRAG_TEACH_EXECUTE_P1
-            self._send_command(command)
-            return self._response(_async=False)
-
-    def wifi_open(self):
-        """wifi open"""
-        with self.lock:
-            command = ProtocolCode.WIFI_OPEN_P1
-            self._send_command(command)
-            return self._response(_async=False)
-
     def get_system_screen_version(self):
         """Read system screen version.
 
@@ -1153,13 +1117,6 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def update_stm_firmware(self):
-        """update stm firmware"""
-        with self.lock:
-            command = ProtocolCode.UPDATE_STM32_FIRMWARE
-            self._send_command(command)
-            return self._response(_async=True, is_set=True)
-
     def receive_485_data(self):
         """receive 485 data"""
         with self.lock:
@@ -1186,16 +1143,17 @@ class UltraArmP1:
             except Exception:
                 pass
 
-    def set_wifi_password(self, password):
+    def set_wifi_password(self, wifi_name, password):
         """Set WiFi password
 
         Args:
+            wifi_name (str) : ssid, WiFi name
             password (str) : WiFi password
         """
         self.calibration_parameters(class_name=self.__class__.__name__, password=password)
         with self.lock:
             command = ProtocolCode.SET_WIFI_PASSWORD
-            command += " P" + str(password)
+            command += " " + str(wifi_name) + '|' + str(password)
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
@@ -1227,10 +1185,13 @@ class UltraArmP1:
             progress_cb = None
         with self.lock:
             self._clear_serial_buffer()
+            self.finish_firmware_upgrade()
 
             # Entering upgrade mode.
-            self._fw_enter_upgrade(fw_name)
+            res = self._fw_enter_upgrade(fw_name)
             time.sleep(0.2)
+            if res != 'ok':
+                return 'Please check the SD card.'
 
             # read bin
             with open(local_path, "rb") as f:
@@ -1268,7 +1229,7 @@ class UltraArmP1:
                     raise RuntimeError(f"Unknown ACK CMD: {cmd}")
 
             # Finish
-            self.finish_firmware_upgrade()
+            return self.finish_firmware_upgrade()
 
     def upgrade_restart(self):
         """Upgrade and restart"""
@@ -1434,3 +1395,36 @@ class UltraArmP1:
             command += " B" + str(b)
             self._send_command(command)
             return self._response(_async=True, is_set=True)
+
+    def set_preview_mode(self, coords):
+        """Set Coordinate Trajectory Preview Mode
+
+        Args:
+            coords (list[float]): Coordinates [X, Y, Z, R].
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.SET_PREVIEW_MODE
+            if len(coords) > 0 and coords[0] is not None:
+                command += f" X{coords[0]}"
+            if len(coords) > 1 and coords[1] is not None:
+                command += f" Y{coords[1]}"
+            if len(coords) > 2 and coords[2] is not None:
+                command += f" Z{coords[2]}"
+            if len(coords) > 3 and coords[3] is not None:
+                command += f" R{coords[3]}"
+
+            self._send_command(command)
+            return self._response(_async=True)
+
+    def get_sd_card_space(self):
+        """Get SD Card Total and Remaining Memory
+
+        Returns:
+            space (list) : Total Memory and Remaining Memory, For example: [Total Memory, Remaining Memory]
+        """
+        with self.lock:
+            self._send_command(ProtocolCode.GET_SD_CARD_MEMORY)
+            return self._request('get_sd_space')
