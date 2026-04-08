@@ -71,6 +71,10 @@ from pymycobot import MyPalletizerSocket
 from pymycobot import ultraArmP340
 # for mycobot pro450 machine
 from pymycobot import Pro450Client
+# for Nercury L1 machine
+from pymycobot import MercuryL1Client
+# for Mercury L1 Chassis
+from pymycobot import MercuryL1Chassis
 ```
 
 The [`demo`](./demo) directory stores some test case files.
@@ -94,3 +98,5 @@ Please go to [here](./docs/README.md).
 | [MyBuddy API说明](./docs/MyBuddy_zh.md) | [MyBuddy API Description](./docs/MyBuddy_en.md) |
 | [MyBuddyEmoticon API说明](./docs/mybuddy_emoticon_zh.md) | [MyBuddyEmoticon API Description](./docs/mybuddy_emoticon_en.md) |
 | [MyCobot Pro450 API说明](./docs/MyCobot_Pro450_cn.md) | [MyCobot Pro450 API Description](./docs/MyCobot_Pro450_en.md) |
+| [Mercury L1 手臂 API说明](./docs/Mercury_L1_cn.md) | [Mercury L1 Arm API Description](./docs/) |
+| [Mercury L1 底盘 API说明](./docs/Mercury_L1_Chassis_zh.md) | [Mercury L1 Chassis API Description](./docs/) |
