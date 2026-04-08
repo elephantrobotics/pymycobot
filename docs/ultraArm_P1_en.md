@@ -345,19 +345,31 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** Running Status
 
-### 21 `open_laser()`
+### 21 `quick_off_laser(state)`
 
-- **Function:** Turns on the laser
+- **Function:** Quickly turn off the laser.
+- **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
+- **Return Value:** `ok` - Success; `error` - Failure.
 
-- **Return Value:** 1
+### 22 `set_pwm_laser(p_value)`
 
-### 22 `close_laser()`
+- **Function:** Set the PWM level (Laser).
+- **Parameters:** `p_value` (`int`) 0 ~ 255.
+- **Return Value:** `ok` - Success; `error` - Failure.
 
-- **Function:** Turns off the laser
+### 23 `quick_off_custom_pwm(state)`
 
-- **Return Value:** 1
+- **Function:** Quickly turn off custom PWM.
+- **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
+- **Return Value:** `ok` - Success; `error` - Failure.
 
-### 23 `set_gripper_angle(gripper_angle, gripper_speed)`
+### 24 `set_pwm_custom(p_value)`
+
+- **Function:** Set the PWM level (Custom).
+- **Parameters:** `p_value` (`int`) 0 ~ 255.
+- **Return Value:** `ok` - Success; `error` - Failure.
+
+### 25 `set_gripper_angle(gripper_angle, gripper_speed)`
 
 - **Function:** Sets the gripper's movement angle
 
@@ -369,13 +381,13 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-### 24 `get_gripper_angle()`
+### 26 `get_gripper_angle()`
 
 - **Function:** Reads the gripper angle
 
 - **Return value:** Gripper angle, 1 ~ 100
 
-### 25 `set_gripper_parameter(addr, mode, parameter_value)`
+### 27 `set_gripper_parameter(addr, parameter_value)`
 
 - **Function:** Sets the gripper parameter
 
@@ -383,15 +395,13 @@ from pymycobot import UltraArmP1
 
   - `addr`: `int`, 1 ~ 69
 
-  - `mode:` (`int`): 1 ~ 2
-
   - `parameter_value` (`int`):
     - `Mode 1:` 0 ~ 255
 
     - `Mode 2:` Greater than 255
 - **Return value:** 1
 
-### 26 `get_gripper_parameter(addr, mode)`
+### 28 `get_gripper_parameter(addr, mode)`
 
 - **Function:** Reads the gripper parameter
 - **Parameter description:**
@@ -403,7 +413,7 @@ from pymycobot import UltraArmP1
 
     - `Mode 2:` Greater than 255
 
-### 27 `set_gripper_enable_status(state):`
+### 29 `set_gripper_enable_status(state):`
 
 - **Function:** Sets the gripper parameters
 
@@ -417,13 +427,13 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-### 28 `set_gripper_zero()`
+### 30 `set_gripper_zero()`
 
 - **Function:** Sets the gripper to zero position
 
 - **Return Value:** 1
 
-### 29 `set_pump_state(pump_state)`
+### 31 `set_pump_state(pump_state)`
 
 - **Function:** Sets the pump status
 
@@ -439,7 +449,7 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** 1
 
-### 30 `set_base_io_output(pin_no, pin_status, pin_signal)`
+### 32 `set_base_io_output(pin_no, pin_status, pin_signal)`
 
 - **Function:** Sets the base IO pin output status
 
@@ -461,13 +471,13 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-### 31 `set_digital_io_output(pin_no, pin_signal)`
+### 33 `set_digital_io_output(pin_no, pin_signal)`
 
 - **Function:** Sets the output state of the final I/O pin
 
 - **Parameter description:**
 
-  - `pin_no`: `int` 1 ~ 4
+  - `pin_no`: `int` 3 ~ 4
 
   - `pin_signal`: `int`
 
@@ -477,23 +487,7 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-### 32 `set_outer_shaft(shaft_state, speed)`
-
-- **Function:** Sets the external axis
-
-- **Parameter description:**
-
-  - `shaft_state`: `int`
-
-    - `0`: Off
-
-    `1`: On
-
-  - `speed`: `int` 1 ~ 20000
-
-- **Return value:** 1
-
-### 33 `set_i2c_data(data_state, data_addr, data_len, data_value)`
+### 34 `set_i2c_data(data_state, data_addr, data_len, data_value)`
 
 - **Function:** Sets I2C data
 
@@ -513,83 +507,7 @@ from pymycobot import UltraArmP1
 
 - **Return value:** 1
 
-### 34 `drag_teach_start()`
-
-- **Function:** Starts drag-and-drop teaching
-
-- **Return value:** 1
-
-### 35 `drag_teach_save()`
-
-- **Function:** save drag-and-drop teaching
-
-- **Return Value:** 1
-
-### 36 `drag_teach_pause()`
-
-- **Function:** Pause drag-and-drop teaching
-
-- **Return Value:** 1
-
-### 37 `drag_teach_resume()`
-
-- **Function:** Resume drag-and-drop teaching
-
-- **Return Value:** 1
-
-### 38 `drag_teach_stop()`
-
-- **Function:** Stop drag-and-drop teaching
-
-- **Return Value:** 1
-
-### 39 `drag_teach_execute()`
-
-- **Function:** Execute drag-and-drop teaching
-
-- **Return Value:** 1
-
-### 40 `wifi_open()`
-
-- **Function:** Turn on Wi-Fi
-
-- **Return Value:** 1
-
-### 41 `get_system_screen_version()`
-
-- **Function:** Reads the screen firmware major version number
-
-- **Return Value:** Major version number
-
-### 42 `get_modify_screen_version()`
-
-- **Function:** Reads the screen firmware correction version number
-
-- **Return Value:** Correction version number
-
-### 43 `set_communication_baud_rate(baud_rate)`
-
-- **Function:** Sets the communication baud rate
-
-- **Parameter Description:**
-
-  - `baud_rate`: `int` standard baud rate, 115200 or 1000000
-
-- **Return Value:** 1
-
-### 44 `update_stm_firmware()`
-
-- **Function:** Updates the STM32 firmware
-
-- **Return Value:** 1
-
-### 45 `receive_485_data()`
-
-- **Function:** Receives 485 data
-
-- **Return Value:** 485 data
-
-### 46 `play_gcode_file(filename)`
+### 35 `play_gcode_file(filename)`
 
 - **Function:** Plays the imported track file.
 
@@ -599,27 +517,57 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** None
 
-### 47 `set_wifi_password(password)`
+### 36 `get_system_screen_version()`
+
+- **Function:** Reads the screen firmware major version number
+
+- **Return Value:** Major version number
+
+### 37 `get_modify_screen_version()`
+
+- **Function:** Reads the screen firmware correction version number
+
+- **Return Value:** Correction version number
+
+### 38 `set_communication_baud_rate(baud_rate)`
+
+- **Function:** Sets the communication baud rate
+
+- **Parameter Description:**
+
+  - `baud_rate`: `int` standard baud rate, 115200 or 1000000
+
+- **Return Value:** 1
+
+### 39 `receive_485_data()`
+
+- **Function:** Receives 485 data
+
+- **Return Value:** 485 data
+
+
+### 40 `set_wifi_password(wifi_name, password)`
 
 - **Function:** Sets the on-screen WiFi password.
 
 - **Parameter Description:**
+  - `wifi_name`: (`str`) SSID， WiFi name.
 
-- `password`: (`str`) WiFi password string, length 8~15 characters.
+  - `password`: (`str`) WiFi password string, length 8~15 characters.
 
 - **Return Value:** 1
 
-### 48 `check_sd_card()`
+### 41 `check_sd_card()`
 
 - **Function:** Checks if an SD card is present.
 
 - **Return Value:** (`str`)
 
-  - `"yes"`: SD card present
+  - `ok`: SD card present
 
-  - `"no"`: SD card not present
+  - `error:0`: SD card not present
 
-### 49 `download_firmware_sd(filename, show_progress=True)`
+### 42 `download_firmware_sd(filename, show_progress=True)`
 
 - **Function:** Downloads firmware data to the SD card.
 
@@ -631,45 +579,25 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** If `show_progress=True`, the download progress is returned; otherwise, no value is returned.
 
-### 50 `upgrade_restart()`
+### 43 `upgrade_restart()`
 
 - **Function:** Firmware upgrade and restart.
 
 - **Return value:** None
 
-### 51 `get_motor_enable_status()`
+### 44 `get_motor_enable_status()`
 
 - **Function:** Reads the motor enable status.
 
 - **Return Value:** `list`, 5 motor enable statuses.
 
-### 52 `clear_zero_calibration_status(joint_id)`
-
-- **Function:** Clears the joint zero-position calibration status.
-
-- **Parameter Description:**
-
-  - `joint_id`: (`int`) Joint ID, range 1 ~ 4.
-
-- **Return Value:** 1
-
-### 53 `set_status_light_color(color_id)`
-
-- **Function:** Sets the light status color.
-
-- **Parameter Description:**
-
-  - `color_id`: (`int`) Color ID, range 1 ~ 4. 1-Red, 2-Green, 3-Yellow, 4-Blue.
-
-- **Return Value:** 1
-
-### 54 `finish_firmware_upgrade()`
+### 45 `finish_firmware_upgrade()`
 
 - **Function:** Ends the download of firmware data to the SD card. (The upgrade can be terminated midway through the firmware download process.)
 
 - **Return Value:** 1.
 
-### 55 `get_base_io_state()`
+### 46 `get_base_io_state()`
 
 - **Function:** Get the state of the base IO pins
   
@@ -680,7 +608,18 @@ from pymycobot import UltraArmP1
   - `2`: Output, level = 0 (low level)
   - `3`: Output, level = 1 (high level)
 
-### 56 `get_end_io_state()`
+### 47 `get_base_io_state(pin_no)`
+
+- **Function:** Get the state of the base IO pins
+- **Parameter:** (`int`) Bottom IO pin number, range: 1 to 10.
+- **Return Value:** `int` range 0 ~ 3
+
+  - `0`: Input, level = 0 (low level)
+  - `1`: Input, level = 1 (high level)
+  - `2`: Output, level = 0 (low level)
+  - `3`: Output, level = 1 (high level)
+
+### 48 `get_end_io_state()`
 
 - **Function:** Get the state of the end IO pins
 
@@ -691,25 +630,36 @@ from pymycobot import UltraArmP1
   - `2`: Output, level = 0 (low level)
   - `3`: Output, level = 1 (high level)
 
-### 57 `set_button_enable()`
+### 49 `get_end_io_state(pin_no)`
+
+- **Function:** Get the state of the end IO pins
+- **Parameter:** (`int`) End IO pin number, range: 1 to 4.
+- **Return Value:** `int` range 0 ~ 3
+
+  - `0`: Input, level = 0 (low level)
+  - `1`: Input, level = 1 (high level)
+  - `2`: Output, level = 0 (low level)
+  - `3`: Output, level = 1 (high level)
+
+### 50 `set_button_enable()`
 
 - **Function:** Enable the button
   
 - **Return Value:** 1
 
-### 58 `set_button_disable()`
+### 51 `set_button_disable()`
 
 - **Function:** Disable the button
 
 - **Return Value:** 1
 
-### 59 `forced_reset_zero()`
+### 52 `forced_reset_zero()`
 
 - **Function:** Set forced homing (reset to zero)
   
 - **Return Value:** 1
 
-### 60 `set_conveyor_control(state, direction, speed, distance)`
+### 53 `set_conveyor_control(state, direction, speed, distance)`
 
 - **Function:** Conveyor belt control
 - **Parameter Description:**
@@ -718,6 +668,37 @@ from pymycobot import UltraArmP1
   - `speed`: (`int`) conveyor speed, range 50~500000
   - `distance`: (`int`) conveyor distance, range 1~500000
 - **Return Value:** 1
+
+### 54 `set_color(r, g, b)`
+
+- **Function:** Sets the RGB color of the light panel.
+- **Parameter Description:**
+  - `r`: (`int`) Red component; range: 0 ~ 255.
+  - `g`: (`int`) Green component; range: 0 ~ 255.
+  - `b`: (`int`) Blue component; range: 0 ~ 255.
+
+- **Return Value:** 1
+
+### 55 `set_preview_mode(coords)`
+
+- **Function:** Sets the coordinate trajectory preview mode.
+- **Parameter Description:**
+  - `coords` (list[float]): A list of coordinate values ​​[X, Y, Z, R].
+
+- **Return Value:** 1
+
+### 56 `get_sd_card_space()`
+
+- **Function:** Retrieves the total and available storage space on the SD card.
+
+- **Return Value:** `list` containing the total space and available space, in bytes. Example: [Total Space, Available Space]
+
+### 57 `collision_unlock()`
+
+- **Function:** Unlocks after collision detection.
+
+- **Return Value:** OK - Success; error - Failure.
+
 
 ---
 
