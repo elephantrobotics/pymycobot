@@ -1167,7 +1167,7 @@ class UltraArmP1Bluetooth:
         Args:
             pin_no (int): bottom pin number, range is 1 ~ 10
         Returns:
-            pin_status (list) : List of numbers in the range 0 to 3, len is 10
+            pin_status (int) : range 0 to 3
                 0: Input, level = 0 (low level)
                 1: Input, level = 1 (high level)
                 2: Output, level = 0 (low level)
@@ -1201,7 +1201,7 @@ class UltraArmP1Bluetooth:
         Args:
             pin_no (int): end pin number, range is 1 ~ 4
         Returns:
-            pin_status (list) : List of numbers in the range 0 to 3, len is 4
+            pin_status (int) : range 0 to 3
                 0: Input, level = 0 (low level)
                 1: Input, level = 1 (high level)
                 2: Output, level = 0 (low level)
@@ -1288,7 +1288,7 @@ class UltraArmP1Bluetooth:
                 command += f" R{coords[3]}"
 
             self._send_command(command)
-            return self._response(_async=True)
+            return self._response(_async=True, is_set=True)
 
     def get_sd_card_space(self):
         """Get SD Card Total and Remaining Memory
@@ -1299,3 +1299,9 @@ class UltraArmP1Bluetooth:
         with self.lock:
             self._send_command(ProtocolCode.GET_SD_CARD_MEMORY)
             return self._request('get_sd_space')
+
+    def collision_unlock(self):
+        """Unlock After Collision Detection."""
+        with self.lock:
+            self._send_command(ProtocolCode.COLLISION_UNLOCK)
+            return self._response(_async=True, is_set=True)

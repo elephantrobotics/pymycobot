@@ -525,8 +525,7 @@ class ProtocolCode(object):
     # ultraArm P1
     SET_COORDS_MAX_SPEED = 'G0'
     SET_COORDS = 'G1'
-    OPEN_LASER = 'M3'
-    CLOSE_LASER = 'M5'
+    COLLISION_UNLOCK = 'M5'
     SET_ANGLES_P1 = 'G1'
     SET_ANGLE_P1 = 'G1'
     GET_JOINT_ANGLES_COORDS = 'M12'
@@ -570,9 +569,9 @@ class ProtocolCode(object):
     SET_BUTTON_ENABLE = 'M35'
     SET_BUTTON_DISABLE = 'M36'
     FORCED_RESET_ZERO = 'M37'
-    CONVEYOR_BELT_CONTROL = 'M38',
-    SET_RGB_COLOR = 'M23',
-    SET_PREVIEW_MODE = 'M51',
+    CONVEYOR_BELT_CONTROL = 'M38'
+    SET_RGB_COLOR = 'M23'
+    SET_PREVIEW_MODE = 'M51'
     # ultraArm P1 Screen
     GET_SYSTEM_SCREEN_VERSION_P1 = "M401"
     GET_MODIFY_SCREEN_VERSION_P1 = "M402"
