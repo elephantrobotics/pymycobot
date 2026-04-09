@@ -61,7 +61,7 @@ class UltraArmP1Socket:
 
     def _debug_read(self, data: str):
         if self.debug:
-            self.log.debug("_read: {}".format(data))
+            self.log.debug(" _read: {}".format(data))
 
     # ---------------------- Socket helpers ----------------------
 
@@ -186,13 +186,13 @@ class UltraArmP1Socket:
                     if self.debug:
                         if flag in ["angle", 'coord']:
                             if flag == "angle":
-                                r = self._parse_bracket_values(lower, "angles", float, 3)
-                                if r is not None:
-                                    self._debug_read(f"angles{r}")
+                                r = self._parse_colon_values(lower, "angles", float, 3)
+                                if r is not None and len(r) > 3:
+                                    self._debug_read(raw_data)
                             if flag == "coord":
-                                r = self._parse_bracket_values(lower, "coords", float, 3)
-                                if r is not None:
-                                    self._debug_read(f"coords{r}")
+                                r = self._parse_colon_values(lower, "coords", float, 3)
+                                if r is not None and len(r) > 3:
+                                    self._debug_read(raw_data)
 
                         else:
                             display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
@@ -203,12 +203,12 @@ class UltraArmP1Socket:
                     # -------- dispatch by flag --------
                     if flag == "angle":
                         r = self._parse_colon_values(lower, "angles", float, 2)
-                        if r is not None:
+                        if r is not None and len(r) ==4:
                             return r
 
                     elif flag == "coord":
                         r = self._parse_colon_values(lower, "coords", float, 2)
-                        if r is not None:
+                        if r is not None and len(r) ==4:
                             return r
 
                     elif flag == "error_information":
@@ -290,7 +290,9 @@ class UltraArmP1Socket:
                         if r is not None:
                             return r
                     elif flag == "check_sd_card":
-                        return lower
+                        parts = lower.split(None, 1)
+                        if len(parts) > 1:
+                            return parts[1].strip()
                         # r = self._parse_colon_values(lower, "sdcard", str, single=True)
                         # if r is not None:
                         #     return r
@@ -317,6 +319,7 @@ class UltraArmP1Socket:
                 except Exception as e:
                     if self.debug:
                         self.log.error(f"socket read exception: {e}")
+                    return -1
             time.sleep(0.001)
 
         if self.debug:
@@ -497,7 +500,7 @@ class UltraArmP1Socket:
             list[float] or int: Joint angles [J1, J2, J3, J4] or -1 if failed.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_JOINT_ANGLES_COORDS)
+            self._send_command(ProtocolCode.GET_ANGLES_P1)
             return self._request("angle")
 
     def get_coords_info(self):
@@ -507,7 +510,7 @@ class UltraArmP1Socket:
             list[float] or int: Coordinates [X, Y, Z, E] or -1 if failed.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_JOINT_ANGLES_COORDS)
+            self._send_command(ProtocolCode.GET_COORDS_P1)
             return self._request("coord")
 
     def set_coords_max_speed(self, coords, _async=True, _gcode=False):
