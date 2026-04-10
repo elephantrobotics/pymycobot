@@ -651,7 +651,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         """
         return self._mesg(ProtocolCode.GET_ERROR_INFO)
 
-    def send_angles(self, arm_id, left_angles, right_angles, speed, _async=False):
+    def send_angles(self, arm_id, speed, left_angles=None, right_angles=None, _async=False):
         """Send the angles of all joints to robot arm.
 
         Args:
@@ -659,9 +659,9 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
+            speed : (int) 1 ~ 100
             left_angles (list): a list of angle values(List[float]). len 8.
             right_angles (list): a list of angle values(List[float]). len 9.
-            speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
         all_angles = []
@@ -683,7 +683,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         angles = [self._angle2int(angle) for angle in all_angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, arm_id, angles, speed, has_reply=True, _async=_async)
 
-    def send_angle(self, arm_id, joint_id, left_angle, right_angle, speed, _async=False):
+    def send_angle(self, arm_id, joint_id, speed, left_angle=None, right_angle=None, _async=False):
         """Send one angle of joint to robot arm.
 
         Args:
@@ -692,9 +692,9 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 1 - left arm
                 2 - right arm
             joint_id : Joint id(genre.Angle)， int left:1-8, right:1-9.
+            speed : (int) 1 ~ 100
             left_angle : left angle value(float).
             right_angle : right angle value(float).
-            speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
         if arm_id == 0:
@@ -713,7 +713,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         right_angle = self._angle2int(right_angle)
         return self._mesg(ProtocolCode.SEND_ANGLE, arm_id, joint_id, [left_angle], [right_angle], speed, has_reply=True, _async=_async)
 
-    def send_coord(self, arm_id, coord_id, left_coord, right_coord, speed, _async=False):
+    def send_coord(self, arm_id, coord_id, speed , left_coord=None, right_coord=None, _async=False):
         """Send one coord to robot arm.
 
         Args:
@@ -722,6 +722,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 1 - left arm
                 2 - right arm
             coord_id (int): coord id, range 1 ~ 6
+            speed (int): 1 ~ 100
             left_coord (float): coord value.
                 The coord range of `X` is -351.11 ~ 566.92.
                 The coord range of `Y` is -645.91 ~ 272.12.
@@ -730,7 +731,6 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 The coord range of `RY` is -180 ~ 180.
                 The coord range of `RZ` is -180 ~ 180.
             right_coord (float): coord value.
-            speed (int): 1 ~ 100
         """
 
         self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
@@ -756,7 +756,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         return self._mesg(ProtocolCode.SEND_COORD, arm_id, coord_id, [left_value],
                           [right_value], speed, has_reply=True, _async=_async)
 
-    def send_coords(self, arm_id, left_coords, right_coords, speed, _async=False):
+    def send_coords(self, arm_id, speed, left_coords=None, right_coords=None, _async=False):
         """Send all coords to robot arm.
 
         Args:
@@ -764,6 +764,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
+            speed : (int) 1 ~ 100
             left_coords: a list of coords value(List[float]). len 6 [x, y, z, rx, ry, rz]
                 The coord range of `X` is -351.11 ~ 566.92.
                 The coord range of `Y` is -645.91 ~ 272.12.
@@ -772,7 +773,6 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 The coord range of `RY` is -180 ~ 180.
                 The coord range of `RZ` is -180 ~ 180.
             right_coords: a list of coords value(List[float]). len 6
-            speed : (int) 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
         coord_list = []

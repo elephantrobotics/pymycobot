@@ -2390,6 +2390,9 @@ def calibration_parameters(**kwargs):
                 if joint_id == 9:
                     pass
                 else:
+                    if not isinstance(value, (int, float)):
+                        raise MercuryL1ClientDataException(
+                            "The acceptable parameter {} should be {} or {}, but the received {}".format(parameter, int, float, value_type))
                     index = robot_limit[class_name]['left_joint_id'][joint_id - 1] - 1
                     angles_min = robot_limit[class_name]["left_angles_min"][index]
                     angles_max = robot_limit[class_name]["left_angles_max"][index]
@@ -2398,6 +2401,9 @@ def calibration_parameters(**kwargs):
                             "left angle value not right, should be {0} ~ {1}, but received {2}".format(
                                 angles_min, angles_max, value))
             elif parameter in ['right_angle']:
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be {} or {}, but the received {}".format(parameter, int, float, value_type))
                 joint_id = kwargs.get('joint_id', None)
                 index = robot_limit[class_name]['right_joint_id'][joint_id - 1] - 1
                 angles_min = robot_limit[class_name]["right_angles_min"][index]
@@ -2439,11 +2445,11 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [0, 1, 2], value_type, MercuryL1ClientDataException, int)
             elif parameter == "left_angles":
                 if not isinstance(value, list):
-                    raise MercuryL1ClientDataException("`angles` must be a list, but the received {}".format(type(value)))
+                    raise MercuryL1ClientDataException("`left angles` must be a list, but the received {}".format(type(value)))
                 # Check angles
                 if len(value) != 8:
                     raise MercuryL1ClientDataException(
-                        "The length of `angles` must be 8, but received length is {}".format(len(value)))
+                        "The length of `right angles` must be 8, but received length is {}".format(len(value)))
                 # Check each angle type
                 for idx, angle in enumerate(value):
                     if not isinstance(angle, (int, float)):
@@ -2458,11 +2464,11 @@ def calibration_parameters(**kwargs):
                                 idx, angles_min, angles_max, angle))
             elif parameter == "right_angles":
                 if not isinstance(value, list):
-                    raise MercuryL1ClientDataException("`angles` must be a list, but the received {}".format(type(value)))
+                    raise MercuryL1ClientDataException("`right angles` must be a list, but the received {}".format(type(value)))
                 # Check angles
                 if len(value) != 9:
                     raise MercuryL1ClientDataException(
-                        "The length of `angles` must be 9, but received length is {}".format(len(value)))
+                        "The length of `right angles` must be 9, but received length is {}".format(len(value)))
                 # Check each angle type
                 for idx, angle in enumerate(value):
                     if not isinstance(angle, (int, float)):

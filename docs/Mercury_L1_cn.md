@@ -285,15 +285,16 @@ print(mc.get_angles())
   - `joint_id`: `int`，关节ID， 范围1 ~ 9
 - **返回值**：`list[float]` 双臂单关节角度, `[left angle, right angle]`
 
-#### `send_angle(arm_id, joint_id, left_angle, right_angle, speed)`
+#### `send_angle(arm_id, joint_id, speed, left_angle=None, right_angle=None, _async=False)`
 
 - **功能：** 向机械臂发送一个关节角度（arm_id模式为1/2时，另一条臂值任意）
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
-    - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `0`: 左臂和右臂，需同时输入 `left_angle` 和 `right_angle` 参数。
+    - `1`: 左臂，只输入 `left_angle` 参数即可。
+    - `2`: 右臂，只输入 `right_angle` 参数即可。
   - `joint_id`：关节 id，范围 int 1-9
+  - `speed`：（`int`）1 ~ 100
   - `left_angle`：角度值（`float`）
       | 关节 Id | 范围 |
       | ---- | ---- |
@@ -318,36 +319,37 @@ print(mc.get_angles())
       | 7 | -155 ~ 155 |
       | 8 | -85 ~ 85 |
       | 9 | -82 ~ 82 |
+  - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
-    - `speed`：机械臂运动速度及范围 1~100
-
-#### `send_angles(arm_id, left_angles, right_angles, speed)`
+#### `send_angles(arm_id, speed, left_angles=None, right_angles=None, _async=False)`
 
 - **功能：** 将所有角度发送到机械臂的所有关节（arm_id模式为1/2时，另一条臂值任意）
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
-    - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `0`: 左臂和右臂，需同时输入 `left_angles` 和 `right_angles` 参数。
+    - `1`: 左臂，只输入 `left_angles` 参数即可。
+    - `2`: 右臂，只输入 `right_angles` 参数即可。
+  - `speed`：（`int`）1 ~ 100
   - `left_angles`：度数列表（`List[float]`），长度 8
   - `right_angles`：度数列表（`List[float]`），长度 9
-  - `speed`：（`int`）1 ~ 100
+  - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
 #### `get_coords()`
 
 - **功能：** 从基于基准的坐标系获取机械臂坐标
 - **返回值：** 左右臂坐标浮点列表：`[[x, y, z, rx, ry, rz], [x, y, z, rx, ry, rz]]`
 
-#### `send_coord(arm_id, coord_id, left_coord, right_coord, speed)`
+#### `send_coord(arm_id, coord_id, speed, left_coord=None, right_coord=None, _async=False)`
 
 - **功能：** 向机械臂发送一个坐标（arm_id模式为1/2时，另一条臂值任意）
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
-    - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `0`: 左臂和右臂，需同时输入 `left_coord` 和 `right_coord` 参数。
+    - `1`: 左臂，只输入 `left_coord` 参数即可。
+    - `2`: 右臂，只输入 `right_coord` 参数即可。
   - `coord_id`：向机械臂发送一个坐标，1-6 对应 [x, y, z, rx, ry, rz]
-  - `coord`：坐标值（`float`）
+  - `speed` (`int`)：1 ~ 100
+  - `left_coord`：坐标值（`float`）
       | 坐标 ID | 范围 |
       | ---- | ---- |
       | x | -474 ~ 474 |
@@ -356,19 +358,21 @@ print(mc.get_angles())
       | rx | -180 ~ 180 |
       | ry | -180 ~ 180 |
       | rz | -180 ~ 180 |
-  - `speed`：（`int`）1-100
+  - `right_coord`：坐标值（`float`）,范围同 `left_coord` 一样。
+  - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
-#### `send_coords(arm_id, left_coords, right_coords, speed)`
+#### `send_coords(arm_id, speed, left_coords=None, right_coords=None, _async=False)`
 
 - **功能：**：发送整体坐标和姿态，将机械臂头部从原点移动到您指定的点（arm_id模式为1/2时，另一条臂值任意）
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
-    - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `0`: 左臂和右臂，需同时输入 `left_coords` 和 `right_coords` 参数。
+    - `1`: 左臂，只输入 `left_coords` 参数即可。
+    - `2`: 右臂，只输入 `right_coords` 参数即可。
+  - `speed` (`int`)：1 ~ 100
   - `left_coords`: 坐标列表，值`[x,y,z,rx,ry,rz]`，长度6
   - `right_coords`: 坐标列表，值`[x,y,z,rx,ry,rz]`，长度6
-  - `speed` (`int`)：1 ~ 100
+  - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
 #### `pause(arm_id, deceleration=0)`
 

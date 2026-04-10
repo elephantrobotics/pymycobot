@@ -904,7 +904,7 @@ class MercuryL1Client(L1CloseLoop):
         """
         left_angles = [0] * 8
         right_angles = [0] * 9
-        return self.send_angles(arm_id, left_angles, right_angles, speed, _async=_async)
+        return self.send_angles(arm_id, speed, left_angles, right_angles, _async=_async)
 
     def get_digital_inputs(self, arm_id):
         """Read the status of all pins at the end, including: IN1, IN2, button 1 (right),
