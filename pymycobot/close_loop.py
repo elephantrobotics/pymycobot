@@ -625,7 +625,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
     def drag_teach_execute(self):
         """Start dragging the teaching point and only execute it once."""
-        if self.get_drag_fifo_len() == 0:
+        if self.is_drag_fifo_empty() == 0:
             return_value = 'There is currently no trajectory path. Please record first!'
             return return_value
         return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, has_reply=True)
@@ -1711,6 +1711,13 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
     def get_drag_fifo_len(self):
         return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN)
+
+    def is_drag_fifo_empty(self):
+        """Determine whether the drag-to-teach execution queue is empty.
+
+        Returns: 0 - empty, 1 - not empty.
+        """
+        return self._mesg(ProtocolCode.IS_DRAG_FIFO_EMPTY)
 
     def jog_rpy(self, axis, direction, speed, _async=True):
         """Rotate the end point around the fixed axis of the base coordinate system
