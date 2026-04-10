@@ -12,10 +12,10 @@ from pymycobot.robot_info import _interpret_status_code, RobotStatusL1Info
 
 
 class MercuryL1Client(L1CloseLoop):
-    def __init__(self, ip='192.168.0.232', netport=6501, debug=False, save_serial_log=False):
+    def __init__(self, ip='192.168.1.232', netport=6501, debug=False, save_serial_log=False):
         """
         Args:
-            ip     : Server IP address, default '192.168.0.232'
+            ip     : Server IP address, default '192.168.1.232'
             netport : Socket port number, default is 6501
             debug    : whether show debug info
         """
@@ -128,6 +128,9 @@ class MercuryL1Client(L1CloseLoop):
             else:
                 return error_list
         elif data_len in [34]:
+            for i in range(0, data_len, 2):
+                res.append(self._decode_int16(valid_data[i:i + 2]))
+        elif data_len in [24] and genre == ProtocolCode.GET_COORDS:
             for i in range(0, data_len, 2):
                 res.append(self._decode_int16(valid_data[i:i + 2]))
         elif data_len in [89]:
@@ -265,12 +268,15 @@ class MercuryL1Client(L1CloseLoop):
             ProtocolCode.GET_WORLD_REFERENCE,
         ]:
             if res:
-                r = []
+                left_coords = []
+                right_coords = []
                 for idx in range(3):
-                    r.append(self._int2coord(res[idx]))
+                    left_coords.append(self._int2coord(res[:6][idx]))
+                    right_coords.append(self._int2coord(res[6:][idx]))
                 for idx in range(3, 6):
-                    r.append(self._int2angle(res[idx]))
-                return r
+                    left_coords.append(self._int2angle(res[:6][idx]))
+                    right_coords.append(self._int2angle(res[6:][idx]))
+                return [left_coords, right_coords]
             else:
                 return res
         elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
