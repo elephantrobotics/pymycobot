@@ -632,6 +632,26 @@ mc.send_angle(1, 40, 20)
 - **function**：Get joint temperature
 - **Return value**： A list unit ℃
 
+#### `backup_servo_params(servo_id)`
+
+- **Function**: Backs up servo parameters. Requires firmware version 7.4.0 or higher. (Confirms the use of existing parameters.)
+- **Parameters**:
+
+  - `servo_id (int)`: Servo ID; range: 1 ~ 6; 254 - all servos.
+
+- **Return Value**:
+  - `1`: Complete.
+
+#### `restore_servo_params(servo_id)`
+
+- **Function**: Restores servo parameters. Requires firmware version 7.4.0 or higher. (Effective only if a parameter backup has previously been performed.)
+- **Parameters**:
+
+  - `servo_id (int)`: Servo ID; range: 1 ~ 6; 254 - all servos.
+
+- **Return Value**:
+  - `1`: Complete.
+
 ### 9. Robotic arm end IO control
 
 #### `set_color(r, g, b)`
