@@ -239,6 +239,7 @@ class ProtocolCode(object):
     GET_DRAG_FIFO = 0x44
     SET_DRAG_FIFO = 0x45
     GET_DRAG_FIFO_LEN = 0x46
+    IS_DRAG_FIFO_EMPTY = 0x47
     GET_MAX_ACC = 0x42
     SET_MAX_ACC = 0x43
     GET_ACCELERATION = 0x44
