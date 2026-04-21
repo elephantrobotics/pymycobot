@@ -1,5 +1,6 @@
 # coding=utf-8
 import locale
+import struct
 import time
 import threading
 import socket
@@ -78,6 +79,17 @@ class Pro450Client(Pro450CloseLoop):
             elif data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
                 res_list = [i for i in valid_data]
                 return res_list
+            elif data_len == 29 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+                res_list = [i for i in valid_data]
+                res = res_list[3:27]
+                data = bytes(res)
+                values = []
+                for i in range(0, 24, 4):
+                    chunk = data[i:i + 4]
+                    val = struct.unpack(">f", chunk)[0]
+                    values.append(val)
+
+                return values
             elif data_len == 12 and genre == ProtocolCode.GET_TORQUE_COMP:
                 res_list = [i for i in valid_data]
                 return res_list
@@ -1601,7 +1613,7 @@ class Pro450Client(Pro450CloseLoop):
         Args:
             joint_id (int): joint ID， range 1 ~ 6
             damping (int): damping  0-close 1-open
-            comp_value (int): Compensation value, range is 0 ~ 250, default is 0, The smaller the value, the harder it is to drag the joint
+            comp_value (int): Compensation value, range is 0 ~ 50, default is 0, The smaller the value, the harder it is to drag the joint
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, comp_value=comp_value, damping=damping)
@@ -1868,3 +1880,8 @@ class Pro450Client(Pro450CloseLoop):
         """
 
         return self._mesg(ProtocolCode.GET_PRO_GRIPPER_OFFSET)
+
+    def get_force_sensor_data(self):
+        """Get the force sensor data.(External force sensor required)"""
+        command = [0x01, 0x04, 0x00, 0x00, 0x00, 0x0C, 0xF0, 0x0F]
+        return self.tool_serial_write_data(command)

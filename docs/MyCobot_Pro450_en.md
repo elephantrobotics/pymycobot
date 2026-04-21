@@ -1237,3 +1237,10 @@ print(mc.get_angles())
 
   - `False` - Failure
   
+### 21 Force Sensor
+
+#### `get_force_sensor_data()`
+
+- **Function**: Reads force sensor data (requires an external 6D sensor)
+
+- **Return Value**: (`list`) A list of sensor data, length 6

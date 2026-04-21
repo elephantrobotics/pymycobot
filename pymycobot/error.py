@@ -858,6 +858,12 @@ def calibration_parameters(**kwargs):
                 if value < increment_min or value > increment_max:
                     raise MyCobot280DataException(
                         "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+            elif parameter == 'servo_id':
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MyCobot280DataException(
+                        "The value supported by parameter {} is in [1, 2, 3, 4, 5, 6, 254], but the received value is {}".format(
+                            parameter, value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MyCobot280DataException)
     elif class_name in ["MyCobot320", "MyCobot320Socket"]:
@@ -2000,8 +2006,8 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 50 ~ 250, but received {}".format(parameter, value))
             elif parameter == "comp_value":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if value < 0 or value > 250:
-                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 250, but received {}".format(parameter, value))
+                if value < 0 or value > 50:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 50, but received {}".format(parameter, value))
             elif parameter == "trajectory":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value not in [0,1]:
