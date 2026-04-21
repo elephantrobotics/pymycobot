@@ -1092,7 +1092,7 @@ class UltraArmP1Socket:
             return self._response(_async=False)
 
     def go_home(self, speed=2000, _async=True):
-        return self.set_angles([0, 0, 90, 0], speed, _async=_async)
+        return self.set_angles([0, 0, 89, 0], speed, _async=_async)
 
     def close(self):
         """Close the socket connect."""
@@ -1391,4 +1391,10 @@ class UltraArmP1Socket:
         """Unlock After Collision Detection."""
         with self.lock:
             self._send_command(ProtocolCode.COLLISION_UNLOCK)
+            return self._response(_async=True, is_set=True)
+
+    def clear_error_status(self):
+        """Clear Error Status."""
+        with self.lock:
+            self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
             return self._response(_async=True, is_set=True)
