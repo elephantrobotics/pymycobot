@@ -12,6 +12,19 @@ from pymycobot import UltraArmP1
 
 **注意：** 若没有安装我们的API库，请参考 [README.md](../README.md) 文档进行安装。
 
+```python
+# 示例
+from pymycobot import UltraArmP1
+
+ua = UltraArmP1("COM3",1000000)
+
+res = ua.get_angles_info()
+print(res)
+
+ua.set_angles([0, 0, 90, 0],50)
+...
+```
+
 ### 1 `set_reboot()`
 
 - **功能：** 设置机械臂开发板重启。
@@ -76,7 +89,7 @@ from pymycobot import UltraArmP1
 
     </table>
 
-  - `speed`：表示机械臂运动的速度，范围 1~20000 。
+  - `speed`：表示机械臂运动的速度，范围 1~100 。
   - `_async`: 运动到位反馈，默认开启。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
@@ -86,7 +99,7 @@ from pymycobot import UltraArmP1
 - **功能：**  发送所有角度给机械臂所有关节
 - **参数说明：**
   - `degrees`: (List[float])包含所有关节的角度 ,四轴机器人有四个关节，所以长度为4，表示方法为：[20,20,90, 20]
-  - `speed`: 表示机械臂运动的速度，取值范围是1~20000。
+  - `speed`: 表示机械臂运动的速度，取值范围是1~100。
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
@@ -158,7 +171,7 @@ from pymycobot import UltraArmP1
 
       </table>
 
-  - `speed`: 表示机械臂运动的速度，范围是1-20000。
+  - `speed`: 表示机械臂运动的速度，范围是1-100。
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
@@ -178,7 +191,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: 主要控制机器臂移动的方向，1 - 正向移动，0 - 负向移动
 
-  - `speed`: 速度 1 ~ 20000。
+  - `speed`: 速度 1 ~ 100。
 
   - `_async`: 运动到位反馈，默认开环。
 
@@ -194,7 +207,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: 主要控制机器臂移动的方向，1 - 正向移动，0 - 负向移动
 
-  - `speed`: 速度 1 ~ 20000 。
+  - `speed`: 速度 1 ~ 100 。
 
   - `_async`: 运动到位反馈，默认打开。
 
@@ -210,7 +223,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: 角度增量值。
 
-  - `speed`: 速度 1 ~ 20000。
+  - `speed`: 速度 1 ~ 100。
 
   - `_async`: 运动到位反馈，默认打开。
 
@@ -226,7 +239,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: 坐标增量值。
 
-  - `speed`: 速度 1 ~ 20000 。
+  - `speed`: 速度 1 ~ 100 。
 
   - `_async`: 运动到位反馈，默认打开。
 
@@ -522,15 +535,15 @@ from pymycobot import UltraArmP1
   - `2`: 输出，电平=0（低电平）
   - `3`: 输出，电平=1（高电平）
 
-### 50 `set_button_enable()`
+### 50 `set_end_button_enable()`
 
-- **功能：** 设置按钮使能
+- **功能：** 设置末端按钮使能
   
 - **返回值：** 1
 
-### 51 `set_button_disable()`
+### 51 `set_end_button_disable()`
 
-- **功能：** 设置按钮掉使能
+- **功能：** 设置末端按钮掉使能
 
 - **返回值：** 1
 
@@ -580,6 +593,11 @@ from pymycobot import UltraArmP1
 
 - **返回值：** OK - 成功；error - 失败
 
+### 58 `clear_error_status()`
+
+- **功能：** 清除错误状态，若超限需手动将关节移动到限位内。
+
+- **返回值：** OK - 成功；error - 失败
 
 ---
 
@@ -604,7 +622,7 @@ ua = UltraArmP1Socket("192.168.10.10",9000)
 res = ua.get_angles_info()
 print(res)
 
-mc.set_angles([0, 0, 90, 0],2500)
+ua.set_angles([0, 0, 90, 0],50)
 ...
 ```
 
@@ -631,6 +649,6 @@ ua = UltraArmP1Bluetooth("10:51:DB:40:2C:11")
 res = ua.get_angles_info()
 print(res)
 
-mc.set_angles([0, 0, 90, 0],2500)
+ua.set_angles([0, 0, 90, 0],50)
 ...
 ```

@@ -12,6 +12,19 @@ from pymycobot import UltraArmP1
 
 **Note:** If our API library is not installed, please refer to the [README.md](../README.md) document for installation instructions.
 
+```python
+# demo
+from pymycobot import UltraArmP1
+
+ua = UltraArmP1("COM3",1000000)
+
+res = ua.get_angles_info()
+print(res)
+
+ua.set_angles([0, 0, 90, 0],50)
+...
+```
+
 ### 1 `set_reboot()`
 
 - **Function:** Sets the robotic arm development board to restart.
@@ -103,7 +116,7 @@ from pymycobot import UltraArmP1
     </table>
 
 
-  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 20000.
+  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 100.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -117,7 +130,7 @@ from pymycobot import UltraArmP1
 
   - `degrees`: (List[float]) Contains the angles of all joints. A four-axis robot has four joints, so the length is 4, represented as [20,20,90, 20].
 
-  - `speed`: Represents the speed of the robotic arm, ranging from 1 to 20000.
+  - `speed`: Represents the speed of the robotic arm, ranging from 1 to 100.
 
   - `_async`: Provides feedback on movement position, enabled by default.
 
@@ -237,7 +250,7 @@ from pymycobot import UltraArmP1
     </table>
 
 
-  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 20000.
+  - `speed`: Represents the speed of the robotic arm's movement, ranging from 1 to 100.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -259,7 +272,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: Primarily controls the direction of the robotic arm's movement, 1 - positive movement, 0 - negative movement.
 
-  - `speed`: Speed ​​from 1 to 20000.
+  - `speed`: Speed ​​from 1 to 100.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -275,7 +288,7 @@ from pymycobot import UltraArmP1
 
   - `direction`: Primarily controls the direction of the robotic arm's movement, 1 - positive movement, 0 - negative movement.
 
-  - `speed`: Speed ​​1 to 20000.
+  - `speed`: Speed ​​1 to 100.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -291,7 +304,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: Angle increment value.
 
-  - `speed`: Speed ​​1 ~ 20000.
+  - `speed`: Speed ​​1 ~ 100.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -307,7 +320,7 @@ from pymycobot import UltraArmP1
 
   - `increment`: The coordinate increment value.
 
-  - `speed`: Speed, ranging from 1 to 20000.
+  - `speed`: Speed, ranging from 1 to 100.
 
   - `_async`: Motion positioning feedback, enabled by default.
 
@@ -641,15 +654,15 @@ from pymycobot import UltraArmP1
   - `2`: Output, level = 0 (low level)
   - `3`: Output, level = 1 (high level)
 
-### 50 `set_button_enable()`
+### 50 `set_end_button_enable()`
 
-- **Function:** Enable the button
+- **Function:** Enable the end button
   
 - **Return Value:** 1
 
-### 51 `set_button_disable()`
+### 51 `set_end_button_disable()`
 
-- **Function:** Disable the button
+- **Function:** Disable the end button
 
 - **Return Value:** 1
 
@@ -699,6 +712,11 @@ from pymycobot import UltraArmP1
 
 - **Return Value:** OK - Success; error - Failure.
 
+### 58 `clear_error_status()`
+
+- **Function:** Clears the error status. If a limit has been exceeded, the joint must be manually moved back within the limit boundaries.
+
+- **Return Value:** OK - Success; error - Failure
 
 ---
 

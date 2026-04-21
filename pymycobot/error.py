@@ -2285,9 +2285,9 @@ def calibration_parameters(**kwargs):
                     parameter, value_type, ultraArmP1DataException, int
                 )
 
-                if not (1 <= value <= 20000):
+                if not (1 <= value <= 100):
                     raise ultraArmP1DataException(
-                        f"Speed out of range, should be 1 ~ 20000, but received {value}"
+                        f"Speed out of range, should be 1 ~ 100, but received {value}"
                     )
             elif parameter == "wait_time":
                 check_value_type(
@@ -2363,9 +2363,9 @@ def calibration_parameters(**kwargs):
             elif parameter == "jog_speed":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
 
-                if not (1 <= value <= 20000):
+                if not (1 <= value <= 100):
                     raise ultraArmP1DataException(
-                        f"Speed out of range, should be 1 ~ 20000, but received {value}")
+                        f"Speed out of range, should be 1 ~ 100, but received {value}")
             elif parameter in ["direction", "state", "pin_signal", "basic_pin_status"]:
                 check_0_or_1(parameter, value, [0, 1], value_type, ultraArmP1DataException, int)
             elif parameter == "gripper_speed":

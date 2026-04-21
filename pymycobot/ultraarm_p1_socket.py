@@ -9,6 +9,7 @@ Python socket interface for the ultraArmP1 robotic arm.
 Author: weijian.wang
 Date: 2026-03-11
 """
+import locale
 import logging
 import os
 import socket
@@ -20,6 +21,7 @@ import select
 from pymycobot.log import setup_logging
 from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
+from pymycobot.robot_info import UltraArmP1RobotInfo
 
 
 class UltraArmP1Socket:
@@ -44,6 +46,10 @@ class UltraArmP1Socket:
         self.calibration_parameters = calibration_parameters
         self.lock = threading.Lock()
         time.sleep(0.5)
+
+        self.language, _ = locale.getdefaultlocale()
+        if self.language not in ["zh_CN", "en_US"]:
+            self.language = "en_US"
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -84,7 +90,7 @@ class UltraArmP1Socket:
             return b""
 
     # ---------------------- Response waiting & parsing ----------------------
-    def _response(self, timeout=90, _async=True, _gcode=False, is_set=False):
+    def _response(self, timeout=300, _async=True, _gcode=False, is_set=False):
         """Wait for device response from the serial buffer.
 
         Returns 'ok' when keyword is found, False on timeout.
@@ -119,27 +125,17 @@ class UltraArmP1Socket:
                     if "error:" in text_lower:
                         r = self._parse_colon_values(text_lower, "error", int)
                         return r[0] if r is not None else "error"
-                # Limit error
-                if "limiterror" in text_lower:
-                    r = self._parse_colon_values(text_lower, "limiterror", int, single=True)
-                    if r is not None:
-                        err_code = r
-                        if err_code == 6:
-                            return "J2/J3 joint coupling limit."
+                    # Limit error
+                    if "limiterror" in text_lower:
+                        res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
+                        if res is not None:
+                            return self._parse_error_code(res, self.language)
 
-                        elif err_code == 7:
-                            return "Target position exceeds limit."
-                        elif err_code == 1:
-                            return "J1 joint over-limit"
-                        else:
-                            return f"ErrorCode {err_code}"
-
-                # Collision detection
-                if "collisiondetectionerror" in text_lower:
-                    r = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
-                    if r is not None:
-                        joint = r
-                        return f"Joint{joint} Collision Detection Error."
+                    # Collision detection
+                    if "collisiondetectionerror" in text_lower:
+                        res = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
+                        if res is not None:
+                            return self._parse_error_code(res, self.language)
 
                 try:
                     if text.lower().count(keyword.decode()) >= 1:
@@ -197,9 +193,7 @@ class UltraArmP1Socket:
                         else:
                             display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
                             self._debug_read(display)
-                    # common error
-                    if "error: command not recognized" in lower:
-                        return -1
+
                     # -------- dispatch by flag --------
                     if flag == "angle":
                         r = self._parse_colon_values(lower, "angles", float, 2)
@@ -212,24 +206,10 @@ class UltraArmP1Socket:
                             return r
 
                     elif flag == "error_information":
-                        r = self._parse_colon_values(lower, "error", int)
+                        r = self._parse_colon_values(lower, "error", int, single=True)
                         if r is not None:
-                            error_desc = [
-                                "Joint1 motor limit exceeded.",
-                                "Joint2 motor limit exceeded.",
-                                "Joint3 motor limit exceeded.",
-                                "Reserved",
-                                "Reserved",
-                                "Reserved",
-                                "Reserved",
-                                "Reserved"
-                            ]
-
-                            for i, val in enumerate(r):
-                                if val == 1:
-                                    print(f"[Robot Error] {error_desc[i]}")
-
-                            return r
+                            value = r
+                            return self._parse_error_code(value, self.language)
 
                     elif flag == "get_gripper_angle":
                         r = self._parse_colon_values(lower, "gripperangle", int, single=True)
@@ -326,43 +306,6 @@ class UltraArmP1Socket:
             self.log.warning(f"request timeout, received buffer: {raw_data}")
         return -1
 
-    def _parse_bracket_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
-        """
-        Parse keyword[...] values from lower string.
-
-        Args:
-            lower (str): lower-case received buffer
-            keyword (str): keyword to search (lower-case)
-            value_type: int or float or str
-            round_ndigits (int|None): rounding digits for float
-            single (bool): return first value only
-
-        Returns:
-            list | int | float | None
-        """
-        idx = lower.find(keyword)
-        if idx == -1:
-            return None
-
-        bracket_start = lower.find("[", idx)
-        bracket_end = lower.find("]", idx)
-        if bracket_start == -1 or bracket_end == -1 or bracket_end <= bracket_start:
-            return None
-
-        try:
-            sub = lower[bracket_start + 1: bracket_end]
-            items = [x.strip() for x in sub.split(",") if x.strip() != ""]
-
-            values = []
-            for x in items:
-                v = value_type(x)
-                if value_type is float and round_ndigits is not None:
-                    v = round(v, round_ndigits)
-                values.append(v)
-            return values[0] if single else values
-        except Exception:
-            return None
-
     def _parse_colon_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
         """
         Parse keyword:value1,value2,... format
@@ -405,6 +348,25 @@ class UltraArmP1Socket:
             if self.debug:
                 self.log.error(f"serial read exception: {e}")
             return None
+
+    def _parse_error_code(self, value: int, lang="en_US"):
+        if value == 0:
+            return "ok" if lang == "zh_CN" else "ok"
+
+        errors = []
+
+        for i in range(32):
+            if value & (1 << i):
+                info = UltraArmP1RobotInfo.ERROR_MAP.get(i)
+                if info:
+                    errors.append(info.get(lang, info["en_US"]))
+                else:
+                    errors.append(
+                        f"未知错误(bit{i})" if lang == "zh_CN"
+                        else f"Unknown error (bit{i})"
+                    )
+
+        return "; ".join(errors)
 
     def _send_command(self, command: str):
         """Send commands to serial port"""
@@ -541,7 +503,7 @@ class UltraArmP1Socket:
 
         Args:
             coords (list[float]): Coordinates [X, Y, Z].
-            speed (int): Movement speed (1~20000).
+            speed (int): Movement speed (1~100).
             _async: (bool): Closed-loop switch
             _gcode: (bool): GCode switch
         """
@@ -557,7 +519,7 @@ class UltraArmP1Socket:
                 command += f" Z{coords[2]}"
             if len(coords) > 3 and coords[3] is not None:
                 command += f" R{coords[3]}"
-            if speed is not None and 1 <= speed <= 20000:
+            if speed is not None and 1 <= speed <= 100:
                 command += f" F{speed}"
 
             self._send_command(command)
@@ -569,7 +531,7 @@ class UltraArmP1Socket:
         Args:
             coord_id (str): 'X', 'Y', 'Z', 'R'
             coord (float): coordinate value
-            speed (int): movement speed 1 ~ 20000
+            speed (int): movement speed 1 ~ 100
         """
         self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
         with self.lock:
@@ -585,7 +547,7 @@ class UltraArmP1Socket:
         Args:
             joint_id (int): Joint number (1~4).
             angle (float): Angle value.
-            speed (int): Movement speed (1~20000).
+            speed (int): Movement speed (1~100).
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
@@ -606,7 +568,7 @@ class UltraArmP1Socket:
 
         Args:
             angles (list[float]): Joint angles [J1, J2, J3, J4].
-            speed (int): Movement speed (1~20000).
+            speed (int): Movement speed (1~100).
             _async: (bool): Closed-loop switch
             _gcode: (bool): Closed-loop switch
         """
@@ -622,7 +584,7 @@ class UltraArmP1Socket:
                 command += f" C{angles[2]}"
             if len(angles) > 3 and angles[3] is not None:
                 command += f" D{angles[3]}"
-            if speed is not None and 1 <= speed <= 20000:
+            if speed is not None and 1 <= speed <= 100:
                 command += f" F{speed}"
 
             self._send_command(command)
@@ -663,7 +625,7 @@ class UltraArmP1Socket:
             direction :
                 0 : Negative motion
                 1 : Positive motion
-            speed : (int) 1-20000
+            speed : (int) 1-100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
                                     jog_speed=speed)
@@ -684,7 +646,7 @@ class UltraArmP1Socket:
             direction:
                 0 : Negative motion
                 1 : Positive motion
-            speed : (int) 1-20000
+            speed : (int) 1-100
         """
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     jog_speed=speed)
@@ -702,7 +664,7 @@ class UltraArmP1Socket:
         Args:
             joint_id: Joint id 1 - 4
             increment: Angle increment value
-            speed: int (1 - 20000)
+            speed: int (1 - 100)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
@@ -720,7 +682,7 @@ class UltraArmP1Socket:
         Args:
             coord_id: axis id 1 - 4.
             increment: Coord increment value
-            speed: int (1 - 20000)
+            speed: int (1 - 100)
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
@@ -1091,7 +1053,7 @@ class UltraArmP1Socket:
             self._send_command(command)
             return self._response(_async=False)
 
-    def go_home(self, speed=2000, _async=True):
+    def go_home(self, speed=20, _async=True):
         return self.set_angles([0, 0, 89, 0], speed, _async=_async)
 
     def close(self):
@@ -1302,14 +1264,14 @@ class UltraArmP1Socket:
                 return res_data[pin_no - 1]
             return -1
 
-    def set_button_disable(self):
-        """Disable the settings button."""
+    def set_end_button_disable(self):
+        """Disable the settings end button."""
         with self.lock:
             self._send_command(ProtocolCode.SET_BUTTON_DISABLE)
             return self._response(_async=True, is_set=True)
 
-    def set_button_enable(self):
-        """Enable the settings button."""
+    def set_end_button_enable(self):
+        """Enable the settings end button."""
         with self.lock:
             self._send_command(ProtocolCode.SET_BUTTON_ENABLE)
             return self._response(_async=True, is_set=True)
