@@ -2449,7 +2449,7 @@ def calibration_parameters(**kwargs):
                 # Check angles
                 if len(value) != 8:
                     raise MercuryL1ClientDataException(
-                        "The length of `right angles` must be 8, but received length is {}".format(len(value)))
+                        "The length of `left angles` must be 8, but received length is {}".format(len(value)))
                 # Check each angle type
                 for idx, angle in enumerate(value):
                     if not isinstance(angle, (int, float)):
