@@ -110,6 +110,10 @@ class MercuryL1Client(L1CloseLoop):
             elif genre == ProtocolCode.PRO450_GET_DIGITAL_INPUTS:
                 for i in range(4):
                     res.append(valid_data[i])
+            elif genre == ProtocolCode.GET_ERROR_INFO:
+                for i in range(0, data_len, 2):
+                    res.append(self._decode_int16(valid_data[i:i + 2]))
+                return res
             else:
                 for i in range(1, 4):
                     res.append(valid_data[i])

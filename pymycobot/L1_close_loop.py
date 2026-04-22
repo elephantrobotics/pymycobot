@@ -632,14 +632,22 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
     #     self.calibration_parameters(class_name=self.__class__.__name__, rank=rank, rank_value=value)
     #     return self._mesg(ProtocolCode.SET_FILTER_LEN, rank, value)
 
-    def clear_error_information(self):
-        """Clear robot error message"""
-        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO)
+    def clear_error_information(self, arm_id):
+        """Clear robot error message
+
+        Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        return self._mesg(ProtocolCode.CLEAR_ERROR_INFO, arm_id)
 
     def get_error_information(self):
         """Obtaining robot error information
 
-        Return:
+        Return: list [left error, right error]
             0: No error message.
             1 ~ 6: The corresponding joint exceeds the limit position.
             32-36: Coordinate motion error.

@@ -208,7 +208,7 @@ print(mc.get_angles())
     - `0`: 左臂和右臂
     - `1`: 左臂
     - `2`: 右臂
-  - `joint_id`: int. 关节 id 1 - 6，254-所有关节恢复。
+  - `joint_id`: int. 关节 id 1 - 7，254-所有关节恢复。
 
 #### `get_comm_error_counts(arm_id, joint_id)`
 
