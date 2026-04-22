@@ -111,9 +111,21 @@ class MercuryL1Client(L1CloseLoop):
                 for i in range(4):
                     res.append(valid_data[i])
             elif genre == ProtocolCode.GET_ERROR_INFO:
-                for i in range(0, data_len, 2):
-                    res.append(self._decode_int16(valid_data[i:i + 2]))
-                return res
+                def parse_error(two_bytes):
+                    high, low = two_bytes[0], two_bytes[1]
+
+                    if high == 0xD0:
+                        return low
+                    else:
+                        return 0
+
+                if data_len != 4:
+                    return -1
+
+                left = parse_error(valid_data[0:2])
+                right = parse_error(valid_data[2:4])
+
+                return [left, right]
             else:
                 for i in range(1, 4):
                     res.append(valid_data[i])
