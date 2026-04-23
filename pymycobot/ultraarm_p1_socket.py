@@ -129,6 +129,8 @@ class UltraArmP1Socket:
                     if "limiterror" in text_lower:
                         res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
                         if res is not None:
+                            if res == 6:
+                                return "J2、J3 耦合" if self.language == 'zh_CN' else 'J2-J3 coupling error'
                             return self._parse_error_code(res, self.language)
 
                     # Collision detection
