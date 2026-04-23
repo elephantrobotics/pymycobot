@@ -455,28 +455,26 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def set_gripper_state(self, gripper_value, gripper_speed):
+    def set_gripper_state(self, gripper_value, gripper_speed, gripper_type=1):
         """Set gripper angle.
 
         Args:
             gripper_value (int): 0 - 100
 
-            gripper_speed: 1 - 1500
+            gripper_speed:
+                - not force gripper: 1 - 1500
+                - force gripper: 1 - 65
+            gripper_type (int): 1 ~ 2, 1 - not force gripper; 2 - force gripper
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__,
-            gripper_value=gripper_value,
-            gripper_speed=gripper_speed,
-        )
+        self.calibration_parameters(class_name=self.__class__.__name__,gripper_value=gripper_value,
+                                    gripper_speed=gripper_speed,gripper_type=gripper_type)
         with self.lock:
-            command = (
-                ProtocolCode.GIRPPER_OPEN
-                + "A"
-                + str(gripper_value)
-                + "F"
-                + str(gripper_speed)
-                + ProtocolCode.END
-            )
+            command = ProtocolCode.GIRPPER_OPEN
+            command += " A"+ str(gripper_value)
+            command += " F"+ str(gripper_speed)
+            command += " M"+ str(gripper_type)
+            command += ProtocolCode.END
+
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
