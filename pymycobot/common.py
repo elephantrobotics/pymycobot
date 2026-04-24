@@ -592,6 +592,7 @@ class ProtocolCode(object):
     GET_SD_CARD_MEMORY = "M441"
     START_DOWNLOAD_FIRMWARE = "M450"
     FINISH_DOWNLOAD_FIRMWARE = "M451"
+    GET_QUEUE_SIZE_P1 = "M600"
 
 
 

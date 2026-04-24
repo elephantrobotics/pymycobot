@@ -123,8 +123,18 @@ class UltraArmP1Socket:
                     if "ok" in text_lower:
                         return 'ok'
                     if "error:" in text_lower:
-                        r = self._parse_colon_values(text_lower, "error", int)
-                        return r[0] if r is not None else "error"
+                        r = self._parse_colon_values(text_lower, "error", int, single=True)
+                        if r is not None:
+                            if 'g11' in text_lower:
+                                if r == 0:
+                                    return "未找到.bin 文件" if self.language == "zh_CN" else ".bin not found"
+                                elif r == 1:
+                                    return "升级固件打开文件失败" if self.language == "zh_CN" else "Failed to open firmware upgrade file"
+                                elif r == 2:
+                                    return "STM32 进入升级模式失败" if self.language == "zh_CN" else "Failed to enter STM32 upgrade mode"
+                                elif r == 3:
+                                    return "SD打开失败" if self.language == "zh_CN" else "Failed to open SD card"
+                            return r
                     # Limit error
                     if "limiterror" in text_lower:
                         res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
@@ -379,64 +389,55 @@ class UltraArmP1Socket:
         except Exception as e:
             self.log.error(f"socket send error: {e}")
 
-    def _fw_calc_crc(self, payload: bytes):
-        """
-        CRC = sum(CMD + IDX_H + IDX_L + LEN_H + LEN_L + DATA) & 0xFF
-        """
-        return sum(payload) & 0xFF
-
-    def _fw_build_packet(self, idx: int, data: bytes):
-        """Build data packets"""
-        frame = bytearray()
-        frame += b'\xA5\x5A'  # Frame header
-        frame += b'\x01'  # CMD: PC send data
-        frame += idx.to_bytes(2, 'big')  # Packet index
-        frame += len(data).to_bytes(2, 'big')
-        frame += data
-
-        crc = self._fw_calc_crc(frame[2:])  # exclude header
-        frame.append(crc)
-        return bytes(frame)
-
-    def _fw_read_ack(self, timeout=1.0):
-        """Read screen response data"""
+    def _wait_queue_safe(self, timeout=5.0):
         start = time.time()
-        buf = bytearray()
+        while True:
+            queue_size = self.get_queue_size()
+            # Abnormal Return Value (-1)
+            if queue_size is None or queue_size < 0:
+                self._queue_invalid = True
+                time.sleep(0.02)
+                continue
+            else:
+                self._queue_invalid = False
+            # Unblocked State
+            if not self._queue_blocked:
+                if queue_size >= 80:
+                    self._queue_blocked = True
+                    continue
+                else:
+                    return
 
-        while time.time() - start < timeout:
-            chunk = self._read_available_bytes()
-            if chunk:
-                buf += chunk
-                # At least 8 bytes are needed for an ACK.
-                while len(buf) >= 8:
-                    if buf[0:2] != b'\xA5\x5A':
-                        buf.pop(0)
-                        continue
+            # Blocked Status (Must drop below 40)
+            else:
+                if queue_size <= 40:
+                    self._queue_blocked = False
+                    return
 
-                    frame = bytes(buf[:8])
-                    buf[:] = buf[8:]
-                    self._debug_read(frame.hex(' ').upper())
-                    cmd = frame[2]
-                    idx = int.from_bytes(frame[3:5], 'big')
-                    return cmd, idx
+            # Global Timeout Protection (Queue persistently remains high)
+            # if time.time() - start > timeout:
+            #     print(f"queue wait timeout, size={queue_size}")
+            #     return
 
-            time.sleep(0.002)
+            time.sleep(0.01)
 
-        return None
+    def _normalize_gcode_line(self, line):
+        line = line.strip()
 
-    def _fw_enter_upgrade(self, filename: str):
-        """Start downloading"""
-        command = ProtocolCode.START_DOWNLOAD_FIRMWARE
-        command += f" {filename}"
-        self._send_command(command)
+        if not line or line.startswith(";"):
+            return None
+
+        tokens = line.strip().split()
+
+        if tokens[0].upper() == "G0":
+            tokens[0] = "G1"
+
+        return " ".join(tokens)
 
     def finish_firmware_upgrade(self):
         """Download complete"""
         command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
         self._send_command(command)
-
-    def _download_progress(self, percent):
-        print(f"Download progress: {percent}%")
 
     # ---------------------- Control methods ----------------------
     def set_reboot(self):
@@ -999,23 +1000,10 @@ class UltraArmP1Socket:
                     continue
 
                 command = line + ProtocolCode.END
-
+                self._wait_queue_safe()
                 self.sock.sendall(command.encode())
                 time.sleep(0.02)
                 self._debug_write(command)
-
-    def _normalize_gcode_line(self, line):
-        line = line.strip()
-
-        if not line or line.startswith(";"):
-            return None
-
-        tokens = line.strip().split()
-
-        if tokens[0].upper() == "G0":
-            tokens[0] = "G1"
-
-        return " ".join(tokens)
 
     def get_system_screen_version(self):
         """Read system screen version.
@@ -1094,67 +1082,6 @@ class UltraArmP1Socket:
             command = ProtocolCode.CHECK_SD_CARD
             self._send_command(command)
             return self._request("check_sd_card")
-
-    # def download_firmware_sd(self, filename, show_progress=True):
-    #     """
-    #     Download firmware to the SD card via M450/M451 commands.
-    #
-    #     Args:
-    #         filename (str): name of the firmware file, and must be a .bin file
-    #         show_progress (bool): whether to show download progress
-    #     """
-    #     self.calibration_parameters(class_name=self.__class__.__name__, download_filename=filename)
-    #
-    #     local_path = filename  # For local use
-    #
-    #     fw_name = os.path.basename(filename)  # For protocol use (M450)
-    #
-    #     if show_progress:
-    #         # callback(percent:int) to report progress
-    #         progress_cb = self._download_progress
-    #     else:
-    #         progress_cb = None
-    #     with self.lock:
-    #
-    #         # Entering upgrade mode.
-    #         self._fw_enter_upgrade(fw_name)
-    #         time.sleep(0.2)
-    #
-    #         # read bin
-    #         with open(local_path, "rb") as f:
-    #             bin_data = f.read()
-    #
-    #         chunk_size = 512
-    #         total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
-    #
-    #         idx = 1
-    #         while idx <= total_packets:
-    #             offset = (idx - 1) * chunk_size
-    #             data = bin_data[offset: offset + chunk_size]
-    #
-    #             pkt = self._fw_build_packet(idx, data)
-    #             self._debug_write(pkt.hex(' ').upper())
-    #             # self._serial_port.write(pkt)
-    #             self.sock.sendall(pkt)
-    #             # self._serial_port.flush()
-    #
-    #             ack = self._fw_read_ack(timeout=1.0)
-    #             if ack is None:
-    #                 continue  # timeout -> resend
-    #             cmd, next_idx = ack
-    #
-    #             if cmd == 2:  # success
-    #                 idx = next_idx
-    #                 if progress_cb:
-    #                     progress_cb(int((idx - 1) * 100 / total_packets))
-    #
-    #             elif cmd == 3:  # resend
-    #                 idx = next_idx
-    #             else:
-    #                 raise RuntimeError(f"Unknown ACK CMD: {cmd}")
-    #
-    #         # Finish
-    #         self.finish_firmware_upgrade()
 
     def upgrade_restart(self):
         """Upgrade and restart"""
@@ -1362,3 +1289,12 @@ class UltraArmP1Socket:
         with self.lock:
             self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
             return self._response(_async=True, is_set=True)
+
+    def get_queue_size(self):
+        """Get Buffer Queue Size.
+
+        Returns:
+            `int` queue size
+        """
+        self._send_command(ProtocolCode.GET_QUEUE_SIZE_P1)
+        return self._request('get_queue_size')

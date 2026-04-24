@@ -150,8 +150,18 @@ class UltraArmP1Bluetooth:
                     if "ok" in text_lower:
                         return 'ok'
                     if "error:" in text_lower:
-                        r = self._parse_colon_values(text_lower, "error", int)
-                        return r[0] if r is not None else "error"
+                        r = self._parse_colon_values(text_lower, "error", int, single=True)
+                        if r is not None:
+                            if 'g11' in text_lower:
+                                if r == 0:
+                                    return "未找到.bin 文件" if self.language == "zh_CN" else ".bin not found"
+                                elif r == 1:
+                                    return "升级固件打开文件失败" if self.language == "zh_CN" else "Failed to open firmware upgrade file"
+                                elif r == 2:
+                                    return "STM32 进入升级模式失败" if self.language == "zh_CN" else "Failed to enter STM32 upgrade mode"
+                                elif r == 3:
+                                    return "SD打开失败" if self.language == "zh_CN" else "Failed to open SD card"
+                            return r
                     # Limit error
                     if "limiterror" in text_lower:
                         res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
@@ -399,6 +409,51 @@ class UltraArmP1Bluetooth:
             self.client.write_gatt_char(self.handle,command.encode(), response=False), self.loop)
 
         future.result()
+
+    def _wait_queue_safe(self, timeout=5.0):
+        start = time.time()
+        while True:
+            queue_size = self.get_queue_size()
+            # Abnormal Return Value (-1)
+            if queue_size is None or queue_size < 0:
+                self._queue_invalid = True
+                time.sleep(0.02)
+                continue
+            else:
+                self._queue_invalid = False
+            # Unblocked State
+            if not self._queue_blocked:
+                if queue_size >= 80:
+                    self._queue_blocked = True
+                    continue
+                else:
+                    return
+
+            # Blocked Status (Must drop below 40)
+            else:
+                if queue_size <= 40:
+                    self._queue_blocked = False
+                    return
+
+            # Global Timeout Protection (Queue persistently remains high)
+            # if time.time() - start > timeout:
+            #     print(f"queue wait timeout, size={queue_size}")
+            #     return
+
+            time.sleep(0.01)
+
+    def _normalize_gcode_line(self, line):
+        line = line.strip()
+
+        if not line or line.startswith(";"):
+            return None
+
+        tokens = line.strip().split()
+
+        if tokens[0].upper() == "G0":
+            tokens[0] = "G1"
+
+        return " ".join(tokens)
 
     # ---------------- Control methods ----------------
 
@@ -987,24 +1042,10 @@ class UltraArmP1Bluetooth:
                 if line is None:
                     continue
 
-                command = line + ProtocolCode.END
-
-                self.sock.sendall(command.encode())
+                command = line
+                self._wait_queue_safe()
+                self._send_command(command)
                 time.sleep(0.02)
-                self._debug_write(command)
-
-    def _normalize_gcode_line(self, line):
-        line = line.strip()
-
-        if not line or line.startswith(";"):
-            return None
-
-        tokens = line.strip().split()
-
-        if tokens[0].upper() == "G0":
-            tokens[0] = "G1"
-
-        return " ".join(tokens)
 
     def get_system_screen_version(self):
         """Read system screen version.
@@ -1274,3 +1315,12 @@ class UltraArmP1Bluetooth:
         with self.lock:
             self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
             return self._response(_async=True, is_set=True)
+
+    def get_queue_size(self):
+        """Get Buffer Queue Size.
+
+        Returns:
+            `int` queue size
+        """
+        self._send_command(ProtocolCode.GET_QUEUE_SIZE_P1)
+        return self._request('get_queue_size')
