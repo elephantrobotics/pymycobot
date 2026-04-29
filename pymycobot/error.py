@@ -2332,12 +2332,10 @@ def calibration_parameters(**kwargs):
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
             value_type = type(value)
-            if parameter == "pin_no_base":
-                check_0_or_1(parameter, value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value_type, MyCobotPro450DataException, int)
-            elif parameter in ["pin_no", "communicate_mode", "tool_arm_id"]:
+            if parameter in ["pin_no", "tool_arm_id"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, MercuryL1ClientDataException, int)
-            elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration',
-                               'communication_mode', 'protocol_mode', 'state', 'damping']:
+            elif parameter in ['pin_signal', 'value', 'state', 'vr_mode', 'rftype', 'end', 'mode',
+                               'state', 'damping', 'left_direction', 'right_direction']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MercuryL1ClientDataException, int)
             elif parameter == "move_type":
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
@@ -2345,7 +2343,7 @@ def calibration_parameters(**kwargs):
                     raise MercuryL1ClientDataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
             elif parameter in ['log_state']:
                 check_0_or_1(parameter, value, list(range(0, 8)), value_type, MercuryL1ClientDataException, int)
-            elif parameter in ['max_acc']:
+            elif parameter in ['left_max_acc', 'right_max_acc']:
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
                 mode = kwargs.get('mode', None)
                 if mode == 0:
@@ -2356,7 +2354,7 @@ def calibration_parameters(**kwargs):
                     if not (1 <= value <= 400):
                         raise MercuryL1ClientDataException(
                             f"The parameter {parameter} only supports 1 ~ 400 (coord mode), but received {value}")
-            elif parameter in ['max_speed']:
+            elif parameter in ['left_max_speed', 'right_max_speed']:
                 mode = kwargs.get('mode', None)
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
                 if mode == 0:
@@ -2370,16 +2368,32 @@ def calibration_parameters(**kwargs):
             elif parameter in['coord_id']:
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryL1ClientDataException)
-            elif parameter in['joint_id']:
+            elif parameter in ['joint_id']:
                 arm_id = kwargs.get('arm_id', None)
                 if arm_id == 0:
                     parameter = 'all_joint_id'
                 elif arm_id == 1:
                     parameter = 'left_joint_id'
-                else:
+                elif arm_id == 2:
                     parameter = 'right_joint_id'
+                else:
+                    parameter = 'joint_id'
                 if value not in robot_limit[class_name][parameter]:
                     check_id(value, robot_limit[class_name][parameter], MercuryL1ClientDataException)
+            elif parameter in ["servo_restore"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                arm_id = kwargs.get('arm_id', None)
+                if arm_id == 0:
+                    limit_value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 254]
+                elif arm_id == 1:
+                    limit_value = [1, 2, 3, 4, 5, 6, 7, 8, 254]
+                elif arm_id == 2:
+                    limit_value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 254]
+                else:
+                    limit_value = [1, 2, 3, 4, 5, 6, 7]
+                if value not in limit_value:
+                    raise MercuryL1ClientDataException(
+                        "The joint_id should be in {}, but received {}".format(limit_value, value))
             elif parameter in ["servo_restore", "set_motor_enabled"]:
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
                 if value not in [1, 2, 3, 4, 5, 6, 7, 8, 9, 254]:
@@ -2447,9 +2461,9 @@ def calibration_parameters(**kwargs):
                 if not isinstance(value, list):
                     raise MercuryL1ClientDataException("`left angles` must be a list, but the received {}".format(type(value)))
                 # Check angles
-                if len(value) != 8:
+                if len(value) != 7:
                     raise MercuryL1ClientDataException(
-                        "The length of `left angles` must be 8, but received length is {}".format(len(value)))
+                        "The length of `left angles` must be 7, but received length is {}".format(len(value)))
                 # Check each angle type
                 for idx, angle in enumerate(value):
                     if not isinstance(angle, (int, float)):
@@ -2466,9 +2480,9 @@ def calibration_parameters(**kwargs):
                 if not isinstance(value, list):
                     raise MercuryL1ClientDataException("`right angles` must be a list, but the received {}".format(type(value)))
                 # Check angles
-                if len(value) != 9:
+                if len(value) != 7:
                     raise MercuryL1ClientDataException(
-                        "The length of `right angles` must be 9, but received length is {}".format(len(value)))
+                        "The length of `right angles` must be 7, but received length is {}".format(len(value)))
                 # Check each angle type
                 for idx, angle in enumerate(value):
                     if not isinstance(angle, (int, float)):
@@ -2599,7 +2613,7 @@ def calibration_parameters(**kwargs):
                     raise MercuryL1ClientDataException(
                         "The parameter {} only supports 1 ~ 10000 ms, but received {}".format(parameter, value))
 
-            elif parameter == 'increment_angle':
+            elif parameter in ['left_increment_angle', 'right_increment_angle']:
                 joint_id = kwargs.get('joint_id', None)
                 index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
                 span = abs(robot_limit[class_name]["angles_max"][index] - robot_limit[class_name]["angles_min"][index])
@@ -2610,7 +2624,7 @@ def calibration_parameters(**kwargs):
                     raise MercuryL1ClientDataException(
                         "increment angle value not right, should be {0} ~ {1}, but received {2}".format(
                             increment_min, increment_max, value))
-            elif parameter == 'increment_coord':
+            elif parameter in ['left_increment_coord', 'right_increment_coord']:
                 coord_id = kwargs.get('coord_id', None)
                 index = robot_limit[class_name]['coord_id'][coord_id - 1] - 1  # Get the index based on the ID
                 span = abs(robot_limit[class_name]["coords_max"][index] - robot_limit[class_name]["coords_min"][index])

@@ -25,6 +25,24 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         self.lock = threading.Lock()
         self.event = threading.Event()
 
+    @staticmethod
+    def _motion_busy(moving):
+        """True if is_moving() says any side is moving (or non-idle int, e.g. -1 treated busy)."""
+        if isinstance(moving, (list, tuple)):
+            return any(x != 0 for x in moving)
+        if isinstance(moving, int):
+            return moving != 0
+        return False
+
+    @staticmethod
+    def _motion_idle(moving):
+        """True if is_moving() says all sides stopped (both 0 for [L,R])."""
+        if isinstance(moving, (list, tuple)):
+            return all(x == 0 for x in moving)
+        if isinstance(moving, int):
+            return moving == 0
+        return False
+
     def _send_command(self, genre, real_command):
         self.write_command.append(genre)
         cls_name = self.__class__.__name__
@@ -49,6 +67,8 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             L1CloseLoop, self)._mesg(genre, *args, **kwargs)
         is_in_position = False
         is_get_return = False
+        left_done = False
+        right_done = False
         lost_times = 0
         with self.lock:
 
@@ -64,10 +84,8 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
             big_wait_time = True
-        elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.POWER_ON_ONLY, ProtocolCode.RELEASE_ALL_SERVOS,
-                       ProtocolCode.FOCUS_ALL_SERVOS,
-                       ProtocolCode.RELEASE_SERVO, ProtocolCode.FOCUS_SERVO, ProtocolCode.STOP,
-                       ProtocolCode.SET_CONTROL_MODE, ProtocolCode.MERCURY_DRAG_TEACH_CLEAN]:
+        elif genre in [ProtocolCode.POWER_OFF, ProtocolCode.POWER_ON_ONLY, ProtocolCode.STOP,
+                       ProtocolCode.MERCURY_DRAG_TEACH_CLEAN, ProtocolCode.SET_MOTOR_ENABLED]:
             wait_time = 3
             big_wait_time = True
         elif genre in [
@@ -79,8 +97,6 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 ProtocolCode.JOG_COORD,
                 ProtocolCode.JOG_INCREMENT,
                 ProtocolCode.JOG_INCREMENT_COORD,
-                ProtocolCode.COBOTX_SET_SOLUTION_ANGLES,
-                ProtocolCode.MERCURY_SET_BASE_COORDS,
                 ProtocolCode.MERCURY_JOG_BASE_COORD,
                 ProtocolCode.MERCURY_SET_BASE_COORD,
                 ProtocolCode.OVER_LIMIT_RETURN_ZERO,
@@ -93,7 +109,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             is_in_position = True
             big_wait_time = True
         elif genre in [ProtocolCode.SERVO_RESTORE]:
-            wait_time = 0.3
+            wait_time = 0.2
             big_wait_time = True
 
         elif genre in (ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, ProtocolCode.MERCURY_GET_TOQUE_GRIPPER):
@@ -109,9 +125,6 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
 
         if genre == ProtocolCode.SET_FRESH_MODE:
             timeout = 4
-        elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
-            timeout = 5
-            wait_time = 4
         elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
             if real_command[8] in [36, 13]:
                 timeout = 3
@@ -123,6 +136,11 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         interval_time = time.time()
         is_moving = 0
         check_is_moving_t = 1
+        # print('wait_time:', wait_time)
+        arm_mode = None
+
+        if len(real_command) > 4:
+            arm_mode = real_command[4]
 
         while True and time.time() - t < wait_time:
             self.event.wait(0.1)
@@ -130,16 +148,35 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             with self.lock_out:
                 for v in self.read_command:
                     read_data = v[0]
-                    if is_get_return and is_in_position and read_data[2] == 0x04 and read_data[3] == 0x5b:
+                    if is_in_position and read_data[2] == 0x04 and read_data[3] in [0x5b, 0x5c]:
                         if v[1] < t:
                             with self.lock:
                                 if v in self.read_command:
                                     self.read_command.remove(v)
                             continue
                         # print("到位反馈", flush=True)
+                        # Mark Left and Right Arms as In Position
+                        if read_data[3] == 0x5B:
+                            left_done = True
+                        elif read_data[3] == 0x5C:
+                            right_done = True
+
                         is_get_return = True
-                        need_break = True
-                        data = read_data
+
+                        if arm_mode == 0:  # all arm
+                            if left_done and right_done:
+                                need_break = True
+                                data = read_data
+
+                        elif arm_mode == 1:  # left arm
+                            if left_done:
+                                need_break = True
+                                data = read_data
+
+                        elif arm_mode == 2:  # right arm
+                            if right_done:
+                                need_break = True
+                                data = read_data
                         with self.lock:
                             if v in self.read_command:
                                 self.read_command.remove(v)
@@ -174,9 +211,8 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 # 发送指令以后，超时0.5S没有收到第一次反馈，并且是运动指令，并且超时时间是正常指令
                 t = time.time()
                 moving = self.is_moving()
-                if isinstance(moving, int):
-                    if moving != 0:
-                        continue
+                if self._motion_busy(moving):
+                    continue
                 # 运动指令丢失，重发
                 # print("运动指令丢失，重发", flush=True)
                 lost_times += 1
@@ -197,7 +233,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             if is_in_position and time.time() - interval_time > check_is_moving_t and wait_time == 300:
                 interval_time = time.time()
                 moving = self.is_moving()
-                if isinstance(moving, int) and moving == 0:
+                if self._motion_idle(moving):
                     # print("停止运动，退出")
                     is_moving += 1
                     if is_moving == 1:
@@ -275,7 +311,9 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                         self.event.set()
 
             except Exception as e:
-                pass
+                import traceback
+                e = traceback.format_exc()
+                self.log.error(e)
 
     def _process_received(self, buffer):
         frames = []
@@ -287,8 +325,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 if i + total_len <= len(buffer):  # The buffer is sufficient for a complete data frame.
                     frame = buffer[i:i + total_len]
                     cmd_id = frame[3]
-
-                    if cmd_id in self.write_command or cmd_id == 0x5B:
+                    if cmd_id in self.write_command or cmd_id == 0x5B or cmd_id == 0x5C:
                         frames.append(frame)
                     i += total_len
                 else:
@@ -342,9 +379,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         """Adjust robot arm status
 
         Return:
-            1 - power on
-            0 - power off
-            -1 - error data
+            list: [left, right], 1 - power on; 0 - power off; -1 - error data
         """
         return self._mesg(ProtocolCode.IS_POWER_ON)
 
@@ -355,7 +390,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             angles (list): The angles of six joints. e.g. [0, 0, 0, 0, 0, 0]
 
         Return:
-            list : A float list of coord . [x, y, z, rx, ry, rz].
+            list : A float list of coord .[[left coords], [right coords]].
 
         """
         if angles is None:
@@ -368,10 +403,8 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
     def is_paused(self):
         """Judge whether the manipulator pauses or not.
 
-        Return:
-            1 - paused
-            0 - not paused
-            -1 - error
+        Returns:
+            list: [left, right]. 1 - paused; 0 - not paused; -1 - on parse error.
         """
         return self._mesg(ProtocolCode.IS_PAUSED)
 
@@ -399,7 +432,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         """ Get the angle of all joints.
 
         Return:
-            list: A float list of all angle.
+            list: A float list of all angle. [[left angles], [right angles]].
         """
         return self._mesg(ProtocolCode.GET_ANGLES)
 
@@ -432,6 +465,10 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         return self._mesg(ProtocolCode.TOOL_SERIAL_WRITE_DATA, arm_id, command)
 
     def get_robot_status(self):
+        """Get robot status.
+
+        Returns: List
+        """
         return self._mesg(ProtocolCode.MERCURY_ROBOT_STATUS)
 
     def power_on(self, arm_id):
@@ -447,10 +484,8 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             1: success
             2: failed
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id)
-        res = self._mesg(ProtocolCode.POWER_ON, arm_id)
-        return res
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        return self._mesg(ProtocolCode.POWER_ON, arm_id)
 
     def power_off(self):
         """Robot power outage"""
@@ -460,29 +495,32 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
 
     def get_robot_type(self):
         """Get robot type
+
+        Return: robot type
         """
         return self._mesg(ProtocolCode.GET_ROBOT_ID)
-
-    # def get_zero_pos(self):
-    #     """Read the zero encoder value
-    #
-    #     Returns:
-    #         list: The values of the zero encoders of the seven joints
-    #     """
-    #     return self._mesg(ProtocolCode.GET_ZERO_POS)
 
     def is_init_calibration(self):
         """Check if the robot is initialized for calibration
 
         Returns:
-            bool: True if the robot is initialized for calibration, False otherwise
+            If the robot has been initialized for calibration, the value is 1; otherwise, it is a list of lists.
+            For example: [[left status], [right status]]; where 1 indicates that the zero position has been set,
+            and 0 indicates that the zero position has not been set.
         """
         return self._mesg(ProtocolCode.IS_INIT_CALIBRATION)
 
-    def over_limit_return_zero(self):
+    def over_limit_return_zero(self, arm_id):
         """Return to zero when the joint is over the limit
+
+        Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
         """
-        return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO, has_reply=True)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        return self._mesg(ProtocolCode.OVER_LIMIT_RETURN_ZERO, arm_id, has_reply=True)
 
     # def drag_teach_clean(self):
     #     """clear sample
@@ -522,26 +560,33 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         return self._mesg(ProtocolCode.PAUSE, arm_id)
 
     def get_modified_version(self):
+        """Reads the master controller firmware correction version number (for internal use only).
+
+        Returns: int
+        """
         return self._mesg(ProtocolCode.MODIFY_VERSION)
 
-    # def set_control_mode(self, mode):
-    #     """Set robot motion mode
-    #
-    #     Args:
-    #         mode (int): 0 - location mode, 1 - torque mode
-    #
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, mode=mode)
-    #     return self._mesg(ProtocolCode.SET_CONTROL_MODE, mode)
+    def set_control_mode(self, arm_id, mode=0):
+        """Set robot motion mode (per arm on L1 dual-arm).
 
-    # def get_control_mode(self):
-    #     """Get robot motion mode
-    #
-    #     Returns:
-    #         int: 0 - location mode, 1 - torque mode
-    #     """
-    #     return self._mesg(ProtocolCode.GET_CONTROL_MODE)
+        Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
+            mode (int): 0 - location mode, 1 - torque mode
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, arm_id=arm_id, mode=mode)
+        return self._mesg(ProtocolCode.SET_CONTROL_MODE, arm_id, mode)
+
+    def get_control_mode(self):
+        """Get robot motion mode for both arms (single read, no parameters).
+
+        Returns: list [left_mode, right_mode] — each 0 - location; 1 - torque.
+        """
+        return self._mesg(ProtocolCode.GET_CONTROL_MODE)
 
     # def set_collision_mode(self, mode):
     #     """Set collision detection mode
@@ -585,11 +630,13 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
     #     return self._mesg(ProtocolCode.SET_VR_MODE, mode)
     #
     def get_model_direction(self):
-        """Get the direction of the robot model
+        """Get the direction of the robot model (Arms Only)
+
+        Returns: list [left direction, right direction] — each 0 - Same Direction; 1 - Opposite Direction.
         """
         return self._mesg(ProtocolCode.GET_MODEL_DIRECTION)
 
-    def set_model_direction(self, arm_id, joint_id, direction):
+    def set_model_direction(self, arm_id, joint_id, l_direction=None, r_direction=None):
         """Set the direction of the robot model
 
         Args:
@@ -598,10 +645,24 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 1 - left arm
                 2 - right arm
             joint_id (int): joint ID, 1 ~ 7.
-            direction (int): 1 - forward, 0 - backward
+            l_direction (int): left arm direction, 1 - forward, 0 - backward
+            r_direction (int): right arm direction, 1 - forward, 0 - backward
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id, direction=direction)
-        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, arm_id, joint_id, direction)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, left_direction=l_direction, right_direction=r_direction)
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, left_direction=l_direction)
+            r_direction = 0
+        elif arm_id == 2:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, right_direction=r_direction)
+            l_direction = 0
+        left_direction = l_direction
+        right_direction = r_direction
+        return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, arm_id, joint_id, left_direction, right_direction)
 
     # def get_filter_len(self, rank):
     #     """Get the filter length
@@ -649,7 +710,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
 
         Return: list [left error, right error]
             0: No error message.
-            1 ~ 6: The corresponding joint exceeds the limit position.
+            1 ~ 7: The corresponding joint exceeds the limit position.
             32-36: Coordinate motion error.
                 32: No coordinate solution. Please check if the arm span is near the limit.
                 33: No adjacent solution for linear motion.
@@ -668,24 +729,29 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 1 - left arm
                 2 - right arm
             speed : (int) 1 ~ 100
-            left_angles (list): a list of angle values(List[float]). len 8.
-            right_angles (list): a list of angle values(List[float]). len 9.
+            left_angles (list): a list of angle values(List[float]). len 7.
+            right_angles (list): a list of angle values(List[float]). len 7.
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, speed=speed)
         all_angles = []
 
         if arm_id == 0:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, arm_id=arm_id, left_angles=left_angles,
-                right_angles=right_angles, speed=speed)
+                class_name=self.__class__.__name__, left_angles=left_angles, right_angles=right_angles)
+            left_angles.append(0)
+            right_angles.append(0)
+            right_angles.append(0)
             all_angles = left_angles + right_angles
         elif arm_id == 1:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, arm_id=arm_id, left_angles=left_angles, speed=speed)
+                class_name=self.__class__.__name__, left_angles=left_angles)
+            left_angles.append(0)
             all_angles = left_angles + [0] * 9
         elif arm_id == 2:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, arm_id=arm_id, right_angles=right_angles, speed=speed)
+                class_name=self.__class__.__name__, right_angles=right_angles)
+            right_angles.append(0)
+            right_angles.append(0)
             all_angles = [0] * 8 + right_angles
 
         angles = [self._angle2int(angle) for angle in all_angles]
@@ -704,18 +770,18 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             left_angle : left angle value(float).
             right_angle : right angle value(float).
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, speed=speed)
         if arm_id == 0:
             self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,joint_id=joint_id,
-                                        left_angle=left_angle, right_angle=right_angle, speed=speed)
+                                        left_angle=left_angle, right_angle=right_angle)
         elif arm_id == 1:
             self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id,
-                                        left_angle=left_angle, speed=speed)
+                                        left_angle=left_angle)
             right_angle = 0
 
         elif arm_id == 2:
             self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id,
-                                        right_angle=right_angle, speed=speed)
+                                        right_angle=right_angle)
             left_angle = 0
         left_angle = self._angle2int(left_angle)
         right_angle = self._angle2int(right_angle)
@@ -732,26 +798,18 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             coord_id (int): coord id, range 1 ~ 6
             speed (int): 1 ~ 100
             left_coord (float): coord value.
-                The coord range of `X` is -351.11 ~ 566.92.
-                The coord range of `Y` is -645.91 ~ 272.12.
-                The coord range of `Y` is -262.91 ~ 655.13.
-                The coord range of `RX` is -180 ~ 180.
-                The coord range of `RY` is -180 ~ 180.
-                The coord range of `RZ` is -180 ~ 180.
             right_coord (float): coord value.
         """
 
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, speed=speed)
         if arm_id == 0:
-            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id,
-                                        left_coord=left_coord, right_coord=right_coord, speed=speed)
+            self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id,
+                                        left_coord=left_coord, right_coord=right_coord)
         elif arm_id == 1:
-            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
-                                        coord_id=coord_id, left_coord=left_coord, speed=speed)
+            self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, left_coord=left_coord)
             right_coord = 0
         elif arm_id == 2:
-            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
-                                        coord_id=coord_id, right_coord=right_coord, speed=speed)
+            self.calibration_parameters(class_name=self.__class__.__name__, coord_id=coord_id, right_coord=right_coord)
             left_coord = 0
 
         is_xyz = coord_id <= 3
@@ -782,19 +840,16 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 The coord range of `RZ` is -180 ~ 180.
             right_coords: a list of coords value(List[float]). len 6
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, speed=speed)
         coord_list = []
         if arm_id == 0:
-            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
-                                        left_coords=left_coords, right_coords=right_coords, speed=speed)
+            self.calibration_parameters(class_name=self.__class__.__name__, left_coords=left_coords, right_coords=right_coords)
             coord_list = self._encode_coords(left_coords) + self._encode_coords(right_coords)
         elif arm_id == 1:
-            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
-                                        left_coords=left_coords, speed=speed)
+            self.calibration_parameters(class_name=self.__class__.__name__, left_coords=left_coords)
             coord_list = self._encode_coords(left_coords) + [0] * 6
         elif arm_id == 2:
-            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
-                                        right_coords=right_coords, speed=speed)
+            self.calibration_parameters(class_name=self.__class__.__name__, right_coords=right_coords)
             coord_list = [0] * 6 + self._encode_coords(right_coords)
 
         return self._mesg(ProtocolCode.SEND_COORDS, arm_id, coord_list, speed, has_reply=True, _async=_async)
@@ -838,41 +893,81 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             for joint_id in range(1, 10):
                 self._mesg(ProtocolCode.SET_SERVO_CALIBRATION, arm_id, joint_id)
 
-    def is_in_position(self, data, mode=0):
+    def is_in_position(self, arm_id, mode, left_data=None, right_data=None):
         """Judge whether in the position.
 
         Args:
-            data: A data list, angles or coords. angles len 6, coords len 6.
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
             mode: 1 - coords, 0 - angles
+            left_data: A data list, angles or coords. angles len 7, coords len 6.
+            right_data: A data list, angles or coords. angles len 7, coords len 6.
 
         Return:
             1 - True\n
             0 - False\n
             -1 - Error
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        if mode == 1:
-            self.calibration_parameters(
-                class_name=self.__class__.__name__, coords=data)
-            data_list = []
-            for idx in range(3):
-                data_list.append(self._coord2int(data[idx]))
-            for idx in range(3, 6):
-                data_list.append(self._angle2int(data[idx]))
-        elif mode == 0:
-            self.calibration_parameters(
-                class_name=self.__class__.__name__, angles=data)
-            data_list = [self._angle2int(i) for i in data]
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, mode=mode)
+        left_data_list = []
+        right_data_list = []
+        if arm_id == 0:
+            if mode == 1:
+                self.calibration_parameters(
+                    class_name=self.__class__.__name__, left_coords=left_data, right_coords=right_data)
+                for idx in range(3):
+                    left_data_list.append(self._coord2int(left_data[idx]))
+                    right_data_list.append(self._coord2int(right_data[idx]))
+                for idx in range(3, 6):
+                    left_data_list.append(self._angle2int(left_data[idx]))
+                    right_data_list.append(self._angle2int(right_data[idx]))
+                left_data_list.append(0)
+                right_data_list.append(0)
+            elif mode == 0:
+                self.calibration_parameters(
+                    class_name=self.__class__.__name__, left_angles=left_data, right_angles=right_data)
+                left_data_list = [self._angle2int(i) for i in left_data]
+                right_data_list = [self._angle2int(i) for i in right_data]
+        elif arm_id == 1:
+            if mode == 1:
+                self.calibration_parameters(
+                    class_name=self.__class__.__name__, left_coords=left_data)
+                for idx in range(3):
+                    left_data_list.append(self._coord2int(left_data[idx]))
+                for idx in range(3, 6):
+                    left_data_list.append(self._angle2int(left_data[idx]))
+                left_data_list.append(0)
+                right_data_list = [0] * 7
+            elif mode == 0:
+                self.calibration_parameters(
+                    class_name=self.__class__.__name__, left_angles=left_data)
+                left_data_list = [self._angle2int(i) for i in left_data]
+                right_data_list = [0] * 7
+        elif arm_id == 2:
+            if mode == 1:
+                self.calibration_parameters(
+                    class_name=self.__class__.__name__, right_coords=right_data)
+                for idx in range(3):
+                    right_data_list.append(self._coord2int(right_data[idx]))
+                for idx in range(3, 6):
+                    right_data_list.append(self._angle2int(right_data[idx]))
+                left_data_list = [0] * 7
+                right_data_list.append(0)
+            elif mode == 0:
+                self.calibration_parameters(
+                    class_name=self.__class__.__name__, right_angles=right_data)
+                left_data_list = [0] * 7
+                right_data_list = [self._angle2int(i) for i in right_data]
 
-        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
+        return self._mesg(ProtocolCode.IS_IN_POSITION, arm_id, mode, left_data_list ,right_data_list)
 
     def is_moving(self):
-        """Detect if the robot is moving
+        """Detect if the robot is moving.
 
-        Return:
-            0 - not moving
-            1 - is moving
-            -1 - error data
+        Returns:
+            list [left, right] — each 1 - moving, 0 - stopped ; -1 - on parse error.
         """
         return self._mesg(ProtocolCode.IS_MOVING)
 
@@ -883,13 +978,13 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             mode (int): 0 - angle speed. 1 - coord speed.
 
         Return:
-            angle speed range 1 ~ 150°/s. coord speed range 1 ~ 200mm/s
+            List [left speed, right speed], angle speed range 1 ~ 150°/s. coord speed range 1 ~ 200mm/s
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.GET_SPEED, mode)
 
-    def set_max_speed(self, arm_id, mode, max_speed):
+    def set_max_speed(self, arm_id, mode, left_max_speed=None, right_max_speed=None):
         """Set maximum speed
 
         Args:
@@ -898,16 +993,25 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 1 - left arm
                 2 - right arm
             mode (int): 0 - angle speed. 1 - coord speed.
-            max_speed (int): angle speed range 1 ~ 150°/s. coord speed range 1 ~ 200mm/s
-
-        Returns:
-            1: _description_
+            left_max_speed (int): angle speed range 1 ~ 150°/s. coord speed range 1 ~ 200mm/s
+            right_max_speed (int):
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, mode=mode, max_speed=max_speed)
-        return self._mesg(ProtocolCode.SET_SPEED, arm_id, mode, [max_speed])
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, mode=mode, left_max_speed=left_max_speed,
+                right_max_speed=right_max_speed)
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, mode=mode, left_max_speed=left_max_speed)
+            right_max_speed = 0
+        elif arm_id == 2:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, mode=mode, right_max_speed=right_max_speed)
+            left_max_speed = 0
+        return self._mesg(ProtocolCode.SET_SPEED, arm_id, mode, [left_max_speed], [right_max_speed])
 
-    def set_max_acc(self, arm_id, mode, max_acc):
+    def set_max_acc(self, arm_id, mode, left_max_acc=None, right_max_acc=None):
         """Set maximum acceleration
 
         Args:
@@ -916,131 +1020,116 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
                 1 - left arm
                 2 - right arm
             mode (int): 0 - angle acceleration. 1 - coord acceleration.
-            max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 400°/s. Coordinate acceleration range is 1 ~ 400mm/s
+            left_max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 200°/s. Coordinate acceleration range is 1 ~ 400mm/s
+            right_max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 200°/s. Coordinate acceleration range is 1 ~ 400mm/s
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, mode=mode, max_acc=max_acc)
-        return self._mesg(ProtocolCode.SET_MAX_ACC, arm_id, mode, [max_acc])
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, mode=mode, left_max_acc=left_max_acc, right_max_acc=right_max_acc)
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, mode=mode, left_max_acc=left_max_acc)
+            right_max_acc = 0
+        elif arm_id == 2:
+            self.calibration_parameters(class_name=self.__class__.__name__, mode=mode, right_max_acc=right_max_acc)
+            left_max_acc = 0
+        return self._mesg(ProtocolCode.SET_MAX_ACC, arm_id, mode, [left_max_acc], [right_max_acc])
 
     def get_max_acc(self, mode):
         """Get maximum acceleration
 
         Args:
             mode (int): 0 - angle acceleration. 1 - coord acceleration.
+
+        Returns:
+            List [left acceleration, right acceleration]
         """
         self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.GET_MAX_ACC, mode)
 
-    def get_joint_min_angle(self, joint_id):
+    def get_joint_min_angle(self):
         """Gets the minimum movement angle of the specified joint
 
-        Args:
-            joint_id: Joint id 1 - 7
-
-        Return:
-            angle value(float)
+        Returns:
+            List [left angles, right angles]: software limit for this joint on each arm, degrees.
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id)
-        return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE, joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MIN_ANGLE)
 
-    def get_joint_max_angle(self, joint_id):
+    def get_joint_max_angle(self):
         """Gets the maximum movement angle of the specified joint
 
-        Args:
-            joint_id: Joint id 1 - 7
-
-        Return:
-            angle value(float)
+        Returns:
+            List [left angles, right angles]: software limit for this joint on each arm, degrees.
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id)
-        return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE, joint_id)
+        return self._mesg(ProtocolCode.GET_JOINT_MAX_ANGLE)
 
-    def set_joint_max_angle(self, arm_id, joint_id, degree):
+    def set_joint_max_angle(self, joint_id, degree):
         """Set the maximum angle of the joint (must not exceed the maximum angle specified for the joint)
 
         Args:
-            arm_id (int):
-                0 - left and right arm
-                1 - left arm
-                2 - right arm
-            joint_id (int): Joint id 1 - 7
+            joint_id (int): Joint id 1 - 7 (Arm only)
             degree: The angle range of
-                joint 1 is -165 ~ 165.
-                joint 2 is -55 ~ 95.
-                joint 3 is -173 ~ 5.
-                joint 4 is -165 ~ 165.
-                joint 5 is -20 ~ 265.
-                joint 6 is -180 ~ 180.
-                joint 6 is -180 ~ 180.
+                joint 1 is -181 ~ 135.
+                joint 2 is -46 ~ 95.
+                joint 3 is -155 ~ 155.
+                joint 4 is -135 ~ 135.
+                joint 5 is -155 ~ 155.
+                joint 6 is -115 ~ 115.
+                joint 7 is -155 ~ 155.
 
         Return:
             1 - success
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, arm_id, joint_id, degree)
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
+        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
 
-    def set_joint_min_angle(self, arm_id, joint_id, degree):
+    def set_joint_min_angle(self, joint_id, degree):
         """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
 
         Args:
-            arm_id (int):
-                0 - left and right arm
-                1 - left arm
-                2 - right arm
-            joint_id (int): Joint id 1 - 6.
+            joint_id (int): Joint id 1 - 7 (Arm only)
             degree: The angle range of
-                joint 1 is -165 ~ 165.
-                joint 2 is -55 ~ 95.
-                joint 3 is -173 ~ 5.
-                joint 4 is -165 ~ 165.
-                joint 5 is -20 ~ 265.
-                joint 6 is -180 ~ 180.
-                joint 6 is -180 ~ 180.
+                joint 1 is -181 ~ 135.
+                joint 2 is -46 ~ 95.
+                joint 3 is -155 ~ 155.
+                joint 4 is -135 ~ 135.
+                joint 5 is -155 ~ 155.
+                joint 6 is -115 ~ 115.
+                joint 7 is -155 ~ 155.
 
         Return:
             1 - success
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, arm_id, joint_id, degree)
+            class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
+        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
 
     def get_servo_speeds(self):
-        """Get joint speed
+        """Get joint speed (per joint, °/s after decode).
 
-        Return:
-            unit step/s
+        Returns:
+            List [[left J1–J8], [right J1–J9]] (each value is raw int16/100).
+             Legacy short payloads may return a flat list of raw bytes.
         """
         return self._mesg(ProtocolCode.GET_SERVO_SPEED)
 
     def get_servo_currents(self):
-        """Get joint current
+        """Get joint current (per joint, mA scale /100 after decode).
 
-        Return:
-            0 ~ 5000 mA
+        Returns:
+            List [[left J1–J8], [right J1–J9]]. Legacy: flat list of raw bytes.
         """
         return self._mesg(ProtocolCode.GET_SERVO_CURRENTS)
 
     def get_servo_status(self):
-        """Get joint status
+        """Get joint hardware status (uint16 per joint, 0 = OK).
 
+        Returns:
+            List [[left J1–J8], [right J1–J9]]. Legacy: flat list of raw bytes.
         """
         return self._mesg(ProtocolCode.GET_SERVO_STATUS)
-
-    def set_color(self, r=0, g=0, b=0):
-        """Set the light color on the top of the robot end.
-
-        Args:
-            r (int): 0 ~ 255
-            g (int): 0 ~ 255
-            b (int): 0 ~ 255
-
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, rgb=[r, g, b])
-        return self._mesg(ProtocolCode.SET_COLOR, r, g, b)
 
     def set_digital_output(self, arm_id, pin_no, pin_signal):
         """Set the end-of-arm IO status
@@ -1054,20 +1143,23 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, tool_arm_id=arm_id, pin_no=pin_no, pin_signal=pin_signal)
-        return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
+        return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, arm_id, pin_no, pin_signal)
 
-    def get_digital_input(self, pin_no):
+    def get_digital_input(self, arm_id, pin_no):
         """Read the end-of-arm IO status
 
         Args:
+            arm_id (int):
+                1 - left arm
+                2 - right arm
             pin_no (int): 1 or 2
 
         Returns:
             int: 0 or 1
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, pin_no=pin_no)
-        return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no)
+            class_name=self.__class__.__name__, tool_arm_id=arm_id, pin_no=pin_no)
+        return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, arm_id, pin_no)
 
     def get_world_reference(self):
         """Get the world coordinate system"""
@@ -1158,36 +1250,15 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
     #     """
     #     return self._mesg(ProtocolCode.GET_COLLISION_MODE)
 
-    # def get_servo_encoders(self):
-    #     return self._mesg(ProtocolCode.GET_ENCODERS)
+    def get_servo_encoders(self):
+        """Read Waist Encoder Values (Current, Zero Position)
 
-    # def set_base_io_output(self, pin_no, pin_signal):
-    #     """Set the base output IO status
-    #
-    #     Args:
-    #         pin_no: pin port number. range 1 ~ 6
-    #         pin_signal: 0 - low. 1 - high.
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
-    #     return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
-    #
-    # def get_base_io_input(self, pin_no):
-    #     """Get the input IO status of the base
-    #
-    #     Args:
-    #         pin_no: (int) pin port number. range 1 ~ 6
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, pin_no=pin_no)
-    #     return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
-
-    # def identify_print(self):
-    #     res = self.all_debug_data
-    #     self.all_debug_data = []
-    #     return res
+        Returns: list [current encoder, zero position]
+        """
+        return self._mesg(ProtocolCode.GET_ENCODERS)
 
     def get_motors_run_err(self):
+        """Error reading motor in motion"""
         return self._mesg(ProtocolCode.GET_MOTORS_RUN_ERR)
 
     # def get_fusion_parameters(self, rank_mode):

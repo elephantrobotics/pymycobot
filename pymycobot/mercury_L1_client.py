@@ -34,11 +34,34 @@ class MercuryL1Client(L1CloseLoop):
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
         self.max_joint, self.min_joint = 0, 0
+        self._joint_limits_initialized = False
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.SERVER_IP, self.SERVER_PORT))
         return sock
+
+    def _decode_l1_motor_temps_37(self, valid_data):
+        """Split 37-byte motor temperature payload into ``[left, right]`` (V1.0.2+ sheet)."""
+        b = bytes(valid_data[:37])
+        left = {"coil": list(b[0:8]), "mos": list(b[8:16])}
+        right = {"coil": list(b[16:25]), "mos": list(b[25:34])}
+        return [left, right]
+
+    def _decode_l1_dual_servo_joints(self, genre, valid_data):
+        """Parse first 34 bytes as 8 left + 9 right int16 fields (0xE1 / 0xE2 / 0xE4, firmware V1.0.2+)."""
+        raw = bytes(valid_data[:34])
+        left_pairs = [raw[i : i + 2] for i in range(0, 16, 2)]
+        right_pairs = [raw[i : i + 2] for i in range(16, 34, 2)]
+        if genre == ProtocolCode.GET_SERVO_STATUS:
+            return [
+                [int.from_bytes(p, "big", signed=False) for p in left_pairs],
+                [int.from_bytes(p, "big", signed=False) for p in right_pairs],
+            ]
+        return [
+            [self._int2angle(self._decode_int16(p)) for p in left_pairs],
+            [self._int2angle(self._decode_int16(p)) for p in right_pairs],
+        ]
 
     def _mesg(self, genre, *args, **kwargs):
         read_data = super(MercuryL1Client, self)._mesg(genre, *args, **kwargs)
@@ -61,39 +84,88 @@ class MercuryL1Client(L1CloseLoop):
             valid_data, data_len = read_data
         else:
             return -1
+
         res = []
         # print('data_len:', data_len, valid_data)
-        if genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
-            res = [i for i in valid_data]
+        if genre == ProtocolCode.GET_MOTORS_TEMPERATURE:
+            if data_len == 34:
+                data = list(valid_data[:34])
+                left = data[0:7] + data[7:15]
+                right = data[15:24] + data[24:33]
+                return [left, right]
+            if data_len == 14:
+                return [int(x) for x in valid_data]
+        elif (genre in (
+                ProtocolCode.GET_SERVO_SPEED,
+                ProtocolCode.GET_SERVO_CURRENTS,
+                ProtocolCode.GET_SERVO_STATUS,
+        ) and data_len >= 34):
+            return self._decode_l1_dual_servo_joints(genre, valid_data)
+        elif genre == ProtocolCode.PRO450_GET_DIGITAL_INPUTS:
+            if data_len >= 4:
+                return [int(valid_data[i]) for i in range(1, 5)]
+        elif genre == ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT:
+            if data_len >= 7:
+                return [
+                        int.from_bytes(valid_data[1:5], "big", signed=False),
+                        int.from_bytes(valid_data[5:7], "big", signed=False),
+                    ]
+        elif genre ==  ProtocolCode.GET_DIGITAL_INPUT:
+            if data_len >= 2:
+                return valid_data[1]
+            return -1
+        elif genre in (
+            ProtocolCode.GET_CONTROL_MODE,
+            ProtocolCode.GET_FRESH_MODE,
+            ProtocolCode.IS_PAUSED,
+            ProtocolCode.IS_MOVING,
+            ProtocolCode.IS_FREE_MODE,
+            ProtocolCode.IS_POWER_ON,
+        ):
+            if data_len >= 2:
+                return [valid_data[0], valid_data[1]]
+            return -1
+        elif genre == ProtocolCode.GET_DEBUG_LOG_MODE:
+            if data_len >= 2:
+                return [valid_data[0], valid_data[1]]
+            if data_len >= 1:
+                return valid_data[0]
+            return -1
+        elif genre in (ProtocolCode.GET_JOINT_MIN_ANGLE, ProtocolCode.GET_JOINT_MAX_ANGLE):
+            for header_i in range(0, len(valid_data), 2):
+                one = valid_data[header_i: header_i + 2]
+                res.append(self._decode_int16(one))
+            angles = [self._int2coord(angle) for angle in res]
+            return angles
+
+        elif genre in [ProtocolCode.GET_SPEED, ProtocolCode.GET_MAX_ACC] and data_len == 4:
+            return [
+                self._decode_int16(valid_data[0:2]),
+                self._decode_int16(valid_data[2:4]),
+            ]
+        elif genre == ProtocolCode.GET_MODEL_DIRECTION:
+            if data_len == 14:
+                return [list(valid_data[0:7]), list(valid_data[7: ])]
+            return -1
+        elif data_len == 19 and genre == ProtocolCode.IS_INIT_CALIBRATION:
+            if valid_data[0] == 1:
+                return 1
+            return [list(valid_data[1:10]), list(valid_data[10: ])]
         elif data_len in [8, 12, 14, 16, 26, 60]:
-            if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
-                if valid_data[0] == 1:
-                    return 1
-                n = len(valid_data)
-                for v in range(1, n):
-                    res.append(valid_data[v])
-            elif data_len == 8 and genre == ProtocolCode.GET_DOWN_ENCODERS:
-                res = self._bytes4_to_int(valid_data)
-            elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES,
-                                             ProtocolCode.GET_SERVO_CURRENTS]:
-                for i in range(data_len):
-                    res.append(valid_data[i])
-            elif data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+            if data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
                 res_list = [i for i in valid_data]
                 return res_list
-            elif data_len == 14 and genre == ProtocolCode.GET_MOTORS_TEMPERATURE:
-                res_list = [i for i in valid_data]
-                return res_list
+            elif data_len == 8 and genre == ProtocolCode.GET_ENCODERS:
+                return [
+                        int.from_bytes(valid_data[0:4], "big", signed=False),
+                        int.from_bytes(valid_data[4:8], "big", signed=False),
+                    ]
             else:
                 for header_i in range(0, len(valid_data), 2):
                     one = valid_data[header_i: header_i + 2]
                     res.append(self._decode_int16(one))
         elif data_len == 2:
-            if genre in [ProtocolCode.IS_SERVO_ENABLE]:
-                return [self._decode_int8(valid_data[1:2])]
-            elif genre in [ProtocolCode.GET_ERROR_INFO]:
-                return self._decode_int8(valid_data[1:])
-            elif genre in [ProtocolCode.GET_ROBOT_ID]:
+            if genre in [ProtocolCode.GET_ROBOT_ID]:
                 high, low = valid_data
                 motor_type = (high << 8) | low  # 组合成 16 位整数
                 return motor_type
@@ -107,9 +179,6 @@ class MercuryL1Client(L1CloseLoop):
             if genre == ProtocolCode.COBOTX_GET_ANGLE:
                 for i in range(0, data_len, 2):
                     res.append(self._decode_int16(valid_data[i:i + 2]))
-            elif genre == ProtocolCode.PRO450_GET_DIGITAL_INPUTS:
-                for i in range(4):
-                    res.append(valid_data[i])
             elif genre == ProtocolCode.GET_ERROR_INFO:
                 def parse_error(two_bytes):
                     high, low = two_bytes[0], two_bytes[1]
@@ -131,18 +200,7 @@ class MercuryL1Client(L1CloseLoop):
                     res.append(valid_data[i])
         elif data_len == 7:
             error_list = [i for i in valid_data]
-            if genre == ProtocolCode.IS_INIT_CALIBRATION:
-                res = error_list
-            elif genre == ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT:
-                for i in valid_data:
-                    res.append(i)
-
-                if genre == ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT:
-                    baud_rate = int.from_bytes(res[1:5], byteorder="big", signed=False)
-                    timeout = int.from_bytes(res[5:7], byteorder="big", signed=False)
-                    return [baud_rate, timeout]
-            else:
-                return error_list
+            return error_list
         elif data_len in [34]:
             for i in range(0, data_len, 2):
                 res.append(self._decode_int16(valid_data[i:i + 2]))
@@ -196,10 +254,6 @@ class MercuryL1Client(L1CloseLoop):
             for i in valid_data:
                 res.append(i)
 
-            if genre == ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT:
-                baud_rate = int.from_bytes(res[0:4], byteorder="big", signed=False)
-                timeout = int.from_bytes(res[4:6], byteorder="big", signed=False)
-                return [baud_rate, timeout]
         elif data_len == 11 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
             res_list = [i for i in valid_data]
             return res_list
@@ -208,7 +262,6 @@ class MercuryL1Client(L1CloseLoop):
             return res_list
         else:
             if genre in [
-                ProtocolCode.GET_SERVO_VOLTAGES,
                 ProtocolCode.GET_SERVO_STATUS,
                 ProtocolCode.GET_SERVO_TEMPS,
             ]:
@@ -220,66 +273,39 @@ class MercuryL1Client(L1CloseLoop):
             return -1
 
         if genre in [
-            ProtocolCode.ROBOT_VERSION,
-            ProtocolCode.GET_ROBOT_ID,
-            ProtocolCode.IS_POWER_ON,
-            ProtocolCode.IS_CONTROLLER_CONNECTED,
-            ProtocolCode.IS_PAUSED,
             ProtocolCode.IS_IN_POSITION,
-            ProtocolCode.IS_MOVING,
-            ProtocolCode.IS_SERVO_ENABLE,
-            ProtocolCode.IS_ALL_SERVO_ENABLE,
-            ProtocolCode.GET_SERVO_DATA,
-            ProtocolCode.GET_DIGITAL_INPUT,
-            ProtocolCode.GET_GRIPPER_VALUE,
-            ProtocolCode.IS_GRIPPER_MOVING,
-            ProtocolCode.GET_SPEED,
-            ProtocolCode.GET_ENCODER,
-            ProtocolCode.GET_BASIC_INPUT,
-            ProtocolCode.GET_TOF_DISTANCE,
             ProtocolCode.GET_END_TYPE,
             ProtocolCode.GET_MOVEMENT_TYPE,
             ProtocolCode.GET_REFERENCE_FRAME,
-            ProtocolCode.GET_FRESH_MODE,
-            ProtocolCode.GET_GRIPPER_MODE,
-            ProtocolCode.SET_SSID_PWD,
-            ProtocolCode.GET_ERROR_DETECT_MODE,
             ProtocolCode.POWER_ON,
             ProtocolCode.POWER_OFF,
-            ProtocolCode.RELEASE_ALL_SERVOS,
-            ProtocolCode.RELEASE_SERVO,
-            ProtocolCode.FOCUS_ALL_SERVOS,
-            ProtocolCode.FOCUS_SERVO,
             ProtocolCode.STOP,
             ProtocolCode.SET_BREAK,
-            ProtocolCode.IS_BTN_CLICKED,
-            ProtocolCode.GET_CONTROL_MODE,
             ProtocolCode.GET_VR_MODE,
             ProtocolCode.GET_FILTER_LEN,
-            ProtocolCode.IS_SERVO_ENABLE,
-            ProtocolCode.GET_POS_SWITCH,
             ProtocolCode.GET_TOOL_MODIFY_VERSION,
             ProtocolCode.GET_FUSION_PARAMETERS,
-            ProtocolCode.GET_MAX_ACC,
-            ProtocolCode.GET_ERROR_INFO,
             ProtocolCode.GET_COLLISION_MODE,
             ProtocolCode.GET_IDENTIFY_MODE,
-            ProtocolCode.GET_COMMUNICATION_MODE,
-            ProtocolCode.IS_MOTOR_PAUSE,
-            ProtocolCode.IS_FREE_MODE,
             ProtocolCode.GET_FRESH_SPEED_MODE,
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_SERVO_SPEED]:
-            return [self._int2angle(angle) for angle in res]
         elif genre in [ProtocolCode.GET_ANGLES]:
             angles = [self._int2angle(angle) for angle in res]
             left_angles = angles[:8]
             right_angles = angles[8:]
             return [left_angles, right_angles]
+        elif genre == ProtocolCode.MERCURY_ERROR_COUNTS:
+            left_info = res[:4]
+            right_info = res[4:]
+            return [left_info, right_info]
+        elif genre == ProtocolCode.GET_ENCODERS:
+            return [
+                int.from_bytes(res[0:4], "big", signed=False),
+                int.from_bytes(res[4:8], "big", signed=False),
+            ],
         elif genre in [
             ProtocolCode.GET_COORDS,
-            ProtocolCode.MERCURY_GET_BASE_COORDS,
             ProtocolCode.GET_TOOL_REFERENCE,
             ProtocolCode.GET_WORLD_REFERENCE,
         ]:
@@ -295,42 +321,12 @@ class MercuryL1Client(L1CloseLoop):
                 return [left_coords, right_coords]
             else:
                 return res
-        elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
-            return [self._int2coord(angle) for angle in res]
         elif genre in [ProtocolCode.SOLVE_INV_KINEMATICS]:
             if res == [-57295, -57295, -57295, -57295, -57295, -57295]:
                 return 'No solution for conversion'
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_BASIC_VERSION, ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
+        elif genre in [ProtocolCode.SOFTWARE_VERSION, ProtocolCode.GET_ATOM_VERSION]:
             return self._int2coord(self._process_single(res))
-        elif genre in [
-            ProtocolCode.GET_JOINT_MAX_ANGLE,
-            ProtocolCode.GET_JOINT_MIN_ANGLE,
-        ]:
-            return self._int2coord(res[0])
-        elif genre == ProtocolCode.GET_ANGLES_COORDS:
-            r = []
-            for index in range(len(res)):
-                if index < 7:
-                    r.append(self._int2angle(res[index]))
-                elif index < 10:
-                    r.append(self._int2coord(res[index]))
-                else:
-                    r.append(self._int2angle(res[index]))
-            return r
-        elif genre == ProtocolCode.GO_ZERO:
-            r = []
-            if res:
-                if 1 not in res[1:]:
-                    return res[0]
-                else:
-                    for i in range(1, len(res)):
-                        if res[i] == 1:
-                            r.append(i)
-            return r
-        elif genre in [ProtocolCode.COBOTX_GET_SOLUTION_ANGLES,
-                       ProtocolCode.GET_POS_OVER]:
-            return self._int2angle(res[0])
         elif genre in [ProtocolCode.COBOTX_GET_ANGLE]:
             return [self._int2angle(angle) for angle in res]
         elif genre == ProtocolCode.MERCURY_ROBOT_STATUS:
@@ -425,22 +421,6 @@ class MercuryL1Client(L1CloseLoop):
 
                 return parsed
 
-        elif genre == ProtocolCode.IS_INIT_CALIBRATION:
-            if res == [1] * 7:
-                return 1
-            return res
-        elif genre == ProtocolCode.GET_BASE_EXTERNAL_CONFIG:
-            mode = res[0]
-            baud_rate = int.from_bytes(res[1:5], byteorder="big", signed=False)
-            timeout = int.from_bytes(res[5:9], byteorder="big", signed=False)
-            return [mode, baud_rate, timeout]
-        elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
-            mode = res[0]
-            if mode == 1:
-                return res
-            elif mode == 2:
-                can_id = (res[1] << 24) | (res[2] << 16) | (res[3] << 8) | res[4]
-                return [mode, can_id] + res[5:]
         else:
             return res
 
@@ -462,26 +442,38 @@ class MercuryL1Client(L1CloseLoop):
         return crc.to_bytes(2, byteorder=mode)
 
     def _joint_limit_init(self):
-        max_joint = np.zeros(7)
-        min_joint = np.zeros(7)
-        for i in range(7):
-            max_joint[i] = self.get_joint_max_angle(i + 1)
-            min_joint[i] = self.get_joint_min_angle(i + 1)
-        return max_joint, min_joint
+        mx = self.get_joint_max_angle()
+        mn = self.get_joint_min_angle()
 
-    def _joint_limit_judge_old(self, angles):
-        offset = 3
-        try:
-            for i in range(6):
-                if self.min_joint[i] + offset < angles[i] < self.max_joint[i] - offset:
-                    pass
-                else:
-                    if self.language == "zh_CN":
-                        return f"当前角度为{angles[i]}, 角度范围为： {self.min_joint[i]} ~ {self.max_joint[i]}"
-                    return f"current value = {angles[i]}, limit is {self.min_joint[i]} ~ {self.max_joint[i]}"
-        except TypeError:
-            return "joint limit error"
-        return "over limit error {}".format(angles)
+        if isinstance(mx, (list, tuple, np.ndarray)):
+            max_vals = [float(v) for v in mx]
+        else:
+            max_vals = [float(mx)] * 10
+        if isinstance(mn, (list, tuple, np.ndarray)):
+            min_vals = [float(v) for v in mn]
+        else:
+            min_vals = [float(mn)] * 10
+
+        if len(max_vals) < 10:
+            max_vals.extend([max_vals[-1]] * (10 - len(max_vals)))
+        if len(min_vals) < 10:
+            min_vals.extend([min_vals[-1]] * (10 - len(min_vals)))
+
+        # Protocol mapping:
+        # 1-7: shared arm joints (used by both left/right arm chains)
+        # 8: left waist joint
+        # 9-10: right neck/head joints
+        max_l = max_vals[:8]
+        min_l = min_vals[:8]
+        max_r = max_vals[:7] + max_vals[8:10]
+        min_r = min_vals[:7] + min_vals[8:10]
+        self.max_joint_left = max_l
+        self.max_joint_right = max_r
+        self.min_joint_left = min_l
+        self.min_joint_right = min_r
+        self.max_joint, self.min_joint = max_l, min_l
+        self._joint_limits_initialized = True
+        return max_l, min_l
 
     def _joint_limit_judge(self, angles):
         offset = 3
@@ -490,24 +482,26 @@ class MercuryL1Client(L1CloseLoop):
             left_angles, right_angles = angles
 
             for i in range(len(left_angles)):
-                if not (self.min_joint[i] + offset < left_angles[i] < self.max_joint[i] - offset):
+                if not (self.min_joint_left[i] + offset < left_angles[i] < self.max_joint_left[i] - offset):
                     if self.language == "zh_CN":
-                        return f"左臂关节{i + 1} 当前角度为{left_angles[i]}, 范围：{self.min_joint[i]} ~ {self.max_joint[i]}"
-                    return f"Left joint {i + 1} = {left_angles[i]}, limit {self.min_joint[i]} ~ {self.max_joint[i]}"
+                        return f"左臂关节{i + 1} 当前角度为{left_angles[i]}, 范围：{self.min_joint_left[i]} ~ {self.max_joint_left[i]}"
+                    return f"Left joint {i + 1} = {left_angles[i]}, limit {self.min_joint_left[i]} ~ {self.max_joint_left[i]}"
 
             for i in range(len(right_angles)):
-                if not (self.min_joint[i] + offset < right_angles[i] < self.max_joint[i] - offset):
+                if not (self.min_joint_right[i] + offset < right_angles[i] < self.max_joint_right[i] - offset):
                     if self.language == "zh_CN":
-                        return f"右臂关节{i + 1} 当前角度为{right_angles[i]}, 范围：{self.min_joint[i]} ~ {self.max_joint[i]}"
-                    return f"Right joint {i + 1} = {right_angles[i]}, limit {self.min_joint[i]} ~ {self.max_joint[i]}"
+                        return f"右臂关节{i + 1} 当前角度为{right_angles[i]}, 范围：{self.min_joint_right[i]} ~ {self.max_joint_right[i]}"
+                    return f"Right joint {i + 1} = {right_angles[i]}, limit {self.min_joint_right[i]} ~ {self.max_joint_right[i]}"
 
         except Exception as e:
             return f"joint limit error: {str(e)}"
 
         return ""
 
-    def _Singularity(self, angles):
+    def _Singularity(self, angles, arm_zh="", arm_en=""):
         try:
+            if not isinstance(angles, (list, tuple)) or len(angles) < 6:
+                return ""
             # Joint 6: 0 and 180 degrees are singular points
             singular_angles = [0, 180]
             state = ""
@@ -515,32 +509,30 @@ class MercuryL1Client(L1CloseLoop):
             for singular in singular_angles:
                 if singular - offset < angles[5] < singular + offset:
                     if self.language == "zh_CN":
-                        return f"在关节 6 处检测到奇点：{angles[5]} 度"
-                    return f"Singularity detected at joint 6: {angles[5]} degrees"
+                        prefix = f"{arm_zh}" if arm_zh else ""
+                        return f"{prefix}在关节 6 处检测到奇点：{angles[5]} 度"
+                    prefix = f"{arm_en} " if arm_en else ""
+                    return f"{prefix}Singularity detected at joint 6: {angles[5]} degrees"
             return state
-        except:
+        except Exception:
             return "Singularity error"
 
-    def _check_coords(self, new_coords, is_print=0):
+    def _check_coords(self, new_coords, is_print=0, arm_zh="", arm_en=""):
         try:
-            first_three = new_coords[:3]
+            first_three = list(new_coords[:3])
             first_three[2] -= 83.64
             info = ""
             # Calculate the Euclidean norm (magnitude)
             magnitude = np.linalg.norm(first_three)
             if is_print == 1:
                 if self.language == "zh_CN":
-                    info += f"当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
+                    label = f"{arm_zh}" if arm_zh else ""
+                    info += f"{label}当前臂展为{magnitude}, 最大的臂展为{self.arm_span}"
                 else:
-                    info += f"Arm span is {magnitude}, max is {self.arm_span}"
-
-            # if magnitude > self.arm_span - 10:
-            #     if self.language == "zh_CN":
-            #         info += f"当前臂展为{magnitude}超出物理限位, 最大的臂展为{self.arm_span}"
-            #     else:
-            #         info += f"Arm span is {magnitude} exceeds physical limit, max is {self.arm_span}"
+                    label = f"{arm_en} " if arm_en else ""
+                    info += f"{label}Arm span is {magnitude}, max is {self.arm_span}"
             return info
-        except:
+        except Exception:
             return "check coords error"
 
     def _status_explain(self, status):
@@ -549,26 +541,80 @@ class MercuryL1Client(L1CloseLoop):
             self.arm_span = 440
         if 0x00 < status <= 0x07:
             angles = self.get_angles()
-            if type(self.max_joint) == int and self.max_joint == 0:
-                self.max_joint, self.min_joint = self._joint_limit_init()
+            if not self._joint_limits_initialized:
+                self._joint_limit_init()
             error_info += self._joint_limit_judge(angles)
         elif status in [32, 33]:
             error_coords = self.get_coords()
-            error_info += self._check_coords(error_coords, 1)
+            if (
+                isinstance(error_coords, (list, tuple))
+                and len(error_coords) == 2
+                and isinstance(error_coords[0], (list, tuple))
+            ):
+                error_info += self._check_coords(error_coords[0], 1, arm_zh="左臂", arm_en="Left arm")
+                error_info += self._check_coords(error_coords[1], 1, arm_zh="右臂", arm_en="Right arm")
+            else:
+                error_info += self._check_coords(error_coords, 1)
         elif status == 36:
             angles = self.get_angles()
-            error_info += self._Singularity(angles)
+            if (
+                isinstance(angles, (list, tuple))
+                and len(angles) == 2
+                and isinstance(angles[0], (list, tuple))
+            ):
+                error_info += self._Singularity(angles[0], arm_zh="左臂", arm_en="Left arm")
+                error_info += self._Singularity(angles[1], arm_zh="右臂", arm_en="Right arm")
+            else:
+                error_info += self._Singularity(angles)
 
         return error_info
 
-    def _check_jog_allowed(self):
-        """Check whether jog motion is allowed based on fresh mode."""
-        if self.get_fresh_mode() != 0:
-            if self.language == "en_US":
-                return 'Error: JOG motion cannot be used in refresh mode. Please switch to interpolation mode.'
-            else:
-                return '错误：刷新模式无法使用JOG运动，请切换插补模式使用'
-        return None
+    def _check_jog_allowed(self, arm_id=None):
+        """JOG is only allowed in interpolation mode (fresh mode 0) for the affected arm(s).
+
+        Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
+        Returns:
+            ``None`` if JOG is allowed. Otherwise a ``str`` for the public API to return to the user
+        """
+        fm = self.get_fresh_mode()
+        if not isinstance(fm, (list, tuple)) or len(fm) < 2:
+            return None
+        left_m, right_m = fm[0], fm[1]
+        bad = []
+        if arm_id in (None, 0):
+            if left_m == 1:
+                bad.append("left")
+            if right_m == 1:
+                bad.append("right")
+        elif arm_id == 1:
+            if left_m == 1:
+                bad.append("left")
+        elif arm_id == 2:
+            if right_m == 1:
+                bad.append("right")
+        if not bad:
+            return None
+        if self.language == "zh_CN":
+            parts = []
+            if "left" in bad:
+                parts.append("左臂")
+            if "right" in bad:
+                parts.append("右臂")
+            arms = "、".join(parts)
+            return "错误：{}处于刷新模式，无法使用 JOG，请将该臂切换为插补模式。".format(arms)
+        # Default / en_US: literal English copy (not translated from elsewhere).
+        if len(bad) == 2:
+            return (
+                "Error: Left and right arms are in refresh mode. "
+                "JOG is only allowed in interpolation mode; switch the affected arm(s) with set_fresh_mode(arm_id, 0)."
+            )
+        return "Error: {} arm is in refresh mode. JOG is only allowed in interpolation mode.".format(
+            "Left" if bad[0] == "left" else "Right"
+        )
 
     def open(self):
         self.sock = self.connect_socket()
@@ -592,7 +638,7 @@ class MercuryL1Client(L1CloseLoop):
         return self._mesg(ProtocolCode.SET_MOTOR_ENABLED, arm_id, joint_id, state)
 
     def flash_tool_firmware(self, arm_id, main_version, modified_version=0, _async=False):
-        """Burn tool firmware
+        """Burn arm tool firmware
 
         Args:
             arm_id (int):
@@ -612,8 +658,8 @@ class MercuryL1Client(L1CloseLoop):
             return self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, arm_id, [main_version], modified_version)
         else:
             self._mesg(ProtocolCode.FLASH_TOOL_FIRMWARE, arm_id, [main_version], modified_version)
-
-            print(f'Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
+            self.log.info('Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
+            print('Firmware burning in progress, expected to take 50 seconds, please wait patiently...')
 
             time.sleep(wait_time)
 
@@ -624,33 +670,29 @@ class MercuryL1Client(L1CloseLoop):
                 if tool_main_version != -1 and tool_modify_version != -1:
                     version_str = f"v{tool_main_version}.{tool_modify_version}"
                     msg = f"Current firmware version：{version_str}"
+                    self.log.info(msg)
                     return msg
 
                 time.sleep(1)
-
+            self.log.info("Burning complete, but failed to read the end version number")
             print("⚠️ Burning complete, but failed to read the end version number")
             return -1
 
-    def get_comm_error_counts(self, arm_id, joint_id):
+    def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions
 
         Args:
-            arm_id (int):
-                0 - left and right arm
-                1 - left arm
-                2 - right arm
-            joint_id (int): joint ID, 1 ~ 9
+            joint_id (int): joint ID, 1 ~ 7
 
-        Returns:
-             A list of length 4, such as [0, 0, 0, 0], represents:
-               - `[0]`: Number of joint sending exceptions
-               - `[1]`: Number of joint reading exceptions
-               - `[2]`: Number of end-point sending exceptions
-               - `[3]`: Number of end-point sending exceptions
+        Returns: List [[left count], [right count]]. eg: [[0, 0, 0, 0], [0, 0, 0, 0]], left arm is [0, 0, 0, 0]:
+            [0] - Joint Send Error Count
+            [1] - Joint Read Error Count
+            [2] - End-effector STM32F103 Send Error Count
+            [3] - End-effector STM32F103 Read Error Count
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id)
-        return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, arm_id, joint_id)
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.MERCURY_ERROR_COUNTS, joint_id)
 
     # def set_break(self, joint_id, value):
     #     """Set break point
@@ -672,26 +714,33 @@ class MercuryL1Client(L1CloseLoop):
 
         Args:
             arm_id (int): 1 - left arm, 2 - right arm
+
+        Returns: int
         """
         self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id)
         return self._mesg(ProtocolCode.GET_TOOL_MODIFY_VERSION, arm_id)
 
-    def set_fresh_mode(self, mode):
-        """Set command refresh mode
+    def set_fresh_mode(self, arm_id, mode):
+        """Set command refresh / interpolation mode.
 
         Args:
-            mode: int.
-                1 - Always execute the latest command first.
-                0 - Execute instructions sequentially in the form of a queue.
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
+            mode (int):
+                0 - interpolation (queue) mode
+                1 - refresh mode (latest command first)
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, arm_id=arm_id, mode=mode)
+        return self._mesg(ProtocolCode.SET_FRESH_MODE, arm_id, mode)
 
     def get_fresh_mode(self):
-        """Query sports mode
+        """Query motion mode for both arms (single read, no parameters).
 
         Returns:
-            0 - interpolation mode, 1 - refresh mode
+            list [left_mode, right_mode] — each 0 - interpolation, 1 - refresh.
         """
         return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
 
@@ -724,11 +773,15 @@ class MercuryL1Client(L1CloseLoop):
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
 
-    def set_debug_state(self, log_state):
+    def set_debug_state(self, arm_id, log_state):
         """
         Set the debug log mode of the robot.
 
         Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
             log_state (int): Debug state as bitmask (0~7)
                 0: No debug logs
                 1: Only common debug log (_debug.log)
@@ -742,27 +795,27 @@ class MercuryL1Client(L1CloseLoop):
         Returns:
             int: 1-success, 0-failure, -1-error
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, log_state=log_state)
-        return self._mesg(ProtocolCode.SET_DEBUG_LOG_MODE, log_state)
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, log_state=log_state)
+        return self._mesg(ProtocolCode.SET_DEBUG_LOG_MODE, arm_id, log_state)
 
     def get_debug_state(self):
         """
         Get the current debug log mode of the robot.
 
         Returns:
-            int: Current debug state (0-7), or -1 if failed
-                0: No debug logs
-                1: Only common debug log (_debug.log)
-                2: Only motion-related log (_move.log)
-                3: Common + motion-related logs (_debug.log+_move.log)
-                4: Motor read/control frequency log (_clock_rate_debug.log)
-                5: Common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log)
-                6: Motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log)
-                7: All logs
+            list: ``[left_state, right_state]`` — each 
+            - 0: no debug logs,
+            - 1: only common debug log (_debug.log),
+            - 2: only motion-related log (_move.log),
+            - 3: common + motion-related logs (_debug.log+_move.log),
+            - 4: motor read/control frequency log (_clock_rate_debug.log),
+            - 5: common + Motor read/control frequency logs (_debug.log+_clock_rate_debug.log),
+            - 6: motion + Motor read/control frequency logs (_move.log+_clock_rate_debug.log),
+            - 7: all logs
         """
-        return self._mesg(ProtocolCode.GET_DEBUG_LOG_MODE)
+        return self._mesg(ProtocolCode.GET_DEBUG_LOG_MODE, has_reply=True)
 
-    def jog_angle(self, arm_id, joint_id, direction, speed, _async=True):
+    def jog_angle(self, arm_id, joint_id,  speed, l_direction=None, r_direction=None, _async=True):
         """Jog control angle.
 
         Args:
@@ -770,19 +823,32 @@ class MercuryL1Client(L1CloseLoop):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
-            joint_id (int): Joint id 1 - 9.
-            direction (int): 0 - decrease, 1 - increase
+            joint_id (int): Joint id 1 - 7.
             speed (int): int range 1 - 100
+            l_direction (int): left arm direction, 0 - decrease, 1 - increase
+            r_direction (int): right arm direction, 0 - decrease, 1 - increase
             _async (bool, optional): Whether to execute asynchronous control. Defaults to True.
         """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id, direction=direction, speed=speed)
-        msg = self._check_jog_allowed()
+        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, speed=speed)
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, left_direction=l_direction, right_direction=r_direction)
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, left_direction=l_direction)
+            r_direction = 0
+        elif arm_id == 2:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, right_direction=r_direction)
+            l_direction = 0
+        left_direction = l_direction
+        right_direction = r_direction
+        msg = self._check_jog_allowed(arm_id)
         if msg:
             return msg
-        return self._mesg(ProtocolCode.JOG_ANGLE, arm_id, joint_id, direction, speed, _async=_async, has_reply=True)
+        return self._mesg(ProtocolCode.JOG_ANGLE, arm_id, joint_id, left_direction, right_direction, speed, _async=_async, has_reply=True)
 
-    def jog_coord(self, arm_id, coord_id, direction, speed, _async=True):
+    def jog_coord(self, arm_id, coord_id, speed, l_direction, r_direction, _async=True):
         """Jog control coord. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the jog_base_coord interface
 
         Args:
@@ -791,8 +857,9 @@ class MercuryL1Client(L1CloseLoop):
                 1 - left arm
                 2 - right arm
             coord_id (int): int 1-6
-            direction (int): 0 - decrease, 1 - increase
-            speed (int): 1 - 100
+            speed (int): int range 1 - 100
+            l_direction (int): left arm direction, 0 - decrease, 1 - increase
+            r_direction (int): right arm direction, 0 - decrease, 1 - increase
             _async (bool, optional): Whether to execute asynchronous control. Defaults to True.
 
         Returns:
@@ -800,11 +867,24 @@ class MercuryL1Client(L1CloseLoop):
 
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id, direction=direction, speed=speed)
-        msg = self._check_jog_allowed()
+            class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id, speed=speed)
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, left_direction=l_direction, right_direction=r_direction)
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, left_direction=l_direction)
+            r_direction = 0
+        elif arm_id == 2:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, right_direction=r_direction)
+            l_direction = 0
+        left_direction = l_direction
+        right_direction = r_direction
+        msg = self._check_jog_allowed(arm_id)
         if msg:
             return msg
-        return self._mesg(ProtocolCode.JOG_COORD, arm_id, coord_id, direction, speed, _async=_async, has_reply=True)
+        return self._mesg(ProtocolCode.JOG_COORD, arm_id, coord_id, left_direction, right_direction, speed, _async=_async, has_reply=True)
 
     # def jog_rpy(self, axis, direction, speed, _async=True):
     #     """Rotate the end point around the fixed axis of the base coordinate system
@@ -836,7 +916,7 @@ class MercuryL1Client(L1CloseLoop):
             class_name=self.__class__.__name__, rank_mode=rank_mode, rank_mode_value=value)
         return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
 
-    def jog_increment_angle(self, arm_id, joint_id, increment, speed, _async=False):
+    def jog_increment_angle(self, arm_id, joint_id, speed, l_increment=None, r_increment=None, _async=False):
         """Single angle incremental motion control.
 
         Args:
@@ -844,40 +924,77 @@ class MercuryL1Client(L1CloseLoop):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
-            joint_id: Joint id 1 - 9.
-            increment: Angle increment value
+            joint_id: Joint id 1 - 7.
             speed: int (1 - 100)
+            l_increment: left arm angle increment value
+            r_increment: right arm angle increment value
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id, increment_angle=increment, speed=speed)
-        scaled_increment = self._angle2int(increment)
-        scaled_increment = max(min(scaled_increment, 32767), -32768)
-        msg = self._check_jog_allowed()
+            class_name=self.__class__.__name__, arm_id=arm_id,  speed=speed)
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id,left_increment_angle=l_increment,
+                right_increment_angle=r_increment)
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, left_increment_angle=l_increment)
+            r_increment = 0
+        elif arm_id == 2:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, joint_id=joint_id, right_increment_angle=r_increment)
+            l_increment = 0
+        left_scaled_increment = self._angle2int(l_increment)
+        left_scaled_increment = max(min(left_scaled_increment, 32767), -32768)
+        right_scaled_increment = self._angle2int(r_increment)
+        right_scaled_increment = max(min(right_scaled_increment, 32767), -32768)
+        msg = self._check_jog_allowed(arm_id)
         if msg:
             return msg
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, has_reply=True,
-                          _async=_async)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, arm_id, joint_id, [left_scaled_increment], [right_scaled_increment],
+                          speed, has_reply=True, _async=_async)
 
-    def jog_increment_coord(self, coord_id, increment, speed, _async=False):
+    def jog_increment_coord(self, arm_id, coord_id, speed, l_increment=None, r_increment=None, _async=False):
         """Single coordinate incremental motion control.
         This interface is based on a single arm 1-axis coordinate system.
 
         Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
             coord_id: axis id 1 - 6.
-            increment: Coord increment value
             speed: int (1 - 100)
+            l_increment: left arm coord increment value
+            r_increment: right arm coord increment value
+
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, increment_coord=increment, speed=speed)
+            class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id, speed=speed)
+        if arm_id == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, left_increment_coord=l_increment, right_increment_coord=r_increment)
+        elif arm_id == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, left_increment_coord=l_increment)
+            r_increment = 0
+        elif arm_id == 2:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, right_increment_coord=r_increment)
+            l_increment = 0
+
         if coord_id <= 3:
-            value = self._coord2int(increment)
+            left_value = self._coord2int(l_increment)
+            right_value = self._coord2int(r_increment)
         else:
-            scaled_increment = self._angle2int(increment)
-            value = max(min(scaled_increment, 32767), -32768)
+            left_scaled_increment = self._angle2int(l_increment)
+            right_scaled_increment = self._angle2int(r_increment)
+            left_value = max(min(left_scaled_increment, 32767), -32768)
+            right_value = max(min(right_scaled_increment, 32767), -32768)
         msg = self._check_jog_allowed()
         if msg:
             return msg
-        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
+        return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, arm_id, coord_id, [left_value], [right_value],
+                          speed, has_reply=True, _async=_async)
 
     def set_world_reference(self, coords):
         """Set the world coordinate system
@@ -924,18 +1041,16 @@ class MercuryL1Client(L1CloseLoop):
             1 : All motors return to zero position.
             0 : failed.
         """
-        left_angles = [0] * 8
-        right_angles = [0] * 9
-        return self.send_angles(arm_id, speed, left_angles, right_angles, _async=_async)
+        return self.send_angles(arm_id, speed, [0] * 7, [0] * 7, _async=_async)
 
     def get_digital_inputs(self, arm_id):
-        """Read the status of all pins at the end, including: IN1, IN2, button 1 (right),
-            and button 2 (button 2 is closer to the emergency stop, left).
+        """Read end-effector digital inputs for **both** arms in one response (protocol 0x7B).
 
-        Args:
-            arm_id (int): 1 - left arm, 2 - right arm
+        Pin order per arm: IN1, IN2, end button 1, end button 2 (0/1).
+
+        Returns:
+            List [left, right], eg: [[IN1, IN2, btn1, btn2], [IN1, IN2, btn1, btn2]]
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id)
         return self._mesg(ProtocolCode.PRO450_GET_DIGITAL_INPUTS, arm_id)
 
     # def set_torque_comp(self, joint_id, damping, comp_value=0):
@@ -972,15 +1087,6 @@ class MercuryL1Client(L1CloseLoop):
         elif limit_mode == 2 and state == 1:
             self.sync_mode = True
 
-    def is_motor_pause(self):
-        """Read motor pause status
-
-        Return:
-            1 : Paused, can be resumed using the resume() interface.
-            0 : Not paused.
-        """
-        return self._mesg(ProtocolCode.IS_MOTOR_PAUSE)
-
     def set_tool_serial_baud_rate(self, arm_id, baud_rate=115200):
         """ Set the end 485 baud rate
 
@@ -1014,12 +1120,14 @@ class MercuryL1Client(L1CloseLoop):
         return self._mesg(ProtocolCode.SET_TOOL_SERIAL_TIMEOUT, arm_id, high_byte, low_byte)
 
     def get_tool_config(self, arm_id):
-        """ Get the end 485 baud rate and timeout
+        """Read end-effector RS485 baud rate and timeout for both arms (protocol 0xBA).
 
         Args:
-            arm_id (int): 1 - left arm, 2 - right arm
-
-        Returns: (list) [baud_rate, timeout]
+            arm_id (int):
+            1 - left arm
+            2 - right arm
+        Returns:
+            List [baud, timeout ms]
         """
         self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id)
         return self._mesg(ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT, arm_id)
@@ -1032,35 +1140,22 @@ class MercuryL1Client(L1CloseLoop):
                 0 - left and right arm
                 1 - left arm
                 2 - right arm
+            mode (int): 0 - close. 1 - open
         """
         self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, mode=mode)
         return self._mesg(ProtocolCode.SET_FREE_MODE, arm_id, mode)
 
     def get_free_move_mode(self):
-        """ Set the free move mode"""
+        """ Set the free move mode
+
+        Returns: List [left mode, right mode]. 0 - close. 1 - open
+        """
         return self._mesg(ProtocolCode.IS_FREE_MODE)
 
-    # def set_motor_type(self, motor_type):
-    #     """Set motor type.
-    #
-    #     Args:
-    #         motor_type (hex/int/str): motor type, can be 0xA1C2, 0xA3C0, or 'A1C2', 'a3c0'
-    #     """
-    #
-    #     self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
-    #
-    #     if isinstance(motor_type, str):
-    #         motor_type = int(motor_type, 16)
-    #
-    #     high_byte = (motor_type >> 8) & 0xFF  # 0xA3
-    #     low_byte = motor_type & 0xFF  # 0xC0
-    #
-    #     return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
-
     def get_motor_temps(self):
-        """Read motor temperature
+        """Read motor temperature.
 
-        Return: A list, bits 1-7 represent coil temperature, bits 8-14 represent MOSFET temperature.
+       Returns: list[int] eg:[[Left Coil Temperature and MOS Tube Temperature], [Right Coil Temperature and MOS Tube Temperature]].
         """
         return self._mesg(ProtocolCode.GET_MOTORS_TEMPERATURE)
 
