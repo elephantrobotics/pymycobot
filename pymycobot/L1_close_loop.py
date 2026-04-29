@@ -905,7 +905,7 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
             left_data: A data list, angles or coords. angles len 7, coords len 6.
             right_data: A data list, angles or coords. angles len 7, coords len 6.
 
-        Return:
+        Return: [left status, right status]
             1 - True\n
             0 - False\n
             -1 - Error

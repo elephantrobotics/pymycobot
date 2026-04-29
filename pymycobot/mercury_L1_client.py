@@ -121,6 +121,7 @@ class MercuryL1Client(L1CloseLoop):
             ProtocolCode.IS_MOVING,
             ProtocolCode.IS_FREE_MODE,
             ProtocolCode.IS_POWER_ON,
+            ProtocolCode.IS_IN_POSITION,
         ):
             if data_len >= 2:
                 return [valid_data[0], valid_data[1]]
@@ -273,7 +274,6 @@ class MercuryL1Client(L1CloseLoop):
             return -1
 
         if genre in [
-            ProtocolCode.IS_IN_POSITION,
             ProtocolCode.GET_END_TYPE,
             ProtocolCode.GET_MOVEMENT_TYPE,
             ProtocolCode.GET_REFERENCE_FRAME,
@@ -848,7 +848,7 @@ class MercuryL1Client(L1CloseLoop):
             return msg
         return self._mesg(ProtocolCode.JOG_ANGLE, arm_id, joint_id, left_direction, right_direction, speed, _async=_async, has_reply=True)
 
-    def jog_coord(self, arm_id, coord_id, speed, l_direction, r_direction, _async=True):
+    def jog_coord(self, arm_id, coord_id, speed, l_direction=None, r_direction=None, _async=True):
         """Jog control coord. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the jog_base_coord interface
 
         Args:
