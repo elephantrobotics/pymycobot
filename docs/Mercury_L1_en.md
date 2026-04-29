@@ -763,6 +763,11 @@ print(mc.get_angles())
 - **Function**: Retrieves the operational status of all joints.
 - **Return Value**: A nested list; a value of 0 indicates that no errors are present. Format: `[[Left Arm Status], [Right Arm Status]]`.
 
+#### `get_motor_temps()`
+
+- **Function:** Retrieves the temperatures of the motor coils and MOSFETs.
+- **Return Value:** A nested list in the format `[[Left Arm Coil Temp, Left Arm MOSFET Temp], [Right Arm Coil Temp, Right Arm MOSFET Temp]]`.
+
 ### 13. End-effector IO Control
 
 #### `set_digital_output(arm_id, pin_no, pin_signal)`
