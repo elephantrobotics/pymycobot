@@ -122,50 +122,110 @@ print(mc.get_angles())
 
 - **Function:** Checks whether the robot's zero position has been set.
 
-- **Return Value:** `bool` — Returns `True` if the robot has completed zero-position calibration initialization; otherwise, returns `False`.
+- **Return Value:** `int/list`
+  - `1`: All joints have been zero-position calibrated.
+  - `list`: If any joint has not been zero-position calibrated, returns a two-dimensional list formatted as `[[left_arm_joint_calibration_status], [right_arm_joint_calibration_status]]`.
+    - `[0]`: Calibration status of J1 ~ J8 on the left arm.
+    - `[1]`: Calibration status of J1 ~ J9 on the right arm.
+    - In each status value, `1` indicates the zero position has been set, and `0` indicates it has not.
 
 #### `get_fresh_mode()`
 
-- **Function:** Queries the motion mode.
+- **Function:** Queries the motion mode for **both** arms in one read (no parameters).
 
-- **Return Value:**
-  - `0`: Interpolation Mode
-  - `1`: Refresh Mode
+- **Return Value:** `list` — `[left arm mode, right arm mode]`; where `0` - interpolation mode; `1` - refresh mode.
 
-#### `set_fresh_mode()`
+#### `set_fresh_mode(arm_id, mode)`
 
-- **Function:** Sets the refresh mode.
+- **Function:** Sets interpolation vs refresh mode.
 
 - **Parameters:**
-  - `1`: Refresh Mode — Always executes the latest command first. 
-  - `0`: Interpolation Mode — Executes commands sequentially in a queue.
+  - `arm_id`: `int`
+    - `0` — Both arms;
+    - `1` — Left arm;
+    - `2` — Right arm
+  - `mode`: `int`
+    - `0` — Interpolation mode (execute in queue order);
+    - `1` — Refresh mode (prioritize execution of the latest instruction).
+
+#### `get_debug_state()`
+
+- **Function:** Retrieves the current robot's debug logging mode.
+
+- **Return Value:** `list`: `[left_state, right_state]` — The current debug logging status:
+  - `0`: No debug logs recorded
+  - `1`: General debug logs only (_debug.log)
+  - `2`: Motion-related logs only (_move.log)
+  - `3`: General + Motion-related logs (_debug.log + _move.log)
+  - `4`: Motor read/control frequency logs only (_clock_rate_debug.log)
+  - `5`: General + Motor frequency logs (_debug.log + _clock_rate_debug.log)
+  - `6`: Motion + Motor frequency logs (_move.log + _clock_rate_debug.log)
+  - `7`: Record all logs
+
+#### `set_debug_state(arm_id, log_state)`
+
+- **Function:** Sets the current robot's debug logging mode.
+
+- **Parameters:**
+  - `arm_id`: `int`
+    - `0` — Both arms
+    - `1` — Left arm
+    - `2` — Right arm
+  - `log_state`: `int`, Debug logging status (0 ~ 7)
+    - `0`: No debug logs recorded
+    - `1`: General debug logs only (_debug.log)
+    - `2`: Motion-related logs only (_move.log)
+    - `3`: General + Motion-related logs (_debug.log + _move.log)
+    - `4`: Motor read/control frequency logs only (_clock_rate_debug.log)
+    - `5`: General + Motor frequency logs (_debug.log + _clock_rate_debug.log)
+    - `6`: Motion + Motor frequency logs (_move.log + _clock_rate_debug.log)
+    - `7`: Record all logs
+- **Return Value:** `int`
+  - 1 — Success
+  - 0 — Failure
+  - -1 — Error
 
 #### `get_free_move_mode()`
 
 - **Function:** Retrieves the free-move mode status.
 
-- **Return Value:**
-- `0`: Free-move mode is disabled.
-- `1`: Free-move mode is enabled.
+- **Return Value:** `list` `[left_mode, right_mode]`, indicating the free-move mode status of the left arm and right arm respectively.
+  - `0`: Free-move mode is disabled.
+  - `1`: Free-move mode is enabled.
 
-#### `set_free_move_mode(mode)`
+#### `set_free_move_mode(arm_id, mode)`
 
 - **Function:** Sets the free-move mode. (Note: Joints can only be relaxed by holding down the end-effector button when free-move mode is enabled.)
 
 - **Parameters:**
-- `1`: Enable free-move mode. 
-- `0`: Disable free-move mode.
+  - `arm_id`: `int`
+    - `0` — Both arms
+    - `1` — Left arm
+    - `2` — Right arm
+  - `mode`: `int`
+    - `1`: Open free-move mode.
+    - `0`: Close free-move mode.
 
 ### 3. Robot Anomaly Detection
 
 #### `get_robot_status()`
 
 - **Function:** Retrieves the error and safety status for the left and right robot arms.
-- **Return Value:** A `list` in the format `[[Left Arm Status], [Right Arm Status]]`, where `0` indicates a normal state. For example: `[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]`. Others — Robot Anomalies:
-  - **Left Arm**
-    - `[Joint collision detected?, Currently in motion?, J1 limit exceeded?, J2 limit exceeded?, J3 limit exceeded?, J4 limit exceeded?, J5 limit exceeded?, J6 limit exceeded?, J7 limit exceeded?, J8 limit exceeded?, J1 motor hardware error?, J2 motor hardware error?, J3 motor hardware error?, J4 motor hardware error?, J5 motor hardware error?, J6 motor hardware error?, J7 motor hardware error?, J8 motor hardware error?, J1 software communication error?, J2 software communication error?, J3 software communication error?, J4 software communication error?, J5 software communication error?, J6 software communication error?, J7 software communication error?, J8 software communication error?]`
-  - **Right Arm**
-    - `[Joint collision detected, Currently in motion, J1 limit exceeded, J2 limit exceeded, J3 limit exceeded, J4 limit exceeded, J5 limit exceeded, J6 limit exceeded, J7 limit exceeded, J8 limit exceeded, J9 limit exceeded, J1 motor hardware error, J2 motor hardware error, J3 motor hardware error, J4 motor hardware error, J5 motor hardware error, J6 motor hardware error, J7 motor hardware error, J8 motor hardware error, J9 motor hardware error, J1 software communication error, J2 software communication error, J3 software communication error, J4 software communication error, J5 software communication error, J6 software communication error, J7 software communication error, J8 software communication error, J9 software communication error]`
+- **Return Value:** `list`, a two-dimensional list formatted as `[[left_arm_status], [right_arm_status]]`. In each status value, `0` indicates normal; any non-zero value indicates an abnormal state for the corresponding item.
+  - `[0]`: Left arm status list, length 26.
+  - `[1]`: Right arm status list, length 29.
+  - Left arm status indexes:
+    - `[0]`: Joint collision status.
+    - `[1]`: Motion status.
+    - `[2] ~ [9]`: J1 ~ J8 limit status.
+    - `[10] ~ [17]`: J1 ~ J8 motor hardware error status.
+    - `[18] ~ [25]`: J1 ~ J8 software communication error status.
+  - Right arm status indexes:
+    - `[0]`: Joint collision status.
+    - `[1]`: Motion status.
+    - `[2] ~ [10]`: J1 ~ J9 limit status.
+    - `[11] ~ [19]`: J1 ~ J9 motor hardware error status.
+    - `[20] ~ [28]`: J1 ~ J9 software communication error status.
 
 #### `servo_restore(arm_id, joint_id)`
 
@@ -175,7 +235,7 @@ print(mc.get_angles())
     - `0`: Left and Right Arms
     - `1`: Left Arm
     - `2`: Right Arm
-  - `joint_id`: `int`. Joint ID (1–7); use `254` to restore all joints.
+  - `joint_id`: `int`. Joint ID (1–9); use `254` to restore all joints.
 
 #### `get_comm_error_counts(arm_id, joint_id)`
 
@@ -186,7 +246,7 @@ print(mc.get_angles())
     - `1`: Left arm
     - `2`: Right arm
   - `joint_id`: `int` — Joint ID (1 - 9)
-- **Return Value**: `list` — A list of length 4 (e.g., `[0, 0, 0, 0]`), representing the following:
+- **Return Value**: `list`: A 2D list in the format `[[Left Arm Error Statistics], [Right Arm Error Statistics]]`. For example: `[[0, 0, 0, 0], [0, 0, 0, 0]]`, where the 4 values ​​within each sublist represent, in order:
   - `[0]`: Joint transmission error count
   - `[1]`: Joint reception error count
   - `[2]`: End-effector transmission error count
@@ -213,52 +273,63 @@ print(mc.get_angles())
   - `1`: Left arm
   - `2`: Right arm
 
-#### `over_limit_return_zero()`
+#### `over_limit_return_zero(arm_id)`
 
-- **Function:** Command to return robot joints to the zero position following an over-limit error
+- **Function:** Command to return robot joints to the zero position following an over-limit error (Sending motion commands other than 'stop' is prohibited until the homing process is complete.)
+- **Parameters:** (`int`) `arm_id` — Arm ID
+  - `0`: Left arm and right arm
+  - `1`: Left arm
+  - `2`: Right arm
 
 #### `get_motors_run_err()`
 
 - **Function:** Reads motor error information during robot motion
-- **Return Value:** `list` — A list of length 6; if all elements are 0, it indicates normal operation
+- **Return Value:** `list` — A list of length 14; if all elements are 0, it indicates normal operation
 
 ### 4. Robot Motion Control
 
-#### `set_control_mode(mode)`
+#### `set_control_mode(arm_id, mode=0)`
 
-- **Function:** Sets the robot's motion mode.
+- **Function:** Sets the robot's motion mode (left / right / both arms).
 - **Parameters:**
-  - `mode`: `int`. 0 ~ 1 (inclusive); default is 0.
-    - `0`: Position Mode
-    - `1`: Torque Mode
+  - `arm_id`: `int`.
+    - `0` — both arms
+    - `1` — left arm
+    - `2` — right arm
+  - `mode`: `int`. 0 ~ 1, default is 0.
+    - `0`: Position mode: the regular control mode, generally used in most cases.
+    - `1`: Torque mode: enables zero-force drag mode automatically. In this mode, the robotic arm cannot be controlled to move.
 
 #### `get_control_mode()`
 
-- **Function:** Retrieves the robot's current motion mode.
-- **Return Value:**
-  - `0`: Position Mode
-  - `1`: Torque Mode
+- **Function:** Reads the current motion mode of the **left and right arms**.
+- **Return Value:** `list` — `[left_mode, right_mode]`, where `0` indicates position mode and `1` indicates torque mode.
 
 #### `get_angles()`
 
 - **Function:** Retrieves the angles of all joints.
-- **Return Value:** `list`. A list of floating-point values ​​representing the angles of both the left and right arms, formatted as `[[left arm angles], [right arm angles]]`.
+- **Return Value:** `list`. A two-dimensional list of floating-point values, formatted as `[[left arm joint angles], [right arm joint angles]]`.
+  - `[0]`: All joint angles of the left arm.
+  - `[1]`: All joint angles of the right arm.
 
 #### `get_angle(joint_id)`
 
 - **Function:** Retrieves the angle of a single specific joint.
 - **Parameters:**
-- `joint_id`: `int`. The joint ID; range: 1 ~ 9.
-- **Return Value:** `list[float]`. The angle for the specified joint across both arms, formatted as `[left angle, right angle]`.
+  - `joint_id`: `int`. The joint ID; range: 1 ~ 9.
+- **Return Value:** `list[float]`. The angle of the specified joint on the left and right arms, formatted as `[left_arm_angle, right_arm_angle]`.
+  - `[0]`: Angle of the specified joint on the left arm.
+  - `[1]`: Angle of the specified joint on the right arm.
 
 #### `send_angle(arm_id, joint_id, speed, left_angle=None, right_angle=None, _async=False)`
 
 - **Function:** Sends a target angle command to a specific joint on the robotic arm (when `arm_id` is set to 1 or 2, the value for the other arm is ignored).
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, joint_id, speed, left_angle, right_angle, _async`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + joint_id + left_angle + right_angle + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) The arm ID.
     - `0`: Left and Right Arms. Requires both the `left_angle` and `right_angle` parameters to be provided. 
-    - `1`: Left Arm. Only the `left_angle` parameter is required. 
-    - `2`: Right Arm. Only the `right_angle` parameter is required. 
+    - `1`: Left Arm. Only the `left_angle` parameter is required. For example, to rotate Joint J5 of the left arm by 50 degrees at a speed of 20: `send_angle(1, 5, 20, 50)`
+    - `2`: Right Arm. Only the `right_angle` parameter is required. For example, to rotate the right arm's J3 joint by 50 degrees at a speed of 20: `send_angle(2, 3, 20, right_angle=50)`
   - `joint_id`: Joint ID (int), range: 1–9
   - `speed`: (`int`) 1 ~ 100
   - `left_angle`: Angle value (`float`)
@@ -293,11 +364,12 @@ print(mc.get_angles())
 #### `send_angles(arm_id, speed, left_angles=None, right_angles=None, _async=False)`
 
 - **Function:** Sends angle commands to all joints of the robotic arm (when `arm_id` mode is 1 or 2, the values ​​for the other arm can be arbitrary).
+- **Note:** When calling the function, please pass arguments according to the current interface signature: `arm_id, speed, left_angles, right_angles, _async`. This order differs from the field order in the underlying protocol, but it does not affect usage; internally, when commands are dispatched, they will be structured according to protocol requirements as: `arm_id + left_angles + right_angles + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms; requires simultaneous input of both `left_angles` and `right_angles` parameters. 
-    - `1`: Left Arm; requires input of only the `left_angles` parameter. 
-    - `2`: Right Arm; requires input of only the `right_angles` parameter. 
+    - `1`: Left Arm; requires input of only the `left_angles` parameter. For example, homing the left arm joints at a speed of 30: `send_angles(1, 30, [0]*7)`
+    - `2`: Right Arm; requires input of only the `right_angles` parameter. For example, returning the right arm joint to its zero position at a speed of 20: `send_angles(2, 30, right_angles[0]*7)`
   - `speed`: (`int`) 1 ~ 100
   - `left_angles`: List of angles in degrees (`List[float]`), length 8.
   - `right_angles`: List of angles in degrees (`List[float]`), length 9.
@@ -306,16 +378,18 @@ print(mc.get_angles())
 #### `get_coords()`
 
 - **Function:** Retrieves the robotic arm's coordinates relative to the base coordinate system.
-- **Return Value:** A list of floating-point coordinates for the left and right arms: `[[x, y, z, rx, ry, rz], [x, y, z, rx, ry, rz]]`.
+- **Return Value:** A 2D list, representing the lists of floating-point coordinates for the left and right arms, respectively: `[[x, y, z, rx, ry, rz], [x, y, z, rx, ry, rz]]`.
 
 #### `send_coord(arm_id, coord_id, speed, left_coord=None, right_coord=None, _async=False)`
 
 - **Function:** Sends a coordinate command to the robotic arm (when `arm_id` mode is 1 or 2, the values ​​for the other arm can be arbitrary).
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, coord_id, speed, left_coord, right_coord, _async`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + coord_id + left_coord + right_coord + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms; requires simultaneous input of both `left_coord` and `right_coord` parameters. 
-    - `1`: Left Arm; requires input of only the `left_coord` parameter. 
-    - `2`: Right Arm; requires input of only the `right_coord` parameter. - `coord_id`: Sends a specific coordinate value to the robotic arm; IDs 1-6 correspond to [x, y, z, rx, ry, rz].
+    - `1`: Left Arm; only the `left_coord` parameter is required. For example, to move the left arm x coordinate to 100 at a speed of 30: `send_coord(1, 1, 30, 100)`
+    - `2`: Right Arm; only the `right_coord` parameter is required. For example, to move the right arm z coordinate to 200 at a speed of 30: `send_coord(2, 3, 30, right_coord=200)`
+  - `coord_id`: Sends a specific coordinate value to the robotic arm; IDs 1-6 correspond to [x, y, z, rx, ry, rz].
   - `speed` (`int`): 1 ~ 100
   - `left_coord`: Coordinate value (`float`)
 
@@ -334,17 +408,18 @@ print(mc.get_angles())
 #### `send_coords(arm_id, speed, left_coords=None, right_coords=None, _async=False)`
 
 - **Function:** Sends a complete set of coordinates and pose data, moving the robotic arm's end-effector from the origin to a specified target point (when `arm_id` mode is 1 or 2, the values ​​for the other arm can be arbitrary).
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, speed, left_coords, right_coords, _async`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + left_coords + right_coords + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms; requires input for both `left_coords` and `right_coords` parameters.
-    - `1`: Left Arm; requires input only for the `left_coords` parameter.
-    - `2`: Right Arm; requires input only for the `right_coords` parameter. 
+    - `1`: Left Arm; only the `left_coords` parameter is required. For example, to move the left arm to the specified coordinates at a speed of 30: `send_coords(1, 30, [100, 0, 200, 0, 0, 0])`
+    - `2`: Right Arm; only the `right_coords` parameter is required. For example, to move the right arm to the specified coordinates at a speed of 30: `send_coords(2, 30, right_coords=[100, 0, 200, 0, 0, 0])`
   - `speed` (`int`): 1 ~ 100
   - `left_coords`: Coordinate list; values ​​`[x, y, z, rx, ry, rz]`, length 6.
   - `right_coords`: Coordinate list; values ​​`[x, y, z, rx, ry, rz]`, length 6.
   - `_async`: Motion closed-loop switch; default is enabled (False); disabled (True). 
 
-#### `pause(arm_id, deceleration=0)`
+#### `pause(arm_id)`
 
 - **Function:** Controls the command core to pause and halt all motion commands.
 - **Parameters:**
@@ -352,7 +427,6 @@ print(mc.get_angles())
     - `0`: Left and Right Arms
     - `1`: Left Arm
     - `2`: Right Arm
-  - `deceleration`: Whether to decelerate before stopping; defaults to 0. Both 0 and 1 indicate a gradual pause.
 - **Return Value:**
   - `1` - Stopped
   - `0` - Not stopped
@@ -360,11 +434,8 @@ print(mc.get_angles())
 
 #### `is_paused()`
 
-- **Function:** Checks whether the program has paused its motion commands.
-- **Return Value:**
-  - `1` - Paused
-  - `0` - Not paused
-  - `-1` - Error
+- **Function:** Checks whether the program has paused its motion commands (both arms in one read).
+- **Return Value:** `list` — `[left, right]`; each `1` - paused, `0` - not paused. `-1` - error
 
 #### `resume(arm_id)`
 
@@ -375,7 +446,7 @@ print(mc.get_angles())
     - `1`: Left Arm
     - `2`: Right Arm
 
-#### `stop(arm_id, deceleration=0)`
+#### `stop(arm_id)`
 
 - **Function:** Halts robot motion.
 - **Parameters:**
@@ -383,81 +454,94 @@ print(mc.get_angles())
     - `0`: Left and Right Arms
     - `1`: Left Arm
     - `2`: Right Arm
-  - `deceleration`: Whether to decelerate before stopping; defaults to 0. Both 0 and 1 indicate a gradual stop.
 - **Return Value:**
   - `1` - Stopped
   - `0` - Not stopped
   - `-1` - Error
 
-#### `is_in_position(data, flag)`
+#### `is_in_position(arm_id, mode, left_data=None, right_data=None)`
 
-- **Function:** Determines whether the robot has reached a specific target position.
-- **Parameters:**
-  - `data`: A set of data points, which can be either joint angles or Cartesian coordinates. Assume the valid length range for input angles is 6, and the valid length range for input coordinate values ​​is 6.
-  - `flag` Data Type (Value range: 0 or 1)
-    - `0`: List of angle values
+- **Function**: Determines whether the arm has reached the specified position.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, mode, left_data, right_data`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + mode + left_data + right_data`.
+- **Parameters**:
+  - `arm_id`: (`int`) Arm ID
+    - `0`: Left and Right Arms
+    - `1`: Left Arm. For example, to check whether the left arm has reached the zero joint angles: `is_in_position(1, 0, [0]*7)`
+    - `2`: Right Arm. For example, to check whether the right arm has reached the zero joint angles: `is_in_position(2, 0, right_data=[0]*7)`
+  - `mode`: (`int`) Range: 0 to 1
+    - `0`: List of joint angle values
     - `1`: List of coordinate values
-- **Return Value:**
-  - `1` - true
-  - `0` - false
-  - `-1` - error
+  - `left_data`: Provides a set of data for the left arm; can be either joint angles or coordinates. (Assumes an input length of 7 for angles, and 6 for coordinates.)
+  - `right_data`: Provides a set of data for the right arm; can be either joint angles or coordinates. (Assumes an input length of 7 for angles, and 6 for coordinates.)
+- **Return Value:** `list`, formatted as `[left_status, right_status]`.
+  - `[0]`: Whether the left arm has reached the target position.
+  - `[1]`: Whether the right arm has reached the target position.
+  - Status value:
+    - `1` - Reached.
+    - `0` - Not reached.
+    - `-1` - Error.
 
 #### `is_moving()`
 
-- **Function:** Detects whether the robot is currently in motion.
-- **Return Value:**
-  - `1`: Moving
-  - `0`: Stopped
-  - `-1`: Error
+- **Function:** Detects whether the robot is currently in motion (both arms in one read).
+- **Return Value:** `list` — `[left, right]`; each `1` - moving, `0` - stopped. `-1` - error
 
 ### 5. JOG Mode and Operations
 
-#### `jog_angle(arm_id, joint_id, direction, speed)`
+#### `jog_angle(arm_id, joint_id, speed, l_direction=None, r_direction=None)`
 
 - **Function:** JOG control for joint angles; the specified joint moves continuously.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, joint_id, speed, l_direction, r_direction`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + joint_id + l_direction + r_direction + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms
-    - `1`: Left Arm
-    - `2`: Right Arm
-  - `joint_id`: The ID of the robotic arm joint; range: 1 to 9.
-  - `direction` (`int`): Controls the direction of joint movement; input `0` for movement in the negative direction, input `1` for movement in the positive direction.
+    - `1`: Left Arm. For example, to move the left arm J3 joint continuously in the positive direction at a speed of 30: `jog_angle(1, 3, 30, 1)`
+    - `2`: Right Arm. For example, to move the right arm J3 joint continuously in the negative direction at a speed of 30: `jog_angle(2, 3, 30, r_direction=0)`
+  - `joint_id`: The ID of the robotic arm joint; range: 1 to 7.
+  - `l_direction`: (`int`) Movement direction of the left arm; input `0` for movement in the negative direction, input `1` for movement in the positive direction.
+  - `r_direction`: (`int`) Movement direction of the right arm; input `0` for movement in the negative direction, input `1` for movement in the positive direction.
   - `speed`: 1 to 100.
 
-#### `jog_coord(arm_id, coord_id, direction, speed)`
+#### `jog_coord(arm_id, coord_id, speed, l_direction=None, r_direction=None)`
 
 - **Function:** JOG control for coordinates; the specified coordinate moves continuously.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, coord_id, speed, l_direction, r_direction`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + coord_id + l_direction + r_direction + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms
-    - `1`: Left Arm
-    - `2`: Right Arm
+    - `1`: Left Arm. For example, to move the left arm along the x-axis continuously in the positive direction at a speed of 30: `jog_coord(1, 1, 30, 1)`
+    - `2`: Right Arm. For example, to move the right arm along the z-axis continuously in the negative direction at a speed of 30: `jog_coord(2, 3, 30, r_direction=0)`
   - `coord_id`: (`int`) The coordinate axis of the robotic arm; range: 1 to 6.
-  - `direction` (`int`): Controls the direction of movement along the axis; input `0` for movement in the negative direction, input `1` for movement in the positive direction.
+  - `l_direction`: (`int`) Movement direction of the left arm; input `0` for movement in the negative direction, input `1` for movement in the positive direction.
+  - `r_direction`: (`int`) Movement direction of the right arm; input `0` for movement in the negative direction, input `1` for movement in the positive direction.
   - `speed`: 1 to 100.
 
-#### `jog_increment_angle(arm_id, joint_id, increment, speed)`
+#### `jog_increment_angle(arm_id, joint_id, speed, l_increment=None, r_increment=None)`
 
 - **Function:** Incremental control for a single joint angle.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, joint_id, speed, l_increment, r_increment`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + joint_id + l_increment + r_increment + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms
-    - `1`: Left Arm
-    - `2`: Right Arm
-  - `joint_id`: 1 to 9.
-  - `increment`: The incremental movement relative to the current joint angle position.
+    - `1`: Left Arm. For example, to increase the left arm J3 joint angle by 10 degrees at a speed of 30: `jog_increment_angle(1, 3, 30, 10)`
+    - `2`: Right Arm. For example, to decrease the right arm J3 joint angle by 10 degrees at a speed of 30: `jog_increment_angle(2, 3, 30, r_increment=-10)`
+  - `joint_id`: 1 to 7.
+  - `l_increment`: Incremental movement of the left arm relative to the current joint angle position.
+  - `r_increment`: Incremental movement of the right arm relative to the current joint angle position.
   - `speed`: 1 to 100.
 
-#### `jog_increment_coord(arm_id, coord_id, increment, speed)`
+#### `jog_increment_coord(arm_id, coord_id, speed, l_increment=None, r_increment=None)`
 
 - **Function:** Incremental control for a single coordinate axis.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, coord_id, speed, l_increment, r_increment`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + coord_id + l_increment + r_increment + speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms
-    - `1`: Left Arm
-    - `2`: Right Arm
+    - `1`: Left Arm. For example, to increase the left arm x coordinate by 10 at a speed of 30: `jog_increment_coord(1, 1, 30, 10)`
+    - `2`: Right Arm. For example, to decrease the right arm z coordinate by 10 at a speed of 30: `jog_increment_coord(2, 3, 30, r_increment=-10)`
   - `coord_id`: Coordinate axis 1 - 6.
-  - `increment`: Incremental movement relative to the current position coordinates.
+  - `l_increment`: Incremental movement of the left arm relative to the current position coordinates.
+  - `r_increment`: Incremental movement of the right arm relative to the current position coordinates.
   - `speed`: 1 ~ 100
 
 ### 6. Speed/Acceleration Parameters
@@ -469,20 +553,22 @@ print(mc.get_angles())
   - `mode` : `int`
     - `0`: Angular speed
     - `1`: Cartesian speed
-- **Return Value:** Angular speed range: 1–150°/s; Cartesian speed range: 1–200 mm/s.
+- **Return Value:** `list` `[left_value, right_value]`. Angular speed range: 1–150°/s; Cartesian speed range: 1–200 mm/s.
 
-#### `set_max_speed(arm_id, mode, max_speed)`
+#### `set_max_speed(arm_id, mode, left_max_speed=None, right_max_speed=None)`
 
 - **Function:** Set the maximum movement speed.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, mode, left_max_speed, right_max_speed`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + mode + left_max_speed + right_max_speed`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left Arm and Right Arm
-    - `1`: Left Arm
-    - `2`: Right Arm
+    - `1`: Left Arm. For example, to set the maximum angular speed of the left arm to 100: `set_max_speed(1, 0, 100)`
+    - `2`: Right Arm. For example, to set the maximum Cartesian speed of the right arm to 150: `set_max_speed(2, 1, right_max_speed=150)`
   - `mode` : `int`
     - `0`: Angular speed
     - `1`: Cartesian speed
-  - `max_speed`: Angular speed range: 1–150°/s; Cartesian speed range: 1–200 mm/s.
+  - `left_max_speed`: Maximum speed of the left arm. Angular speed range: 1–150°/s; Cartesian speed range: 1–200 mm/s.
+  - `right_max_speed`: Maximum speed of the right arm. Angular speed range: 1–150°/s; Cartesian speed range: 1–200 mm/s.
 
 #### `get_max_acc(mode)`
 
@@ -491,65 +577,63 @@ print(mc.get_angles())
   - `mode` : `int`
     - `0`: Angular acceleration
     - `1`: Cartesian acceleration
-- **Return Value:** Angular acceleration range: 1–150°/s; Cartesian acceleration range: 1–400 mm/s.
+- **Return Value:** `list` `[left_value, right_value]`. Angular acceleration range: 1–150°/s; Cartesian acceleration range: 1–400 mm/s.
 
-#### `set_max_acc(arm_id, mode, max_acc)`
+#### `set_max_acc(arm_id, mode, left_max_acc=None, right_max_acc=None)`
 
 - **Function:** Set the maximum movement acceleration.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, mode, left_max_acc, right_max_acc`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + mode + left_max_acc + right_max_acc`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left Arm and Right Arm
-    - `1`: Left Arm
-    - `2`: Right Arm
+    - `1`: Left Arm. For example, to set the maximum angular acceleration of the left arm to 100: `set_max_acc(1, 0, 100)`
+    - `2`: Right Arm. For example, to set the maximum Cartesian acceleration of the right arm to 200: `set_max_acc(2, 1, right_max_acc=200)`
   - `mode` : `int`
     - `0`: Angular acceleration
     - `1`: Cartesian acceleration
-  - `max_acc`: Angular acceleration range: 1–150°/s; Cartesian acceleration range: 1–400 mm/s.
+  - `left_max_acc`: Maximum acceleration of the left arm. Angular acceleration range: 1–150°/s; Cartesian acceleration range: 1–400 mm/s.
+  - `right_max_acc`: Maximum acceleration of the right arm. Angular acceleration range: 1–150°/s; Cartesian acceleration range: 1–400 mm/s.
 
 ### 7. Software Joint Limits
 
-#### `get_joint_min_angle(joint_id)`
+#### `get_joint_min_angle()`
 
-- **Function:** Retrieves the minimum movement angle for a specified joint.
-- **Parameters:**
-  - `joint_id`: Input Joint ID (Range: 1–9)
-- **Return Value:** `float` (Angle value)
+- **Function:** Retrieves the minimum movement angle limits for all joints.
+- **Return Value:** `list[float]`, length 10, indicating the minimum angle limit of each joint (protocol values ÷ 10, in degrees).
+  - `[0] ~ [6]`: Common minimum angles of J1 ~ J7 for the left and right arms.
+  - `[7]`: Minimum angle of the waist.
+  - `[8]`: Minimum angle of the neck.
+  - `[9]`: Minimum angle of the head.
 
-#### `get_joint_max_angle(joint_id)`
+#### `get_joint_max_angle()`
 
-- **Function:** Retrieves the maximum movement angle for a specified joint.
-- **Parameters:**
-  - `joint_id`: Input Joint ID (Range: 1–9)
-- **Return Value:** `float` (Angle value)
+- **Function:** Retrieves the maximum movement angle limits for all joints.
+- **Return Value:** `list[float]`, length 10, indicating the maximum angle limit of each joint (protocol values ÷ 10, in degrees).
+  - `[0] ~ [6]`: Common maximum angles of J1 ~ J7 for the left and right arms.
+  - `[7]`: Maximum angle of the waist.
+  - `[8]`: Maximum angle of the neck.
+  - `[9]`: Maximum angle of the head.
 
 #### `set_joint_min_angle(arm_id, joint_id, angle)`
 
 - **Function:** Sets the minimum angle limit for a joint.
 - **Parameters:**
-  - `arm_id`: (`int`) Arm ID
-    - `0`: Left and Right Arms
-    - `1`: Left Arm
-    - `2`: Right Arm
-  - `joint_id`: Input Joint ID (Range: 1–6)
+  - `joint_id`: Input Joint ID (Range: 1–7)
   - `angle`: Refer to the limit information for the corresponding joint in the [send_angle()](#send_angleid-degree-speed) interface; the value must not be less than the minimum limit.
 
 #### `set_joint_max_angle(arm_id, joint_id, angle)`
 
 - **Function:** Sets the maximum angle limit for a joint.
 - **Parameters:**
-  - `arm_id`: (`int`) Arm ID
-    - `0`: Left and Right Arms
-    - `1`: Left Arm
-    - `2`: Right Arm
-  - `joint_id`: Input Joint ID (Range: 1–6)
+  - `joint_id`: Input Joint ID (Range: 1–7)
   - `angle`: Refer to the limit information for the corresponding joint in the [send_angle()](#send_angleid-degree-speed) interface; the value must not be greater than the maximum limit.
 
 ### 8. Joint Motor Auxiliary Control
 
 #### `get_servo_encoders()`
 
-- **Function:** Reads the encoder values ​​for all joints.
-- **Return Value:** A list of length 6.
+- **Function:** Reads the waist encoder values ​​(current, zero position).
+- **Return Value:** A list of length 2, e.g., `[Current, Zero Position]`.
 
 #### `set_servo_calibration(arm_id, servo_id)`
 
@@ -561,13 +645,13 @@ print(mc.get_angles())
     - `2`: Right Arm
   - `servo_id`: 1 - 9
 
-#### `set_break(joint_id, value)`
+<!-- #### `set_break(joint_id, value)`
 
 - **Function:** Sets the joint brake status.
 - **Parameters:**
 - `joint_id`: (`int`) Joint ID (1 - 6)
 - `value`: (`int`) 0 - Disable; 1 - Enable
-- **Return Value:** 0: Failure; 1: Success
+- **Return Value:** 0: Failure; 1: Success -->
 
 #### `set_motor_enabled(arm_id, joint_id, state)`
 
@@ -664,11 +748,6 @@ print(mc.get_angles())
 
 ### 12. Runtime Auxiliary Information
 
-#### `get_zero_pos()`
-
-- **Function**: Reads the zero-position encoder values.
-- **Return Value**: A `list` containing the zero-position encoder values ​​for all 6 joints.
-
 #### `get_servo_speeds()`
 
 - **Function**: Retrieves the movement speeds for all joints.
@@ -686,50 +765,38 @@ print(mc.get_angles())
 
 ### 13. End-effector IO Control
 
-#### `set_digital_output(pin_no, pin_signal)`
+#### `set_digital_output(arm_id, pin_no, pin_signal)`
 
 - **Function:** Sets the state of an end-effector IO pin.
 - **Parameters:**
+  - `arm_id`: (`int`) Arm ID
+    - `1`: Left Arm
+    - `2`: Right Arm
   - `pin_no` (int): Pin number; range: 1 to 2.
   - `pin_signal` (int): 0 / 1; 0 = Low level, 1 = High level.
 - **Return Value:**
-  - `1`: Success.
+  - `1`: Completed.
 
-#### `get_digital_input(pin_no)`
+#### `get_digital_input(arm_id, pin_no)`
 
 - **Function:** Retrieves the state of an end-effector IO pin.
-- **Parameters:** `pin_no` (int); range: 1 to 2.
+- **Parameters:**
+  - `arm_id`: (`int`) Arm ID
+    - `1`: Left Arm
+    - `2`: Right Arm
+  - `pin_no` (int): Pin number; range: 1 to 2.
 - **Return Value:** `int` (0 / 1); 0 = Low level, 1 = High level.
 
-#### `get_digital_inputs()`
+#### `get_digital_inputs(arm_id)`
 
-- **Function:** Reads the states of all end-effector pins, including: IN1, IN2, Button 1 (right side), and Button 2 (Button 2 is located closer to the Emergency Stop button, on the left side).
-- **Return Value:** `list[int]` (0 / 1); 0 = Low level, 1 = High level. e.g., `[0, 0, 1, 0]` indicates that Button 1 is pressed. ### 14. End-effector Light Board Functions
+- **Function:** Reads the states of all end-effector pins, including: IN1, IN2, Button 1 (right side), and Button 2 (left side).
+- **Parameters:**
+  - `arm_id`: (`int`) Arm ID
+    - `1`: Left Arm
+    - `2`: Right Arm
+- **Return Value:** `[IN1, IN2, Button 1, Button 2]`; each value is `0` / `1` (low / high). Example: `[0, 0, 1, 0]` means Button 1 is pressed.
 
-<!-- #### `is_btn_clicked()`
-
-- **Function**: Get the status of the button at the end of the robot arm
-- **Return Value**:
-- 0: Not clicked
-- 1: Clicked -->
-
-### 15. Base IO Control
-
-#### `set_base_io_output(pin_no, pin_signal)`
-
-- **Function**: Sets the output state of the base IO pins.
-- **Parameters**:
-  - `pin_no` (`int`): Pin number, range: 1 to 12.
-  - `pin_signal` (`int`): 0 - Low level; 1 - High level.
-
-#### `get_base_io_output(pin_no)`
-
-- **Function**: Gets the input state of the base IO pins.
-- **Parameters**:
-  - `pin_no` (`int`): Pin number, range: 1 to 12.
-- **Return Value**: 0 - Low level; 1 - High level.
-
-### 16. End-effector RS485 Communication Settings
+### 14. End-effector RS485 Communication Settings
 
 #### `tool_serial_write_data(arm_id, command)`
 
@@ -773,14 +840,14 @@ print(mc.get_angles())
 
 #### `get_tool_config(arm_id)`
 
-- **Function:** Retrieves the end-effector RS485 baud rate and timeout duration.
+- **Function:** Retrieves the end-effector baud rate and timeout.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
-    - `1`: Left arm
-    - `2`: Right arm
-- **Return Value:** (`list`) A list containing the baud rate and timeout duration; e.g., [baud_rate, timeout].
+    - `1`: Left Arm
+    - `2`: Right Arm
+- **Return Value:** `list`, formatted as `[baud_rate, timeout_ms]`.
 
-### 17. Tool Coordinate System Operations
+### 15. Tool Coordinate System Operations
 
 #### `set_tool_reference(coords)`
 
@@ -859,7 +926,7 @@ print(mc.get_angles())
   - `0` - Flange (Default)
   - `1` - Tool
 
-### 18. Algorithm Parameters
+### 16. Algorithm Parameters
 
 <!-- #### `get_vr_mode()`
 
@@ -877,20 +944,25 @@ print(mc.get_angles())
 #### `get_model_direction()`
 
 - **Function:** Gets the joint model direction.
-- **Return Value:** Model directions for joints 1 through 6.
-  - `1` - Same direction as the motor.
-  - `0` - Opposite direction to the motor.
+- **Return Value:** `list`, a two-dimensional list formatted as `[[left_arm_joint_directions], [right_arm_joint_directions]]`.
+  - `[0]`: Model directions of J1 ~ J7 on the left arm.
+  - `[1]`: Model directions of J1 ~ J7 on the right arm.
+  - Direction value:
+    - `1` - Same direction as the motor.
+    - `0` - Opposite direction to the motor.
 
-#### `set_model_direction(arm_id, joint_id, direction)`
+#### `set_model_direction(arm_id, joint_id, l_direction=None, r_direction=None)`
 
 - **Function:** Sets the joint model direction.
+- **Note:** When calling this function, pass parameters in the order defined by the function signature: `arm_id, joint_id, l_direction, r_direction`. This order differs from the underlying protocol field order, but it does not affect usage. The command is internally assembled according to the protocol as: `arm_id + joint_id + l_direction + r_direction`.
 - **Parameters:**
   - `arm_id`: (`int`) Arm ID
     - `0`: Left and Right Arms
-    - `1`: Left Arm
-    - `2`: Right Arm
-  - `joint_id (int)`: 1 ~ 9
-  - `direction (int)`: `1` - Same direction as the motor. `0` - Opposite direction to the motor.
+    - `1`: Left Arm. For example, to set left arm J3 to the same direction as the motor: `set_model_direction(1, 3, 1)`
+    - `2`: Right Arm. For example, to set right arm J3 to the opposite direction to the motor: `set_model_direction(2, 3, r_direction=0)`
+  - `joint_id (int)`: 1 ~ 7
+  - `l_direction` (`int`): Model direction of the left arm joint; `1` - same direction as the motor, `0` - opposite direction to the motor.
+  - `r_direction` (`int`): Model direction of the right arm joint; `1` - same direction as the motor, `0` - opposite direction to the motor.
 
 #### `get_filter_len(rank)`
 
@@ -934,7 +1006,7 @@ print(mc.get_angles())
   - `rank_mode (int)`: 1 ~ 4
   - `value (int)`: 0 ~ 1000
 
-### 19. Kinematics Algorithm Interface
+### 17. Kinematics Algorithm Interface
 
 #### `solve_inv_kinematics(target_coords, current_angles)`
 
@@ -944,7 +1016,7 @@ print(mc.get_angles())
   - `current_angles`: `list` — A list of floating-point values ​​representing all current joint angles of the robotic arm.
 - **Return Value:** `list` — A list of floating-point values ​​representing the calculated joint angles.
 
-### 20. Pro Force-Controlled Gripper
+### 18. Pro Force-Controlled Gripper
 
 #### `get_pro_gripper_firmware_version(arm_id, gripper_id=14)`
 
@@ -1276,7 +1348,7 @@ print(mc.get_angles())
   - `True` - Success
   - `False` - Failure
 
-### 21. Aoyi Five-Finger Dexterous Hand
+### 19. Aoyi Five-Finger Dexterous Hand
 
 #### `get_five_fingers_angles(arm_id, hand_id=2)`
 

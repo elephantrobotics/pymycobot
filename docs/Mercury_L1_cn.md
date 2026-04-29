@@ -122,29 +122,37 @@ print(mc.get_angles())
 
 - **功能：** 检查机器是否已设置零位
 
-- **返回值:** `bool`: 如果机器人已初始化校准零位，则为 True，否则为 False
+- **返回值:** `int/list`
+  - `1`: 所有关节均已设置零位
+  - `list`: 存在未设置零位的关节时，返回二维列表，格式为 `[[左臂关节校准状态], [右臂关节校准状态]]`
+    - `[0]`: 左臂 J1 ~ J8 的校准状态
+    - `[1]`: 右臂 J1 ~ J9 的校准状态
+    - 每个状态值中，`1` 表示已设置零位，`0` 表示未设置零位
 
 #### `get_fresh_mode()`
 
-- **功能:** 查询运动模式
+- **功能:** 读取**左右臂**运动模式
 
-- **返回值:** 
-  - `0`: 插补模式
-  - `1`: 刷新模式
+- **返回值:** `list` — `[左臂模式, 右臂模式]`；其中为 `0` - 插补模式； `1` - 刷新模式。
 
-#### `set_fresh_mode()`
+#### `set_fresh_mode(arm_id, mode)`
 
-- **功能:** 设置刷新模式
-  
+- **功能:** 设置插补 / 刷新模式
+
 - **参数:**
-  - `1`: 刷新-总是首先执行最新的命令。
-  - `0`: 插补-以队列的形式按顺序执行指令。
+  - `arm_id`: `int`
+    - `0` — 双臂；
+    - `1` — 左臂；
+    - `2` — 右臂
+  - `mode`: `int`.
+    - `0` — 插补模式（按队列顺序执行）；
+    - `1` — 刷新模式（优先执行最新指令）。
 
-<!-- #### `get_debug_state()`
+#### `get_debug_state()`
 
 - **功能:** 获取当前机器人的调试日志模式。
 
-- **返回值:** `int`: 当前调试日志状态。
+- **返回值:** `list`:  `[left_state, right_state]` 当前调试日志状态: 。
   - `0`: 不记录任何调试日志 
   - `1`: 仅常规调试日志 (_debug.log)
   - `2`: 仅运动相关日志 (_move.log)
@@ -154,11 +162,15 @@ print(mc.get_angles())
   - `6`: 运动 + 电机频率日志 (_move.log + _clock_rate_debug.log)
   - `7`: 记录全部日志
 
-#### `set_debug_state(log_state)`
+#### `set_debug_state(arm_id, log_state)`
 
 - **功能:** 设置当前机器人的调试日志模式。
   
 - **参数:** 
+  - `arm_id`: `int`
+    - `0` — 双臂
+    - `1` — 左臂
+    - `2` — 右臂
   - `log_state`: `int`, 调试日志状态（0 ~ 7）
     - `0`: 不记录任何调试日志 
     - `1`: 仅常规调试日志 (_debug.log)
@@ -171,34 +183,49 @@ print(mc.get_angles())
 - **返回值**：`int`
   - 1-成功
   - 0-失败
-  - -1-错误 -->
+  - -1-错误
 
 #### `get_free_move_mode()`
 
 - **功能:** 读取自由移动模式
 
-- **返回值:** 
+- **返回值:** `list` `[left_mode, right_mode]`，分别表示左臂和右臂的自由移动模式状态。
   - `0`: 关闭自由移动模式
   - `1`: 打开自由移动模式
 
-#### `set_free_move_mode(mode)`
+#### `set_free_move_mode(arm_id, mode)`
 
 - **功能:** 设置自由移动模式（仅当打开自由移动后，按住末端按钮才可放松关节）
   
 - **参数:**
-  - `1`: 打开自由移动模式。
-  - `0`: 关闭自由移动模式。
+  - `arm_id`: `int`
+    - `0` — 双臂
+    - `1` — 左臂
+    - `2` — 右臂
+  - `mode`: `int`
+    - `1`: 打开自由移动模式。
+    - `0`: 关闭自由移动模式。
 
 ### 3. 机器人异常检测
 
 #### `get_robot_status()`
 
 - **功能：** 读取左右臂机器人错误安全状态
-- **返回值:** `list` ,  `[[左臂状态], [右臂状态]]`, 0 - 正常。比如 `[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]`，其他 - 机器人异常
-  - **左臂**
-    - `[关节是否碰撞，是否正在运动，J1是否超限，J2是否超限，J3是否超限，J4是否超限，J5是否超限，J6是否超限，J7是否超限，J8是否超限，J1是否电机硬件报错，J2是否电机硬件报错，J3是否电机硬件报错，J4是否电机硬件报错，J5是否电机硬件报错，J6是否电机硬件报错，J7是否电机硬件报错，J8是否电机硬件报错，J1是否软件通信报错，J2是否软件通信报错，J3是否软件通信报错，J4是否软件通信报错，J5是否软件通信报错，J6是否软件通信报错，J7是否软件通信报错，J8是否软件通信报错]`
-  - **右臂**
-    - `[关节是否碰撞，是否正在运动，J1是否超限，J2是否超限，J3是否超限，J4是否超限，J5是否超限，J6是否超限，J7是否超限，J8是否超限，J9是否超限，J1是否电机硬件报错，J2是否电机硬件报错，J3是否电机硬件报错，J4是否电机硬件报错，J5是否电机硬件报错，J6是否电机硬件报错，J7是否电机硬件报错，J8是否电机硬件报错，J9是否电机硬件报错，J1是否软件通信报错，J2是否软件通信报错，J3是否软件通信报错，J4是否软件通信报错，J5是否软件通信报错，J6是否软件通信报错，J7是否软件通信报错，J8是否软件通信报错，J9是否软件通信报错]`
+- **返回值:** `list`，二维列表，格式为 `[[左臂状态], [右臂状态]]`。每个状态值中 `0` 表示正常，非 `0` 表示对应项异常。
+  - `[0]`: 左臂状态列表，长度为 26
+  - `[1]`: 右臂状态列表，长度为 29
+  - 左臂状态索引说明：
+    - `[0]`: 关节是否碰撞
+    - `[1]`: 是否正在运动
+    - `[2] ~ [9]`: J1 ~ J8 是否超限
+    - `[10] ~ [17]`: J1 ~ J8 是否电机硬件报错
+    - `[18] ~ [25]`: J1 ~ J8 是否软件通信报错
+  - 右臂状态索引说明：
+    - `[0]`: 关节是否碰撞
+    - `[1]`: 是否正在运动
+    - `[2] ~ [10]`: J1 ~ J9 是否超限
+    - `[11] ~ [19]`: J1 ~ J9 是否电机硬件报错
+    - `[20] ~ [28]`: J1 ~ J9 是否软件通信报错
 
 #### `servo_restore(arm_id, joint_id)`
 
@@ -208,18 +235,15 @@ print(mc.get_angles())
     - `0`: 左臂和右臂
     - `1`: 左臂
     - `2`: 右臂
-  - `joint_id`: int. 关节 id 1 - 7，254-所有关节恢复。
+  - `joint_id`: int. 关节 id 1 - 9，254-所有关节恢复。
 
-#### `get_comm_error_counts(arm_id, joint_id)`
+#### `get_comm_error_counts(joint_id)`
 
 - **功能**：读取通信异常次数
 - **参数**：
-  - `arm_id`: `int` 手臂ID  
-    - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
   - `joint_id`: int. 关节 id 1 - 9
-- **返回值**： `list` 长度为4的列表，比如[0, 0, 0, 0]，分别代表：
+- **返回值**： `list` 二维列表，格式为 `[[左臂错误统计], [右臂错误统计]]`。
+  例如：`[[0, 0, 0, 0], [0, 0, 0, 0]]`，每个子列表中的 4 个值依次表示：
   - `[0]`: 关节发送异常次数
   - `[1]`: 关节读取异常次数
   - `[2]`: 末端发送异常次数
@@ -228,7 +252,7 @@ print(mc.get_angles())
 #### `get_error_information()`
 
 - **功能**：读取机器人错误信息
-- **返回值**：`list[int]`, [左臂状态，右臂状态]
+- **返回值**：`list[int]`, `[左臂状态，右臂状态]`
   - `0`：无错误信息
   - `1~6`：对应关节超出限位位置。
   - `32~36`：坐标运动异常。
@@ -247,31 +271,37 @@ print(mc.get_angles())
   - `1`: 左臂
   - `2`: 右臂
 
-#### `over_limit_return_zero()`
+#### `over_limit_return_zero(arm_id)`
 
-- **功能** 机器关节超限回零指令
+- **功能** 机器关节超限回零 (禁止在回零结束前发送stop以外的运动指令)
+- **参数:** (`int`) `arm_id` 手臂ID
+  - `0`: 左臂和右臂
+  - `1`: 左臂
+  - `2`: 右臂
 
 #### `get_motors_run_err()`
 
 - **功能**：读取机器人运动中的电机错误信息
-- **返回值**：`list`, 长度为6的列表，全部是0，代表正常
+- **返回值**：`list`, 长度为14的列表，全部是0，代表正常
 
 ### 4. 机器人运动控制
 
-#### `set_control_mode(mode)`
+#### `set_control_mode(arm_id, mode=0)`
 
-- **功能**：设置机器人运动模式
+- **功能**：设置机器人运动模式（左臂 / 右臂 / 双臂）
 - **参数**：
-  - `mode`: `int`. 0 ~ 1，默认0
-    - `0`: 位置模式
-    - `1`: 力矩模式
+  - `arm_id`: `int`.
+    - `0` — 双臂
+    - `1` — 左臂
+    - `2` — 右臂
+  - `mode`: `int`. 0 ~ 1，默认 0
+    - `0`: 位置模式：常规的控制模式，一般都使用这个
+    - `1`: 力矩模式：开启后会自动开启零力拖动功能，此模式下不可以控制机械臂运动
 
 #### `get_control_mode()`
 
-- **功能**：获取机器人运动模式
-- **返回值**：
-  - `0`: 位置模式
-  - `1`: 力矩模式
+- **功能**：读取**左右臂**当前运动模式
+- **返回值**：`list` — `[左臂模式, 右臂模式]`，其中 `0` -位置模式  `1` - 力矩模式
   
 #### `get_angles()`
 
@@ -288,93 +318,102 @@ print(mc.get_angles())
 #### `send_angle(arm_id, joint_id, speed, left_angle=None, right_angle=None, _async=False)`
 
 - **功能：** 向机械臂发送一个关节角度（arm_id模式为1/2时，另一条臂值任意）
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, joint_id, speed, left_angle, right_angle, _async`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + joint_id + left_angle + right_angle + speed`。
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂，需同时输入 `left_angle` 和 `right_angle` 参数。
-    - `1`: 左臂，只输入 `left_angle` 参数即可。
-    - `2`: 右臂，只输入 `right_angle` 参数即可。
+    - `1`: 左臂，只输入 `left_angle` 参数即可。比如 左臂 J5关节转动50度，速度为20：`send_angle(1, 5, 20, 50)`
+    - `2`: 右臂，只输入 `right_angle` 参数即可，比如 右臂 J3关节转动50度，速度为20：`send_angle(2, 3, 20, right_angle=50)`。
   - `joint_id`：关节 id，范围 int 1-9
   - `speed`：（`int`）1 ~ 100
   - `left_angle`：角度值（`float`）
-      | 关节 Id | 范围 |
-      | ---- | ---- |
-      | 1 | -181 ~ 135 |
-      | 2 | -46 ~ 96 |
-      | 3 | -155 ~ 155 |
-      | 4 | -135 ~ 18 |
-      | 5 | -155 ~ 155 |
-      | 6 | -115 ~ 115 |
-      | 7 | -155 ~ 155 |
-      | 8（腰部） | 0 ~ 40 |
+  
+| 关节 Id | 范围 |
+| ---- | ---- |
+| 1 | -181 ~ 135 |
+| 2 | -46 ~ 96 |
+| 3 | -155 ~ 155 |
+| 4 | -135 ~ 18 |
+| 5 | -155 ~ 155 |
+| 6 | -115 ~ 115 |
+| 7 | -155 ~ 155 |
+| 8（腰部） | 0 ~ 40 |
   
   - `right_angle`：角度值（`float`）
-      | 关节 Id | 范围 |
-      | ---- | ---- |
-      | 1 | -181 ~ 135 |
-      | 2 | -46 ~ 96 |
-      | 3 | -155 ~ 155 |
-      | 4 | -135 ~ 18 |
-      | 5 | -155 ~ 155 |
-      | 6 | -115 ~ 115 |
-      | 7 | -155 ~ 155 |
-      | 8（脖子） | -50 ~ 50 |
-      | 9（头部） | -82 ~ 82 |
+
+| 关节 Id | 范围 |
+| ---- | ---- |
+| 1 | -181 ~ 135 |
+| 2 | -46 ~ 96 |
+| 3 | -155 ~ 155 |
+| 4 | -135 ~ 18 |
+| 5 | -155 ~ 155 |
+| 6 | -115 ~ 115 |
+| 7 | -155 ~ 155 |
+| 8（脖子） | -50 ~ 50 |
+| 9（头部） | -82 ~ 82 |
+
   - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
 #### `send_angles(arm_id, speed, left_angles=None, right_angles=None, _async=False)`
 
 - **功能：** 将所有角度发送到机械臂的所有关节（arm_id模式为1/2时，另一条臂值任意）
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, speed, left_angles, right_angles, _async`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + left_angles + right_angles + speed`。
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂，需同时输入 `left_angles` 和 `right_angles` 参数。
-    - `1`: 左臂，只输入 `left_angles` 参数即可。
-    - `2`: 右臂，只输入 `right_angles` 参数即可。
+    - `1`: 左臂，只输入 `left_angles` 参数即可。比如左臂关节回零，速度30：`send_angles(1, 30, [0]*7)`
+    - `2`: 右臂，只输入 `right_angles` 参数即可。比如右臂关节回零，速度20：`send_angles(2, 30, right_angles[0]*7)`
   - `speed`：（`int`）1 ~ 100
-  - `left_angles`：度数列表（`List[float]`），长度 8
-  - `right_angles`：度数列表（`List[float]`），长度 9
+  - `left_angles`：度数列表（`List[float]`），长度 7
+  - `right_angles`：度数列表（`List[float]`），长度 7
   - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
 #### `get_coords()`
 
 - **功能：** 从基于基准的坐标系获取机械臂坐标
-- **返回值：** 左右臂坐标浮点列表：`[[x, y, z, rx, ry, rz], [x, y, z, rx, ry, rz]]`
+- **返回值：** 二维列表，分别代表左右臂坐标浮点列表：`[[x, y, z, rx, ry, rz], [x, y, z, rx, ry, rz]]`
 
 #### `send_coord(arm_id, coord_id, speed, left_coord=None, right_coord=None, _async=False)`
 
 - **功能：** 向机械臂发送一个坐标（arm_id模式为1/2时，另一条臂值任意）
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, coord_id, speed, left_coord, right_coord, _async`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + coord_id + left_coord + right_coord + speed`。
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂，需同时输入 `left_coord` 和 `right_coord` 参数。
-    - `1`: 左臂，只输入 `left_coord` 参数即可。
-    - `2`: 右臂，只输入 `right_coord` 参数即可。
+    - `1`: 左臂，只输入 `left_coord` 参数即可。比如左臂 x 坐标移动到 100，速度为 30：`send_coord(1, 1, 30, 100)`
+    - `2`: 右臂，只输入 `right_coord` 参数即可。比如右臂 z 坐标移动到 200，速度为 30：`send_coord(2, 3, 30, right_coord=200)`
   - `coord_id`：向机械臂发送一个坐标，1-6 对应 [x, y, z, rx, ry, rz]
   - `speed` (`int`)：1 ~ 100
   - `left_coord`：坐标值（`float`）
-      | 坐标 ID | 范围 |
-      | ---- | ---- |
-      | x | -1000 ~ 1000 |
-      | y | -474 ~ 1000 |
-      | z | -1000 ~ 1000 |
-      | rx | -180 ~ 180 |
-      | ry | -180 ~ 180 |
-      | rz | -180 ~ 180 |
+  
+| 坐标 ID | 范围 |
+| ---- | ---- |
+| x | -1000 ~ 1000 |
+| y | -474 ~ 1000 |
+| z | -1000 ~ 1000 |
+| rx | -180 ~ 180 |
+| ry | -180 ~ 180 |
+| rz | -180 ~ 180 |
+    
   - `right_coord`：坐标值（`float`）,范围同 `left_coord` 一样。
   - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
 #### `send_coords(arm_id, speed, left_coords=None, right_coords=None, _async=False)`
 
-- **功能：**：发送整体坐标和姿态，将机械臂头部从原点移动到您指定的点（arm_id模式为1/2时，另一条臂值任意）
+- **功能：** 发送整体坐标和姿态，将机械臂末端从原点移动到您指定的点（arm_id模式为1/2时，另一条臂值任意）
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, speed, left_coords, right_coords, _async`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + left_coords + right_coords + speed`。
 - **参数：**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂，需同时输入 `left_coords` 和 `right_coords` 参数。
-    - `1`: 左臂，只输入 `left_coords` 参数即可。
-    - `2`: 右臂，只输入 `right_coords` 参数即可。
+    - `1`: 左臂，只输入 `left_coords` 参数即可。比如左臂移动到指定坐标，速度为 30：`send_coords(1, 30, [100, 0, 200, 0, 0, 0])`
+    - `2`: 右臂，只输入 `right_coords` 参数即可。比如右臂移动到指定坐标，速度为 30：`send_coords(2, 30, right_coords=[100, 0, 200, 0, 0, 0])`
   - `speed` (`int`)：1 ~ 100
   - `left_coords`: 坐标列表，值`[x,y,z,rx,ry,rz]`，长度6
   - `right_coords`: 坐标列表，值`[x,y,z,rx,ry,rz]`，长度6
   - `_async`: 运动闭环开关，默认开启-False；关闭-True。
 
-#### `pause(arm_id, deceleration=0)`
+#### `pause(arm_id)`
 
 - **功能：** 控制指令暂停核心并停止所有运动指令
 - **参数:**
@@ -382,19 +421,15 @@ print(mc.get_angles())
     - `0`: 左臂和右臂
     - `1`: 左臂
     - `2`: 右臂
-  - `deceleration`： 是否减速并停止，默认为 0。0和1均代表缓暂停
 - **返回值**:
-  - `1` - stopped
-  - `0` - not stop
-  - `-1` - error
+  - `1` - 已暂停
+  - `0` - 未暂停
+  - `-1` - 错误
 
 #### `is_paused()`
 
-- **功能：** 检查程序是否暂停了移动命令
-- **返回值:**
-  - `1` - paused
-  - `0` - not paused
-  - `-1` - error
+- **功能：** 读取左右臂程序是否暂停了移动命令
+- **返回值:** `list` — `[左臂, 右臂]`； `1` - 已暂停，`0` - 未暂停；`-1` - 错误
 
 #### `resume(arm_id)`
 
@@ -405,7 +440,7 @@ print(mc.get_angles())
     - `1`: 左臂
     - `2`: 右臂
   
-#### `stop(arm_id, deceleration=0)`
+#### `stop(arm_id)`
 
 - **功能：** 停止机器人运动
 - **参数:**
@@ -413,81 +448,94 @@ print(mc.get_angles())
     - `0`: 左臂和右臂
     - `1`: 左臂
     - `2`: 右臂
-  - `deceleration` ： 是否减速并停止。默认为 0。0和1均代表缓停
 - **返回值**:
   - `1` - 已停止
   - `0` - 未停止
   - `-1` - 错误
 
-#### `is_in_position(data, flag)`
+#### `is_in_position(arm_id, mode, left_data=None, right_data=None)`
 
 - **功能** : 判断是否到达点位。
+- **注意:** 函数调用时请按当前接口签名传参：`arm_id, mode, left_data, right_data`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + mode + left_data + right_data`。
 - **参数:**
-  - `data`:提供一组数据，可以是角度或坐标值。假设输入角度长度范围为 6，输入坐标值长度范围为 6
-  - `flag` 数据类型（值范围 0 或 1）
+  - `arm_id`: (`int`) 手臂ID
+    - `0`: 左臂和右臂
+    - `1`: 左臂。比如判断左臂是否到达零位角度：`is_in_position(1, 0, [0]*7)`
+    - `2`: 右臂。比如判断右臂是否到达零位角度：`is_in_position(2, 0, right_data=[0]*7)`
+  - `mode` ~`int` 范围 0 ~ 1
     - `0`: 角度值列表
     - `1`: 坐标值列表
-- **返回值**:
-  - `1` - true
-  - `0` - false
-  - `-1 ` - error
+  - `left_data`:提供一组左臂数据，可以是角度或坐标值。假设输入角度长度范围为 7，输入坐标值长度范围为 6
+  - `right_data`:提供一组右臂数据，可以是角度或坐标值。假设输入角度长度范围为 7，输入坐标值长度范围为 6
+- **返回值**: `list`，格式为 `[左臂状态, 右臂状态]`。
+  - `[0]`: 左臂是否到达目标点位
+  - `[1]`: 右臂是否到达目标点位
+  - 每个状态值含义：
+    - `1` - 已到达
+    - `0` - 未到达
+    - `-1` - 错误
 
 #### `is_moving()`
 
-- **功能：** 检测机器人是否在运动
-- **返回值:**
-  - `1` 正在运动
-  - `0` 停止运动
-  - `-1` 错误
+- **功能：** 读取左右臂是否在运动
+- **返回值:** `list` — `[左臂, 右臂]`； `1` - 运动中，`0` - 静止；`-1` - 错误
 
 ### 5. JOG 模式和操作
 
-#### `jog_angle(arm_id, joint_id, direction, speed)`
+#### `jog_angle(arm_id, joint_id,  speed, l_direction=None, r_direction=None)`
 
 - **功能：** jog 控制角度，关节持续运动
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, joint_id, speed, l_direction, r_direction`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + joint_id + l_direction + r_direction + speed`。
 - **参数**:
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
-  - `joint_id`: 表示机械臂的关节ID，范围 1 ~ 9
-  - `direction(int)`: 控制机械臂运动方向，输入`0`为负值方向运动，输入`1`为正值方向运动
+    - `1`: 左臂。比如左臂 J3 关节以速度 30 正方向持续运动：`jog_angle(1, 3, 30, 1)`
+    - `2`: 右臂。比如右臂 J3 关节以速度 30 负方向持续运动：`jog_angle(2, 3, 30, r_direction=0)`
+  - `joint_id`: 表示机械臂的关节ID，范围 1 ~ 7
+  - `l_direction`: (`int`) 左臂运动方向，输入`0`为负值方向运动，输入`1`为正值方向运动
+  - `r_direction`: (`int`) 右臂运动方向，输入`0`为负值方向运动，输入`1`为正值方向运动
   - `speed`: 1 ~ 100
 
-#### `jog_coord(arm_id, coord_id, direction, speed)`
+#### `jog_coord(arm_id, coord_id, speed, l_direction=None, r_direction=None)`
 
 - **功能：** jog 控制坐标， 坐标持续运动.
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, coord_id, speed, l_direction, r_direction`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + coord_id + l_direction + r_direction + speed`。
 - **参数:**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `1`: 左臂。比如左臂 x 轴以速度 30 正方向持续运动：`jog_coord(1, 1, 30, 1)`
+    - `2`: 右臂。比如右臂 z 轴以速度 30 负方向持续运动：`jog_coord(2, 3, 30, r_direction=0)`
   - `coord_id`: (`int`) 机械臂坐标轴范围：1~6
-  - `direction`:(`int`) 控制机械臂运动方向，输入`0`为负值方向运动，输入`1`为正值方向运动
+  - `l_direction`: (`int`) 左臂运动方向，输入`0`为负值方向运动，输入`1`为正值方向运动
+  - `r_direction`: (`int`) 右臂运动方向，输入`0`为负值方向运动，输入`1`为正值方向运动
   - `speed`: 1 ~ 100
 
-#### `jog_increment_angle(arm_id, joint_id, increment, speed)`
+#### `jog_increment_angle(arm_id, joint_id, speed, l_increment=None, r_increment=None)`
 
 - **功能：** 单关节角度增量控制
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, joint_id, speed, l_increment, r_increment`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + joint_id + l_increment + r_increment + speed`。
 - **参数**:
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
-  - `joint_id`: 1-9
-  - `increment`: 基于当前位置角度的增量移动
+    - `1`: 左臂。比如左臂 J3 关节在当前位置基础上增加 10 度，速度 30：`jog_increment_angle(1, 3, 30, 10)`
+    - `2`: 右臂。比如右臂 J3 关节在当前位置基础上减少 10 度，速度 30：`jog_increment_angle(2, 3, 30, r_increment=-10)`
+  - `joint_id`: 1-7
+  - `l_increment`: 左臂基于当前位置角度的增量移动
+  - `r_increment`: 右臂基于当前位置角度的增量移动
   - `speed`: 1 ~ 100
 
-#### `jog_increment_coord(arm_id, coord_id, increment, speed)`
+#### `jog_increment_coord(arm_id, coord_id, speed, l_increment=None, r_increment=None)`
 
 - **功能：** 单坐标增量控制
+- **注意：** 函数调用时请按当前接口签名传参：`arm_id, coord_id, speed, l_increment, r_increment`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + coord_id + l_increment + r_increment + speed`。
 - **参数**:
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `1`: 左臂。比如左臂 x 坐标在当前位置基础上增加 10，速度 30：`jog_increment_coord(1, 1, 30, 10)`
+    - `2`: 右臂。比如右臂 z 坐标在当前位置基础上减少 10，速度 30：`jog_increment_coord(2, 3, 30, r_increment=-10)`
   - `coord_id`: 坐标轴 1 - 6.
-  - `increment`: 基于当前位置坐标的增量移动
+  - `l_increment`: 左臂基于当前位置坐标的增量移动
+  - `r_increment`: 右臂基于当前位置坐标的增量移动
   - `speed`: 1 ~ 100
 
 ### 6. 速度/加速度参数
@@ -499,20 +547,22 @@ print(mc.get_angles())
   - `mode` : `int`
     - `0`: 角度速度
     - `1`: 坐标速度
-- **返回值**：角速度范围1～150°/s，坐标速度范围1～200mm/s
+- **返回值**：`list` [左臂值，右臂值]，角速度范围1～150°/s，坐标速度范围1～200mm/s
 
-#### `set_max_speed(arm_id, mode, max_speed)`
+#### `set_max_speed(arm_id, mode, left_max_speed=None, right_max_speed=None)`
 
 - **功能:** 设置最大运动速度
+- **注意:** 函数调用时请按当前接口签名传参：`arm_id, mode, left_max_speed, right_max_speed`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + mode + left_max_speed + right_max_speed`。
 - **参数:**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `1`: 左臂。比如设置左臂最大角度速度为 100：`set_max_speed(1, 0, 100)`
+    - `2`: 右臂。比如设置右臂最大坐标速度为 150：`set_max_speed(2, 1, right_max_speed=150)`
   - `mode` : `int`
     - `0`: 角度速度
     - `1`: 坐标速度
-  - `max_speed`: 角度速度范围1～150°/s，坐标速度范围1～200mm/s
+  - `left_max_speed`: 左臂角度速度范围1～150°/s，坐标速度范围1～200mm/s
+  - `right_max_speed`: 右臂角度速度范围1～150°/s，坐标速度范围1～200mm/s
 
 #### `get_max_acc(mode)`
 
@@ -521,82 +571,64 @@ print(mc.get_angles())
   - `mode` : `int`
     - `0`: 角度加速度
     - `1`: 坐标加速度
-- **返回值**：角度加速度范围1～150°/s，坐标加速度范围1～400mm/s
+- **返回值**：`list` [左臂值，右臂值]，角度加速度范围1～150°/s，坐标加速度范围1～400mm/s
 
-#### `set_max_acc(arm_id, mode, max_acc)`
+#### `set_max_acc(arm_id, mode, left_max_acc=None, right_max_acc=None)`
 
 - **功能:** 设置最大运动加速度
+- **注意:** 函数调用时请按当前接口签名传参：`arm_id, mode, left_max_acc, right_max_acc`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + mode + left_max_acc + right_max_acc`。
 - **参数:**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
+    - `1`: 左臂。比如设置左臂最大角度加速度为 100：`set_max_acc(1, 0, 100)`
+    - `2`: 右臂。比如设置右臂最大坐标加速度为 200：`set_max_acc(2, 1, right_max_acc=200)`
   - `mode` : `int`
     - `0`: 角度加速度
     - `1`: 坐标加速度
-  - `max_acc`: 角度加速度范围1～150°/s，坐标加速度范围1～400mm/s
+  - `left_max_acc`: 左臂角度加速度范围1～150°/s，坐标加速度范围1～400mm/s
+  - `right_max_acc`: 右臂角度加速度范围1～150°/s，坐标加速度范围1～400mm/s
 
 ### 7. 软件关节限位
 
-#### `get_joint_min_angle(joint_id)`
+#### `get_joint_min_angle()`
 
-- **功能:** 获取指定关节的最小运动角度
-- **参数:**
-  - `joint_id` : 输入关节ID（范围1-9）
-- **返回值**：`float` 角度值
+- **功能:** 读取全部关节的最小运动角度（软件限位）
 
-#### `get_joint_max_angle(joint_id)`
+- **返回值**：`list[float]`，长度为 10，表示各关节的最小角度限制（协议值 ÷10 后的度）。
+  - `[0] ~ [6]`: 左右臂共同的 J1 ~ J7 最小角度
+  - `[7]`: 腰部最小角度
+  - `[8]`: 颈部最小角度
+  - `[9]`: 头部最小角度
 
-- **功能:** 获取指定关节的最大运动角度
-- **参数:**
-  - `joint_id` : 输入关节ID（范围1-9）
-- **返回值**：`float` 角度值
+#### `get_joint_max_angle()`
 
-#### `set_joint_min_angle(arm_id, joint_id, angle)`
+- **功能:** 读取全部关节的最大运动角度（软件限位）
+- **返回值**：`list[float]`，长度为 10，表示各关节的最大角度限制（协议值 ÷10 后的度）。
+  - `[0] ~ [6]`: 左右臂共同的 J1 ~ J7 最大角度
+  - `[7]`: 腰部最大角度
+  - `[8]`: 颈部最大角度
+  - `[9]`: 头部最大角度
+
+#### `set_joint_min_angle(joint_id, angle)`
 
 - **功能:** 设置最小关节角度限制
 - **参数:**
-  - `arm_id`: (`int`) 手臂ID
-    - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
-  - `joint_id` : 输入关节ID（范围1-6）
+  - `joint_id` : 输入关节ID（范围1-7）
   - `angle`: 参考[send_angle()](#send_angleid-degree-speed)接口中对应关节的限制信息，不得小于最小值
 
 #### `set_joint_max_angle(arm_id, joint_id, angle)`
 
 - **功能：** 设置最大关节角度限制
 - **参数：**
-  - `arm_id`: (`int`) 手臂ID
-    - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
-  - `joint_id` ：输入关节ID（范围1-6）
+  - `joint_id` ：输入关节ID（范围1-7）
   - `angle`：参考[send_angle()](#send_angleid-degree-speed)接口中对应关节的限制信息，不得大于最大值
 
 ### 8. 关节电机辅助控制
 
 #### `get_servo_encoders()`
 
-- **功能**：读取全关节编码器值
-- **返回值**： 长度为6的列表
-
-<!-- #### `is_servo_enable(servo_id)`
-
-- **功能：** Detecting joint connection status
-- **参数:** ` servo id` 1-7
-- **返回值:**
-  - `1`: Connection successful
-  - `0`: not connected
-  - `-1`: error
-
-#### `is_all_servo_enable()`
-
-- **功能：** Detect the status of all joint connections
-- **返回值:**
-  - `1`: Connection successful
-  - `0`: not connected
-  - `-1`: error -->
+- **功能**：读取腰部编码器值（当前，零位）
+- **返回值**： 长度为2的列表，比如 `[当前，零位]`
 
 #### `set_servo_calibration(arm_id, servo_id)`
 
@@ -608,13 +640,13 @@ print(mc.get_angles())
     - `2`: 右臂
   - `servo_id`: 1 - 9
 
-#### `set_break（joint_id, value）`
+<!-- #### `set_break（joint_id, value）`
 
 - **功能：** 设置关节刹车
 - **参数**：
   - `joint_id`: int. 关节 id 1 - 6
   - `value`: int. 0 - 掉使能, 1 - 使能
-- **返回值:** 0 : 失败; 1 : 成功
+- **返回值:** 0 : 失败; 1 : 成功 -->
 
 #### `set_motor_enabled(arm_id, joint_id, state`
 
@@ -711,11 +743,6 @@ print(mc.get_angles())
 
 ### 12. 运行辅助信息
 
-#### `get_zero_pos()`
-
-- **功能**: 读取零位编码器值
-- **返回值:** `list`6个关节的零编码器的值
-
 #### `get_servo_speeds()`
 
 - **功能**：获取所有关节的运动速度
@@ -733,57 +760,43 @@ print(mc.get_angles())
 
 ### 13. 末端 IO 控制
 
-#### `set_digital_output(pin_no, pin_signal)`
+#### `set_digital_output(arm_id, pin_no, pin_signal)`
 
 - **功能:** 设置末端IO状态
 - **参数**
+  - `arm_id`: (`int`) 手臂ID
+    - `1`: 左臂
+    - `2`: 右臂
   - `pin_no` (int): 引脚号，范围 1 ~ 2
   - `pin_signal` (int): 0 / 1, 0 - 低电平，1 - 高电平
 - **返回值:**
   - `1`: 完成
 
-#### `get_digital_input(pin_no)`
+#### `get_digital_input(arm_id, pin_no)`
 
 - **功能:** 获取末端IO状态
-- **参数**: `pin_no` (int)，范围 1 ~ 2
+- **参数**:
+  - `arm_id`: (`int`) 手臂ID
+    - `1`: 左臂
+    - `2`: 右臂
+  - `pin_no` (int)，范围 1 ~ 2
 - **返回值**: `int` 0 / 1, 0 - 低电平，1 - 高电平
 
-#### `get_digital_inputs()`
+#### `get_digital_inputs(arm_id)`
 
-- **功能:** 读取末端所有引脚的状态，包括：IN1、IN2、按钮 1（右侧）以及按钮 2（按钮 2 更靠近紧急停止按钮，位于左侧）。
-- **返回值**: `list[int]` 0 / 1, 0 - 低电平，1 - 高电平。 eg: [0, 0, 1, 0]代表按钮1被按下。
+- **功能:** 读取末端所有引脚状态，包括：IN1、IN2、按钮 1（右侧）以及按钮 2（左侧）。
+- **参数**:
+  - `arm_id`: (`int`) 手臂ID
+    - `1`: 左臂
+    - `2`: 右臂
+- **返回值:** `[IN1, IN2, 按钮1, 按钮2]`，每个值为 0 / 1（低/高电平）。例如 `[0, 0, 1, 0]` 表示按钮 1 被按下。
 
-### 14. 末端灯板功能
-
-<!-- #### `is_btn_clicked()`
-
-- **功能**: Get the status of the button at the end of the robot arm
-- **返回值**:
-  - 0: no clicked
-  - 1: clicked -->
-
-### 15. 底部 IO 控制
-
-#### `set_base_io_output(pin_no, pin_signal)`
-
-- **功能**：设置底部IO输出状态
-- **参数**：
-  - `pin_no` (`int`) 引脚号，范围 1 ~ 12
-  - `pin_signal` (`int`): 0 - 低电平. 1 - 高电平
-
-#### `get_base_io_output(pin_no)`
-
-- **功能：** 获取底部IO输入状态
-- **参数:**
-  - `pin_no` (`int`) 引脚号，范围 1 ~ 12
-- **返回值:** 0 - 低电平. 1 - 高电平 
-
-### 16. 设置末端485通信
+### 14. 设置末端485通信
 
 #### `tool_serial_write_data(arm_id, command)`
 
 - **功能：** 末端485发送数据，数据长度范围为1~45字节
-- **参数**： 
+- **参数**：
   - `arm_id`: (`int`) 手臂ID
     - `1`: 左臂
     - `2`: 右臂
@@ -798,7 +811,7 @@ print(mc.get_angles())
     - `1`: 左臂
     - `2`: 右臂
   - `main_version (str)`: 主次版本号，比如 `'1.1'`
-  - `modified_version (int)`: 更正版本号，范围 0 ~ 255，默认是 0 
+  - `modified_version (int)`: 更正版本号，范围 0 ~ 255，默认是 0
 
 #### `set_tool_serial_baud_rate(arm_id, baud_rate=115200)`
 
@@ -822,14 +835,14 @@ print(mc.get_angles())
 
 #### `get_tool_config(arm_id)`
 
-- **功能：** 获取末端485波特率和超时时间
-- **参数：**
+- **功能：** 读取末端波特率与超时时间。
+- **参数**: 
   - `arm_id`: (`int`) 手臂ID
     - `1`: 左臂
     - `2`: 右臂
-- **返回值:** (`list`) 包含波特率和超时时间的列表，比如：[波特率, 超时时间]
+- **返回值:** `list`，格式为 `[波特率, 超时时间(ms)]`。
 
-### 17. 工具坐标系操作
+### 15. 工具坐标系操作
 
 #### `set_tool_reference(coords)`
 
@@ -837,14 +850,14 @@ print(mc.get_angles())
 - **参数**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
 
-      | 坐标 ID | 范围 |
-      | ---- | ---- |
-      | x | -1000 ~ 1000 |
-      | y | -1000 ~ 1000 |
-      | z | -1000 ~ 1000 |
-      | rx | -180 ~ 180 |
-      | ry | -180 ~ 180 |
-      | rz | -180 ~ 180 |
+| 坐标 ID | 范围 |
+| ---- | ---- |
+| x | -1000 ~ 1000 |
+| y | -1000 ~ 1000 |
+| z | -1000 ~ 1000 |
+| rx | -180 ~ 180 |
+| ry | -180 ~ 180 |
+| rz | -180 ~ 180 |
 
 #### `get_tool_reference(coords)`
 
@@ -857,14 +870,14 @@ print(mc.get_angles())
 - **参数**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
 
-      | 坐标 ID | 范围 |
-      | ---- | ---- |
-      | x | -1000 ~ 1000 |
-      | y | -1000 ~ 1000 |
-      | z | -1000 ~ 1000 |
-      | rx | -180 ~ 180 |
-      | ry | -180 ~ 180 |
-      | rz | -180 ~ 180 |
+| 坐标 ID | 范围 |
+| ---- | ---- |
+| x | -1000 ~ 1000 |
+| y | -1000 ~ 1000 |
+| z | -1000 ~ 1000 |
+| rx | -180 ~ 180 |
+| ry | -180 ~ 180 |
+| rz | -180 ~ 180 |
 
 #### `get_world_reference()`
 
@@ -908,7 +921,7 @@ print(mc.get_angles())
   - `0` - 法兰（默认）
   - `1` - 工具
 
-### 18. 算法参数
+### 16. 算法参数
 
 <!-- #### `get_vr_mode()`
 
@@ -926,20 +939,25 @@ print(mc.get_angles())
 #### `get_model_direction()`
 
 - **功能:** 获取关节模型方向
-- **返回值:** 1-6关节的模型方向
-  - `1` - 与电机同向
-  - `0` - 与电机反向
+- **返回值:** `list`，二维列表，格式为 `[[左臂关节方向], [右臂关节方向]]`。
+  - `[0]`: 左臂 J1 ~ J7 的模型方向
+  - `[1]`: 右臂 J1 ~ J7 的模型方向
+  - 每个方向值含义：
+    - `1` - 与电机同向
+    - `0` - 与电机反向
 
-#### `set_model_direction(arm_id, joint_id, direction)`
+#### `set_model_direction(arm_id, joint_id, l_direction=None, r_direction=None)`
 
 - **功能:** 设置关节模型方向
+- **注意:** 函数调用时请按当前接口签名传参：`arm_id, joint_id, l_direction, r_direction`。该顺序与底层协议字段顺序不同，但不影响使用；内部下发指令时会按协议要求组织为：`arm_id + joint_id + l_direction + r_direction`。
 - **参数:**
   - `arm_id`: (`int`) 手臂ID
     - `0`: 左臂和右臂
-    - `1`: 左臂
-    - `2`: 右臂
-  - `joint_id (int)`: 1 ~ 9
-  - `direction (int)`: `1` - 与电机同向. `0` - 与电机反向
+    - `1`: 左臂。比如设置左臂 J3 与电机同向：`set_model_direction(1, 3, 1)`
+    - `2`: 右臂。比如设置右臂 J3 与电机反向：`set_model_direction(2, 3, r_direction=0)`
+  - `joint_id (int)`: 1 ~ 7
+  - `l_direction` (`int`): 左臂关节模型方向，`1` - 与电机同向，`0` - 与电机反向
+  - `r_direction` (`int`): 右臂关节模型方向，`1` - 与电机同向，`0` - 与电机反向
 
 #### `get_filter_len(rank)`
 
@@ -983,7 +1001,7 @@ print(mc.get_angles())
   - `rank_mode (int)`: 1 ~ 4
   - `value (int)`: 0 ~ 1000
 
-### 19. 运动学算法接口
+### 17. 运动学算法接口
 
 #### `solve_inv_kinematics(target_coords, current_angles)`
 
@@ -993,7 +1011,7 @@ print(mc.get_angles())
   - `current_angles`: `list` 所有角度的浮点列表，机械臂当前角度
 - **返回值**: `list` 所有角度的浮点列表。
 
-### 20. Pro 力控夹爪
+### 18. Pro 力控夹爪
 
 #### `get_pro_gripper_firmware_version(arm_id, gripper_id=14)`
 
@@ -1332,7 +1350,7 @@ print(mc.get_angles())
   - `True` - 成功
   - `False` - 失败
   
-### 21. 傲意五指灵巧手
+### 19. 傲意五指灵巧手
 
 #### `get_five_fingers_angles(arm_id, hand_id=2)`
 
@@ -1432,3 +1450,6 @@ print(mc.get_angles())
     - `2`: 右臂
   - `target_hand_id`: (`int`) 需要设置新的五指设备ID，取值范围 0 ~ 254。
   - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+
+
+---
