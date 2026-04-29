@@ -616,7 +616,7 @@ print(mc.get_angles())
   - `joint_id` : 输入关节ID（范围1-7）
   - `angle`: 参考[send_angle()](#send_angleid-degree-speed)接口中对应关节的限制信息，不得小于最小值
 
-#### `set_joint_max_angle(arm_id, joint_id, angle)`
+#### `set_joint_max_angle(joint_id, angle)`
 
 - **功能：** 设置最大关节角度限制
 - **参数：**

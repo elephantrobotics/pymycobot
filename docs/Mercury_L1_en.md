@@ -614,14 +614,14 @@ print(mc.get_angles())
   - `[8]`: Maximum angle of the neck.
   - `[9]`: Maximum angle of the head.
 
-#### `set_joint_min_angle(arm_id, joint_id, angle)`
+#### `set_joint_min_angle(joint_id, angle)`
 
 - **Function:** Sets the minimum angle limit for a joint.
 - **Parameters:**
   - `joint_id`: Input Joint ID (Range: 1–7)
   - `angle`: Refer to the limit information for the corresponding joint in the [send_angle()](#send_angleid-degree-speed) interface; the value must not be less than the minimum limit.
 
-#### `set_joint_max_angle(arm_id, joint_id, angle)`
+#### `set_joint_max_angle(joint_id, angle)`
 
 - **Function:** Sets the maximum angle limit for a joint.
 - **Parameters:**
