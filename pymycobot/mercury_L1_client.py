@@ -41,13 +41,6 @@ class MercuryL1Client(L1CloseLoop):
         sock.connect((self.SERVER_IP, self.SERVER_PORT))
         return sock
 
-    def _decode_l1_motor_temps_37(self, valid_data):
-        """Split 37-byte motor temperature payload into ``[left, right]`` (V1.0.2+ sheet)."""
-        b = bytes(valid_data[:37])
-        left = {"coil": list(b[0:8]), "mos": list(b[8:16])}
-        right = {"coil": list(b[16:25]), "mos": list(b[25:34])}
-        return [left, right]
-
     def _decode_l1_dual_servo_joints(self, genre, valid_data):
         """Parse first 34 bytes as 8 left + 9 right int16 fields (0xE1 / 0xE2 / 0xE4, firmware V1.0.2+)."""
         raw = bytes(valid_data[:34])
