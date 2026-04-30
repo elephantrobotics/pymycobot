@@ -152,7 +152,7 @@ print(mc.get_angles())
 
 - **Function:** Retrieves the current robot's debug logging mode.
 
-- **Return Value:** `list`: `[left_state, right_state]` — The current debug logging status:
+- **Return Value:** `int`:  The current debug logging status:
   - `0`: No debug logs recorded
   - `1`: General debug logs only (_debug.log)
   - `2`: Motion-related logs only (_move.log)
@@ -162,15 +162,11 @@ print(mc.get_angles())
   - `6`: Motion + Motor frequency logs (_move.log + _clock_rate_debug.log)
   - `7`: Record all logs
 
-#### `set_debug_state(arm_id, log_state)`
+#### `set_debug_state(log_state)`
 
 - **Function:** Sets the current robot's debug logging mode.
 
 - **Parameters:**
-  - `arm_id`: `int`
-    - `0` — Both arms
-    - `1` — Left arm
-    - `2` — Right arm
   - `log_state`: `int`, Debug logging status (0 ~ 7)
     - `0`: No debug logs recorded
     - `1`: General debug logs only (_debug.log)

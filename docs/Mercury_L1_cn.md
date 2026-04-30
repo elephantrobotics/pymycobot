@@ -152,7 +152,7 @@ print(mc.get_angles())
 
 - **功能:** 获取当前机器人的调试日志模式。
 
-- **返回值:** `list`:  `[left_state, right_state]` 当前调试日志状态: 。
+- **返回值:** `int`: 当前调试日志状态: 。
   - `0`: 不记录任何调试日志 
   - `1`: 仅常规调试日志 (_debug.log)
   - `2`: 仅运动相关日志 (_move.log)
@@ -162,15 +162,11 @@ print(mc.get_angles())
   - `6`: 运动 + 电机频率日志 (_move.log + _clock_rate_debug.log)
   - `7`: 记录全部日志
 
-#### `set_debug_state(arm_id, log_state)`
+#### `set_debug_state(log_state)`
 
 - **功能:** 设置当前机器人的调试日志模式。
   
-- **参数:** 
-  - `arm_id`: `int`
-    - `0` — 双臂
-    - `1` — 左臂
-    - `2` — 右臂
+- **参数:**
   - `log_state`: `int`, 调试日志状态（0 ~ 7）
     - `0`: 不记录任何调试日志 
     - `1`: 仅常规调试日志 (_debug.log)

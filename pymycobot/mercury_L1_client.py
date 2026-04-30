@@ -767,15 +767,11 @@ class MercuryL1Client(L1CloseLoop):
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.COBOTX_GET_ANGLE, joint_id)
 
-    def set_debug_state(self, arm_id, log_state):
+    def set_debug_state(self, log_state):
         """
         Set the debug log mode of the robot.
 
         Args:
-            arm_id (int):
-                0 - left and right arm
-                1 - left arm
-                2 - right arm
             log_state (int): Debug state as bitmask (0~7)
                 0: No debug logs
                 1: Only common debug log (_debug.log)
@@ -789,15 +785,15 @@ class MercuryL1Client(L1CloseLoop):
         Returns:
             int: 1-success, 0-failure, -1-error
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, log_state=log_state)
-        return self._mesg(ProtocolCode.SET_DEBUG_LOG_MODE, arm_id, log_state)
+        self.calibration_parameters(class_name=self.__class__.__name__, log_state=log_state)
+        return self._mesg(ProtocolCode.SET_DEBUG_LOG_MODE, log_state)
 
     def get_debug_state(self):
         """
         Get the current debug log mode of the robot.
 
         Returns:
-            list: ``[left_state, right_state]`` — each 
+            int:
             - 0: no debug logs,
             - 1: only common debug log (_debug.log),
             - 2: only motion-related log (_move.log),
