@@ -247,6 +247,7 @@ class MercuryE1(E1CloseLoop):
             ProtocolCode.IS_FREE_MODE,
             ProtocolCode.GET_FRESH_SPEED_MODE,
             ProtocolCode.GET_DRAG_FIFO_LEN,
+            ProtocolCode.GET_DM_PID,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_SERVO_SPEED]:
