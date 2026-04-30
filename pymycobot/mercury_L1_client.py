@@ -267,6 +267,7 @@ class MercuryL1Client(L1CloseLoop):
             return -1
 
         if genre in [
+            ProtocolCode.MODIFY_VERSION,
             ProtocolCode.GET_END_TYPE,
             ProtocolCode.GET_MOVEMENT_TYPE,
             ProtocolCode.GET_REFERENCE_FRAME,
