@@ -361,7 +361,8 @@ class MercuryCommandGenerator(CloseLoop):
             ProtocolCode.GET_MONITOR_MODE,
             ProtocolCode.GET_COLLISION_MODE,
             ProtocolCode.GET_DYNAMIC_PARAMETERS,
-            ProtocolCode.GET_ERROR_INFO
+            ProtocolCode.GET_ERROR_INFO,
+            ProtocolCode.IS_DRAG_FIFO_EMPTY,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_DRAG_FIFO]:
