@@ -297,9 +297,13 @@ from pymycobot.ultraArmP340 import ultraArmP340
   - `state` (int)：Input 0 indicates that the suction pump is started, and input 1 indicates that the suction pump is closed
 - **Return value:** None
 
-**4.2** `set_gripper_zero()`
+**4.2** `set_gripper_zero(gripper_type)`
 
 - **Function:** Set gripper zero position（Set the current position to zero）
+- **Parameter Description:**
+  - `gripper_type`: `int`, 1 ~ 2. Default: 1.
+    - 1 - Non-force-controlled gripper;
+    - 2 - Force-controlled gripper.
 - **Return value:** None
 
 **4.3** `set_gripper_state(gripper_value, gripper_speed, gripper_type=1):`

@@ -446,10 +446,17 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def set_gripper_zero(self):
-        """Set gripper zero."""
+    def set_gripper_zero(self, gripper_type=1):
+        """Set gripper zero.
+
+        Args:
+            gripper_type (int): 1 ~ 2, 1 - not force gripper; 2 - force gripper
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
         with self.lock:
-            command = ProtocolCode.GRIPPER_ZERO + ProtocolCode.END
+            command = ProtocolCode.GRIPPER_ZERO
+            command += " M" + str(gripper_type)
+            command += ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
