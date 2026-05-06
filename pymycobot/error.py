@@ -2393,18 +2393,9 @@ def calibration_parameters(**kwargs):
 
             elif parameter in ["parameter_value"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
-                gripper_mode = kwargs.get("gripper_mode", None)
-                if gripper_mode is None:
-                    raise ultraArmP1DataException("gripper_mode must be specified before parameter_value")
-
-                if gripper_mode == 1:
-                    if not (0 <= value <= 255):
-                        raise ultraArmP1DataException(
-                            f"When gripper_mode=1, the parameter_value only supports 0 ~ 255, but received {value}")
-                elif gripper_mode == 2:
-                    if not (value > 255):
-                        raise ultraArmP1DataException(
-                            f"When gripper_mode=2, the parameter_value must > 255, but received {value}")
+                if not (0 <= value <= 512):
+                    raise ultraArmP1DataException(
+                        f"The parameter_value only supports 0 ~ 512, but received {value}")
             elif parameter in ["pump_state"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if value not in [0, 1, 2]:
