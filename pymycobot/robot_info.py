@@ -160,10 +160,10 @@ class UltraArmP1RobotInfo(object):
         2: {"zh_CN": "J3关节超限", "en_US": "J3 joint limit exceeded"},
         3: {"zh_CN": "J4关节超限", "en_US": "J4 joint limit exceeded"},
 
-        4: {"zh_CN": "J1关节碰撞", "en_US": "J1 collision detected"},
-        5: {"zh_CN": "J2关节碰撞", "en_US": "J2 collision detected"},
-        6: {"zh_CN": "J3关节碰撞", "en_US": "J3 collision detected"},
-        7: {"zh_CN": "J4关节碰撞", "en_US": "J4 collision detected"},
+        4: {"zh_CN": "J1关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J1 collision detected,please use the collision_unlock() interface to unlock."},
+        5: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
+        6: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
+        7: {"zh_CN": "J4关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J4 collision detected,please use the collision_unlock() interface to unlock."},
 
         8: {"zh_CN": "J1编码器报错", "en_US": "J1 encoder error"},
         9: {"zh_CN": "J2编码器报错", "en_US": "J2 encoder error"},
@@ -183,6 +183,18 @@ class UltraArmP1RobotInfo(object):
         20: {"zh_CN": "J5驱动板过温", "en_US": "J5 driver over temperature"},
         21: {"zh_CN": "J2、J3耦合", "en_US": "J2-J3 coupling error"},
         22: {"zh_CN": "坐标无解", "en_US": "No inverse kinematics solution"},
+    }
+    ERROR_MOTION_MAP = {
+        1: {"zh_CN": "J1关节超限", "en_US": "J1 joint limit exceeded"},
+        2: {"zh_CN": "J2关节超限", "en_US": "J2 joint limit exceeded"},
+        4: {"zh_CN": "J3关节超限", "en_US": "J3 joint limit exceeded"},
+        8: {"zh_CN": "J4关节超限", "en_US": "J4 joint limit exceeded"},
+        16: {"zh_CN": "J2、J3 关节耦合", "en_US": "J2-J3 joint coupling error"},
+    }
+    ERROR_COLLISION_MAP = {
+        1: {"zh_CN": "J1关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J1 collision detected,please use the collision_unlock() interface to unlock."},
+        2: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
+        3: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
     }
 
 # coding=utf-8

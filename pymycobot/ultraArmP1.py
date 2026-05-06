@@ -92,7 +92,7 @@ class UltraArmP1:
             return b""
 
     # ---------------------- Response waiting & parsing ----------------------
-    def _response(self, timeout=300, _async=True, _gcode=False, is_set=False):
+    def _response(self, _async=True, _gcode=False, is_set=False):
         """Wait for device response from the serial buffer.
 
         Returns 'ok' when keyword is found, False on timeout.
@@ -103,22 +103,42 @@ class UltraArmP1:
         if not _async and not _gcode:
             return 1
         start_time = time.time()
+        wait_time = 300
+
+        response_timeout = wait_time
+        if is_set and wait_time == 300:
+            response_timeout = 3
+
         received_data = b""
         if _gcode:
             keyword = b"start"
         else:  # _async=True
             keyword = b"end"
+        # Keep the public default timeout for compatibility, but do not let
+        # normal motion commands block for 300s when the controller is silent.
+        movement_status_wait = (
+            _async and not _gcode and not is_set and wait_time == 300
+        )
+        if is_set:
+            response_timeout = 0.5
 
-        while time.time() - start_time < timeout:
+        status_timeout = 3
+        status_query_interval = 0.2
+        last_status_time = start_time
+        last_status_query_time = start_time - status_query_interval
+
+        while time.time() - start_time < response_timeout:
             chunk = self._read_available_bytes()
             if chunk:
                 received_data += chunk
                 # try decode for debug
                 try:
                     text = received_data.decode(errors='ignore')
+                    chunk_text = chunk.decode(errors='ignore')
                 except Exception:
                     text = str(received_data)
-                self._debug_read(text)
+                    chunk_text = str(chunk)
+                self._debug_read(chunk_text)
 
                 text_lower = text.lower()
                 if is_set:
@@ -141,32 +161,66 @@ class UltraArmP1:
                 if "limiterror" in text_lower:
                     res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
                     if res is not None:
-                        if res == 6:
-                            return "J2、J3 耦合" if self.language == 'zh_CN' else 'J2-J3 coupling error'
-                        return self._parse_error_code(res, self.language)
+                        return self._parse_mapped_error_code(
+                            res, UltraArmP1RobotInfo.ERROR_MOTION_MAP, self.language)
 
                 # Collision detection
                 if "collisiondetectionerror" in text_lower:
                     res = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
                     if res is not None:
-                        return self._parse_error_code(res, self.language)
-
+                        return self._parse_mapped_error_code(
+                            res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language)
                 try:
+                    # Motion closed-loop feedback
                     if text.lower().count(keyword.decode()) >= 1:
                         return 'ok'
                 except Exception:
                     # fallback to raw bytes check
                     if received_data.lower().count(keyword) >= 1:
                         return 'ok'
+
+                if movement_status_wait:
+                    # M200 returns mainmoving:0/1.  Treat 0 as the same
+                    # closed-loop completion signal as the firmware's end text.
+                    run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
+                    if run_status is not None:
+                        last_status_time = time.time()
+                        if run_status == 0:
+                            # If the robot was already in an error state before
+                            # this motion command, it may only report not moving.
+                            error_info = self._query_error_information()
+                            if error_info and error_info != "ok":
+                                return error_info
+                            return 'ok'
+                    else:
+                        return -1
+
+            if movement_status_wait:
+                time.sleep(0.1)
+                now = time.time()
+                if now - last_status_time >= status_timeout:
+                    error_info = self._query_error_information()
+                    if error_info and error_info != "ok":
+                        return error_info
+                    break
+                if now - last_status_query_time >= status_query_interval:
+                    # Query run status without calling get_run_status(), since
+                    # callers already hold self.lock while waiting here.
+                    self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1)
+                    last_status_query_time = now
+
+                time.sleep(0.01)
+            elif is_set and response_timeout != wait_time:
+                time.sleep(0.01)
             # time.sleep(0.01)
         # Timeout
         if self.debug:
             try:
-                self.log.error(f"_timeout: {received_data}")
+                self.log.error(f"_timeout read: {received_data}")
             except Exception:
                 self.log.error(f"_timeout received data")
 
-        return False
+        return -1
 
     def _request(self, flag=""):
         """
@@ -365,6 +419,31 @@ class UltraArmP1:
                 self.log.error(f"serial read exception: {e}")
             return None
 
+    def _query_error_information(self, timeout=0.3):
+        self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
+        raw_data = ""
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            chunk = self._read_available_bytes()
+            if chunk:
+                try:
+                    chunk_text = chunk.decode(errors="ignore")
+                except Exception:
+                    chunk_text = str(chunk)
+                raw_data += chunk_text
+                self._debug_read(chunk_text)
+
+                r = self._parse_colon_values(
+                    raw_data.lower(), "error", int, single=True
+                )
+                if r is not None:
+                    return self._parse_error_code(r, self.language)
+
+            time.sleep(0.01)
+
+        return None
+
     def _parse_error_code(self, value: int, lang="en_US"):
         if value == 0:
             return "ok" if lang == "zh_CN" else "ok"
@@ -383,6 +462,19 @@ class UltraArmP1:
                     )
 
         return "; ".join(errors)
+
+    def _parse_mapped_error_code(self, value: int, error_map, lang="en_US"):
+        if value == 0:
+            return "ok"
+
+        info = error_map.get(value)
+        if info:
+            return info.get(lang, info["en_US"])
+
+        return (
+            f"未知错误({value})" if lang == "zh_CN"
+            else f"Unknown error ({value})"
+        )
 
     def _send_command(self, command: str):
         """Send commands to serial port"""
@@ -712,7 +804,7 @@ class UltraArmP1:
             self._send_command(ProtocolCode.SET_STOP_P1)
             return self._response(_async=True, is_set=True)
 
-    def set_jog_angle(self, joint_id, direction, speed, _async=False, _gcode=False):
+    def set_jog_angle(self, joint_id, direction, speed, _async=True, _gcode=False):
         """Start jog movement with angle
 
         Args:
@@ -734,7 +826,7 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
-    def set_jog_coord(self, axis_id, direction, speed, _async=False, _gcode=False):
+    def set_jog_coord(self, axis_id, direction, speed, _async=True, _gcode=False):
         """Start jog movement with coord
 
         Args:
@@ -816,7 +908,7 @@ class UltraArmP1:
             command = ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1
             command += " J" + str(joint_number)
             self._send_command(command)
-            return self._response(_async=True, timeout=240)
+            return self._response(_async=True)
 
     def get_zero_calibration_state(self):
         """Read zero-point calibration status.
@@ -1136,15 +1228,8 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def receive_485_data(self):
-        """receive 485 data"""
-        with self.lock:
-            command = ProtocolCode.RECEIVE_485_DATA_P1
-            self._send_command(command)
-            return self._response(_async=False)
-
     def go_home(self, speed=20, _async=True):
-        return self.set_angles([0, 0, 89, 0], speed, _async=_async)
+        return self.set_angles([0, 0, 90, 0], speed, _async=_async)
 
     def close(self):
         """Close the serial port."""
@@ -1274,23 +1359,6 @@ class UltraArmP1:
             command += " J" + str(joint_id)
             self._send_command(command)
             return self._response(_async=True, is_set=True)
-
-    def set_status_light_color(self, color_id):
-        """Set status light color
-
-        Args:
-            color_id (int): color ID, range is 1 ~ 4
-                1: red
-                2: green
-                3: yellow
-                4: blue
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, color_id=color_id)
-        with self.lock:
-            command = ProtocolCode.SET_STATUS_LIGHTS_COLOR
-            command += " J" + str(color_id)
-            self._send_command(command)
-            return self._response(_async=False)
 
     def get_all_base_io_states(self):
         """Get All bottom I/O pin status.
