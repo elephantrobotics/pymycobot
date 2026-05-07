@@ -117,7 +117,7 @@ class UltraArmP1Bluetooth:
 
     # ---------------- Response waiting ----------------
 
-    def _response(self, timeout=300, _async=True, _gcode=False, is_set=False):
+    def _response(self, _async=True, _gcode=False, is_set=False):
 
         if _gcode:
             _async = False
@@ -126,6 +126,12 @@ class UltraArmP1Bluetooth:
             return 1
 
         start_time = time.time()
+        wait_time = 300
+
+        response_timeout = wait_time
+        if is_set and wait_time == 300:
+            response_timeout = 3
+
         received_data = b""
 
         if _gcode:
@@ -133,17 +139,30 @@ class UltraArmP1Bluetooth:
         else:
             keyword = b"end"
 
-        while time.time() - start_time < timeout:
+        movement_status_wait = (
+                _async and not _gcode and not is_set and wait_time == 300
+        )
+        if is_set:
+            response_timeout = 0.5
+
+        status_timeout = 3
+        status_query_interval = 0.2
+        last_status_time = start_time
+        last_status_query_time = start_time - status_query_interval
+
+        while time.time() - start_time < response_timeout:
             chunk = self._read_available_bytes()
             if chunk:
                 received_data += chunk
 
                 try:
                     text = received_data.decode(errors='ignore')
+                    chunk_text = chunk.decode(errors='ignore')
                 except Exception:
                     text = str(received_data)
+                    chunk_text = str(chunk)
 
-                self._debug_read(text)
+                self._debug_read(chunk_text)
 
                 text_lower = text.lower()
                 if is_set:
@@ -166,25 +185,56 @@ class UltraArmP1Bluetooth:
                     if "limiterror" in text_lower:
                         res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
                         if res is not None:
-                            if res == 6:
-                                return "J2、J3 耦合" if self.language == 'zh_CN' else 'J2-J3 coupling error'
-                            return self._parse_error_code(res, self.language)
+                            return self._parse_mapped_error_code(
+                                res, UltraArmP1RobotInfo.ERROR_MOTION_MAP, self.language)
 
                     # Collision detection
                     if "collisiondetectionerror" in text_lower:
                         res = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
                         if res is not None:
-                            return self._parse_error_code(res, self.language)
+                            return self._parse_mapped_error_code(
+                                res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language)
 
                 # if keyword in received_data.lower():
                 #     return 'ok'
                 if text_lower.count(keyword.decode()) >= 1:
                     return 'ok'
+                if movement_status_wait:
+                    # M200 returns mainmoving:0/1.  Treat 0 as the same
+                    # closed-loop completion signal as the firmware's end text.
+                    run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
+                    if run_status is not None:
+                        last_status_time = time.time()
+                        if run_status == 0:
+                            # If the robot was already in an error state before
+                            # this motion command, it may only report not moving.
+                            error_info = self._query_error_information()
+                            if error_info and error_info != "ok":
+                                return error_info
+                            return 'ok'
+                    else:
+                        return -1
+            if movement_status_wait:
+                time.sleep(0.1)
+                now = time.time()
+                if now - last_status_time >= status_timeout:
+                    error_info = self._query_error_information()
+                    if error_info and error_info != "ok":
+                        return error_info
+                    break
+                if now - last_status_query_time >= status_query_interval:
+                    # Query run status without calling get_run_status(), since
+                    # callers already hold self.lock while waiting here.
+                    self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1)
+                    last_status_query_time = now
 
-            time.sleep(0.01)
+                time.sleep(0.01)
+            elif is_set and response_timeout != wait_time:
+                time.sleep(0.01)
+            # time.sleep(0.01)
 
         if self.debug:
-            self.log.error(f"_timeout: {received_data}")
+            self.log.error(f"_timeout read: {received_data}")
 
         return False
 
@@ -375,6 +425,31 @@ class UltraArmP1Bluetooth:
                 self.log.error(f"bluetooth read exception: {e}")
             return None
 
+    def _query_error_information(self, timeout=1):
+        self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
+        raw_data = ""
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            chunk = self._read_available_bytes()
+            if chunk:
+                try:
+                    chunk_text = chunk.decode(errors="ignore")
+                except Exception:
+                    chunk_text = str(chunk)
+                raw_data += chunk_text
+                self._debug_read(chunk_text)
+
+                r = self._parse_colon_values(
+                    raw_data.lower(), "error", int, single=True
+                )
+                if r is not None:
+                    return self._parse_error_code(r, self.language)
+
+            time.sleep(0.01)
+
+        return None
+
     def _parse_error_code(self, value: int, lang="en_US"):
         if value == 0:
             return "ok" if lang == "zh_CN" else "ok"
@@ -393,6 +468,19 @@ class UltraArmP1Bluetooth:
                     )
 
         return "; ".join(errors)
+
+    def _parse_mapped_error_code(self, value: int, error_map, lang="en_US"):
+        if value == 0:
+            return "ok"
+
+        info = error_map.get(value)
+        if info:
+            return info.get(lang, info["en_US"])
+
+        return (
+            f"未知错误({value})" if lang == "zh_CN"
+            else f"Unknown error ({value})"
+        )
 
     def _clear_recv_buffer(self):
         with self.lock:
@@ -663,7 +751,7 @@ class UltraArmP1Bluetooth:
             self._send_command(ProtocolCode.SET_STOP_P1)
             return self._response(_async=True, is_set=True)
 
-    def set_jog_angle(self, joint_id, direction, speed, _async=False, _gcode=False):
+    def set_jog_angle(self, joint_id, direction, speed, _async=True, _gcode=False):
         """Start jog movement with angle
 
         Args:
@@ -684,7 +772,7 @@ class UltraArmP1Bluetooth:
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
-    def set_jog_coord(self, axis_id, direction, speed, _async=False, _gcode=False):
+    def set_jog_coord(self, axis_id, direction, speed, _async=True, _gcode=False):
         """Start jog movement with coord
 
         Args:
@@ -1078,15 +1166,8 @@ class UltraArmP1Bluetooth:
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def receive_485_data(self):
-        """receive 485 data"""
-        with self.lock:
-            command = ProtocolCode.RECEIVE_485_DATA_P1
-            self._send_command(command)
-            return self._response(_async=True, is_set=True)
-
     def go_home(self, speed=20, _async=True):
-        return self.set_angles([0, 0, 89, 0], speed, _async=_async)
+        return self.set_angles([0, 0, 90, 0], speed, _async=_async)
 
     def set_wifi_password(self, wifi_name, password):
         """Set WiFi password

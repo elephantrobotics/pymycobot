@@ -181,7 +181,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** 1
 
-### 13 `set_jog_angle(joint_id, direction, speed, _async=False)`
+### 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG角度运动
 
@@ -193,11 +193,11 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `speed`: 速度 1 ~ 100。
 
-  - `_async`: 运动到位反馈，默认开环。
+  - `_async`: 运动到位反馈，默认闭环。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-### 14 `set_jog_coord(axis_id, direction, speed, _async=False)`
+### 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG坐标运动。
 
@@ -209,7 +209,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `speed`: 速度 1 ~ 100 。
 
-  - `_async`: 运动到位反馈，默认打开。
+  - `_async`: 运动到位反馈，默认闭环。
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
