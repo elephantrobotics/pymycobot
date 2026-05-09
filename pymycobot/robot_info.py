@@ -196,6 +196,19 @@ class UltraArmP1RobotInfo(object):
         2: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
         3: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
     }
+    ERROR_M450_MAP = {
+        0: {"zh_CN": "SD卡不存在", "en_US": "SD card not present"},
+        1: {"zh_CN": "无固件文件名", "en_US": "No firmware file name"},
+        2: {"zh_CN": "无法打开固件文件写入", "en_US": "Unable to open firmware file write"},
+        3: {"zh_CN": "非固定升级文件名称", "en_US": "Non-fixed upgrade file name"},
+    }
+    ERROR_G11_MAP = {
+        0: {"zh_CN": "未找到.bin 文件", "en_US": ".bin file not found"},
+        1: {"zh_CN": "升级固件打开文件失败", "en_US": "Failed to open firmware upgrade file"},
+        2: {"zh_CN": "STM32 进入升级模式失败", "en_US": "Failed to enter STM32 upgrade mode"},
+        3: {"zh_CN": "SD卡打开失败", "en_US": "Failed to open SD card"},
+        4: {"zh_CN": "固件文件名不匹配", "en_US": "Firmware filename mismatch"},
+    }
 
 # coding=utf-8
 
