@@ -120,7 +120,7 @@ class UltraArmP1:
             _async and not _gcode and not is_set and wait_time == 300
         )
         if is_set:
-            response_timeout = 0.5
+            response_timeout = 3
 
         status_timeout = 3
         status_query_interval = 0.2
@@ -147,15 +147,12 @@ class UltraArmP1:
                     if "error:" in text_lower:
                         r = self._parse_colon_values(text_lower, "error", int, single=True)
                         if r is not None:
-                            if 'g11' in text_lower:
-                                if r == 0:
-                                    return "未找到.bin 文件" if self.language == "zh_CN" else ".bin not found"
-                                elif r == 1:
-                                    return "升级固件打开文件失败" if self.language == "zh_CN" else "Failed to open firmware upgrade file"
-                                elif r == 2:
-                                    return "STM32 进入升级模式失败" if self.language == "zh_CN" else "Failed to enter STM32 upgrade mode"
-                                elif r == 3:
-                                    return "SD打开失败" if self.language == "zh_CN" else "Failed to open SD card"
+                            if 'm450' in text_lower:
+                                return self._parse_mapped_error_code(
+                                    r, UltraArmP1RobotInfo.ERROR_M450_MAP, self.language)
+                            elif 'g11' in text_lower:
+                                return self._parse_mapped_error_code(
+                                    r, UltraArmP1RobotInfo.ERROR_G11_MAP, self.language)
                             return r
                 # Limit error
                 if "limiterror" in text_lower:
@@ -232,6 +229,8 @@ class UltraArmP1:
         timeout = 0.3
         if flag == "check_sd_card":
             timeout = 3
+        elif flag in ['angle', 'coord', 'io', 'motorenable']:
+            timeout = 0.02
 
         raw_data = ""
         start_time = time.time()
@@ -362,6 +361,26 @@ class UltraArmP1:
                         r = self._parse_colon_values(lower, "queue_size", int, single=True)
                         if r is not None:
                             return r
+                    elif flag == 'get_sn_code':
+                        r = self._parse_colon_values(lower, "sn", int, single=True)
+                        if r is not None:
+                            return r
+                    elif flag == 'get_robot_id':
+                        r = self._parse_colon_values(lower, "id", str, single=True)
+                        if r is not None:
+                            return r
+                    elif flag == 'get_wifi_ip':
+                        if 'error' in lower:
+                            return None
+                        r = self._parse_colon_values(lower, "ip", str, single=True)
+                        if r is not None:
+                            return r
+                    elif flag == 'get_bluetooth_mac':
+                        if 'error' in lower:
+                            return None
+                        r = self._parse_colon_values(lower, "mac", str, single=True)
+                        if r is not None:
+                            return r
 
                     elif flag is None:
                         return -1
@@ -374,6 +393,18 @@ class UltraArmP1:
 
         if self.debug:
             self.log.warning(f"request timeout, received buffer: {raw_data}")
+        return -1
+
+    def _request_with_retry(self, command, flag, attempts=3):
+        for attempt in range(attempts):
+            self._send_command(command)
+            result = self._request(flag)
+            if result != -1:
+                return result
+            if self.debug and attempt < attempts - 1:
+                self.log.warning(
+                    f"request retry {attempt + 1}/{attempts - 1}, flag: {flag}"
+                )
         return -1
 
     def _parse_colon_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
@@ -464,8 +495,8 @@ class UltraArmP1:
         return "; ".join(errors)
 
     def _parse_mapped_error_code(self, value: int, error_map, lang="en_US"):
-        if value == 0:
-            return "ok"
+        # if value == 0:
+        #     return "ok"
 
         info = error_map.get(value)
         if info:
@@ -645,8 +676,7 @@ class UltraArmP1:
             list[float] or int: Joint angles [J1, J2, J3, J4] or -1 if failed.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_ANGLES_P1)
-            return self._request("angle")
+            return self._request_with_retry(ProtocolCode.GET_ANGLES_P1, "angle")
 
     def get_coords_info(self):
         """Get the current Cartesian coordinates of the robot.
@@ -655,8 +685,7 @@ class UltraArmP1:
             list[float] or int: Coordinates [X, Y, Z, E] or -1 if failed.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_COORDS_P1)
-            return self._request("coord")
+            return self._request_with_retry(ProtocolCode.GET_COORDS_P1, "coord")
 
     def set_coords_max_speed(self, coords, _async=True, _gcode=False):
         """The robot moves at its maximum speed using Cartesian coordinates.
@@ -785,8 +814,9 @@ class UltraArmP1:
             (float) Firmware version
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_SYSTEM_VERSION_P1)
-            return self._request("system_version")
+            return self._request_with_retry(
+                ProtocolCode.GET_SYSTEM_VERSION_P1, "system_version"
+            )
 
     def get_modify_version(self):
         """Get firmware modify version
@@ -795,8 +825,9 @@ class UltraArmP1:
             (int) modify version
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_MODIFY_VERSION_P1)
-            return self._request("modify_version")
+            return self._request_with_retry(
+                ProtocolCode.GET_MODIFY_VERSION_P1, "modify_version"
+            )
 
     def stop(self):
         """Stop movement"""
@@ -889,8 +920,9 @@ class UltraArmP1:
     def get_error_information(self):
         """Read error message"""
         with self.lock:
-            self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
-            return self._request("error_information")
+            return self._request_with_retry(
+                ProtocolCode.GET_ERROR_INFO_P1, "error_information"
+            )
 
     def set_zero_calibration(self, joint_number):
         """Set zero-point calibration.
@@ -917,8 +949,10 @@ class UltraArmP1:
             (list) zero-point calibration status, len 4
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_BACK_ZERO_STATUS_P1)
-            return self._request("zero_calibration_state")
+            return self._request_with_retry(
+                ProtocolCode.GET_BACK_ZERO_STATUS_P1,
+                "zero_calibration_state"
+            )
 
     def set_joint1_encoder_calibration(self):
         """Set the 730 encoder calibration for J1.(Internal Interface)"""
@@ -929,8 +963,9 @@ class UltraArmP1:
     def get_run_status(self):
         """Read running status."""
         with self.lock:
-            self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1)
-            return self._request("run_status")
+            return self._request_with_retry(
+                ProtocolCode.GET_RUNNING_STATUS_P1, "run_status"
+            )
 
     def quick_off_laser(self, state):
         """Quick turn off laser
@@ -1009,8 +1044,9 @@ class UltraArmP1:
         Returns: (int) gripper angle.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_GRIPPER_ANGLE_P1)
-            return self._request("get_gripper_angle")
+            return self._request_with_retry(
+                ProtocolCode.GET_GRIPPER_ANGLE_P1, "get_gripper_angle"
+            )
 
     def set_gripper_parameter(self, addr, parameter_value):
         """Set gripper parameter
@@ -1051,8 +1087,7 @@ class UltraArmP1:
             command = ProtocolCode.GET_GRIPPER_PARAMETER_P1
             command += " J" + str(addr)
             command += " K" + str(mode)
-            self._send_command(command)
-            return self._request("get_gripper_parameter")
+            return self._request_with_retry(command, "get_gripper_parameter")
 
     def get_gripper_run_status(self):
         """Get gripper running status.
@@ -1060,8 +1095,10 @@ class UltraArmP1:
         Returns: gripper status.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_GRIPPER_RUN_STATUS_P1)
-            return self._request("get_gripper_run_status")
+            return self._request_with_retry(
+                ProtocolCode.GET_GRIPPER_RUN_STATUS_P1,
+                "get_gripper_run_status"
+            )
 
     def set_gripper_enable_status(self, state):
         """set gripper enable status.
@@ -1203,8 +1240,10 @@ class UltraArmP1:
         Returns: (float) screen version.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_SYSTEM_SCREEN_VERSION_P1)
-            return self._request("get_screen_version")
+            return self._request_with_retry(
+                ProtocolCode.GET_SYSTEM_SCREEN_VERSION_P1,
+                "get_screen_version"
+            )
 
     def get_screen_modify_version(self):
         """Read screen modify version.
@@ -1212,8 +1251,10 @@ class UltraArmP1:
         Returns: (float) modify screen version.
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_MODIFY_SCREEN_VERSION_P1)
-            return self._request("get_screen_modify_version")
+            return self._request_with_retry(
+                ProtocolCode.GET_MODIFY_SCREEN_VERSION_P1,
+                "get_screen_modify_version"
+            )
 
     def set_communication_baud_rate(self, baud_rate):
         """set communication baud rate
@@ -1265,8 +1306,7 @@ class UltraArmP1:
         """Check if there is an SD card."""
         with self.lock:
             command = ProtocolCode.CHECK_SD_CARD
-            self._send_command(command)
-            return self._request("check_sd_card")
+            return self._request_with_retry(command, "check_sd_card")
 
     def download_firmware_sd(self, filename, show_progress=True):
         """
@@ -1295,7 +1335,7 @@ class UltraArmP1:
             res = self._fw_enter_upgrade(fw_name)
             time.sleep(0.2)
             if res != 'ok':
-                return 'Please check the SD card.'
+                return res
 
             # read bin
             with open(local_path, "rb") as f:
@@ -1344,8 +1384,10 @@ class UltraArmP1:
     def get_motor_enable_status(self):
         """Retrieve motor enable status"""
         with self.lock:
-            self._send_command(ProtocolCode.GET_MOTOR_ENABLE_STATUS)
-            return self._request('get_motor_enable_status')
+            return self._request_with_retry(
+                ProtocolCode.GET_MOTOR_ENABLE_STATUS,
+                'get_motor_enable_status'
+            )
 
     def clear_zero_calibration_status(self, joint_id):
         """Clear zero calibration status
@@ -1371,8 +1413,9 @@ class UltraArmP1:
                 3: Output, level = 1 (high level)
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_BASE_IO_STATE_P1)
-            return self._request('get_base_io_state')
+            return self._request_with_retry(
+                ProtocolCode.GET_BASE_IO_STATE_P1, 'get_base_io_state'
+            )
 
     def get_base_io_state(self, pin_no):
         """Get bottom I/O pin status.
@@ -1388,8 +1431,9 @@ class UltraArmP1:
         """
         self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no)
         with self.lock:
-            self._send_command(ProtocolCode.GET_BASE_IO_STATE_P1)
-            res_data = self._request('get_base_io_state')
+            res_data = self._request_with_retry(
+                ProtocolCode.GET_BASE_IO_STATE_P1, 'get_base_io_state'
+            )
             if isinstance(res_data, list):
                 return res_data[pin_no - 1]
             return -1
@@ -1405,8 +1449,9 @@ class UltraArmP1:
                 3: Output, level = 1 (high level)
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_END_IO_STATE_P1)
-            return self._request('get_end_io_state')
+            return self._request_with_retry(
+                ProtocolCode.GET_END_IO_STATE_P1, 'get_end_io_state'
+            )
 
     def get_end_io_state(self, pin_no):
         """Get end I/O pin status.
@@ -1422,8 +1467,9 @@ class UltraArmP1:
         """
         self.calibration_parameters(class_name=self.__class__.__name__, end_pin_no=pin_no)
         with self.lock:
-            self._send_command(ProtocolCode.GET_END_IO_STATE_P1)
-            res_data = self._request('get_end_io_state')
+            res_data = self._request_with_retry(
+                ProtocolCode.GET_END_IO_STATE_P1, 'get_end_io_state'
+            )
             if isinstance(res_data, list):
                 return res_data[pin_no - 1]
             return -1
@@ -1513,8 +1559,9 @@ class UltraArmP1:
             space (list) : Total Memory and Remaining Memory, For example: [Total Memory, Remaining Memory]
         """
         with self.lock:
-            self._send_command(ProtocolCode.GET_SD_CARD_MEMORY)
-            return self._request('get_sd_space')
+            return self._request_with_retry(
+                ProtocolCode.GET_SD_CARD_MEMORY, 'get_sd_space'
+            )
 
     def collision_unlock(self):
         """Unlock After Collision Detection."""
@@ -1534,6 +1581,53 @@ class UltraArmP1:
         Returns:
             `int` queue size
         """
-        self._send_command(ProtocolCode.GET_QUEUE_SIZE_P1)
-        return self._request('get_queue_size')
+        return self._request_with_retry(
+            ProtocolCode.GET_QUEUE_SIZE_P1, 'get_queue_size')
+
+    def set_sn_code(self, sn_code):
+        """Set SN Code.
+
+        Args:
+            sn_code (str): SN Code, len is 11
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, sn_code=sn_code)
+        with self.lock:
+            command = ProtocolCode.SET_SN_CODE
+            command += f" {str(sn_code)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_sn_code(self):
+        """Get SN Code."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_SN_CODE, 'get_sn_code')
+
+    def set_robot_id(self, robot_id):
+        """Set Robot ID.
+
+        Args:
+              robot_id (str): Robot ID, len is 3
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, robot_id=robot_id)
+        with self.lock:
+            command = ProtocolCode.SET_ROBOT_ID_P1
+            command += f" {str(robot_id)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_robot_id(self):
+        """Get Robot ID."""
+
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_ROBOT_ID_P1, 'get_robot_id')
+
+    def get_wifi_ip(self):
+        """Get WiFi IP Address"""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_WIFI_IP_PORT_P1, 'get_wifi_ip')
+
+    def get_bluetooth_mac(self):
+        """Get Bluetooth MAC."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_BLUETOOTH_MAC_P1, 'get_bluetooth_mac')
 

@@ -2469,6 +2469,10 @@ def calibration_parameters(**kwargs):
                 if not value.lower().endswith((".bin")):
                     raise ultraArmP1DataException(
                         f"Unsupported file format, please use .bin, but received {value}")
+                # Must use fixed firmware filename
+                if os.path.basename(value).lower() != "upstm32.bin":
+                    raise ultraArmP1DataException(
+                        f"Firmware filename must be 'upstm32.bin', but received '{os.path.basename(value)}'")
             elif parameter == "conveyor_speed":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
 
@@ -2483,6 +2487,33 @@ def calibration_parameters(**kwargs):
                         f"Speed out of range, should be 1 ~ 500000, but received {value}")
             elif parameter == 'rgb':
                 check_rgb_value(value, ultraArmP1DataException, class_name)
+            elif parameter == "sn_code":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `sn_code` must be a string, but received {type(value)}")
+                if len(value) != 11:
+                    raise ultraArmP1DataException(
+                        f"Parameter `sn_code` length must be 11 digits, but received '{len(value)}'")
+                # Must contain only numbers
+                if not value.isdigit():
+                    raise ultraArmP1DataException(
+                        f"Parameter `sn_code` must contain only digits, but received '{value}'")
+            elif parameter == "robot_id":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` must be a string, but received {type(value)}")
+                if len(value) != 3:
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` length must be 3 digits, but received '{len(value)}'")
+                # Must contain only numbers
+                if not value.isdigit():
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` must contain only digits, but received '{value}'")
+                # Range check: 001 ~ 254
+                robot_id = int(value)
+                if robot_id < 1 or robot_id > 254:
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` must be in range 001-254, but received '{value}'")
 
 
 def restrict_serial_port(func):
