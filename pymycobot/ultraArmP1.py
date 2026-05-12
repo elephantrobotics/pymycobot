@@ -250,149 +250,152 @@ class UltraArmP1:
                     chunk = self._serial_port.read(n)
                     chunk_str = chunk.decode(errors="ignore")
                     raw_data += chunk_str
-                    lower = raw_data.lower()
-                    if self.debug:
-                        if flag in ["angle", 'coord']:
-                            if flag == "angle":
-                                r = self._parse_colon_values(lower, "angles", float, 3)
-                                if r is not None and len(r) > 3:
-                                    self._debug_read(raw_data)
-                            if flag == "coord":
-                                r = self._parse_colon_values(lower, "coords", float, 3)
-                                if r is not None and len(r) > 3:
-                                    self._debug_read(raw_data)
-                        else:
-                            display = raw_data if len(raw_data) < 1000 else raw_data[-1000:]
+
+                    while "\n" in raw_data:
+                        # print('raw_data:', repr(raw_data))
+                        line_data, raw_data = raw_data.split("\n", 1)
+                        line_data = line_data.strip()
+
+                        if not line_data:
+                            continue
+
+                        lower = line_data.lower()
+
+                        # debug
+                        if self.debug:
+                            display = line_data if len(line_data) < 1000 else line_data[-1000:]
                             self._debug_read(display)
-                    # -------- dispatch by flag --------
-                    if flag == "angle":
-                        r = self._parse_colon_values(lower, "angles", float, 2)
-                        if r is not None and len(r) ==4:
-                            return r
 
-                    elif flag == "coord":
-                        r = self._parse_colon_values(lower, "coords", float, 2)
-                        if r is not None and len(r) ==4:
-                            return r
+                        # -------- dispatch by flag --------
+                        if flag == "angle":
+                            r = self._parse_colon_values(lower, "angles", float, 2)
+                            if r is not None and len(r) ==4:
+                                return r
 
-                    elif flag == "error_information":
-                        r = self._parse_colon_values(lower, "error", int, single=True)
-                        if r is not None:
-                            value = r
-                            return self._parse_error_code(value, self.language)
+                        elif flag == "coord":
+                            r = self._parse_colon_values(lower, "coords", float, 2)
+                            if r is not None and len(r) ==4:
+                                return r
 
-                    elif flag == "get_gripper_angle":
-                        r = self._parse_colon_values(lower, "gripperangle", int, single=True)
-                        if r is not None:
-                            return r
+                        elif flag == "error_information":
+                            r = self._parse_colon_values(lower, "error", int, single=True)
+                            if r is not None:
+                                value = r
+                                return self._parse_error_code(value, self.language)
 
-                    elif flag == "zero_calibration_state":
-                        r = self._parse_colon_values(lower, "zero state", int)
-                        if r is not None:
-                            return r
+                        elif flag == "get_gripper_angle":
+                            r = self._parse_colon_values(lower, "gripperangle", int, single=True)
+                            if r is not None:
+                                return r
 
-                    elif flag == "system_version":
-                        r = self._parse_colon_values(lower, "getsystemversion", float, 1, single=True)
-                        if r is not None:
-                            return r / 10
+                        elif flag == "zero_calibration_state":
+                            r = self._parse_colon_values(lower, "zero state", int)
+                            if r is not None:
+                                return r
 
-                    elif flag == "modify_version":
-                        r = self._parse_colon_values(
-                            lower, "getmodifyversion", int, single=True
-                        )
-                        if r is not None:
-                            return r
+                        elif flag == "system_version":
+                            r = self._parse_colon_values(lower, "getsystemversion", float, 1, single=True)
+                            if r is not None:
+                                return r / 10
 
-                    elif flag == "get_screen_version":
-                        r = self._parse_colon_values(
-                            lower, "getscreenversion", float, 1, single=True
-                        )
-                        if r is not None:
-                            return r
+                        elif flag == "modify_version":
+                            r = self._parse_colon_values(
+                                lower, "getmodifyversion", int, single=True
+                            )
+                            if r is not None:
+                                return r
 
-                    elif flag == "get_screen_modify_version":
-                        r = self._parse_colon_values(
-                            lower, "getscreenmodifyversion", int, single=True
-                        )
-                        if r is not None:
-                            return r
+                        elif flag == "get_screen_version":
+                            r = self._parse_colon_values(
+                                lower, "getscreenversion", float, 1, single=True
+                            )
+                            if r is not None:
+                                return r
 
-                    elif flag == "run_status":
-                        r = self._parse_colon_values(
-                            lower, "mainmoving", int, single=True
-                        )
-                        if r is not None:
-                            return r
+                        elif flag == "get_screen_modify_version":
+                            r = self._parse_colon_values(
+                                lower, "getscreenmodifyversion", int, single=True
+                            )
+                            if r is not None:
+                                return r
 
-                    elif flag == "get_gripper_run_status":
-                        r = self._parse_colon_values(
-                            lower, "motionstate", int, single=True
-                        )
-                        if r is not None:
-                            return r
+                        elif flag == "run_status":
+                            r = self._parse_colon_values(
+                                lower, "mainmoving", int, single=True
+                            )
+                            if r is not None:
+                                return r
 
-                    elif flag == "get_gripper_parameter":
-                        r = self._parse_colon_values(
-                            lower, "gripperparameters", int, single=True
-                        )
-                        if r is not None:
-                            return r
-                    elif flag == "check_sd_card":
-                        parts = lower.split(None, 1)
-                        if len(parts) > 1:
-                            return parts[1].strip()
-                        # r = self._parse_colon_values(lower, "sdcard", str, single=True)
-                        # if r is not None:
-                        #     return r
-                    elif flag == "get_motor_enable_status":
-                        r = self._parse_colon_values(lower, "motorenable", int)
-                        if r is not None:
-                            return r
-                    elif flag == "get_base_io_state":
-                        r = self._parse_colon_values(lower, "io", int)
-                        if r is not None and len(r) == 10:
-                            return r
-                    elif flag == "get_end_io_state":
-                        r = self._parse_colon_values(lower, "io", int)
-                        if r is not None and len(r) == 4:
-                            return r
-                    elif flag == "get_sd_space":
-                        r = self._parse_colon_values(lower, "space", int)
-                        if r is not None:
-                            return r
-                    elif flag == "get_queue_size":
-                        r = self._parse_colon_values(lower, "queue_size", int, single=True)
-                        if r is not None:
-                            return r
-                    elif flag == 'get_sn_code':
-                        r = self._parse_colon_values(lower, "sn", int, single=True)
-                        if r is not None:
-                            return r
-                    elif flag == 'get_robot_id':
-                        r = self._parse_colon_values(lower, "id", str, single=True)
-                        if r is not None:
-                            return r
-                    elif flag == 'get_wifi_ip':
-                        if 'error' in lower:
-                            return None
-                        r = self._parse_colon_values(lower, "ip", str, single=True)
-                        if r is not None:
-                            return r
-                    elif flag == 'get_bluetooth_mac':
-                        if 'error' in lower:
-                            return None
-                        r = self._parse_colon_values(lower, "mac", str, single=True)
-                        if r is not None:
-                            return r
-                    elif flag == 'get_end_button_state':
-                        if 'error' in lower:
-                            return None
-                        r = self._parse_colon_values(lower, "btn", int, single=True)
-                        if r is not None:
-                            return r
+                        elif flag == "get_gripper_run_status":
+                            r = self._parse_colon_values(
+                                lower, "motionstate", int, single=True
+                            )
+                            if r is not None:
+                                return r
 
-                    elif flag is None:
-                        return -1
+                        elif flag == "get_gripper_parameter":
+                            r = self._parse_colon_values(
+                                lower, "gripperparameters", int, single=True
+                            )
+                            if r is not None:
+                                return r
+                        elif flag == "check_sd_card":
+                            if "ok" in lower:
+                                return 'ok'
+                            if "error:" in lower:
+                                r = self._parse_colon_values(lower, "error", int, single=True)
+                                if r is not None:
+                                    print('SD 卡不存在' if self.language == "zh_CN" else 'SD card not present')
+                                    return r
+                        elif flag == "get_motor_enable_status":
+                            r = self._parse_colon_values(lower, "motorenable", int)
+                            if r is not None:
+                                return r
+                        elif flag == "get_base_io_state":
+                            r = self._parse_colon_values(lower, "io", int)
+                            if r is not None and len(r) == 10:
+                                return r
+                        elif flag == "get_end_io_state":
+                            r = self._parse_colon_values(lower, "io", int)
+                            if r is not None and len(r) == 4:
+                                return r
+                        elif flag == "get_sd_space":
+                            r = self._parse_colon_values(lower, "space", int)
+                            if r is not None:
+                                return r
+                        elif flag == "get_queue_size":
+                            r = self._parse_colon_values(lower, "queue_size", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_sn_code':
+                            r = self._parse_colon_values(lower, "sn", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_robot_id':
+                            r = self._parse_colon_values(lower, "id", str, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_wifi_ip':
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "ip", str, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_bluetooth_mac':
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "mac", str, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_end_button_state':
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "btn", int, single=True)
+                            if r is not None:
+                                return r
+
+                        elif flag is None:
+                            return -1
 
                 except Exception as e:
                     if self.debug:
