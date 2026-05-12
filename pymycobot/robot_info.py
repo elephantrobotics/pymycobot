@@ -209,6 +209,12 @@ class UltraArmP1RobotInfo(object):
         3: {"zh_CN": "SD卡打开失败", "en_US": "Failed to open SD card"},
         4: {"zh_CN": "固件文件名不匹配", "en_US": "Firmware filename mismatch"},
     }
+    ERROR_M431_MAP = {
+        0: {"zh_CN": "SD卡不存在，无法保存wifi.txt文件", "en_US": "SD card not found, unable to save wifi.txt file"},
+        1: {"zh_CN": "指令格式错误，缺少|分隔符或者|在开头", "en_US": "The instruction format is incorrect; the | separator is missing or | is at the beginning."},
+        2: {"zh_CN": "SSID为空", "en_US": "SSID is empty"},
+        3: {"zh_CN": "写入/Wifi/wifi.txt文件失败", "en_US": "Failed to write to /Wifi/wifi.txt file"},
+    }
 
 # coding=utf-8
 

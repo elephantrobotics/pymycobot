@@ -573,6 +573,7 @@ class ProtocolCode(object):
     SET_RGB_COLOR = 'M23'
     SET_PREVIEW_MODE = 'M51'
     CLEAR_ERROR_STATUS = 'M40'
+    GET_END_BUTTON_STATUS = 'M64'
     # ultraArm P1 Screen
     GET_SYSTEM_SCREEN_VERSION_P1 = "M401"
     GET_MODIFY_SCREEN_VERSION_P1 = "M402"

@@ -2514,6 +2514,11 @@ def calibration_parameters(**kwargs):
                 if robot_id < 1 or robot_id > 254:
                     raise ultraArmP1DataException(
                         f"Parameter `robot_id` must be in range 001-254, but received '{value}'")
+            elif parameter == "servo_id":
+                if value not in [0, 1, 2, 3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The servo_id not right, should be in [0, 1, 2, 3, 4], but received {value}."
+                    )
 
 
 def restrict_serial_port(func):

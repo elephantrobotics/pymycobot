@@ -153,6 +153,9 @@ class UltraArmP1:
                             elif 'g11' in text_lower:
                                 return self._parse_mapped_error_code(
                                     r, UltraArmP1RobotInfo.ERROR_G11_MAP, self.language)
+                            elif 'm431' in text_lower:
+                                return self._parse_mapped_error_code(
+                                    r, UltraArmP1RobotInfo.ERROR_M431_MAP, self.language)
                             return r
                 # Limit error
                 if "limiterror" in text_lower:
@@ -347,11 +350,11 @@ class UltraArmP1:
                             return r
                     elif flag == "get_base_io_state":
                         r = self._parse_colon_values(lower, "io", int)
-                        if r is not None:
+                        if r is not None and len(r) == 10:
                             return r
                     elif flag == "get_end_io_state":
                         r = self._parse_colon_values(lower, "io", int)
-                        if r is not None:
+                        if r is not None and len(r) == 4:
                             return r
                     elif flag == "get_sd_space":
                         r = self._parse_colon_values(lower, "space", int)
@@ -379,6 +382,12 @@ class UltraArmP1:
                         if 'error' in lower:
                             return None
                         r = self._parse_colon_values(lower, "mac", str, single=True)
+                        if r is not None:
+                            return r
+                    elif flag == 'get_end_button_state':
+                        if 'error' in lower:
+                            return None
+                        r = self._parse_colon_values(lower, "btn", int, single=True)
                         if r is not None:
                             return r
 
@@ -657,16 +666,26 @@ class UltraArmP1:
             self._send_command(ProtocolCode.SET_REBOOT)
             return self._response(_async=True, is_set=True)
 
-    def set_joint_release(self):
-        """release the robot joints."""
+    def set_joint_release(self, joint_id):
+        """release the robot joints.
+        Args:
+            joint_id (int): Joint number (1~4). 0 for all joints."""
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=joint_id)
         with self.lock:
-            self._send_command(ProtocolCode.SET_JOINT_DISABLE)
+            command = ProtocolCode.SET_JOINT_DISABLE
+            command += f" J{joint_id}"
+            self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def set_joint_enable(self):
-        """Enable the robot joints."""
+    def set_joint_enable(self, joint_id):
+        """Enable the robot joints.
+        Args:
+            joint_id (int): Joint number (1~4). 0 for all joints."""
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=joint_id)
         with self.lock:
-            self._send_command(ProtocolCode.SET_JOINT_ENABLE)
+            command = ProtocolCode.SET_JOINT_ENABLE
+            command += f" J{joint_id}"
+            self._send_command(command)
             return self._response(_async=True, is_set=True)
 
     def get_angles_info(self):
@@ -1631,3 +1650,11 @@ class UltraArmP1:
         with self.lock:
             return self._request_with_retry(ProtocolCode.GET_BLUETOOTH_MAC_P1, 'get_bluetooth_mac')
 
+    def get_end_button_state(self):
+        """Get end button status.
+        Returns:
+            1 - pressed
+            0 - released
+        """
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_END_BUTTON_STATUS, 'get_end_button_state')
