@@ -110,6 +110,9 @@ class UltraArmP1:
             response_timeout = 3
 
         received_data = b""
+        # line buffer
+        text_buffer = ""
+
         if _gcode:
             keyword = b"start"
         else:  # _async=True
@@ -120,7 +123,7 @@ class UltraArmP1:
             _async and not _gcode and not is_set and wait_time == 300
         )
         if is_set:
-            response_timeout = 3
+            response_timeout = 5
 
         status_timeout = 3
         status_query_interval = 0.2
@@ -133,67 +136,73 @@ class UltraArmP1:
                 received_data += chunk
                 # try decode for debug
                 try:
-                    text = received_data.decode(errors='ignore')
-                    chunk_text = chunk.decode(errors='ignore')
+                    chunk_text = chunk.decode("utf-8", errors="ignore")
                 except Exception:
-                    text = str(received_data)
                     chunk_text = str(chunk)
-                self._debug_read(chunk_text)
 
-                text_lower = text.lower()
-                if is_set:
-                    if "ok" in text_lower:
-                        return 'ok'
-                    if "error:" in text_lower:
-                        r = self._parse_colon_values(text_lower, "error", int, single=True)
-                        if r is not None:
-                            if 'm450' in text_lower:
-                                return self._parse_mapped_error_code(
-                                    r, UltraArmP1RobotInfo.ERROR_M450_MAP, self.language)
-                            elif 'g11' in text_lower:
-                                return self._parse_mapped_error_code(
-                                    r, UltraArmP1RobotInfo.ERROR_G11_MAP, self.language)
-                            elif 'm431' in text_lower:
-                                return self._parse_mapped_error_code(
-                                    r, UltraArmP1RobotInfo.ERROR_M431_MAP, self.language)
-                            return r
-                # Limit error
-                if "limiterror" in text_lower:
-                    res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
-                    if res is not None:
-                        return self._parse_mapped_error_code(
-                            res, UltraArmP1RobotInfo.ERROR_MOTION_MAP, self.language)
+                # accumulate text buffer
+                text_buffer += chunk_text
 
-                # Collision detection
-                if "collisiondetectionerror" in text_lower:
-                    res = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
-                    if res is not None:
-                        return self._parse_mapped_error_code(
-                            res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language)
-                try:
-                    # Motion closed-loop feedback
-                    if text.lower().count(keyword.decode()) >= 1:
-                        return 'ok'
-                except Exception:
-                    # fallback to raw bytes check
-                    if received_data.lower().count(keyword) >= 1:
-                        return 'ok'
+                while "\n" in text_buffer:
+                    line, text_buffer = text_buffer.split("\n", 1)
+                    line = line.strip()
 
-                if movement_status_wait:
-                    # M200 returns mainmoving:0/1.  Treat 0 as the same
-                    # closed-loop completion signal as the firmware's end text.
-                    run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
-                    if run_status is not None:
-                        last_status_time = time.time()
-                        if run_status == 0:
-                            # If the robot was already in an error state before
-                            # this motion command, it may only report not moving.
-                            error_info = self._query_error_information()
-                            if error_info and error_info != "ok":
-                                return error_info
+                    self._debug_read(line)
+                    if not line:
+                        continue
+
+                    text_lower = line.lower()
+                    if is_set:
+                        if "ok" in text_lower:
                             return 'ok'
-                    else:
-                        return -1
+                        elif "error:" in text_lower:
+                            r = self._parse_colon_values(text_lower, "error", int, single=True)
+                            if r is not None:
+                                if 'm450' in text_lower:
+                                    return self._parse_mapped_error_code(
+                                        r, UltraArmP1RobotInfo.ERROR_M450_MAP, self.language)
+                                elif 'g11' in text_lower:
+                                    return self._parse_mapped_error_code(
+                                        r, UltraArmP1RobotInfo.ERROR_G11_MAP, self.language)
+                                elif 'm431' in text_lower:
+                                    return self._parse_mapped_error_code(
+                                        r, UltraArmP1RobotInfo.ERROR_M431_MAP, self.language)
+                                return r
+                    # Limit error
+                    if "limiterror" in text_lower:
+                        res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
+                        if res is not None:
+                            return self._parse_mapped_error_code(
+                                res, UltraArmP1RobotInfo.ERROR_MOTION_MAP, self.language)
+
+                    # Collision detection
+                    if "collisiondetectionerror" in text_lower:
+                        res = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
+                        if res is not None:
+                            return self._parse_mapped_error_code(
+                                res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language)
+                    try:
+                        # Motion closed-loop feedback
+                        if text_lower.lower().count(keyword.decode()) >= 1:
+                            return 'ok'
+                    except Exception:
+                        # fallback to raw bytes check
+                        if received_data.lower().count(keyword) >= 1:
+                            return 'ok'
+
+                    if movement_status_wait:
+                        # M200 returns mainmoving:0/1.  Treat 0 as the same
+                        # closed-loop completion signal as the firmware's end text.
+                        run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
+                        if run_status is not None:
+                            last_status_time = time.time()
+                            if run_status == 0:
+                                # If the robot was already in an error state before
+                                # this motion command, it may only report not moving.
+                                error_info = self._query_error_information()
+                                if error_info and error_info != "ok":
+                                    return error_info
+                                return 'ok'
 
             if movement_status_wait:
                 time.sleep(0.1)
@@ -463,6 +472,8 @@ class UltraArmP1:
             return None
 
     def _query_error_information(self, timeout=0.3):
+        self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
+        time.sleep(0.15)
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
         raw_data = ""
         start_time = time.time()
@@ -1512,7 +1523,7 @@ class UltraArmP1:
         """Forced reset to zero."""
         with self.lock:
             self._send_command(ProtocolCode.FORCED_RESET_ZERO)
-            return self._response(_async=True, is_set=True)
+            return self._response(_async=True)
 
     def set_conveyor_control(self, state, direction, speed, distance):
         """Conveyor belt control.
