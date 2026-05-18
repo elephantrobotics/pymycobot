@@ -16,10 +16,11 @@ import os
 import threading
 import time
 import datetime
+
 from pymycobot.log import setup_logging
 from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
-from pymycobot.robot_info import UltraArmP1RobotInfo
+from pymycobot.robot_info import UltraArmP1RobotInfo, RobotLimit
 
 class UltraArmP1:
     """Class for controlling the ultraArmP1 robotic arm via serial communication.
@@ -279,11 +280,19 @@ class UltraArmP1:
                         if flag == "angle":
                             r = self._parse_colon_values(lower, "angles", float, 2)
                             if r is not None and len(r) ==4:
+                                if not self._validate_angles(r):
+                                    if self.debug:
+                                        self.log.warning(f"Discard invalid angle packet: {r}")
+                                    continue
                                 return r
 
                         elif flag == "coord":
                             r = self._parse_colon_values(lower, "coords", float, 2)
                             if r is not None and len(r) ==4:
+                                if not self._validate_coords(r):
+                                    if self.debug:
+                                        self.log.warning(f"Discard invalid coord packet: {r}")
+                                    continue
                                 return r
 
                         elif flag == "error_information":
@@ -298,7 +307,7 @@ class UltraArmP1:
                                 return r
 
                         elif flag == "zero_calibration_state":
-                            r = self._parse_colon_values(lower, "zero state", int)
+                            r = self._parse_colon_values(lower, "zerostate", int)
                             if r is not None:
                                 return r
 
@@ -415,6 +424,46 @@ class UltraArmP1:
         if self.debug:
             self.log.warning(f"request timeout, received buffer: {raw_data}")
         return -1
+
+    def _validate_angles(self, angles):
+        """
+        Validate joint angles against software limits.
+        """
+
+        limits = RobotLimit.robot_limit["UltraArmP1"]
+
+        angles_min = limits["angles_min"]
+        angles_max = limits["angles_max"]
+
+        for i, value in enumerate(angles):
+            if value < angles_min[i] or value > angles_max[i]:
+                if self.debug:
+                    self.log.warning(
+                        f"Invalid angle data: joint{i + 1}={value}, "
+                        f"limit=[{angles_min[i]}, {angles_max[i]}]"
+                    )
+                return False
+        return True
+
+    def _validate_coords(self, coords):
+        """
+        Validate coords against software limits.
+        """
+
+        limits = RobotLimit.robot_limit["UltraArmP1"]
+
+        coords_min = limits["coords_min"]
+        coords_max = limits["coords_max"]
+
+        for i, value in enumerate(coords):
+            if value < coords_min[i] or value > coords_max[i]:
+                if self.debug:
+                    self.log.warning(
+                        f"Invalid coord data: axis{i}={value}, "
+                        f"limit=[{coords_min[i]}, {coords_max[i]}]"
+                    )
+                return False
+        return True
 
     def _request_with_retry(self, command, flag, attempts=3):
         for attempt in range(attempts):
@@ -620,6 +669,67 @@ class UltraArmP1:
         return self._response(_async=True, is_set=True)
 
     def _wait_queue_safe(self, timeout=5.0):
+        start = time.time()
+
+        last_queue_size = None
+
+        while True:
+
+            retry = 0
+            valid_queue_size = None
+
+            while retry < 3:
+                queue_size = self.get_queue_size()
+                # print("M600 Queue_size:", queue_size)
+
+                # Basic anomalies
+                if queue_size is None or queue_size < 0:
+                    retry += 1
+                    time.sleep(0.02)
+                    continue
+
+                # Out-of-range anomaly
+                if queue_size > 100:
+                    # print("queue size overflow", queue_size)
+                    retry += 1
+                    time.sleep(0.005)
+                    continue
+
+                # The difference from the previous value is too large.
+                if last_queue_size is not None and abs(queue_size - last_queue_size) >= 10:
+                    # print("current & last too large", queue_size, last_queue_size)
+                    retry += 1
+                    time.sleep(0.005)
+                    continue
+
+                # Truly effective data
+                valid_queue_size = queue_size
+                break
+
+            # Continuous anomalies
+            if valid_queue_size is None:
+                print("queue size abnormal, exit play")
+                return False
+
+            last_queue_size = valid_queue_size
+            queue_size = valid_queue_size
+
+            # Unblocked
+            if not self._queue_blocked:
+                if queue_size >= 80:
+                    self._queue_blocked = True
+                    continue
+                else:
+                    return True
+            # Blocked
+            else:
+                if queue_size <= 40:
+                    self._queue_blocked = False
+                    return True
+
+            time.sleep(0.01)
+
+    def _wait_queue_safe_old(self, timeout=5.0):
         start = time.time()
         while True:
             queue_size = self.get_queue_size()
@@ -1086,40 +1196,28 @@ class UltraArmP1:
 
         Args:
             addr (int) : 1 ~ 69
-            parameter_value (int) :
-                mode is 1: 0 ~ 255
-                mode is 2: > 255
-
+            parameter_value (int) : 0 ~ 65535
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr, parameter_value=parameter_value)
-        if 0 < parameter_value < 255:
-            mode = 1
-        else:
-            mode = 2
         with self.lock:
             command = ProtocolCode.SET_GRIPPER_PARAMETER_P1
             command += " J" + str(addr)
-            command += " K" + str(mode)
             command += " L" + str(parameter_value)
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def get_gripper_parameter(self, addr, mode):
+    def get_gripper_parameter(self, addr):
         """Get gripper parameter.
 
         Args:
             addr (int) : 1 ~ 69
-            mode (int) : 1 - 2
 
-        Returns: (int) gripper parameter.
-            mode is 1: 0 ~ 255
-            mode is 2: > 255
+        Returns: (int) gripper parameter. 0 ~ 65535
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr, gripper_mode=mode)
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr)
         with self.lock:
             command = ProtocolCode.GET_GRIPPER_PARAMETER_P1
             command += " J" + str(addr)
-            command += " K" + str(mode)
             return self._request_with_retry(command, "get_gripper_parameter")
 
     def get_gripper_run_status(self):
@@ -1260,7 +1358,10 @@ class UltraArmP1:
 
                 command = line + ProtocolCode.END
                 # Queue Protection
-                self._wait_queue_safe()
+                # self._wait_queue_safe()
+                if self._wait_queue_safe() != 1:
+                    print("queue play error")
+                    break
 
                 self._serial_port.write(command.encode())
                 self._serial_port.flush()
