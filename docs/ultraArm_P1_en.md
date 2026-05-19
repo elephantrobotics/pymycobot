@@ -29,19 +29,27 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Function:** Sets the robotic arm development board to restart.
 
-- **Return Value:** None
+- **Return value：** ok
 
-### 2 `set_joint_release()`
+### 2 `set_joint_release(joint_id)`
 
 - **Function:** Releases the joint
 
-- **Return Value:** None
+- **Parameter Description:**
 
-### 3 `set_joint_enable()`
+  - `joint_id`(`int`): Joint number (1~4); 0 indicates all joints.
+
+- **Return value：** ok
+
+### 3 `set_joint_enable(joint_id)`
 
 - **Function:** Locks the joint
 
-- **Return Value:** None
+- **Parameter Description:**
+
+  - `joint_id`(`int`): Joint number (1~4); 0 indicates all joints.
+
+- **Return value：** ok
 
 ### 4 `get_system_version()`
 
@@ -260,7 +268,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Function:** Stops the robotic arm's movement.
 
-- **Return value:** 1
+- **Return value：** ok
 
 ### 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
@@ -338,13 +346,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Parameter Description:** `p_value` Duty cycle, range: 0-5
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 19 `set_zero_calibration()`
 
 - **Function:** Sets zero-point calibration
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 19 `get_zero_calibration_state()`
 
@@ -392,7 +400,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `gripper_speed:` 1 ~ 100
 
-- **Return value:** 1
+- **Return value：** ok
 
 ### 26 `get_gripper_angle()`
 
@@ -408,23 +416,17 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `addr`: `int`, 1 ~ 69
 
-  - `parameter_value` (`int`):
-    - `Mode 1:` 0 ~ 255
+  - `parameter_value` (`int`): 0 ~ 65535
+- **Return value：** ok
 
-    - `Mode 2:` Greater than 255
-- **Return value:** 1
-
-### 28 `get_gripper_parameter(addr, mode)`
+### 28 `get_gripper_parameter(addr)`
 
 - **Function:** Reads the gripper parameter
 - **Parameter description:**
   - `addr`: `int`, 1 ~ 69
 
   - `mode:` (`int`): 1 ~ 2
-- **Return value:** (int) Gripper parameter
-    - `Mode 1:` 0 ~ 255
-
-    - `Mode 2:` Greater than 255
+- **Return value:** (int) Gripper parameter 0 ~ 65535
 
 ### 29 `set_gripper_enable_status(state):`
 
@@ -438,13 +440,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
     - `1`: Enabled
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 30 `set_gripper_zero()`
 
 - **Function:** Sets the gripper to zero position
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 31 `set_pump_state(pump_state)`
 
@@ -460,7 +462,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
     - `2`: Off
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 32 `set_base_io_output(pin_no, pin_status, pin_signal)`
 
@@ -482,7 +484,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
     - `1`: High level
 
-- **Return value:** 1
+- **Return value：** ok
 
 ### 33 `set_digital_io_output(pin_no, pin_signal)`
 
@@ -498,7 +500,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
     - `1`: High level
 
-- **Return value:** 1
+- **Return value：** ok
 
 ### 34 `set_i2c_data(data_state, data_addr, data_len, data_value)`
 
@@ -518,7 +520,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `data_value`: `int` 0 ~ 255
 
-- **Return value:** 1
+- **Return value：** ok
 
 ### 35 `play_gcode_file(filename)`
 
@@ -550,7 +552,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `baud_rate`: `int` standard baud rate, 115200 or 1000000
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 39 `receive_485_data()`
 
@@ -568,7 +570,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `password`: (`str`) WiFi password string, length 8~15 characters.
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 41 `check_sd_card()`
 
@@ -596,7 +598,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Function:** Firmware upgrade and restart.
 
-- **Return value:** None
+- **Return value：** ok
 
 ### 44 `get_motor_enable_status()`
 
@@ -608,7 +610,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Function:** Ends the download of firmware data to the SD card. (The upgrade can be terminated midway through the firmware download process.)
 
-- **Return Value:** 1.
+- **Return value：** ok.
 
 ### 46 `get_base_io_state()`
 
@@ -658,19 +660,19 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Function:** Enable the end button
   
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 51 `set_end_button_disable()`
 
 - **Function:** Disable the end button
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 52 `forced_reset_zero()`
 
 - **Function:** Set forced homing (reset to zero)
   
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 53 `set_conveyor_control(state, direction, speed, distance)`
 
@@ -680,7 +682,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `direction`: (`int`) 0~1, conveyor direction: 0 - forward; 1 - backward
   - `speed`: (`int`) conveyor speed, range 50~500000
   - `distance`: (`int`) conveyor distance, range 1~500000
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 54 `set_color(r, g, b)`
 
@@ -690,7 +692,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `g`: (`int`) Green component; range: 0 ~ 255.
   - `b`: (`int`) Blue component; range: 0 ~ 255.
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 55 `set_preview_mode(coords)`
 
@@ -698,7 +700,7 @@ ua.set_angles([0, 0, 90, 0],50)
 - **Parameter Description:**
   - `coords` (list[float]): A list of coordinate values ​​[X, Y, Z, R].
 
-- **Return Value:** 1
+- **Return value：** ok
 
 ### 56 `get_sd_card_space()`
 
@@ -717,6 +719,51 @@ ua.set_angles([0, 0, 90, 0],50)
 - **Function:** Clears the error status. If a limit has been exceeded, the joint must be manually moved back within the limit boundaries.
 
 - **Return Value:** OK - Success; error - Failure
+
+### 59 `get_queue_size()`
+
+- **Function:** Reads the size of the buffer queue.
+
+- **Return Value:** `int` Queue size
+
+### 60 `set_robot_id(robot_id)`
+
+- **Function:** Sets the device machine code
+
+- **Parameter Description:**
+
+  - `robot_id`: (`str`) Machine code ID, range 001 ~ 254, length 3
+
+- **Return Value:** ok
+
+### 61 `get_robot_id()`
+
+- **Function:** Reads the device machine code
+
+- **Return Value:** Machine code ID, range 001 ~ 254, length 3
+
+### 62 `get_wifi_ip()`
+
+- **Function:** Reads the WiFi IP address (only available when WiFi is connected)
+
+- **Return Value:** `str` WiFi IP address
+
+### 63 `get_bluetooth_mac()`
+
+- **Function:** Reads the Bluetooth communication MAC address (only available when Bluetooth is enabled)
+
+- **Return Value:** `str` Bluetooth MAC address
+
+### 64 `get_end_button_state()`
+
+- **Function:** Reads the state of the end button
+
+- **Return value:**
+
+  - `0`: Not pressed
+
+  - `1`: Pressed
+
 
 ---
 

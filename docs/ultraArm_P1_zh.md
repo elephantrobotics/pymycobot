@@ -28,18 +28,21 @@ ua.set_angles([0, 0, 90, 0],50)
 ### 1 `set_reboot()`
 
 - **功能：** 设置机械臂开发板重启。
-- **返回值：** 无
+- **返回值：** ok
 
-### 2 `set_joint_release()`
+### 2 `set_joint_release(joint_id)`
 
 - **功能：** 放松关节
-- **返回值：** 无
+-**参数说明：** 
+  - `joint_id`(`int`): 关节编号（1~4）；0 表示所有关节。
+- **返回值：** ok
 
-### 3 `set_joint_enable()`
+### 3 `set_joint_enable(joint_id)`
 
 - **功能：** 锁紧关节
-
-- **返回值：** 无
+-**参数说明：** 
+  - `joint_id`(`int`): 关节编号（1~4）；0 表示所有关节。
+- **返回值：** ok
 
 ### 4 `get_system_version()`
 
@@ -179,7 +182,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **功能：** 机械臂停止运动
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
@@ -263,7 +266,7 @@ ua.set_angles([0, 0, 90, 0],50)
     - 3: J3
     - 4: J4
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 19 `get_zero_calibration_state(joint_number)` 
 
@@ -310,7 +313,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `gripper_speed:` 1 ~ 100
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 26 `get_gripper_angle()`
 
@@ -324,24 +327,18 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **参数说明:** 
   - `addr`： `int`, 1 ~ 69
-  - `parameter_value` (`int`):
-    - `模式为1`：0 ~ 255
-    - `模式为2`： 大于255
+  - `parameter_value` (`int`): 0 ~ 65535
 
-- **返回值：** 1
+- **返回值：** ok
 
-### 28 `get_gripper_parameter(addr, mode)`
+### 28 `get_gripper_parameter(addr)`
 
 - **功能：** 读取夹爪参数
 
 - **参数说明:** 
   - `addr`： `int`, 1 ~ 69
 
-  - `mode:`  (`int`): 1 ~ 2
-
-- **返回值：** (int) 夹爪参数
-  - `模式为1`：0 ~ 255
-  - `模式为2`： 大于255
+- **返回值：** (int) 夹爪参数 0 ~ 65535
 
 ### 29 `set_gripper_enable_status(state):`
 
@@ -352,13 +349,13 @@ ua.set_angles([0, 0, 90, 0],50)
     - `0`: 失能
     - `1`: 使能
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 30 `set_gripper_zero()`
 
 - **功能：** 设置夹爪零位
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 31 `set_pump_state(pump_state)`
 
@@ -370,7 +367,7 @@ ua.set_angles([0, 0, 90, 0],50)
     - `1`: 释放
     - `2`: 关闭
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 32 `set_base_io_output(pin_no, pin_status, pin_signal)`
 
@@ -385,7 +382,7 @@ ua.set_angles([0, 0, 90, 0],50)
     - `0`: 低电平
     - `1`: 高电平
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 33 `set_digital_io_output(pin_no, pin_signal)`
 
@@ -397,7 +394,7 @@ ua.set_angles([0, 0, 90, 0],50)
     - `0`: 低电平
     - `1`: 高电平
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 34 `set_i2c_data(data_state, data_addr, data_len, data_value)`
 
@@ -414,7 +411,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `data_len`: `int`: 0 ~ 64
   - `data_value`: `int` 0 ~ 255
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 35 `play_gcode_file(filename)`
 
@@ -442,7 +439,7 @@ ua.set_angles([0, 0, 90, 0],50)
 - **参数说明:** 
   - `baud_rate`： `int` 标准波特率, 115200 or 1000000
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 39 `receive_485_data()`
 
@@ -457,7 +454,7 @@ ua.set_angles([0, 0, 90, 0],50)
 - **参数说明：**
   - `wifi_name`: (`str `) SSID，WiFi名称。
   - `password` ：(`str`) WiFi字符串密码，长度 8 ~ 15位。
-- **返回值：** 1
+- **返回值：** ok
 
 ### 41 `check_sd_card()`
 
@@ -539,19 +536,19 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **功能：** 设置末端按钮使能
   
-- **返回值：** 1
+- **返回值：** ok
 
 ### 51 `set_end_button_disable()`
 
 - **功能：** 设置末端按钮掉使能
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 52 `forced_reset_zero()`
 
 - **功能：** 设置强制回零
   
-- **返回值：** 1
+- **返回值：** ok
 
 ### 53 `set_conveyor_control(state, direction, speed, distance)`
 
@@ -561,7 +558,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `direction`: (`int`) 0~1，传送带方向，0 - 前进；1 - 后退
   - `speed`: (`int`) 传送带速度，范围50~500000
   - `distance:` (`int`) 传送带距，范围1~500000
-- **返回值：** 1
+- **返回值：** ok
 
 ### 54 `set_color(r, g, b)`
 
@@ -571,7 +568,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `g`: (`int`) 绿色，范围 0 ~ 255
   - `b`: (`int`) 蓝色，范围 0 ~ 255
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 55 `set_preview_mode(coords)`
 
@@ -579,7 +576,7 @@ ua.set_angles([0, 0, 90, 0],50)
 - **参数说明：**
   - `coords` (list[float]): 坐标值列表 [X, Y, Z, R]
 
-- **返回值：** 1
+- **返回值：** ok
 
 ### 56 `get_sd_card_space()`
 
@@ -598,6 +595,43 @@ ua.set_angles([0, 0, 90, 0],50)
 - **功能：** 清除错误状态，若超限需手动将关节移动到限位内。
 
 - **返回值：** OK - 成功；error - 失败
+
+### 59 `get_queue_size()`
+
+- **功能：** 读取缓冲区队列大小。
+
+- **返回值：** `int` 队列大小
+
+### 60 `set_robot_id(robot_id)`
+
+- **功能：** 设置设备机器码
+- **参数说明：**
+  - `robot_id` ：(`str`) 机器码ID，范围 001 ~ 254，长度是3
+
+- **返回值：** ok
+
+### 61 `get_robot_id()`
+
+- **功能：** 读取设备机器码
+- **返回值：** 机器码ID，范围 001 ~ 254，长度是3
+
+### 62 `get_wifi_ip()`
+
+- **功能：** 读取WiFi IP地址（仅在WiFi连接时才能读取）
+- **返回值：** `str` WiFi IP地址
+
+### 63 `get_bluetooth_mac()`
+
+- **功能：** 读取蓝牙通信的MAC地址（仅在蓝牙打开时才能读取）
+- **返回值：** `str` 蓝牙Mac地址
+
+### 64 `get_end_button_state()`
+
+- **功能：** 读取末端按钮状态
+- **返回值：** 
+  - `0`: 未按下
+  - `1`: 按下
+
 
 ---
 
