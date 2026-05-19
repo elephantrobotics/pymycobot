@@ -242,7 +242,7 @@ class UltraArmP1:
         timeout = 0.3
         if flag == "check_sd_card":
             timeout = 3
-        elif flag in ['angle', 'coord', 'io', 'motorenable']:
+        elif flag in ['angle', 'coord', 'io', 'motorenable', "get_queue_size"]:
             timeout = 0.02
 
         raw_data = ""
