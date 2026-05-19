@@ -366,9 +366,9 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** Running Status
 
-### 21 `quick_off_laser(state)`
+### 21 `set_pwm_laser_mode(state)`
 
-- **Function:** Quickly turn off the laser.
+- **Function:** Set pwm laser mode.
 - **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
 - **Return Value:** `ok` - Success; `error` - Failure.
 
@@ -378,9 +378,9 @@ ua.set_angles([0, 0, 90, 0],50)
 - **Parameters:** `p_value` (`int`) 0 ~ 255.
 - **Return Value:** `ok` - Success; `error` - Failure.
 
-### 23 `quick_off_custom_pwm(state)`
+### 23 `set_pwm_custom_mode(state)`
 
-- **Function:** Quickly turn off custom PWM.
+- **Function:** Set pwm custom mode.
 - **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
 - **Return Value:** `ok` - Success; `error` - Failure.
 

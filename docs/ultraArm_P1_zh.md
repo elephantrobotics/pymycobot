@@ -280,9 +280,9 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：**  运行状态
 
-### 21 `quick_off_laser(state)`
+### 21 `set_pwm_laser_mode(state)`
 
-- **功能：** 快关激光
+- **功能：** 设置pwm激光模式
 - **参数：** `state (`int`)` 0 ~ 1， 0 - 关闭；1 - 开启。
 - **返回值：** ok - 成功；error - 失败
 
@@ -292,9 +292,9 @@ ua.set_angles([0, 0, 90, 0],50)
 - **参数：** `p_value (`int`)` 0 ~ 255。
 - **返回值：** ok - 成功；error - 失败
 
-### 23 `quick_off_custom_pwm(state)`
+### 23 `set_pwm_custom_mode(state)`
 
-- **功能：** 快关自定义PWM。
+- **功能：** 设置PWM自定义模式。
 - **参数：** `state (`int`)` 0 ~ 1， 0 - 关闭；1 - 开启。
 - **返回值：** ok - 成功；error - 失败
 

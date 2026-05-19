@@ -146,13 +146,33 @@ class UltraArmP1:
 
                 while "\n" in text_buffer:
                     line, text_buffer = text_buffer.split("\n", 1)
+
                     line = line.strip()
 
-                    self._debug_read(line)
                     if not line:
                         continue
 
+                    # keep original frame for debug
+                    origin_line = line
+
+                    # ----------------------------------------------------------
+                    # checksum verify (compatible old protocol)
+                    # ----------------------------------------------------------
+                    if "*" in line:
+                        if not self._verify_checksum(line):
+                            if self.debug:
+                                self.log.warning(f"Checksum failed: {repr(line)}")
+                            continue
+                        # remove checksum
+                        line = line.split("*", 1)[0]
+                    # remove '$'
+                    line = line.lstrip("$")
+                    # debug original frame
+                    if self.debug:
+                        self._debug_read(origin_line)
+
                     text_lower = line.lower()
+
                     if is_set:
                         if "ok" in text_lower:
                             return 'ok'
@@ -184,11 +204,12 @@ class UltraArmP1:
                                 res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language)
                     try:
                         # Motion closed-loop feedback
-                        if text_lower.lower().count(keyword.decode()) >= 1:
+                        if text_lower.lower().count(keyword.decode()) >= 2:
+                            print('text_lower.lower().count(keyword.decode()):', text_lower.lower().count(keyword.decode()))
                             return 'ok'
                     except Exception:
                         # fallback to raw bytes check
-                        if received_data.lower().count(keyword) >= 1:
+                        if received_data.lower().count(keyword) >= 2:
                             return 'ok'
 
                     if movement_status_wait:
@@ -268,12 +289,31 @@ class UltraArmP1:
 
                         if not line_data:
                             continue
+                        # keep original line for debug
+                        origin_line_data = line_data
+
+                        # checksum verify
+                        if "*" in line_data:
+                            if not self._verify_checksum(line_data):
+                                if self.debug:
+                                    self.log.warning(f"Checksum failed: {repr(line_data)}")
+                                continue
+
+                            # remove checksum part
+                            line_data = line_data.split("*", 1)[0]
+
+                        # remove checksum part
+                        if "*" in line_data:
+                            line_data = line_data.split("*", 1)[0]
+
+                        # remove '$'
+                        line_data = line_data.lstrip("$")
 
                         lower = line_data.lower()
 
                         # debug
                         if self.debug:
-                            display = line_data if len(line_data) < 1000 else line_data[-1000:]
+                            display = origin_line_data if len(origin_line_data) < 1000 else origin_line_data[-1000:]
                             self._debug_read(display)
 
                         # -------- dispatch by flag --------
@@ -298,8 +338,7 @@ class UltraArmP1:
                         elif flag == "error_information":
                             r = self._parse_colon_values(lower, "error", int, single=True)
                             if r is not None:
-                                value = r
-                                return self._parse_error_code(value, self.language)
+                                return self._parse_error_code(r, self.language)
 
                         elif flag == "get_gripper_angle":
                             r = self._parse_colon_values(lower, "gripperangle", int, single=True)
@@ -425,6 +464,30 @@ class UltraArmP1:
             self.log.warning(f"request timeout, received buffer: {raw_data}")
         return -1
 
+    def _verify_checksum(self, line):
+
+        try:
+            line = line.strip()
+            if not line.startswith("$"):
+                return False
+
+            if "*" not in line:
+                return False
+
+            data, recv_checksum = line.rsplit("*", 1)
+            data = data[1:]
+            xor_value = 0
+
+            for c in data:
+                xor_value ^= ord(c)
+
+            calc_checksum = f"{xor_value:02X}"
+
+            return calc_checksum.upper() == recv_checksum.upper()
+
+        except Exception:
+            return False
+
     def _validate_angles(self, angles):
         """
         Validate joint angles against software limits.
@@ -521,6 +584,55 @@ class UltraArmP1:
             return None
 
     def _query_error_information(self, timeout=0.3):
+
+        self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
+        time.sleep(0.15)
+        self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
+
+        raw_data = ""
+
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            chunk = self._read_available_bytes()
+
+            if chunk:
+                try:
+                    chunk_text = chunk.decode(errors="ignore")
+                except Exception:
+                    chunk_text = str(chunk)
+                raw_data += chunk_text
+                while "\n" in raw_data:
+                    line_data, raw_data = raw_data.split("\n", 1)
+                    line_data = line_data.strip()
+
+                    if not line_data:
+                        continue
+                    # keep original frame
+                    origin_line = line_data
+                    # checksum verify
+                    if "*" in line_data:
+                        if not self._verify_checksum(line_data):
+                            # if self.debug:
+                            #     self.log.warning(f"Checksum failed: {repr(line_data)}")
+                            continue
+
+                        # remove checksum
+                        line_data = line_data.split("*", 1)[0]
+                    # remove '$'
+                    line_data = line_data.lstrip("$")
+                    # debug original frame
+                    if self.debug:
+                        self._debug_read(origin_line)
+
+                    r = self._parse_colon_values(line_data.lower(),"error", int, single=True)
+
+                    if r is not None:
+                        return self._parse_error_code(r, self.language)
+            time.sleep(0.01)
+        return None
+
+    def _query_error_information_old(self, timeout=0.3):
         self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
         time.sleep(0.15)
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
@@ -1110,15 +1222,15 @@ class UltraArmP1:
                 ProtocolCode.GET_RUNNING_STATUS_P1, "run_status"
             )
 
-    def quick_off_laser(self, state):
-        """Quick turn off laser
+    def set_pwm_laser_mode(self, state):
+        """Set PWM Laser mode.
 
         Args:
             state (int): 0 - close; 1 - open
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         with self.lock:
-            command = ProtocolCode.QUICK_OFF_LASER
+            command = ProtocolCode.SET_PWM_LASER_MODE
             command += " K" + str(state)
             self._send_command(command)
             return self._response(_async=True, is_set=True)
@@ -1137,15 +1249,15 @@ class UltraArmP1:
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def quick_off_custom_pwm(self, state):
-        """Quick turn off custom PWM
+    def set_pwm_custom_mode(self, state):
+        """Set PWM custom mode
 
         Args:
             state (int): 0 - close; 1 - open
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         with self.lock:
-            command = ProtocolCode.QUICK_OFF_CUSTOM_PWM
+            command = ProtocolCode.SET_PWM_CUSTOM_MODE
             command += " K" + str(state)
             self._send_command(command)
             return self._response(_async=True, is_set=True)
@@ -1773,3 +1885,31 @@ class UltraArmP1:
         """
         with self.lock:
             return self._request_with_retry(ProtocolCode.GET_END_BUTTON_STATUS, 'get_end_button_state')
+
+    def coord_inverse_solution(self, coords):
+        """
+
+        Args:
+            coords (list) : Coordinates [X, Y, Z, RX]
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        with self.lock:
+            command = ProtocolCode.SET_COORD_INVERSE_SOLUTION
+            command += f" X{coords[0]} Y{coords[1]} Z{coords[2]} R{coords[3]}"
+
+            self._send_command(command)
+            return self._request('get_inverse_solution_angles')
+
+    def angle_correct_solution(self, angles):
+        """
+
+        Args:
+            angles (list) : Angles list, len is 4
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles)
+        with self.lock:
+            command = ProtocolCode.SET_ANGLE_CORRECT_SOLUTION
+            command += f" A{angles[0]} B{angles[1]} C{angles[2]} D{angles[3]}"
+
+            self._send_command(command)
+            return self._request('get_correct_solution_coords')
