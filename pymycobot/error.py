@@ -2266,7 +2266,7 @@ def calibration_parameters(**kwargs):
             elif parameter in ["pin_no", "communicate_mode"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, MercuryE1DataException, int)
             elif parameter in ['pin_signal', 'value', 'state', 'direction', 'vr_mode', 'rftype', 'end', 'is_linear', 'mode', 'deceleration',
-                               'communication_mode', 'protocol_mode', 'state', 'damping']:
+                               'communication_mode', 'protocol_mode', 'state', 'damping', 'hand_flag']:
                 check_0_or_1(parameter, value, [0, 1], value_type, MercuryE1DataException, int)
             elif parameter == "move_type":
                 check_value_type(parameter, value_type, MercuryE1DataException, int)
@@ -2341,6 +2341,113 @@ def calibration_parameters(**kwargs):
                     if angle < angle_min or angle > angle_max:
                         raise MercuryE1DataException(
                             "Joint {} angle value of {} exceeds the limit, with a limit range of {} ~ {}.".format(joint_id, angle, angle_min, angle_max)
+                        )
+            elif parameter in ["mit_q"]:
+                joint_id = kwargs.get('joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                radius_min = robot_limit[class_name]["radius_min"][index]
+                radius_max = robot_limit[class_name]["radius_max"][index]
+                if not isinstance(value, (int, float)):
+                    raise MercuryE1DataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                if value < radius_min or value > radius_max:
+                    raise MercuryE1DataException(
+                        "Joint {} q value of {} exceeds the limit, with a limit range of {} ~ {} rad.".format(
+                            joint_id, value, radius_min, radius_max)
+                    )
+            elif parameter in ["mit_dq"]:
+                joint_id = kwargs.get('joint_id', None)
+                if not isinstance(value, (int, float)):
+                    raise MercuryE1DataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                dq_max = 30 if joint_id == 7 else 20
+                if value < -dq_max or value > dq_max:
+                    raise MercuryE1DataException(
+                        "Joint {} dq value of {} exceeds the limit, with a limit range of {} ~ {} rad/s.".format(
+                            joint_id, value, -dq_max, dq_max)
+                    )
+            elif parameter in ["mit_kp"]:
+                if not isinstance(value, (int, float)):
+                    raise MercuryE1DataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                if value < 0 or value > 500:
+                    raise MercuryE1DataException(
+                        "kp value not right, should be 0 ~ 500, but received {}".format(value))
+            elif parameter in ["mit_kd"]:
+                if not isinstance(value, (int, float)):
+                    raise MercuryE1DataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                if value < 0 or value > 5:
+                    raise MercuryE1DataException(
+                        "kd value not right, should be 0 ~ 5, but received {}".format(value))
+            elif parameter in ["mit_tau"]:
+                joint_id = kwargs.get('joint_id', None)
+                if not isinstance(value, (int, float)):
+                    raise MercuryE1DataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                tau_max = 120 if joint_id <= 3 else 28 if joint_id <= 6 else 10
+                if value < -tau_max or value > tau_max:
+                    raise MercuryE1DataException(
+                        "Joint {} tau value of {} exceeds the limit, with a limit range of {} ~ {} Nm.".format(
+                            joint_id, value, -tau_max, tau_max)
+                    )
+            elif parameter in ["mit_controls"]:
+                if not isinstance(value, list):
+                    raise MercuryE1DataException(
+                        "mit_controls must be a list, but received {}".format(value_type))
+                if len(value) != 7:
+                    raise MercuryE1DataException(
+                        "The length of mit_controls must be 7, but received {}".format(len(value)))
+                for idx, control in enumerate(value):
+                    joint_id = idx + 1
+                    if isinstance(control, dict):
+                        missing_keys = [key for key in ["joint_pos", "rad_speed", "kp", "kd", "torque"] if key not in control]
+                        if missing_keys:
+                            raise MercuryE1DataException(
+                                "MIT control dict of joint {} is missing key: {}".format(joint_id, missing_keys[0]))
+                        joint_pos = control["joint_pos"]
+                        rad_speed = control["rad_speed"]
+                        kp = control["kp"]
+                        kd = control["kd"]
+                        torque = control["torque"]
+                    elif isinstance(control, (list, tuple)):
+                        if len(control) != 5:
+                            raise MercuryE1DataException(
+                                "MIT control group of joint {} length must be 5, but the received len is {}".format(joint_id, len(control)))
+                        joint_pos, rad_speed, kp, kd, torque = control
+                    else:
+                        raise MercuryE1DataException(
+                            "MIT control group of joint {} must be a list, tuple, or dict.".format(joint_id))
+
+                    radius_min = robot_limit[class_name]["radius_min"][idx]
+                    radius_max = robot_limit[class_name]["radius_max"][idx]
+                    for name, item in [("joint_pos", joint_pos), ("rad_speed", rad_speed), ("kp", kp), ("kd", kd), ("torque", torque)]:
+                        if not isinstance(item, (int, float)):
+                            raise MercuryE1DataException(
+                                "The acceptable MIT parameter {} of joint {} should be an int or float, but the received {}".format(
+                                    name, joint_id, type(item)))
+                    if joint_pos < radius_min or joint_pos > radius_max:
+                        raise MercuryE1DataException(
+                            "Joint {} joint_pos value of {} exceeds the limit, with a limit range of {} ~ {} rad.".format(
+                                joint_id, joint_pos, radius_min, radius_max)
+                        )
+                    dq_max = 30 if joint_id == 7 else 20
+                    if rad_speed < -dq_max or rad_speed > dq_max:
+                        raise MercuryE1DataException(
+                            "Joint {} rad_speed value of {} exceeds the limit, with a limit range of {} ~ {} rad/s.".format(
+                                joint_id, rad_speed, -dq_max, dq_max)
+                        )
+                    if kp < 0 or kp > 500:
+                        raise MercuryE1DataException(
+                            "Joint {} kp value not right, should be 0 ~ 500, but received {}".format(joint_id, kp))
+                    if kd < 0 or kd > 5:
+                        raise MercuryE1DataException(
+                            "Joint {} kd value not right, should be 0 ~ 5, but received {}".format(joint_id, kd))
+                    tau_max = 120 if joint_id <= 3 else 28 if joint_id <= 6 else 10
+                    if torque < -tau_max or torque > tau_max:
+                        raise MercuryE1DataException(
+                            "Joint {} torque value of {} exceeds the limit, with a limit range of {} ~ {} Nm.".format(
+                                joint_id, torque, -tau_max, tau_max)
                         )
             elif parameter == 'coords':
                 check_coords(parameter, value, robot_limit, class_name, MercuryE1DataException)
@@ -2449,7 +2556,7 @@ def calibration_parameters(**kwargs):
                         f"Version must be >= 1.0, but received '{value}'")
             elif parameter in ["tool_modified_version", "five_hand_id", "target_five_hand_id"]:
                 check_value_type(parameter, value_type, MercuryE1DataException, int)
-                if value < 0 or value > 255:
+                if value < 2 or value > 254:
                     raise MercuryE1DataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
             elif parameter in ["tool_coords", "world_coords"]:
                 check_world_tool_coords(parameter, value, MercuryE1DataException)
@@ -2516,6 +2623,58 @@ def calibration_parameters(**kwargs):
                 if value < 1 or value > 65535:
                     raise MercuryE1DataException(
                         "The parameter {} only supports 1 ~ 65535, but received {}".format(parameter, value))
+
+            elif parameter == "hand_gripper_joint_id":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 1 or value > 6:
+                    raise MercuryE1DataException("The range of 'hand_id' in {} is 1 ~ 6, but the received value is {}".format(parameter, value))
+            elif parameter in ['hand_gripper_angle']:
+                joint_id = kwargs.get('hand_gripper_joint_id', None)
+                index = robot_limit[class_name]['hand_gripper_joint_id'][joint_id - 1] - 1
+                max_angles = robot_limit[class_name]["hand_gripper_angles_max"][index]
+                min_angles = robot_limit[class_name]["hand_gripper_angles_min"][index]
+                if value < min_angles or value > max_angles:
+                    raise MercuryE1DataException(
+                        "gripper angle value not right, should be {0} ~ {1}, but received {2}".format(min_angles, max_angles, value))
+
+            elif parameter in ["hand_gripper_angles"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, list)
+                if len(value) not in [6]:
+                    raise MercuryE1DataException("The length of `hand_gripper_angles` must be 6.")
+                for idx, angle in enumerate(value):
+                    joint_id = idx + 1
+                    angle_min = robot_limit[class_name]["hand_gripper_angles_min"][idx]
+                    angle_max = robot_limit[class_name]["hand_gripper_angles_max"][idx]
+                    if angle < angle_min or angle > angle_max:
+                        raise MercuryE1DataException(
+                            "Hand joint {} angle value of {} exceeds the limit, with a limit range of {} ~ {}.".format(
+                                joint_id, angle, angle_min, angle_max))
+            elif parameter == 'hand_gripper_speed':
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if not 1 <= value <= 100:
+                    raise MercuryE1DataException(
+                        "gripper speed not right, should be 1 ~ 100, the error gripper_speed is {}".format(value))
+            elif parameter == "clockwise":
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 16:
+                    raise MyCobot320DataException("The range of 'value' in {} is 0 ~ 16, but the received value is {}".format(parameter, value))
+            elif parameter in ["gripper_p", "gripper_d", "min_pressure", "gripper_i"]:
+                check_value_type(parameter, value_type, MercuryE1DataException, int)
+                if value < 0 or value > 254:
+                    raise MercuryE1DataException("The range of 'value' in {} is 0 ~ 254, but the received value is {}".format(parameter, value))
+            elif parameter == 'hand_pinch_pose':
+                check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MercuryE1DataException, int)
+
+            elif parameter == 'hand_rank_mode':
+                pinch_pose_val = kwargs.get("hand_pinch_pose", None)
+                if pinch_pose_val == 4:
+                    valid_range = list(range(1, 21))  # [1 ~ 20]
+                else:
+                    valid_range = list(range(0, 6))  # [0 ~ 5]
+                check_0_or_1(parameter, value, valid_range, value_type, MercuryE1DataException, int)
+
+            elif parameter == 'hand_idle_flag':
+                check_0_or_1(parameter, value, [0, 1], value_type, MercuryE1DataException, int)
 
 def restrict_serial_port(func):
     """

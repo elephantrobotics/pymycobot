@@ -1,4 +1,4 @@
-# coding=utf-8
+﻿# coding=utf-8
 import locale
 import time
 import threading
@@ -6,10 +6,9 @@ import socket
 
 import numpy as np
 import serial
-from pymycobot.mercury_api import MercuryCommandGenerator
 from pymycobot.e1_close_loop import E1CloseLoop
 from pymycobot.robot_info import _interpret_status_code, RobotStatusE1Info
-from pymycobot.common import ProtocolCode,ProGripper
+from pymycobot.common import ProtocolCode
 
 
 class MercuryE1(E1CloseLoop):
@@ -50,7 +49,7 @@ class MercuryE1(E1CloseLoop):
             self._serial_port.timeout = timeout
             self._serial_port.rts = False
             self._serial_port.open()
-        # self.get_limit_switch()
+        self.get_limit_switch()
 
     def _mesg(self, genre, *args, **kwargs):
         read_data = super(MercuryE1, self)._mesg(genre, *args, **kwargs)
@@ -74,6 +73,7 @@ class MercuryE1(E1CloseLoop):
         else:
             return -1
         res = []
+        # print('data_len:', data_len)
         if genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
             res = [i for i in valid_data]
         elif data_len in [8, 12, 14, 16, 26, 60]:
@@ -182,6 +182,9 @@ class MercuryE1(E1CloseLoop):
                 timeout = int.from_bytes(res[4:6], byteorder="big", signed=False)
                 return [baud_rate, timeout]
         elif data_len == 11 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+            res_list = [i for i in valid_data]
+            return res_list
+        elif data_len == 21 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
             res_list = [i for i in valid_data]
             return res_list
         else:
@@ -394,97 +397,6 @@ class MercuryE1(E1CloseLoop):
                     crc >>= 1
         return crc.to_bytes(2, byteorder=mode)
 
-    def _send_modbus_command(self, gripper_id, func_code, reg_addr, value_high=None, value_low=None, custom_mode=False):
-        """
-        General Modbus command sending method
-
-        Args:
-            gripper_id: Device ID
-            func_code: Function code (0x03 = read, 0x06 = write)
-            reg_addr: Register address
-            value_high: High byte of the write data (can be None for read operations)
-            value_low: Low byte of the write data (can be None for read operations)
-        """
-        # Base payload part shared by both modes
-        payload = [gripper_id, func_code,
-                   (reg_addr >> 8) & 0xFF, reg_addr & 0xFF]
-
-        # Append value for write, or 0x00 0x00 for read
-        if func_code == 0x06:
-            payload.extend([value_high, value_low])
-        else:
-            payload.extend([0x00, 0x00])
-
-        # Build full command based on mode
-        if not custom_mode:
-            # Modbus RTU classic format
-            cmd = payload.copy()
-            cmd.extend(self._modbus_crc(cmd))  # little-endian
-        else:
-            # Custom packet: FE FE LEN + payload + CRC(big-end)
-            # LEN = payload length + CRC length (2)，即 6+2 = 8
-            cmd = [0xFE, 0xFE, 0x08] + payload
-            cmd.extend(self._modbus_crc(cmd, mode='big'))
-        recv = self.tool_serial_write_data(cmd)
-        if not recv:
-            return cmd, -1
-        return cmd, recv
-
-    def _check_gripper_id(self, gripper_id):
-
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
-
-    def _write_and_check(self, gripper_id, reg_addr, value, custom_mode=False):
-        """Write register and verify response robustly (support calibration delay)"""
-        self._check_gripper_id(gripper_id)
-        high, low = (value >> 8) & 0xFF, value & 0xFF
-        # Continuously read the response packets, and send a read command to trigger feedback each time.
-        _, recv = self._send_modbus_command(gripper_id, 0x06, reg_addr, high, low, custom_mode)
-
-        # Basic validity check
-        if not isinstance(recv, (list, bytearray)) or len(recv) < 6:
-            return -1
-
-        # Two modes have different byte offsets
-        # Modbus RTU standard: [id][cmd][regH][regL][valH][valL]...
-        # Custom packet       : [fe][fe][len][id][cmd][regH][regL][valH][valL]...
-        offset = 0 if not custom_mode else 3
-
-        cmd_idx = 1 + offset  # command index
-        reg_h_idx = 2 + offset  # register high
-        reg_l_idx = 3 + offset  # register low
-        val_h_idx = 4 + offset  # value high
-        val_l_idx = 5 + offset  # value low
-
-        # Verify command
-        if recv[cmd_idx] != 0x06:
-            return -1
-
-        # Verify register address consistency
-        if recv[reg_h_idx] != (reg_addr >> 8) & 0xFF or recv[reg_l_idx] != (reg_addr & 0xFF):
-            return -1
-
-        # Determine return status
-        if recv[val_h_idx] == 0x00 and recv[val_l_idx] == 0x01:
-            return 1
-
-        return -1
-
-    def _read_register(self, gripper_id, reg_addr):
-        """Reads a register with command verification"""
-        self._check_gripper_id(gripper_id)
-
-        cmd, recv = self._send_modbus_command(gripper_id, 0x03, reg_addr)
-
-        if isinstance(recv, (list, bytearray)) and len(recv) >= 6:
-            recv_func = recv[1]
-            recv_addr = (recv[2] << 8) | recv[3]
-            if recv_func == 0x03 and recv_addr == reg_addr:
-                return (recv[4] << 8) | recv[5]
-            else:
-                return -1
-
-        return -1
 
     def _joint_limit_init(self):
         max_joint = np.zeros(6)
@@ -572,125 +484,15 @@ class MercuryE1(E1CloseLoop):
                 return '错误：刷新模式无法使用JOG运动，请切换插补模式使用'
         return None
 
-    def _five_fingers_modbus_read(self, slave_id, start_reg, reg_count, retry=3):
-        """Aoyi Five-Finger Dexterity Hand Universal Modbus Read Holding Register Interface
+    def _mit_value2bytes(self, value):
+        value = int(value * 100)
+        return [(value >> 8) & 0xFF, value & 0xFF]
 
-        Args:
-            slave_id (int): Device ID (your dexterity hand is 0x02)
-            start_reg (int): Starting register address
-            reg_count (int): Number of registers to read
-            retry (int): Number of retries
-
-        Returns:
-            list[int] or -1
-        """
-        for attempt in range(retry):
-            cmd = [
-                slave_id,
-                0x03,  # Read register
-                (start_reg >> 8) & 0xFF,
-                start_reg & 0xFF,
-                (reg_count >> 8) & 0xFF,
-                reg_count & 0xFF
-            ]
-            self._serial_port.reset_input_buffer()
-            # CRC
-            cmd += list(self._modbus_crc(bytes(cmd)))
-            recv = self.tool_serial_write_data(cmd)
-            if not recv or recv== -1 or len(recv) < 5:
-                # print("Modbus no response:", recv)
-                continue
-
-            # Find the Modbus starting point
-            start = None
-            for i in range(len(recv) - 1):
-                if recv[i] == slave_id and recv[i + 1] == 0x03:
-                    start = i
-                    break
-
-            if start is None:
-                # print("Modbus header not found:", recv)
-                continue
-
-            recv = recv[start:]
-
-            # Length check
-            if len(recv) < 3:
-                continue
-            byte_count = recv[2]
-            expected_len = 3 + byte_count + 2
-
-            if len(recv) < expected_len:
-                # print("Incomplete frame:", recv)
-                continue
-            recv = recv[:expected_len]
-
-            # CRC check
-            data = recv[:-2]
-            crc_recv = recv[-2:]
-
-            if self._modbus_crc(bytes(data)) != bytes(crc_recv):
-                continue
-
-            # Data Analysis Format: [addr, func, byte_count, data..., crc_l, crc_h]
-            data_bytes = recv[3:3 + byte_count]
-
-            values = []
-            for i in range(0, len(data_bytes), 2):
-                val = (data_bytes[i] << 8) | data_bytes[i + 1]
-                values.append(val)
-
-            return values
-        return -1
-
-    def _five_fingers_modbus_write(self, slave_id, start_reg, values):
-        reg_count = len(values)
-        byte_count = reg_count * 2
-
-        cmd = [
-            slave_id,
-            0x10,
-            (start_reg >> 8) & 0xFF,
-            start_reg & 0xFF,
-            (reg_count >> 8) & 0xFF,
-            reg_count & 0xFF,
-            byte_count
-        ]
-
-        for v in values:
-            high = (v >> 8) & 0xFF
-            low = v & 0xFF
-            cmd.extend([high, low])
-
-        cmd += list(self._modbus_crc(bytes(cmd)))
-
-        recv = self.tool_serial_write_data(cmd)
-
-        if recv is None or recv == -1:
-            return -1
-
-        # Find the starting address for verification
-        start = None
-        for i in range(len(recv) - 1):
-            if recv[i] == slave_id and recv[i + 1] == 0x10:
-                start = i
-                break
-
-        if start is None:
-            return -1
-
-        recv = recv[start:]
-
-        if len(recv) < 8:
-            return -1
-
-        data = recv[:-2]
-        crc_recv = recv[-2:]
-
-        if self._modbus_crc(bytes(data)) != bytes(crc_recv):
-            return -1
-
-        return 1
+    def _encode_mit_control(self, q, dq, kp, kd, tau):
+        data = []
+        for value in [q, dq, kp, kd, tau]:
+            data.extend(self._mit_value2bytes(value))
+        return data
 
     def open(self):
         self._serial_port.open()
@@ -783,291 +585,6 @@ class MercuryE1(E1CloseLoop):
         """
         return self._mesg(ProtocolCode.GET_TOOL_MODIFY_VERSION)
 
-    def get_pro_gripper_firmware_version(self, gripper_id=14):
-        """ Read the firmware major and minor version numbers
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            version number (float): x.x
-        """
-        val = self._read_register(gripper_id, ProGripper.MODBUS_GET_FIRMWARE_VERSION)
-        return val / 10.0 if val >= 0 else -1
-
-    def get_pro_gripper_firmware_modified_version(self, gripper_id=14):
-        """ Read the firmware revision number
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            version number (int)
-        """
-        val = self._read_register(gripper_id, ProGripper.MODBUS_GET_FIRMWARE_MODIFY_VERSION)
-        return val if val >= 0 else -1
-
-    def set_pro_gripper_id(self, target_id, gripper_id=14):
-        """ Set the gripper ID
-
-        Args:
-            target_id (int): Target ID, 1 ~ 254
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, target_id=target_id)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ID, target_id)
-
-    def get_pro_gripper_id(self, gripper_id=14):
-        """ Read the gripper ID
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            gripper_id (int): 1 ~ 254
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_ID)
-
-    def set_pro_gripper_angle(self, gripper_angle, gripper_id=14):
-        """ Set the gripper angle
-
-        Args:
-            gripper_angle (int): 0 ~ 100
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ANGLE, gripper_angle)
-
-    def get_pro_gripper_angle(self, gripper_id=14):
-        """ Get the gripper angle
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            gripper_angle (int): 0 ~ 100
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_ANGLE)
-
-    def set_pro_gripper_open(self, gripper_id=14):
-        """ Open the gripper
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        return self.set_pro_gripper_angle(100, gripper_id)
-
-    def set_pro_gripper_close(self, gripper_id=14):
-        """ Close the gripper
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        return self.set_pro_gripper_angle(0, gripper_id)
-
-    def set_pro_gripper_calibration(self, gripper_id=14):
-        """ Set the gripper zero position
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_CALIBRATION, 0)
-
-    def get_pro_gripper_status(self, gripper_id=14):
-        """ Get the gripper status
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            0 - Moving
-            1 - Stopped moving, no clamping detected
-            2 - Stopped moving, clamping detected
-            3 - After clamping detected, the object fell
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_STATUS)
-
-    def set_pro_gripper_enabled(self, state, gripper_id=14):
-        """ Set the gripper enable state
-
-        Args:
-            state (bool): 0 or 1, 0 - Disable 1 - Enable
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ENABLED, state)
-
-    def set_pro_gripper_torque(self, gripper_torque, gripper_id=14):
-        """ Set the gripper torque
-
-        Args:
-            gripper_torque (int): 0 ~ 100
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_torque=gripper_torque)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_TORQUE, gripper_torque)
-
-    def get_pro_gripper_torque(self, gripper_id=14):
-        """ Set the gripper torque
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            gripper_torque (int): 0 ~ 100
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_TORQUE)
-
-    def set_pro_gripper_speed(self, speed, gripper_id=14):
-        """ Set the gripper torque
-
-        Args:
-            speed (int): 1 ~ 100
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, speed=speed)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_SPEED, speed)
-
-    def get_pro_gripper_speed(self, gripper_id=14):
-        """ Get the gripper speed
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Return:
-            speed (int): 1 ~ 100
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_SPEED)
-
-    def set_pro_gripper_abs_angle(self, gripper_angle, gripper_id=14):
-        """ Set the gripper absolute angle
-
-        Args:
-            gripper_angle (int): 0 ~ 100
-            gripper_id (int): 1 ~ 254, defaults to 14
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_ABS_ANGLE, gripper_angle)
-
-    def set_pro_gripper_io_open_angle(self, gripper_angle, gripper_id=14):
-        """ Set the gripper IO open angle
-
-        Args:
-            gripper_angle (int): 0 ~ 100
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_OPEN_ANGLE, gripper_angle)
-
-    def get_pro_gripper_io_open_angle(self, gripper_id=14):
-        """ Get the gripper IO open angle
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            angle (int): 0 ~ 100
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_IO_OPEN_ANGLE)
-
-    def set_pro_gripper_io_close_angle(self, gripper_angle, gripper_id=14):
-        """ Set the gripper IO close angle
-
-        Args:
-            gripper_angle (int): 0 ~ 100
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_IO_CLOSE_ANGLE, gripper_angle)
-
-    def get_pro_gripper_io_close_angle(self, gripper_id=14):
-        """ Get the gripper IO close angle
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            angle (int): 0 ~ 100
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_IO_CLOSE_ANGLE)
-
-    def set_pro_gripper_mini_pressure(self, pressure_value, gripper_id=14):
-        """ Set the gripper mini pressure
-
-        Args:
-            pressure_value (int): 0 ~ 254
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, pressure_value=pressure_value)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MINI_PRESSURE, pressure_value)
-
-    def get_pro_gripper_mini_pressure(self, gripper_id=14):
-        """ Get the gripper mini pressure
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            mini pressure (int): 0 ~ 254
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_MINI_PRESSURE)
-
-    def set_pro_gripper_protection_current(self, current_value, gripper_id=14):
-        """ Set the gripper protection current
-
-        Args:
-            current_value (int): 100 ~ 300
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, current_value=current_value)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_PROTECTION_CURRENT, current_value)
-
-    def get_pro_gripper_protection_current(self, gripper_id=14):
-        """ Get the gripper protection current
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            current_value (int): 100 ~ 300
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_PROTECTION_CURRENT)
 
     def set_fresh_mode(self, mode):
         """Set command refresh mode
@@ -1186,21 +703,6 @@ class MercuryE1(E1CloseLoop):
             return msg
         return self._mesg(ProtocolCode.JOG_COORD, coord_id, direction, speed, _async=_async, has_reply=True)
 
-    # def jog_rpy(self, axis, direction, speed, _async=True):
-    #     """Rotate the end point around the fixed axis of the base coordinate system
-    #
-    #     Args:
-    #         axis (int): 1 ~ 3. 1 - Roll, 2 - Pitch, 3 - Yaw
-    #         direction (int): 1 - Forward. 0 - Reverse.
-    #         speed (int): 1 ~ 100.
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, axis=axis, direction=direction, speed=speed)
-    #     msg = self._check_jog_allowed()
-    #     if msg:
-    #         return msg
-    #     return self._mesg(ProtocolCode.JOG_RPY, axis, direction, speed, _async=_async, has_reply=True)
-
     def set_fusion_parameters(self, rank_mode, value):
         """Set speed fusion planning parameters
         Args:
@@ -1254,73 +756,6 @@ class MercuryE1(E1CloseLoop):
             return msg
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
-    # def set_communication_mode(self, protocol_mode=0):
-    #     """Set Modbus communication mode
-    #     Args:
-    #         protocol_mode (int):
-    #          0 - close modbus protocol, default
-    #          1 - open modbus protocol
-    #     """
-    #     self.calibration_parameters(class_name=self.__class__.__name__, protocol_mode=protocol_mode)
-    #     return self._mesg(ProtocolCode.SET_COMMUNICATION_MODE, protocol_mode)
-    #
-    # def get_communication_mode(self):
-    #     """Get communication mode
-    #     Returns:
-    #         protocol_mode (int, optional):
-    #             0 - Custom protocol
-    #             1 - Modbus protocol
-    #     """
-    #     return self._mesg(ProtocolCode.GET_COMMUNICATION_MODE)
-
-    # def set_base_external_config(self, communicate_mode, baud_rate, timeout):
-    #     """Bottom external device configuration
-    #
-    #     Args:
-    #         communicate_mode (int): 1 - 485. 2 - can
-    #         baud_rate (int): Baud rate
-    #         timeout (int): Timeout ms
-    #
-    #     """
-    #     self.calibration_parameters(class_name=self.__class__.__name__, communicate_mode=communicate_mode,
-    #                                 baud_rate=baud_rate, timeout=timeout)
-    #     data = bytearray()
-    #     data += communicate_mode.to_bytes(1, 'big')
-    #     data += baud_rate.to_bytes(4, 'big')
-    #     data += timeout.to_bytes(4, 'big')
-    #     return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONFIG, *data)
-
-    # def get_base_external_config(self):
-    #     """Read the bottom external device configuration
-    #
-    #     Returns:
-    #         communicate_mode (int): 1 - 485. 2 - can
-    #         baud_rate (int): Baud rate
-    #         timeout (int): Timeout ms
-    #
-    #     """
-    #     return self._mesg(ProtocolCode.GET_BASE_EXTERNAL_CONFIG)
-
-    # def base_external_can_control(self, can_id, can_data):
-    #     """Bottom external device can control
-    #
-    #     Args:
-    #         can_id (int): 1 - 65535.
-    #         can_data (list): The maximum length is 64
-    #     """
-    #     self.calibration_parameters(class_name=self.__class__.__name__, can_id=can_id, can_data=can_data)
-    #     can_id_bytes = can_id.to_bytes(4, 'big')
-    #     return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *can_id_bytes, *can_data)
-    #
-    # def base_external_485_control(self, data):
-    #     """Bottom external device 485 control
-    #
-    #     Args:
-    #         data (list): The maximum length is 64
-    #     """
-    #     self.calibration_parameters(class_name=self.__class__.__name__, data_485=data)
-    #     return self._mesg(ProtocolCode.SET_BASE_EXTERNAL_CONTROL, *data)
-
     def set_color(self, r=0, g=0, b=0):
         """Set the light color on the top of the robot end.
 
@@ -1333,41 +768,6 @@ class MercuryE1(E1CloseLoop):
         self.calibration_parameters(
             class_name=self.__class__.__name__, rgb=[r, g, b])
         return self._mesg(ProtocolCode.SET_COLOR_PRO450, r, g, b)
-
-    # def parameter_identify(self):
-    #     """Kinetic parameter identification"""
-    #     return self._mesg(ProtocolCode.PARAMETER_IDENTIFY)
-
-    # def fourier_trajectories(self, trajectory, _async=False):
-    #     """Execute dynamic identification trajectory
-    #
-    #     Args:
-    #         trajectory (int): 0 ~ 1
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, trajectory=trajectory)
-    #     # return self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory)
-    #     res = self._mesg(ProtocolCode.FOURIER_TRAJECTORIES, trajectory, _async=_async)
-    #
-    #     # 如果是异步模式，直接返回
-    #     if _async:
-    #         return res
-    #
-    #     stable_stop = 0
-    #     # print("Fourier trajectory started, waiting for finish...")
-    #
-    #     while True:
-    #         moving = self.is_moving()
-    #         # print("moving:", moving)
-    #
-    #         if moving == 0:
-    #             stable_stop += 1
-    #             if stable_stop >= 2:  # 连续两次停止 → 执行完毕
-    #                 return 0
-    #         else:
-    #             stable_stop = 0
-    #
-    #         time.sleep(0.01)
 
     def set_world_reference(self, coords):
         """Set the world coordinate system
@@ -1415,23 +815,6 @@ class MercuryE1(E1CloseLoop):
         """
         return self._mesg(ProtocolCode.PRO450_GET_DIGITAL_INPUTS)
 
-    # def set_torque_comp(self, joint_id, damping, comp_value=0):
-    #     """Set joint torque compensation
-    #
-    #     Args:
-    #         joint_id (int): joint ID， range 1 ~ 6
-    #         damping (int): damping  0-close 1-open
-    #         comp_value (int): Compensation value, range is 0 ~ 250, default is 0, The smaller the value, the harder it is to drag the joint
-    #     """
-    #     self.calibration_parameters(
-    #         class_name=self.__class__.__name__, joint_id=joint_id, comp_value=comp_value, damping=damping)
-    #     return self._mesg(ProtocolCode.SET_TORQUE_COMP, joint_id, comp_value, damping)
-    #
-    # def get_torque_comp(self):
-    #     """Get joint torque compensation
-    #     """
-    #     return self._mesg(ProtocolCode.GET_TORQUE_COMP)
-
     def set_limit_switch(self, limit_mode, state):
         """Set the master switch for motion closed loop.
 
@@ -1458,215 +841,6 @@ class MercuryE1(E1CloseLoop):
         """
         return self._mesg(ProtocolCode.IS_MOTOR_PAUSE)
 
-    def set_pro_gripper_modbus(self, state, custom_mode=False, gripper_id=14):
-        """ Set the gripper modbus mode
-
-        Args:
-            state (int): 0 or 1, 0 - close modbus 1 - open modbus
-            custom_mode (bool):
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 -  failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
-        if custom_mode:
-            return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MODE, state, custom_mode=custom_mode)
-        else:
-            return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_MODE, state)
-
-    def set_pro_gripper_baud(self, baud_rate=0, gripper_id=14):
-        """ Set the gripper baud rate
-
-        Args:
-            baud_rate (int): 0 ~ 5, defaults to 0 - 115200
-                0 - 115200
-                1 - 1000000
-                2 - 57600
-                3 - 19200
-                4 - 9600
-                5 - 4800
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            1 - success, 0 - failed
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, gripper_baud_rate=baud_rate)
-        return self._write_and_check(gripper_id, ProGripper.MODBUS_SET_BAUD_RATE, baud_rate)
-
-    def get_pro_gripper_baud(self, gripper_id=14):
-        """ Set the gripper baud rate
-
-        Args:
-            gripper_id (int): 1 ~ 254, defaults to 14
-
-        Returns:
-            baud_rate (int): 0 ~ 5, defaults to 0 - 115200
-                0 - 115200
-                1 - 1000000
-                2 - 57600
-                3 - 19200
-                4 - 9600
-                5 - 4800
-        """
-        return self._read_register(gripper_id, ProGripper.MODBUS_GET_BAUD_RATE)
-
-    def set_tool_serial_baud_rate(self, baud_rate=115200):
-        """ Set the end 485 baud rate
-
-            Args:
-                baud_rate (int): Standard baud rates, such as 115200, 1000000, 57600, 19200, 9600, 4800.
-                                defaults to 115200
-            """
-        self.calibration_parameters(class_name=self.__class__.__name__, end_485_baud_rate=baud_rate)
-        data = bytearray()
-        data += baud_rate.to_bytes(4, 'big')
-        return self._mesg(ProtocolCode.SET_TOOL_485_BAUD_RATE, *data)
-
-    def set_tool_serial_timeout(self, timeout=10000):
-        """
-        Set end 485 timeout (unit: ms)
-
-        Args:
-            timeout (int): Timeout period, in ms, range 0 ~ 10000 ms, defaults to 10000
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, timeout=timeout)
-
-        high_byte = (timeout >> 8) & 0xFF
-        low_byte = timeout & 0xFF
-
-        return self._mesg(ProtocolCode.SET_TOOL_SERIAL_TIMEOUT, high_byte, low_byte)
-
-    def get_tool_config(self):
-        """ Get the end 485 baud rate and timeout
-
-            Returns: (list) [baud_rate, timeout]
-            """
-        return self._mesg(ProtocolCode.GET_TOOL_485_BAUD_RATE_TIMEOUT)
-
-    def set_free_move_mode(self, mode):
-        """ Set the free move mode"""
-        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        return self._mesg(ProtocolCode.SET_FREE_MODE, mode)
-
-    def get_free_move_mode(self):
-        """ Set the free move mode"""
-        return self._mesg(ProtocolCode.IS_FREE_MODE)
-
-    def set_pro_gripper_init(self, gripper_id=14):
-        """
-        Initialize the Pro450 gripper and automatically recover communication.
-
-        This function automatically handles **four possible gripper states** and
-        brings the device back to Modbus mode at **115200 baud**:
-
-        1. Already in Modbus mode with baudrate = 115200
-           - Angle reading works directly.
-
-        2. Modbus mode but baudrate incorrect (e.g., 1,000,000)
-           - Angle fails at 115200 but succeeds at alternative baudrate.
-
-        3. Custom (non-Modbus) mode + correct baudrate
-           - Baudrate is correct but Modbus commands fail.
-           - Forcing Modbus mode succeeds.
-
-        4. Custom mode + wrong baudrate
-           - Requires scanning possible baudrates and forcing Modbus mode.
-
-        After successful initialization:
-          - Gripper is set to Modbus mode (mode = 1)
-          - Baudrate is restored to 115200
-          - Tool serial port baudrate is restored to 115200
-
-        Args:
-            gripper_id (int): Modbus ID of the gripper, range 1–254.
-                Defaults to 14.
-
-        Returns:
-            bool: True if initialization succeeds, otherwise False.
-        """
-
-        try_bauds = [115200, 1000000]
-
-        print("The gripper is initializing, please wait...")
-
-        self.set_tool_serial_timeout(250)
-
-        test = self.get_pro_gripper_angle(gripper_id=gripper_id)
-        if test != -1:
-            self.set_pro_gripper_modbus(1, gripper_id=gripper_id)  # ensure normal modbus mode
-
-            self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # gripper -> 115200
-
-            self.set_tool_serial_baud_rate(115200)  # end -> 115200
-            self.set_tool_serial_timeout(10000)
-
-            print("Gripper Initialization Successful!")
-            return True
-
-        for baud in try_bauds:
-            # print(f"\n👉 Try the end baud rate: {baud}")
-            self.set_tool_serial_baud_rate(baud_rate=baud)
-
-            cfg = self.get_tool_config()
-            # print(f"   485 current config: {cfg}")
-
-            # Read the angle again, applicable to: Baud rate = Correct, Mode = Modbus
-            test = self.get_pro_gripper_angle(gripper_id=gripper_id)
-            # print(f"🔁 Test Modbus to read angle return: {test}")
-
-            if test != -1:
-                self.set_pro_gripper_baud(0, gripper_id=gripper_id)
-                self.set_tool_serial_baud_rate(115200)
-                self.set_tool_serial_timeout(10000)
-                print("Gripper Initialization Successful!")
-                return True
-
-            # print(f"\n👉 Try the end baud rate again: {baud}")
-            self.set_tool_serial_baud_rate(baud_rate=baud)
-            cfg = self.get_tool_config()
-            # print(f"   485 current config: {cfg}")
-            ret = self.set_pro_gripper_modbus(1, True, gripper_id=gripper_id)
-            # print(f"   set_modbus(custom) ret={ret}")
-
-            if ret == 1:
-                for i in range(3):
-                    t = self.get_pro_gripper_angle(gripper_id=gripper_id)
-                    # print(f" 🔧 Test angle read[{i}] -> {t}")
-                    if t != -1:
-                        break
-                    time.sleep(0.1)
-
-                if t != -1:
-
-                    self.set_pro_gripper_baud(0, gripper_id=gripper_id)  # change gripper → 115200
-
-                    self.set_tool_serial_baud_rate(115200)  # end back → 115200
-                    self.set_tool_serial_timeout(10000)
-
-                    print("Gripper Initialization Successful!")
-                    return True
-
-        print("Gripper Initialization Failed!")
-        return False
-
-    # def set_motor_type(self, motor_type):
-    #     """Set motor type.
-    #
-    #     Args:
-    #         motor_type (hex/int/str): motor type, can be 0xA1C2, 0xA3C0, or 'A1C2', 'a3c0'
-    #     """
-    #
-    #     self.calibration_parameters(class_name=self.__class__.__name__, motor_type=motor_type)
-    #
-    #     if isinstance(motor_type, str):
-    #         motor_type = int(motor_type, 16)
-    #
-    #     high_byte = (motor_type >> 8) & 0xFF  # 0xA3
-    #     low_byte = motor_type & 0xFF  # 0xC0
-    #
-    #     return self._mesg(ProtocolCode.PRO450_SET_MOTOR_TYPE, high_byte, low_byte)
-
     def get_motor_temps(self):
         """Read motor temperature
 
@@ -1675,7 +849,7 @@ class MercuryE1(E1CloseLoop):
         return self._mesg(ProtocolCode.GET_MOTORS_TEMPERATURE)
 
     def set_fresh_speed_mode(self, mode):
-        """Set refresh speed mode - fastest 286°/s, default 150°/s, will not save settings upon power failure.
+        """Set refresh speed mode - fastest 286°/s, default 150°/s, will not save settings upon power failure
         (Note: Interpolation mode cannot be used to set high-speed motion mode; it is only applicable to refresh mode.)
 
         Args:
@@ -1699,186 +873,6 @@ class MercuryE1(E1CloseLoop):
         """
         return self._mesg(ProtocolCode.GET_FRESH_SPEED_MODE, has_reply=True)
 
-    def get_five_fingers_angles(self, hand_id=2):
-        """Read the angle of the five fingers (unit: degrees)
-
-        Args:
-            hand_id (int): Hand ID, range 0 ~ 255, default 2
-
-        Returns:
-            list[float]: For example, [33.54, 173.83, 171.68, 172.1, 174.71, 1.0] represent
-                        [thumb bending, index finger, middle finger, ring finger, little finger, and thumb rotation], respectively.
-        """
-
-        start_reg = 0x0483
-        reg_count = 0x06
-        self.calibration_parameters(class_name=self.__class__.__name__, five_hand_id=hand_id)
-
-        raw = self._five_fingers_modbus_read(hand_id, start_reg, reg_count)
-
-        if not raw or raw==-1:
-            return -1
-        if not isinstance(raw, list):
-            return -1
-        angles = [round(v / 100.0, 2) for v in raw]
-
-        return angles
-
-    def get_five_fingers_angle(self, finger_id, hand_id=2):
-        """Read the angle of a single joint of the five fingers
-
-        Args:
-            finger_id (int): 1 ~ 6
-                    1 - thumb bending
-                    2 - index finger
-                    3 - middle finger
-                    4 - ring finger
-                    5 - little finger
-                    6 - thumb rotation
-            hand_id (int): Hand ID, range 0 ~ 255, default 2
-
-        Returns:
-            float: angle value
-        """
-
-        self.calibration_parameters(class_name=self.__class__.__name__, finger_id=finger_id, five_hand_id=hand_id)
-        start_reg = 1155 + (finger_id - 1)
-        raw = self._five_fingers_modbus_read(hand_id, start_reg, 1)
-
-        if not raw or raw==-1:
-            return -1
-        if not isinstance(raw, list):
-            return -1
-
-        angle = raw[0] / 100.0
-
-        return angle
-
-    def set_five_fingers_angles(self, fingers_angles, hand_id=2):
-        """Set all finger angles.
-
-        Args:
-            fingers_angles (list): A list of length 6, where J1-J6 represent [thumb bending, index finger, middle finger, ring finger, little finger, thumb rotation] respectively.
-                           J1:2.26° ~ 36.76
-                           J2:100.22°~178.37°
-                           J3:97.81° ~ 176.06°
-                           J4:101.38° ~ 176.54°
-                           J5:98.84° ~ 174.86°
-                           J6:0° ~ 90°
-            hand_id (int): Five-finger device ID, range 0 ~ 255, default 2
-
-        Returns:
-            int
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, five_fingers_angles=fingers_angles, five_hand_id=hand_id)
-        values = [int(a * 100 + 1e-8) for a in fingers_angles]
-
-        return self._five_fingers_modbus_write(hand_id, 0x0483, values)
-
-    def set_five_fingers_angle(self, finger_id, finger_angle, hand_id=2):
-        """Set single finger angles
-
-        Args:
-            finger_id (int): 1 ~ 6
-                    1 - thumb bending
-                    2 - index finger
-                    3 - middle finger
-                    4 - ring finger
-                    5 - little finger
-                    6 - thumb rotation
-            finger_angle (int or float) : angle value
-                            J1:2.26° ~ 36.76
-                            J2:100.22°~178.37°
-                            J3:97.81° ~ 176.06°
-                            J4:101.38° ~ 176.54°
-                            J5:98.84° ~ 174.86°
-                            J6:0° ~ 90°
-            hand_id (int): Five-finger device ID, range 0 ~ 255, default 2
-        """
-
-        self.calibration_parameters(class_name=self.__class__.__name__, finger_id=finger_id,
-                                    five_finger_angle=finger_angle, five_hand_id=hand_id)
-
-        reg = 1155 + (finger_id - 1)
-
-        value = int(finger_angle * 100)
-
-        return self._five_fingers_modbus_write(hand_id, reg, [value])
-
-    def get_five_fingers_version(self, hand_id=2):
-        """Read the firmware major and minor version numbers of the five fingers
-
-        Args:
-            hand_id (int): Hand ID, range 0 ~ 255, default 2
-
-        Returns:
-            float: Major and minor version numbers, such as 3.1
-        """
-        raw = self._five_fingers_modbus_read(hand_id, 1001, 1)
-        if raw == -1:
-            return -1
-
-        if not isinstance(raw, list) or len(raw) < 1:
-            return -1
-
-        val = raw[0]
-
-        major = (val >> 8) & 0xFF
-        minor = val & 0xFF
-
-        version = f"{major}.{minor}"
-        return version
-
-    def get_five_fingers_modified_version(self, hand_id=2):
-        """Read firmware and modify version number of the five fingers
-
-        Args:
-            hand_id (int): Hand ID, range 0 ~ 255, default 2
-
-        Returns:
-            int: modified version numbers, such as 79
-        """
-        raw = self._five_fingers_modbus_read(hand_id, 1002, 1)
-        if raw == -1:
-            return -1
-
-        if not isinstance(raw, list) or len(raw) < 1:
-            return -1
-        val = raw[0]
-        return val
-
-    def get_five_fingers_hand_id(self, hand_id=2):
-        """Read hand id of the five fingers
-
-        Args:
-            hand_id (int): Hand ID, range 0 ~ 255, default 2
-
-        Returns:
-            int: hand ID, such as 2
-        """
-        raw = self._five_fingers_modbus_read(hand_id, 1005, 1)
-        if raw == -1:
-            return -1
-
-        if not isinstance(raw, list) or len(raw) < 1:
-            return -1
-
-        val = raw[0]
-
-        roh_hand_id = val & 0xFF
-
-        return roh_hand_id
-
-    def set_five_fingers_hand_id(self, target_hand_id, hand_id=2):
-        """Set hand id of the five fingers
-
-        Args:
-            target_hand_id (int): Hand ID, range 0 ~ 255, default 2
-            hand_id (int): Hand ID, range 0 ~ 255, default 2
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, target_five_hand_id=target_hand_id)
-
-        return self._five_fingers_modbus_write(hand_id, 1005, [target_hand_id])
 
     def get_dm_pid(self, joint_id, mode):
         """Read DM Motor Kp Parameter
@@ -1901,3 +895,49 @@ class MercuryE1(E1CloseLoop):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, mode=mode, kp_value=kp_value)
         return self._mesg(ProtocolCode.SET_DM_PID, joint_id, mode, [kp_value])
+
+    def set_mit_control(self, joint_id, joint_pos, rad_speed, kp, kd, torque):
+        """MIT single-joint control.
+
+        Args:
+            joint_id (int): joint ID, range 1 ~ 7.
+            joint_pos (float): target joint position, unit rad, multiplied by 100 before sending.
+            rad_speed (float): target joint velocity, unit rad/s, multiplied by 100 before sending.
+                J1 ~ J6 range: -20 ~ 20 rad/s; J7 range: -30 ~ 30 rad/s.
+            kp (float): position gain, range 0 ~ 500, multiplied by 100 before sending.
+            kd (float): velocity gain, range 0 ~ 5, multiplied by 100 before sending.
+            torque (float): torque feedforward, unit Nm, multiplied by 100 before sending.
+                J1 ~ J3 range: -120 ~ 120 Nm; J4 ~ J6 range: -28 ~ 28 Nm;
+                J7 range: -10 ~ 10 Nm.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id,
+            mit_q=joint_pos, mit_dq=rad_speed, mit_kp=kp, mit_kd=kd, mit_tau=torque)
+        data = self._encode_mit_control(joint_pos, rad_speed, kp, kd, torque)
+        return self._mesg(ProtocolCode.SET_MIT_CONTROL, joint_id, *data)
+
+    def set_mit_controls(self, controls):
+        """MIT all-joint control.
+
+        Args:
+            controls (list): 7 MIT control groups. Each group can be
+                [joint_pos, rad_speed, kp, kd, tau] or a dict containing joint_pos, rad_speed, kp, kd, torque.
+                Every value is multiplied by 100 before sending.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mit_controls=controls)
+
+        data = []
+        for idx, control in enumerate(controls):
+            joint_id = idx + 1
+            if isinstance(control, dict):
+                joint_pos = control["joint_pos"]
+                rad_speed = control["rad_speed"]
+                kp = control["kp"]
+                kd = control["kd"]
+                torque = control["torque"]
+            else:
+                joint_pos, rad_speed, kp, kd, torque = control
+            data.extend(self._encode_mit_control(joint_pos, rad_speed, kp, kd, torque))
+
+        return self._mesg(ProtocolCode.SET_MIT_CONTROLS, *data)
+

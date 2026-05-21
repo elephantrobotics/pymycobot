@@ -7,9 +7,10 @@ import re
 
 from pymycobot.common import ProtocolCode, write, read, DataProcessor, FingerGripper
 from pymycobot.error import calibration_parameters
+from pymycobot.e1_end_control import E1EndControl
 
 
-class E1CloseLoop(DataProcessor):
+class E1CloseLoop(DataProcessor, E1EndControl):
     _write = write
     _read = read
 
@@ -113,11 +114,25 @@ class E1CloseLoop(DataProcessor):
             timeout = 5
             wait_time = 4
         elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
-            if real_command[7] in [36, 13]:
+            big_wait_time = True
+            timeout = 3
+            wait_time = 0.25
+
+            force_cmd = None
+            hand_cmd = None
+
+            if len(real_command) > 7:
+                force_cmd = real_command[7]
+
+            if len(real_command) > 9:
+                hand_cmd = real_command[10]
+
+            if force_cmd in [36, 13] or hand_cmd in [36, 13]:
                 timeout = 3
                 wait_time = 10
-            else:
-                wait_time = 0.25
+            elif hand_cmd == 45:
+                timeout = 3
+                wait_time = 1
         else:
             timeout = 3
 
@@ -126,7 +141,6 @@ class E1CloseLoop(DataProcessor):
         check_is_moving_t = 1
 
         is_moving_fail_count = 0
-
         while True and time.time() - t < wait_time:
             # self.event.wait(0.05)
             # self.event.clear()
@@ -165,6 +179,11 @@ class E1CloseLoop(DataProcessor):
                     elif genre == read_data[3]:
                         # print(-4)
                         # print("正常读取", flush=True)
+                        if v[1] < t:
+                            with self.lock:
+                                if v in self.read_command:
+                                    self.read_command.remove(v)
+                            continue
                         need_break = True
                         data = read_data
                         with self.lock:
