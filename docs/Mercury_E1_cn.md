@@ -933,7 +933,7 @@ print(mc.get_angles())
   - `target_id` (`int`): 范围1 ~ 254。
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
   
 #### `get_pro_gripper_id(gripper_id=14)`
@@ -950,7 +950,7 @@ print(mc.get_angles())
   - `gripper_angle` (`int`): 夹爪角度，取值范围 0 ~ 100。
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
   
 #### `get_pro_gripper_angle(gripper_id=14)`
@@ -966,7 +966,7 @@ print(mc.get_angles())
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `set_pro_gripper_close(gripper_id=14)`
@@ -975,7 +975,7 @@ print(mc.get_angles())
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `set_pro_gripper_calibration(gripper_id=14)`
@@ -984,7 +984,7 @@ print(mc.get_angles())
 - **参数**：
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_status(gripper_id=14)`
@@ -1005,7 +1005,7 @@ print(mc.get_angles())
   - `state` (`bool`) ：0 或者1， 0 - 掉使能 1 - 上使能
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `set_pro_gripper_torque(torque_value, gripper_id=14)`
@@ -1015,7 +1015,7 @@ print(mc.get_angles())
   - `torque_value` (`int`) ：扭矩值，取值范围 0 ~ 100。
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_torque(gripper_id=14)`
@@ -1032,7 +1032,7 @@ print(mc.get_angles())
   - `speed` (int): 夹爪运动速度，取值范围 1 ~ 100。
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_speed(gripper_id=14)`
@@ -1049,7 +1049,7 @@ print(mc.get_angles())
   - `gripper_angle` (`int`): 夹爪角度，取值范围 0 ~ 100。
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `set_pro_gripper_io_open_angle(gripper_angle, gripper_id=14)`
@@ -1059,7 +1059,7 @@ print(mc.get_angles())
   - `gripper_angle` (`int`): 夹爪角度，取值范围 0 ~ 100。
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_io_open_angle(gripper_id=14)`
@@ -1076,7 +1076,7 @@ print(mc.get_angles())
   - `gripper_angle` (`int`): 夹爪角度，取值范围 0 ~ 100。
   - `gripper_id` (`int`): 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_io_close_angle(gripper_id=14)`
@@ -1093,7 +1093,7 @@ print(mc.get_angles())
   - `pressure_value` (`int`): 启动力值，范围 0 ~ 254。
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_mini_pressure(gripper_id=14)`
@@ -1110,7 +1110,7 @@ print(mc.get_angles())
   - `current_value` (`int`): 夹持电流值，范围 100 ~ 300。
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_protection_current(gripper_id=14)`
@@ -1129,7 +1129,7 @@ print(mc.get_angles())
     - `1` - 1000000
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `get_pro_gripper_baud(gripper_id=14)`
@@ -1151,7 +1151,7 @@ print(mc.get_angles())
   - `custom_mode` (`bool`): 自定义通信模式标识，默认False（当前是modbus模式）。如果当前是自定义通信模式，打开modbus通信模式，需要把custom_mode改为True. 比如：`set_pro_gripper_modbus(1, True)`
   - `gripper_id` (`int`) 夹爪ID，默认14，取值范围 1 ~ 254。
 - **返回值**：
-  - 0 - 失败
+  - -1 - 失败
   - 1 - 成功
 
 #### `set_pro_gripper_init(gripper_id=14)`
@@ -1169,7 +1169,7 @@ print(mc.get_angles())
 
 - **功能**：读取五指灵巧手全部关节角度
 - **参数**：
-  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 2 ~ 254。
 - **返回值**：(`list[float]`)  五指全关节角度，比如 `[33.54, 173.83, 171.68, 172.1, 174.71, 1.0]` 分别代表 `[大拇指弯曲, 食指, 中指, 无名指, 小指, 大拇指旋转]`。
   
 #### `get_five_fingers_angles(finger_id, hand_id=2)`
@@ -1184,7 +1184,7 @@ print(mc.get_angles())
     - `5`: 小指
     - `6`: 大拇指旋转
 
-  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 2 ~ 254。
 
 - **返回值**：(`float`) 角度值。
 
@@ -1199,7 +1199,7 @@ print(mc.get_angles())
     - `J4`: 101.38° ~ 176.54°
     - `J5`: 98.84° ~ 174.86°
     - `J6`: 0° ~ 90°
-  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 2 ~ 254。
 
 #### `set_five_fingers_angle(finger_id, finger_angle, hand_id=2)`
 
@@ -1219,21 +1219,21 @@ print(mc.get_angles())
     - `J4`: 101.38° ~ 176.54°
     - `J5`: 98.84° ~ 174.86°
     - `J6`: 0° ~ 90°
-  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 2 ~ 254。
 
 #### `get_five_fingers_version(hand_id=2)`
 
 - **功能**：读取五指灵巧手固件主次版本号
 - **参数**：
-  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 2 ~ 254。
 - **返回值**：(`float]`)  固件主次版本号，比如 `3.1`。
   
-#### `get_five_fingers_hand_id(hand_id=2)`
+<!-- #### `get_five_fingers_hand_id(hand_id=2)`
 
 - **功能**：读取五指灵巧手设备ID
 - **参数**：
 
-  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 2 ~ 254。
 
 - **返回值**：(`int`) 五指设备ID值。
 
@@ -1242,5 +1242,286 @@ print(mc.get_angles())
 - **功能**：设置五指灵巧手设备ID
 - **参数**：
 
-  - `target_hand_id`: (`int`) 需要设置新的五指设备ID，取值范围 0 ~ 254。
-  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 0 ~ 254。
+  - `target_hand_id`: (`int`) 需要设置新的五指设备ID，取值范围 2 ~ 254。
+  - `hand_id`: (`int`) 五指设备ID，默认2，取值范围 2 ~ 254。 -->
+
+### 22. myGripper H100 三指夹爪
+
+#### `get_hand_firmware_major_version(gripper_id=14)`
+
+- **功能**：读取固件**主**版本号  
+- **参数**：
+  - `gripper_id` (`int`) 夹爪 ID，默认值 14，范围 1 ~ 254  
+- **返回值**：主版本号（浮点数）
+
+#### `get_hand_firmware_minor_version(gripper_id=14)`
+
+- **功能**：读取固件**次**版本号  
+- **参数**：
+  - `gripper_id` (`int`) 夹爪 ID，默认值 14，范围 1 ~ 254  
+- **返回值**：次版本号（整数）
+
+#### `set_hand_gripper_id(id_value, gripper_id=14)`
+
+- **功能**：设置夹爪的 ID  
+- **参数**：
+  - `id_value` (`int`) 新 ID，范围 1 ~ 254  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_id(gripper_id=14)`
+
+- **功能**：获取夹爪的 ID  
+- **参数**：
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：夹爪 ID（整数）
+
+#### `set_hand_gripper_angle(joint_id, gripper_angle, gripper_id=14)`
+
+- **功能**：设置单个关节的角度  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_angle` (`int`) 0 ~ 100  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_angle(joint_id, gripper_id=14)`
+
+- **功能**：读取单个关节的角度  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`gripper_angle` (`int`) 0 ~ 100
+
+#### `set_hand_gripper_angles(gripper_angles, speed, gripper_id=14)`
+
+- **功能**：设置所有关节的角度  
+- **参数**：
+  - `gripper_angles` (`list[int]`) 含 6 个角度值，范围 0 ~ 100  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+  - `speed` (`int`) 1 ~ 100  
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_angles(gripper_id=14)`
+
+- **功能**：读取所有关节的角度  
+- **参数**：
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：6 个整数组成的列表，范围 0 ~ 100
+
+#### `set_hand_gripper_torque(joint_id, torque_value, gripper_id=14)`
+
+- **功能**：设置某关节的力矩  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `torque_value` (`int`) 100 ~ 300  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_torque(joint_id, gripper_id=14)`
+
+- **功能**：获取某关节的力矩  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`torque_value` (`int`) 0 ~ 100
+
+#### `set_hand_gripper_calibrate(joint_id, gripper_id=14)`
+
+- **功能**：校准某个关节的零点位置  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_status(gripper_id=14)`
+
+- **功能**：获取夹爪夹持状态  
+- **参数**：
+  - `gripper_id` (`int`) 夹爪 ID，默认 14，范围 1 ~ 254  
+- **返回值**：
+  - 0 - 正在移动  
+  - 1 - 停止，未夹持  
+  - 2 - 停止，检测到夹持  
+  - 3 - 夹持后物体掉落
+
+#### `set_hand_gripper_enabled(flag, gripper_id=14)`
+
+- **功能**：设置夹爪的使能状态  
+- **参数**：
+  - `flag` (`int`) 0 或 1 ；0 - 掉使能，1 - 上使能。
+  - `gripper_id` (`int`) 1 ~ 254，默认14 
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `set_hand_gripper_speed(joint_id, speed, gripper_id=14)`
+
+- **功能**：设置某关节的移动速度  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `speed` (`int`) 1 ~ 100  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_default_speed(joint_id, gripper_id=14)`
+
+- **功能**：读取某关节的默认速度  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：默认速度 (`int`) 1 ~ 100
+
+#### `set_hand_gripper_p(joint_id, value, gripper_id=14)`
+
+- **功能**：设置某关节的 P 值  
+- **参数**： 
+  - `joint_id` (`int`) 1 ~ 6  
+  - `value` (`int`) 0 ~ 254  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_p(joint_id, gripper_id=14)`
+
+- **功能**：读取某关节的 P 值  
+- **参数**： 
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`value` (`int`) 0 ~ 254
+
+#### `set_hand_gripper_d(joint_id, value, gripper_id=14)`
+
+- **功能**：设置某关节的 D 值  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `value` (`int`) 0 ~ 254  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_d(joint_id, gripper_id=14)`
+
+- **功能**：读取某关节的 D 值  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`value` (`int`) 0 ~ 254
+
+#### `set_hand_gripper_i(joint_id, value, gripper_id=14)`
+
+- **功能**：设置某关节的 I 值  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `value` (`int`) 0 ~ 254  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_i(joint_id, gripper_id=14)`
+
+- **功能**：读取某关节的 I 值  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`value` (`int`) 0 ~ 254
+
+#### `set_hand_gripper_min_pressure(joint_id, value, gripper_id=14)`
+
+- **功能**：设置某关节的最小启动力  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `value` (`int`) 0 ~ 254  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_min_pressure(joint_id, gripper_id=14)`
+
+- **功能**：获取某关节的最小启动力  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`value` (`int`) 0 ~ 254
+
+#### `set_hand_gripper_clockwise(joint_id, value, gripper_id=14)`
+
+- **功能**：设置某关节的顺时针误差范围  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `value` (`int`) 0 ~ 16  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_clockwise(joint_id, gripper_id=14)`
+
+- **功能**：获取某关节的顺时针误差范围  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`value` (`int`) 0 ~ 16
+
+#### `set_hand_gripper_counterclockwise(joint_id, value, gripper_id=14)`
+
+- **功能**：设置某关节的逆时针误差范围  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `value` (`int`) 0 ~ 16  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - 1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_counterclockwise(joint_id, gripper_id=14)`
+
+- **功能**：获取某关节的逆时针误差范围  
+- **参数**：
+  - `joint_id` (`int`) 1 ~ 6  
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：`value` (`int`) 0 ~ 16
+
+#### `set_hand_gripper_pinch_action(pinch_pose, rank_mode, idle_flag=False, gripper_id=14)`
+
+- **功能**：设置夹爪配合动作及速度  
+- **参数**： 
+  - `pinch_pose` (`int`) 0 ~ 4  
+    - 0：所有关节归零  
+    - 1：食指与拇指夹持  
+    - 2：中指与拇指夹持  
+    - 3：食指与中指夹持  
+    - 4：三指夹持（若为 4，`rank_mode` 范围为 1 ~ 20）  
+  - `rank_mode` (`int`) 0 ~ 5  ，合拢程度，等级越高越合拢。
+  - `idle_flag` (`bool`, 可选)：默认False
+  - `gripper_id` (`int`) 1 ~ 254，默认14
+- **返回值**：
+  - -1 - 失败  
+  - 1 - 成功
+
+#### `get_hand_gripper_type(gripper_id=14)`
+
+- **功能**：获取设备类型（左右手）  
+- **参数**：
+  - `gripper_id` (`int`) 1 ~ 254，默认14  
+- **返回值**：`int` 类型  
+  - 0 - 左手  
+  - 1 - 右手
+
+---
