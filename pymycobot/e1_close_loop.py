@@ -142,8 +142,8 @@ class E1CloseLoop(DataProcessor, E1EndControl):
 
         is_moving_fail_count = 0
         while True and time.time() - t < wait_time:
-            # self.event.wait(0.05)
-            # self.event.clear()
+            self.event.wait(0.1)
+            self.event.clear()
             with self.lock_out:
                 for v in self.read_command:
                     read_data = v[0]
@@ -239,7 +239,7 @@ class E1CloseLoop(DataProcessor, E1EndControl):
                             if genre in self.write_command:
                                 self.write_command.remove(genre)
                         return -2
-            time.sleep(0.0001)
+            # time.sleep(0.0001)
         else:
             # print("ERROR: ---超时---")
             pass
@@ -338,7 +338,9 @@ class E1CloseLoop(DataProcessor, E1EndControl):
                                         datas = b"\xfe"
                                         pre = k
                         else:
-                            time.sleep(0.001)
+                            # time.sleep(0.001)
+                            self.event.set()
+                            # pass
                     else:
                         datas = b''
                     if self.save_serial_log:
