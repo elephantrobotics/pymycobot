@@ -706,10 +706,10 @@ class ThreeHand:
 
         cmd, recv = self._send_custom_command(arm_id, gripper_id, 0x03, reg_addr, *data)
         if isinstance(recv, (list, bytearray)) and len(recv) >= 9:
-            recv_func = recv[4]
-            recv_addr = (recv[5] << 8) | recv[6]
+            recv_func = recv[5]
+            recv_addr = (recv[6] << 8) | recv[7]
             if recv_func == 0x03 and recv_addr == reg_addr:
-                data = recv[7:-2]
+                data = recv[8:-2]
                 if len(data) % 2 != 0:
                     return -1
                 res = []
@@ -1382,7 +1382,7 @@ class FiveFingerGripper:
         major = (val >> 8) & 0xFF
         minor = val & 0xFF
 
-        version = f"{major}.{minor}"
+        version = float(f"{major}.{minor}")
         return version
 
     def get_five_fingers_modified_version(self, arm_id, hand_id=2):

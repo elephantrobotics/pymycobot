@@ -70,6 +70,7 @@ class L1CloseLoop(DataProcessor, L1EndControl):
         left_done = False
         right_done = False
         lost_times = 0
+        moving_error_count = 0
         with self.lock:
 
             self._send_command(genre, real_command)
@@ -253,6 +254,19 @@ class L1CloseLoop(DataProcessor, L1EndControl):
             if is_in_position and time.time() - interval_time > check_is_moving_t and wait_time == 300:
                 interval_time = time.time()
                 moving = self.is_moving()
+                # 掉电/通信失败
+                if moving is None or moving == -1:
+                    moving_error_count += 1
+                    # 连续失败3次认为设备离线
+                    if moving_error_count >= 3:
+                        with self.lock:
+                            if genre in self.write_command:
+                                self.write_command.remove(genre)
+                        return -1
+                    continue
+
+                # 通信恢复，清零
+                moving_error_count = 0
                 if self._motion_idle(moving):
                     # print("停止运动，退出")
                     is_moving += 1
@@ -293,7 +307,7 @@ class L1CloseLoop(DataProcessor, L1EndControl):
                     print(res)
                 return data[4]
         valid_data = data[data_pos: data_pos + data_len]
-        return (valid_data, data_len)
+        return (valid_data, data_len, arm_mode)
 
     def read_thread(self, method=None):
         self.buffer = bytearray()
@@ -403,22 +417,14 @@ class L1CloseLoop(DataProcessor, L1EndControl):
         """
         return self._mesg(ProtocolCode.IS_POWER_ON)
 
-    def get_coords(self, angles=None):
-        """Get the coords from robot arm, coordinate system based on base. The target angle can be passed in, and the coordinate position corresponding to the target angle can be obtained.
-
-        Args:
-            angles (list): The angles of six joints. e.g. [0, 0, 0, 0, 0, 0]
+    def get_coords(self):
+        """Get the coords from robot arm, coordinate system based on base
 
         Return:
             list : A float list of coord .[[left coords], [right coords]].
 
         """
-        if angles is None:
-            return self._mesg(ProtocolCode.GET_COORDS)
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, angles=angles)
-        angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.GET_COORDS, angles)
+        return self._mesg(ProtocolCode.GET_COORDS)
 
     def is_paused(self):
         """Judge whether the manipulator pauses or not.
@@ -758,21 +764,15 @@ class L1CloseLoop(DataProcessor, L1EndControl):
         if arm_id == 0:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, left_angles=left_angles, right_angles=right_angles)
-            left_angles.append(0)
-            right_angles.append(0)
-            right_angles.append(0)
-            all_angles = left_angles + right_angles
+            all_angles = left_angles + [0] + right_angles + [0, 0]
         elif arm_id == 1:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, left_angles=left_angles)
-            left_angles.append(0)
-            all_angles = left_angles + [0] * 9
+            all_angles = left_angles + [0] + [0] * 9
         elif arm_id == 2:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, right_angles=right_angles)
-            right_angles.append(0)
-            right_angles.append(0)
-            all_angles = [0] * 8 + right_angles
+            all_angles = [0] * 8 + right_angles + [0, 0]
 
         angles = [self._angle2int(angle) for angle in all_angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, arm_id, angles, speed, has_reply=True, _async=_async)
@@ -794,6 +794,8 @@ class L1CloseLoop(DataProcessor, L1EndControl):
         if arm_id == 0:
             self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,joint_id=joint_id,
                                         left_angle=left_angle, right_angle=right_angle)
+            if joint_id == 9:
+                left_angle = 0
         elif arm_id == 1:
             self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, joint_id=joint_id,
                                         left_angle=left_angle)
@@ -1040,8 +1042,8 @@ class L1CloseLoop(DataProcessor, L1EndControl):
                 1 - left arm
                 2 - right arm
             mode (int): 0 - angle acceleration. 1 - coord acceleration.
-            left_max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 200°/s. Coordinate acceleration range is 1 ~ 400mm/s
-            right_max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 200°/s. Coordinate acceleration range is 1 ~ 400mm/s
+            left_max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 400°/s. Coordinate acceleration range is 1 ~ 400mm/s
+            right_max_acc (int): maximum acceleration value. Angular acceleration range is 1 ~ 400°/s. Coordinate acceleration range is 1 ~ 400mm/s
         """
         self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id)
         if arm_id == 0:
@@ -1096,7 +1098,7 @@ class L1CloseLoop(DataProcessor, L1EndControl):
                 joint 4 is -135 ~ 135.
                 joint 5 is -155 ~ 155.
                 joint 6 is -115 ~ 115.
-                joint 7 is -155 ~ 155.
+                joint 7 is -137 ~ 137.
 
         Return:
             1 - success
@@ -1112,7 +1114,7 @@ class L1CloseLoop(DataProcessor, L1EndControl):
             joint_id (int): Joint id 1 - 7 (Arm only)
             degree: The angle range of
                 joint 1 is -181 ~ 135.
-                joint 2 is -46 ~ 95.
+                joint 2 is -46 ~ 96.
                 joint 3 is -155 ~ 155.
                 joint 4 is -135 ~ 135.
                 joint 5 is -155 ~ 155.

@@ -7,8 +7,8 @@ import time
 import numpy as np
 
 from pymycobot.L1_close_loop import L1CloseLoop
-from pymycobot.common import ProtocolCode, ProGripper
-from pymycobot.robot_info import _interpret_status_code, RobotStatusL1Info
+from pymycobot.common import ProtocolCode
+from pymycobot.robot_info import RobotStatusL1Info
 
 
 class MercuryL1Client(L1CloseLoop):
@@ -23,13 +23,13 @@ class MercuryL1Client(L1CloseLoop):
         self.save_serial_log = save_serial_log
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
-        # self.sock = self.connect_socket()
-        # self.lock = threading.Lock()
-        # self.is_stop = False
-        # self.sync_mode = True
-        # self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
-        # self.read_threading.daemon = True
-        # self.read_threading.start()
+        self.sock = self.connect_socket()
+        self.lock = threading.Lock()
+        self.is_stop = False
+        self.sync_mode = True
+        self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
+        self.read_threading.daemon = True
+        self.read_threading.start()
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
@@ -74,18 +74,25 @@ class MercuryL1Client(L1CloseLoop):
         elif read_data == 0:
             return read_data
         if isinstance(read_data, tuple):
-            valid_data, data_len = read_data
+            valid_data, data_len, arm_mode = read_data
         else:
             return -1
 
         res = []
-        # print('data_len:', data_len, valid_data)
+        # print('data_len:', data_len, valid_data, arm_mode)
         if genre == ProtocolCode.GET_MOTORS_TEMPERATURE:
             if data_len == 34:
                 data = list(valid_data[:34])
-                left = data[0:7] + data[7:15]
-                right = data[15:24] + data[24:33]
-                return [left, right]
+                left_coil = data[0:8]
+                left_mos = data[8:16]
+
+                right_coil = data[16:25]
+                right_mos = data[25:34]
+
+                return [
+                    [left_coil, left_mos],
+                    [right_coil, right_mos]
+                ]
             if data_len == 14:
                 return [int(x) for x in valid_data]
         elif (genre in (
@@ -117,6 +124,14 @@ class MercuryL1Client(L1CloseLoop):
             ProtocolCode.IS_IN_POSITION,
         ):
             if data_len >= 2:
+                if genre == ProtocolCode.IS_IN_POSITION:
+                    if arm_mode == 0:
+                        return [valid_data[0], valid_data[1]]
+                    elif arm_mode == 1:
+                        return valid_data[0]
+                    elif arm_mode == 2:
+                        return valid_data[1]
+
                 return [valid_data[0], valid_data[1]]
             return -1
         elif genre == ProtocolCode.GET_DEBUG_LOG_MODE:
@@ -142,11 +157,18 @@ class MercuryL1Client(L1CloseLoop):
                 return [list(valid_data[0:7]), list(valid_data[7: ])]
             return -1
         elif data_len == 19 and genre == ProtocolCode.IS_INIT_CALIBRATION:
-            if valid_data[0] == 1:
-                return 1
-            return [list(valid_data[1:10]), list(valid_data[10: ])]
+            left_all = valid_data[0]
+            left_joints = list(valid_data[1:9])
+
+            right_all = valid_data[9]
+            right_joints = list(valid_data[10:19])
+
+            left_res = 1 if left_all == 1 else left_joints
+            right_res = 1 if right_all == 1 else right_joints
+
+            return [left_res, right_res]
         elif data_len in [8, 12, 14, 16, 26, 60]:
-            if data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+            if data_len in [8, 12] and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
                 res_list = [i for i in valid_data]
                 return res_list
             elif data_len == 8 and genre == ProtocolCode.GET_ENCODERS:
@@ -279,6 +301,12 @@ class MercuryL1Client(L1CloseLoop):
             ProtocolCode.GET_IDENTIFY_MODE,
             ProtocolCode.GET_FRESH_SPEED_MODE,
         ]:
+            if genre == ProtocolCode.POWER_ON:
+                res = self._process_single(res)
+                # After powering on, wait for the drive to stabilize.
+                if res == 1:
+                    time.sleep(0.03)
+                return res
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
             angles = [self._int2angle(angle) for angle in res]
@@ -526,7 +554,7 @@ class MercuryL1Client(L1CloseLoop):
             return "check coords error"
 
     def _status_explain(self, status):
-        error_info = _interpret_status_code(self.language, status)
+        error_info = RobotStatusL1Info._L1_interpret_status_code(self.language, status)
         if error_info != "":
             self.arm_span = 440
         if 0x00 < status <= 0x07:
@@ -853,17 +881,17 @@ class MercuryL1Client(L1CloseLoop):
 
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id, speed=speed)
+            class_name=self.__class__.__name__, arm_id=arm_id, speed=speed)
         if arm_id == 0:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, left_direction=l_direction, right_direction=r_direction)
+                class_name=self.__class__.__name__, coord_id=coord_id, left_direction=l_direction, right_direction=r_direction)
         elif arm_id == 1:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, left_direction=l_direction)
+                class_name=self.__class__.__name__, coord_id=coord_id, left_direction=l_direction)
             r_direction = 0
         elif arm_id == 2:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, right_direction=r_direction)
+                class_name=self.__class__.__name__, coord_id=coord_id, right_direction=r_direction)
             l_direction = 0
         left_direction = l_direction
         right_direction = r_direction
@@ -955,17 +983,17 @@ class MercuryL1Client(L1CloseLoop):
 
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, arm_id=arm_id, coord_id=coord_id, speed=speed)
+            class_name=self.__class__.__name__, arm_id=arm_id, speed=speed)
         if arm_id == 0:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, left_increment_coord=l_increment, right_increment_coord=r_increment)
+                class_name=self.__class__.__name__, coord_id=coord_id, left_increment_coord=l_increment, right_increment_coord=r_increment)
         elif arm_id == 1:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, left_increment_coord=l_increment)
+                class_name=self.__class__.__name__, coord_id=coord_id, left_increment_coord=l_increment)
             r_increment = 0
         elif arm_id == 2:
             self.calibration_parameters(
-                class_name=self.__class__.__name__, right_increment_coord=r_increment)
+                class_name=self.__class__.__name__, coord_id=coord_id, right_increment_coord=r_increment)
             l_increment = 0
 
         if coord_id <= 3:
@@ -1037,6 +1065,7 @@ class MercuryL1Client(L1CloseLoop):
         Returns:
             List [left, right], eg: [[IN1, IN2, btn1, btn2], [IN1, IN2, btn1, btn2]]
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_arm_id=arm_id)
         return self._mesg(ProtocolCode.PRO450_GET_DIGITAL_INPUTS, arm_id)
 
     # def set_torque_comp(self, joint_id, damping, comp_value=0):

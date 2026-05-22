@@ -2347,7 +2347,7 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
                 mode = kwargs.get('mode', None)
                 if mode == 0:
-                    if not (1 <= value <= 200):
+                    if not (1 <= value <= 400):
                         raise MercuryL1ClientDataException(
                             f"The parameter {parameter} only supports 1 ~ 200 (angle mode), but received {value}")
                 elif mode == 1:
@@ -2401,20 +2401,21 @@ def calibration_parameters(**kwargs):
                         "The joint_id should be in [1,2,3,4,5,6,7,8,9,254], but received {}".format(value))
             elif parameter in ['left_angle']:
                 joint_id = kwargs.get('joint_id', None)
+                # 左臂不存在9关节，直接忽略
                 if joint_id == 9:
-                    pass
-                else:
-                    if not isinstance(value, (int, float)):
-                        raise MercuryL1ClientDataException(
-                            "The acceptable parameter {} should be {} or {}, but the received {}".format(parameter, int, float, value_type))
-                    index = robot_limit[class_name]['left_joint_id'][joint_id - 1] - 1
-                    angles_min = robot_limit[class_name]["left_angles_min"][index]
-                    angles_max = robot_limit[class_name]["left_angles_max"][index]
-                    if value < angles_min or value > angles_max:
-                        raise MercuryL1ClientDataException(
-                            "left angle value not right, should be {0} ~ {1}, but received {2}".format(
-                                angles_min, angles_max, value))
-            elif parameter in ['right_angle']:
+                    return
+
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be {} or {}, but the received {}".format(parameter, int, float, value_type))
+                index = robot_limit[class_name]['left_joint_id'][joint_id - 1] - 1
+                angles_min = robot_limit[class_name]["left_angles_min"][index]
+                angles_max = robot_limit[class_name]["left_angles_max"][index]
+                if value < angles_min or value > angles_max:
+                    raise MercuryL1ClientDataException(
+                        "left angle value not right, should be {0} ~ {1}, but received {2}".format(
+                            angles_min, angles_max, value))
+            elif parameter in ['right_angle', 'degree']:
                 if not isinstance(value, (int, float)):
                     raise MercuryL1ClientDataException(
                         "The acceptable parameter {} should be {} or {}, but the received {}".format(parameter, int, float, value_type))
@@ -2542,7 +2543,7 @@ def calibration_parameters(**kwargs):
                 if float(value) < 1.0:
                     raise MercuryL1ClientDataException(
                         f"Version must be >= 1.0, but received '{value}'")
-            elif parameter in ["tool_modified_version", "five_hand_id", "target_five_hand_id"]:
+            elif parameter in ["five_hand_id", "target_five_hand_id"]:
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
                 if value < 2 or value > 254:
                     raise MercuryL1ClientDataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))

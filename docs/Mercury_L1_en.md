@@ -330,30 +330,30 @@ print(mc.get_angles())
   - `speed`: (`int`) 1 ~ 100
   - `left_angle`: Angle value (`float`)
 
-| Joint ID | Range |
-| ---- | ---- |
+| Joint ID | Range      |
+| ---- |------------|
 | 1 | -181 ~ 135 |
-| 2 | -46 ~ 96 |
+| 2 | -46 ~ 96   |
 | 3 | -155 ~ 155 |
-| 4 | -135 ~ 18 |
+| 4 | -135 ~ 18  |
 | 5 | -155 ~ 155 |
 | 6 | -115 ~ 115 |
-| 7 | -155 ~ 155 |
-| 8 (Waist) | 0 ~ 40 |
+| 7 | -137 ~ 137 |
+| 8 (Waist) | 0 ~ 40     |
 
   - `right_angle`: Angle value (`float`)
 
-| Joint ID | Range |
-| ---- | ---- |
+| Joint ID | Range      |
+| ---- |------------|
 | 1 | -181 ~ 135 |
-| 2 | -46 ~ 96 |
+| 2 | -46 ~ 96   |
 | 3 | -155 ~ 155 |
-| 4 | -135 ~ 18 |
+| 4 | -135 ~ 18  |
 | 5 | -155 ~ 155 |
 | 6 | -115 ~ 115 |
-| 7 | -155 ~ 155 |
-| 8 (Neck) | -50 ~ 50 |
-| 9 (Head) | -82 ~ 82 |
+| 7 | -137 ~ 137  |
+| 8 (Neck) | -50 ~ 50   |
+| 9 (Head) | -82 ~ 82   |
 
   - `_async`: Motion closed-loop control switch; default: Enabled (False); Disabled (True).
 
@@ -876,11 +876,11 @@ print(mc.get_angles())
 - **Parameters:**
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
 
-| Coordinate ID | Range |
-| ---- | ---- |
-| x | -1000 ~ 1000 |
-| y | -1000 ~ 1000 |
-| z | -1000 ~ 1000 |
+| Coordinate ID | Range      |
+| ---- |------------|
+| x | -623 ~ 623 |
+| y | -829 ~ 829 |
+| z | -227 ~ 957 |
 | rx | -180 ~ 180 |
 | ry | -180 ~ 180 |
 | rz | -180 ~ 180 |
@@ -1393,6 +1393,9 @@ print(mc.get_angles())
     - `J5`: 98.84° ~ 174.86°
     - `J6`: 0° ~ 90°
   - `hand_id`: (`int`) Five-finger device ID; defaults to 2, valid range is 2 ~ 254.
+* **Return value**: 
+  * -1 - Failed
+  * 1 - Success
 
 #### `set_five_fingers_angle(arm_id, finger_id, finger_angle, hand_id=2)`
 
@@ -1415,6 +1418,9 @@ print(mc.get_angles())
     - `J5`: 98.84° ~ 174.86°
     - `J6`: 0° ~ 90°
   - `hand_id`: (`int`) Five-finger device ID; defaults to 2, range: 2 ~ 254.
+* **Return value**: 
+  * -1 - Failed
+  * 1 - Success
 
 #### `get_five_fingers_version(arm_id, hand_id=2)`
 
@@ -1479,7 +1485,7 @@ print(mc.get_angles())
   * `id_value` (`int`) New ID, range 1 ~ 254.
   * `gripper_id` (`int`) 1 ~ 254, default 14
 * **Return value**: 
-  * 0 - Failed
+  * -1 - Failed
   * 1 - Success
 
 #### `get_hand_gripper_id(arm_id, gripper_id=14)`
