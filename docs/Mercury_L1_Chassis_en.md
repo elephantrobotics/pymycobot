@@ -230,9 +230,49 @@
 - **Return Value:**
   - **tuple(str, str, str): Bluetooth name, Service UUID, Characteristic UUID**
 
-### Use Cases
+### 6. Lifting
 
-#### Get Chassis System Version
+#### set_lift_control(mileage, speed)
+
+- **Function:** Controls lifting motion
+
+- **Parameters:**
+
+  - **mileage(int):** Motion distance, range -450 ~ 450 mm.
+
+  - **speed(int):** Motion speed, range 1 ~ 100.
+
+- **Return value:**
+
+  - **int: 1**
+
+#### get_lift_information()
+
+- **Function:** Retrieves lifting information
+
+- **Return value:**
+
+  - **list:** For example, [current mileage, error, speed, torque]
+
+#### get_lift_encoder()
+
+- **Function:** Reads the lifting encoder value.
+
+- **Return Value:**
+
+  - **list:** For example, [zero encoder, current encoder]
+
+#### get_lift_recv_loss_count()
+
+- **Function:** View the number of packet losses by the lifting motor
+
+- **Return Value:**
+
+  - **int:** For example, 1.
+
+### 7 Use Cases
+
+#### 7.1 Get Chassis System Version
 
 ```python
 from pymycobot import MercuryL1Chassis
@@ -245,7 +285,7 @@ version = mlc.get_system_version()
 print(version)
 ```
 
-#### Controlling Chassis Movement
+#### 7.2 Controlling Chassis Movement
 
 ```python
 import time

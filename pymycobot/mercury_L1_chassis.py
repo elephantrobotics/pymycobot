@@ -35,6 +35,8 @@ class ProtocolCode(enum.Enum):
     GET_AUTO_REPORT_MESSAGE = 0x25
     SET_LIFT_CONTROL_MOVE = 0x27
     GET_LIFT_CONTROL_MSG = 0x3f
+    GET_LIFT_ENCODER = 0x29
+    GET_LIFT_RECV_LOSS_COUNT = 0x30
 
     # aided
     SET_MOTOR_ENABLED = 0x30
@@ -266,6 +268,14 @@ class MercuryL1ChassisCommand(CommunicationProtocol):
 
         if ProtocolCode.GET_LIFT_CONTROL_MSG.equal(genre):
             return list(reply_data)
+
+        if ProtocolCode.GET_LIFT_ENCODER.equal(genre):
+            zero_encoder = int.from_bytes(reply_data[0:4], byteorder="little", signed=False)
+            current_encoder = int.from_bytes(reply_data[4:8], byteorder="little", signed=False)
+            return [zero_encoder, current_encoder]
+
+        if ProtocolCode.GET_LIFT_RECV_LOSS_COUNT.equal(genre):
+            return int.from_bytes(reply_data[0:2], byteorder="little", signed=False)
 
         if ProtocolCode.GET_WIFI_ACCOUNT.equal(genre):
             data = re.findall(r'AGVPro:WIFI:S:(.*);P:(.*);', reply_data)
@@ -895,3 +905,21 @@ class MercuryL1Chassis(MercuryL1ChassisCommand):
             list such as [20, 0, 0, 0] -> [mileage, error, speed, torque]
         """
         return self._merge(ProtocolCode.GET_LIFT_CONTROL_MSG)
+
+    def get_lift_encoder(self):
+        """Read Lift Encoder
+
+        Returns:
+            A list, such as [zero encoder, current encoder]
+        """
+
+        return self._merge(ProtocolCode.GET_LIFT_ENCODER)
+
+    def get_lift_recv_loss_count(self):
+        """Read Lift Recv Loss Count
+
+        Returns:
+            Int, number of packet losses
+        """
+
+        return self._merge(ProtocolCode.GET_LIFT_RECV_LOSS_COUNT)

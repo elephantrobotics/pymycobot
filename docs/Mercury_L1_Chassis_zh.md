@@ -230,22 +230,51 @@
 - **返回值:**
   - **tuple(str, str, str): 蓝牙名称, 服务uuid, 特征uuid**
 
-## 6. 使用案例
+## 6. 升降
 
-### 6.1 获取Mercury L1 Chassis的系统版本号
+### set_lift_control(mileage, speed)
+
+- **功能:** 控制升降运动
+- **参数:**
+  - **mileage(int): 运动里程，范围 -450 ~ 450 毫米。**
+  - **speed(int): 运动速度，范围 1 ~ 100。**
+- **返回值:**
+  - **int: 1**
+
+### get_lift_information()
+
+- **功能:** 获取升降信息
+- **返回值:**
+  - **list: 例如 [当前里程, 异常, 速度, 力矩]**
+
+### get_lift_encoder()
+
+- **功能:** 读取升降编码器值。
+- **返回值:**
+  - **list: 例如 [零位编码器, 当前编码器]**
+
+### get_lift_recv_loss_count()
+
+- **功能:** 查看升降电机丢包次数
+- **返回值:**
+  - **int: 例如 1。**
+
+## 7. 使用案例
+
+### 7.1 获取Mercury L1 Chassis的系统版本号
 
 ```python
 from pymycobot import MercuryL1Chassis
 
 # 初始化 Mercury L1 Chassis 对象
-mlc = MercuryL1Chassis("/dev/ttyTHS1", baudrate=1000000, debug=True)
+mlc = MercuryL1Chassis("/dev/ttyCH341USB0", baudrate=1000000, debug=True)
 
 # 获取系统版本号
 version = mlc.get_system_version()
 print(version)
 ```
 
-### 6.2 控制Mercury L1 Chassis以0.5ms的速度前进3秒
+### 7.2 控制Mercury L1 Chassis以0.5ms的速度前进3秒
 
 ```python
 import time
