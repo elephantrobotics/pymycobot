@@ -71,14 +71,27 @@ class L1CloseLoop(DataProcessor, L1EndControl):
         right_done = False
         lost_times = 0
         moving_error_count = 0
+        motion_commands = [
+            ProtocolCode.SEND_ANGLE,
+            ProtocolCode.SEND_ANGLES,
+            ProtocolCode.SEND_COORD,
+            ProtocolCode.SEND_COORDS,
+            ProtocolCode.JOG_ANGLE,
+            ProtocolCode.JOG_COORD,
+            ProtocolCode.JOG_INCREMENT,
+            ProtocolCode.JOG_INCREMENT_COORD,
+            ProtocolCode.MERCURY_JOG_BASE_COORD,
+            ProtocolCode.MERCURY_SET_BASE_COORD,
+            ProtocolCode.OVER_LIMIT_RETURN_ZERO,
+            ProtocolCode.JOG_BASE_INCREMENT_COORD,
+            ProtocolCode.WRITE_MOVE_C,
+            ProtocolCode.JOG_RPY,
+            ProtocolCode.WRITE_MOVE_C_R,
+            ProtocolCode.MERCURY_DRAG_TECH_EXECUTE,
+        ]
         with self.lock:
 
             self._send_command(genre, real_command)
-        if _async:
-            with self.lock:
-                if genre in self.write_command:
-                    self.write_command.remove(genre)
-            return 1
         t = time.time()
         wait_time = 0.15
         big_wait_time = False
@@ -89,23 +102,9 @@ class L1CloseLoop(DataProcessor, L1EndControl):
                        ProtocolCode.MERCURY_DRAG_TEACH_CLEAN, ProtocolCode.SET_MOTOR_ENABLED]:
             wait_time = 3
             big_wait_time = True
-        elif genre in [
-                ProtocolCode.SEND_ANGLE,
-                ProtocolCode.SEND_ANGLES,
-                ProtocolCode.SEND_COORD,
-                ProtocolCode.SEND_COORDS,
-                ProtocolCode.JOG_ANGLE,
-                ProtocolCode.JOG_COORD,
-                ProtocolCode.JOG_INCREMENT,
-                ProtocolCode.JOG_INCREMENT_COORD,
-                ProtocolCode.MERCURY_JOG_BASE_COORD,
-                ProtocolCode.MERCURY_SET_BASE_COORD,
-                ProtocolCode.OVER_LIMIT_RETURN_ZERO,
-                ProtocolCode.JOG_BASE_INCREMENT_COORD,
-                ProtocolCode.WRITE_MOVE_C,
-                ProtocolCode.JOG_RPY,
-                ProtocolCode.WRITE_MOVE_C_R,
-                ProtocolCode.MERCURY_DRAG_TECH_EXECUTE] and self.sync_mode:
+        elif genre in motion_commands and _async:
+            wait_time = 3
+        elif genre in motion_commands and self.sync_mode and not _async:
             wait_time = 300
             is_in_position = True
             big_wait_time = True
@@ -212,11 +211,14 @@ class L1CloseLoop(DataProcessor, L1EndControl):
                         with self.lock:
                             if v in self.read_command:
                                 self.read_command.remove(v)
-                        if has_reply == False or self.sync_mode == False:
+                        if has_reply == False or self.sync_mode == False or _async:
                             # print(-3)
                             # print("仅闭环退出", flush=True)
                             need_break = True
                             data = read_data
+                            with self.lock:
+                                if genre in self.write_command:
+                                    self.write_command.remove(genre)
                     elif genre == read_data[3]:
                         # print(-4)
                         # print("正常读取", flush=True)
