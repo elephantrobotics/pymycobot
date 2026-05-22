@@ -2544,7 +2544,7 @@ def calibration_parameters(**kwargs):
                         f"Version must be >= 1.0, but received '{value}'")
             elif parameter in ["tool_modified_version", "five_hand_id", "target_five_hand_id"]:
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
-                if value < 0 or value > 255:
+                if value < 2 or value > 254:
                     raise MercuryL1ClientDataException("The parameter {} only supports 0 ~ 255, but received {}".format(parameter, value))
             elif parameter in ["five_fingers_angles"]:
                 check_value_type(parameter, value_type, MercuryL1ClientDataException, list)
@@ -2660,6 +2660,59 @@ def calibration_parameters(**kwargs):
                 if not 1 <= value <= 255:
                     raise MercuryL1ClientDataException(
                         "rank value not right, should be 1 ~ 255, the error speed is {}".format(value))
+
+            elif parameter == "hand_gripper_joint_id":
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 1 or value > 6:
+                    raise MercuryL1ClientDataException("The range of 'hand_id' in {} is 1 ~ 6, but the received value is {}".format(parameter, value))
+            elif parameter in ['hand_gripper_angle']:
+                joint_id = kwargs.get('hand_gripper_joint_id', None)
+                index = robot_limit[class_name]['hand_gripper_joint_id'][joint_id - 1] - 1
+                max_angles = robot_limit[class_name]["hand_gripper_angles_max"][index]
+                min_angles = robot_limit[class_name]["hand_gripper_angles_min"][index]
+                if value < min_angles or value > max_angles:
+                    raise MercuryL1ClientDataException(
+                        "gripper angle value not right, should be {0} ~ {1}, but received {2}".format(min_angles, max_angles, value))
+
+            elif parameter in ["hand_gripper_angles"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, list)
+                if len(value) not in [6]:
+                    raise MercuryL1ClientDataException("The length of `hand_gripper_angles` must be 6.")
+                for idx, angle in enumerate(value):
+                    joint_id = idx + 1
+                    angle_min = robot_limit[class_name]["hand_gripper_angles_min"][idx]
+                    angle_max = robot_limit[class_name]["hand_gripper_angles_max"][idx]
+                    if angle < angle_min or angle > angle_max:
+                        raise MercuryL1ClientDataException(
+                            "Hand joint {} angle value of {} exceeds the limit, with a limit range of {} ~ {}.".format(
+                                joint_id, angle, angle_min, angle_max))
+            elif parameter == 'hand_gripper_speed':
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if not 1 <= value <= 100:
+                    raise MercuryL1ClientDataException(
+                        "gripper speed not right, should be 1 ~ 100, the error gripper_speed is {}".format(value))
+            elif parameter == "clockwise":
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 16:
+                    raise MercuryL1ClientDataException("The range of 'value' in {} is 0 ~ 16, but the received value is {}".format(parameter, value))
+            elif parameter in ["gripper_p", "gripper_d", "min_pressure", "gripper_i"]:
+                check_value_type(parameter, value_type, MercuryL1ClientDataException, int)
+                if value < 0 or value > 254:
+                    raise MercuryL1ClientDataException("The range of 'value' in {} is 0 ~ 254, but the received value is {}".format(parameter, value))
+            elif parameter == 'hand_pinch_pose':
+                check_0_or_1(parameter, value, [0, 1, 2, 3, 4], value_type, MercuryL1ClientDataException, int)
+
+            elif parameter == 'hand_rank_mode':
+                pinch_pose_val = kwargs.get("hand_pinch_pose", None)
+                if pinch_pose_val == 4:
+                    valid_range = list(range(1, 21))  # [1 ~ 20]
+                else:
+                    valid_range = list(range(0, 6))  # [0 ~ 5]
+                check_0_or_1(parameter, value, valid_range, value_type, MercuryL1ClientDataException, int)
+
+            elif parameter == 'hand_idle_flag':
+                check_0_or_1(parameter, value, [0, 1], value_type, MercuryL1ClientDataException, int)
+
 
 def restrict_serial_port(func):
     """

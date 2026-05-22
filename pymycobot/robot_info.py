@@ -613,5 +613,8 @@ class RobotLimit:
             "five_fingers_angles_min": [2.26, 100.22, 97.81, 101.38, 98.84, 0],
             "five_fingers_angles_max": [36.76, 178.37, 176.06, 176.54, 174.86, 90],
             "finger_id": [1, 2, 3, 4, 5, 6],
+            "hand_gripper_joint_id": [1, 2, 3, 4, 5, 6],
+            "hand_gripper_angles_min": [0] * 6,
+            "hand_gripper_angles_max": [100, 100, 100, 100, 100, 100],
         },
     }

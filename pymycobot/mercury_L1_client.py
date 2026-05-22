@@ -23,13 +23,13 @@ class MercuryL1Client(L1CloseLoop):
         self.save_serial_log = save_serial_log
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
-        self.sock = self.connect_socket()
-        self.lock = threading.Lock()
-        self.is_stop = False
-        self.sync_mode = True
-        self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
-        self.read_threading.daemon = True
-        self.read_threading.start()
+        # self.sock = self.connect_socket()
+        # self.lock = threading.Lock()
+        # self.is_stop = False
+        # self.sync_mode = True
+        # self.read_threading = threading.Thread(target=self.read_thread, args=("socket",))
+        # self.read_threading.daemon = True
+        # self.read_threading.start()
         self.language, _ = locale.getdefaultlocale()
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
@@ -248,12 +248,8 @@ class MercuryL1Client(L1CloseLoop):
             for i in valid_data:
                 res.append(i)
 
-        elif data_len == 11 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
-            res_list = [i for i in valid_data]
-            return res_list
-        elif data_len == 18 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
-            res_list = [i for i in valid_data]
-            return res_list
+        elif data_len in [11, 18, 22] and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+            return [i for i in valid_data]
         else:
             if genre in [
                 ProtocolCode.GET_SERVO_STATUS,

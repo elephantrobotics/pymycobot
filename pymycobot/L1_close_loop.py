@@ -4,10 +4,10 @@ import time
 
 from pymycobot.common import ProtocolCode, write, read, DataProcessor, FingerGripper
 from pymycobot.error import calibration_parameters
-from pymycobot.end_control import FiveFingerGripper, L1ForceGripper
+from pymycobot.L1_end_control import L1EndControl
 
 
-class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
+class L1CloseLoop(DataProcessor, L1EndControl):
     _write = write
     _read = read
 
@@ -126,11 +126,31 @@ class L1CloseLoop(DataProcessor, FiveFingerGripper, L1ForceGripper):
         if genre == ProtocolCode.SET_FRESH_MODE:
             timeout = 4
         elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
-            if real_command[8] in [36, 13]:
+            big_wait_time = True
+            timeout = 3
+            wait_time = 0.3
+
+            force_cmd = None
+            hand_cmd = None
+
+            if len(real_command) > 8:
+                force_cmd = real_command[8]
+
+            if len(real_command) > 10:
+                hand_cmd = real_command[11]
+
+            if force_cmd in [36, 13] or hand_cmd in [36, 13]:
                 timeout = 3
                 wait_time = 10
-            else:
-                wait_time = 0.3
+            elif hand_cmd == 45:
+                timeout = 3
+                wait_time = 1
+        # elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+        #     if real_command[8] in [36, 13]:
+        #         timeout = 3
+        #         wait_time = 10
+        #     else:
+        #         wait_time = 0.3
         else:
             timeout = 3
         interval_time = time.time()
