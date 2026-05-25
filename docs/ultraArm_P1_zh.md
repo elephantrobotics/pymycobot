@@ -632,6 +632,31 @@ ua.set_angles([0, 0, 90, 0],50)
   - `0`: 未按下
   - `1`: 按下
 
+### 65 `coord_inverse_solution(coords)`
+
+- **功能：** 坐标逆解，输入坐标读取角度。
+- **参数说明：**
+  - `coords` (list[float]): 坐标值列表 [X, Y, Z, R]
+- **返回值：** 
+  - `angles` (list[float]): 角度值列表 [J1, J2, J3, J4]
+
+### 66 `angle_correct_solution(angles)`
+
+- **功能：** 角度正解，输入角度读取坐标。
+- **参数说明：**
+  - `angles` (list[float]): 角度值列表 [J1, J2, J3, J4]
+- **返回值：** 
+  - `coords` (list[float]): 坐标值列表 [X, Y, Z, R]
+
+### 67 `get_wifi_signal_strength()`
+
+- **功能：** 读取WiFi信号强度（仅在WiFi连接时才能读取）
+- **返回值：** `int` 信号强度，单位 dbm，比如 `-62`
+
+### 67 `get_bluetooth_signal_strength()`
+
+- **功能：** 读取蓝牙信号强度（仅在蓝牙连接时才能读取）
+- **返回值：** `int` 信号强度，单位 dbm，比如 `-52`
 
 ---
 

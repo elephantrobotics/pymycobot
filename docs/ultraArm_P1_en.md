@@ -764,6 +764,41 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `1`: Pressed
 
+### 65 `coord_inverse_solution(coords)`
+
+- **Function:** Inverse coordinate solution; input coordinates and read angles.
+
+- **Parameter Description:**
+
+  - `coords` (list[float]): List of coordinate values ​​[X, Y, Z, R]
+
+- **Return Value:**
+
+  - `angles` (list[float]): List of angle values ​​[J1, J2, J3, J4]
+
+### 66 `angle_correct_solution(angles)`
+
+- **Function:** Correct angle solution; input angles and read coordinates.
+
+- **Parameter Description:**
+
+  - `angles` (list[float]): List of angle values ​​[J1, J2, J3, J4]
+
+- **Return Value:**
+
+  - `coords` (list[float]): List of coordinate values ​​[X, Y, Z, R]
+
+### 67 `get_wifi_signal_strength()`
+
+- **Function:** Reads WiFi signal strength (only available when WiFi is connected)
+
+- **Return Value:** `int` signal strength, in dBm, e.g., `-62`
+
+### 67 `get_bluetooth_signal_strength()`
+
+- **Function:** Reads Bluetooth signal strength (only available when Bluetooth is connected)
+
+- **Return Value:** `int` signal strength, in dBm, e.g., `-52`
 
 ---
 
@@ -792,7 +827,7 @@ res = ua.get_angles_info()
 
 print(res)
 
-mc.set_angles([0, 0, 90, 0],2500)
+ua.set_angles([0, 0, 90, 0],50)
 
 ...
 ```
@@ -823,7 +858,7 @@ res = ua.get_angles_info()
 
 print(res)
 
-mc.set_angles([0, 0, 90, 0],2500)
+ua.set_angles([0, 0, 90, 0],50)
 
 ...
 ```

@@ -12,6 +12,7 @@ Date: 2026-03-11
 import locale
 import logging
 import os
+import re
 import socket
 import threading
 import time
@@ -447,6 +448,14 @@ class UltraArmP1Socket:
                             r = self._parse_colon_values(lower, "dbm", int, single=True)
                             if r is not None:
                                 return r
+                        elif flag == 'get_inverse_solution_angles':
+                            r = self._parse_solution_values(lower, ["a", "b", "c", "d"])
+                            if r is not None and len(r) ==4:
+                                return r
+                        elif flag == 'get_correct_solution_coords':
+                            r = self._parse_solution_values(lower,["x", "y", "z", "r"])
+                            if r is not None and len(r) ==4:
+                                return r
 
                         elif flag is None:
                             return -1
@@ -575,6 +584,27 @@ class UltraArmP1Socket:
                 values.append(v)
 
             return values[0] if single else values
+        except Exception as e:
+            if self.debug:
+                self.log.error(f"serial read exception: {e}")
+            return None
+
+    def _parse_solution_values(self, text, keys):
+        """
+        Example:angle:A+0.000 B+0.000 C+90.000 D+0.000
+        """
+        try:
+            result = []
+            for key in keys:
+                match = re.search(
+                    rf"{key}([+-]?\d+(?:\.\d+)?)",
+                    text,
+                    re.IGNORECASE
+                )
+                if not match:
+                    return None
+                result.append(float(match.group(1)))
+            return result
         except Exception as e:
             if self.debug:
                 self.log.error(f"serial read exception: {e}")
