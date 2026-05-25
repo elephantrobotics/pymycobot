@@ -450,6 +450,18 @@ class UltraArmP1:
                             r = self._parse_colon_values(lower, "btn", int, single=True)
                             if r is not None:
                                 return r
+                        elif flag in ['get_bluetooth_signal_strength','get_wifi_signal_strength']:
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "dbm", int, single=True)
+                            if r is not None:
+                                return r
+                        # elif flag == 'get_bluetooth_signal_strength':
+                        #     if 'error' in lower:
+                        #         return None
+                        #     r = self._parse_colon_values(lower, "dbm", int, single=True)
+                        #     if r is not None:
+                        #         return r
 
                         elif flag is None:
                             return -1
@@ -632,8 +644,52 @@ class UltraArmP1:
             time.sleep(0.01)
         return None
 
+    def _query_update_info(self, timeout=0.3):
+
+        raw_data = ""
+
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            chunk = self._read_available_bytes()
+
+            if chunk:
+                try:
+                    chunk_text = chunk.decode(errors="ignore")
+                except Exception:
+                    chunk_text = str(chunk)
+                raw_data += chunk_text
+                while "\n" in raw_data:
+                    line_data, raw_data = raw_data.split("\n", 1)
+                    line_data = line_data.strip()
+
+                    if not line_data:
+                        continue
+                    # keep original frame
+                    origin_line = line_data
+                    # checksum verify
+                    if "*" in line_data:
+                        if not self._verify_checksum(line_data):
+                            # if self.debug:
+                            #     self.log.warning(f"Checksum failed: {repr(line_data)}")
+                            continue
+
+                        # remove checksum
+                        line_data = line_data.split("*", 1)[0]
+                    # remove '$'
+                    line_data = line_data.lstrip("$")
+                    # debug original frame
+                    if self.debug:
+                        self._debug_read(origin_line)
+
+                    r = self._parse_colon_values(line_data.lower(),"updatestate", int, single=True)
+
+                    if r is not None:
+                        return self._parse_error_code(r, self.language)
+            time.sleep(0.01)
+        return None
+
     def _query_error_information_old(self, timeout=0.3):
-        self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
         time.sleep(0.15)
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
         raw_data = ""
@@ -1627,6 +1683,42 @@ class UltraArmP1:
             self._send_command(ProtocolCode.UPGRADE_RESTART)
             return self._response(_async=True, is_set=True)
 
+    def _get_upgrade_info(self):
+        """Get upgrade info"""
+        with self.lock:
+            start_time = time.time()
+            timeout = 90
+            while time.time() - start_time < timeout:
+                state = self._query_update_info(timeout=1)
+                if state is None:
+                    time.sleep(0.5)
+                    continue
+                # updating
+                if state == 2:
+                    if self.debug:
+                        self.log.debug("Firmware updating...")
+                    time.sleep(0.5)
+                    continue
+                # success
+                elif state == 3:
+                    if self.debug:
+                        self.log.debug("Firmware update success")
+                    return 3
+                # failed
+                elif state == 4:
+                    if self.debug:
+                        self.log.error("Firmware update failed")
+                    return 4
+                # idle / not upgrading
+                elif state == 1:
+                    time.sleep(0.5)
+                    continue
+            # timeout
+            if self.debug:
+                self.log.error("Firmware update timeout")
+            return -1
+
+
     def get_motor_enable_status(self):
         """Retrieve motor enable status"""
         with self.lock:
@@ -1732,11 +1824,11 @@ class UltraArmP1:
             self._send_command(ProtocolCode.SET_BUTTON_ENABLE)
             return self._response(_async=True, is_set=True)
 
-    def forced_reset_zero(self):
+    def forced_reset_zero(self, _async=True):
         """Forced reset to zero."""
         with self.lock:
             self._send_command(ProtocolCode.FORCED_RESET_ZERO)
-            return self._response(_async=True)
+            return self._response(_async=_async)
 
     def set_conveyor_control(self, state, direction, speed, distance):
         """Conveyor belt control.
@@ -1913,3 +2005,13 @@ class UltraArmP1:
 
             self._send_command(command)
             return self._request('get_correct_solution_coords')
+
+    def get_wifi_signal_strength(self):
+        """Get WiFi signal strength."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_WIFI_SIGNAL_P1, 'get_wifi_signal_strength')
+
+    def get_bluetooth_signal_strength(self):
+        """Get Bluetooth signal strength."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_BLUETOOTH_SIGNAL_P1, 'get_bluetooth_signal_strength')

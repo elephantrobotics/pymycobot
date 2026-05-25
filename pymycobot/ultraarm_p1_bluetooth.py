@@ -447,6 +447,12 @@ class UltraArmP1Bluetooth:
                             r = self._parse_colon_values(lower, "btn", int, single=True)
                             if r is not None:
                                 return r
+                        elif flag in ['get_bluetooth_signal_strength','get_wifi_signal_strength']:
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "dbm", int, single=True)
+                            if r is not None:
+                                return r
 
                         elif flag is None:
                             return -1
@@ -601,8 +607,6 @@ class UltraArmP1Bluetooth:
             return None
 
     def _query_error_information(self, timeout=0.3):
-
-        self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
         time.sleep(0.15)
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
 
@@ -1682,3 +1686,13 @@ class UltraArmP1Bluetooth:
         """
         with self.lock:
             return self._request_with_retry(ProtocolCode.GET_END_BUTTON_STATUS, 'get_end_button_state')
+
+    def get_wifi_signal_strength(self):
+        """Get WiFi signal strength."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_WIFI_SIGNAL_P1, 'get_wifi_signal_strength')
+
+    def get_bluetooth_signal_strength(self):
+        """Get Bluetooth signal strength."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_BLUETOOTH_SIGNAL_P1, 'get_bluetooth_signal_strength')
