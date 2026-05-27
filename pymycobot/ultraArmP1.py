@@ -2043,3 +2043,31 @@ class UltraArmP1:
         """Get Bluetooth signal strength."""
         with self.lock:
             return self._request_with_retry(ProtocolCode.GET_BLUETOOTH_SIGNAL_P1, 'get_bluetooth_signal_strength')
+
+    def set_modbus_mode(self, state):
+        """Set modbus mode.
+
+        Args:
+              state (int): 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_MODBUS_MODE_P1
+            command += f" S{str(state)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_collision_threshold(self, joint_id, threshold):
+        """Set collision threshold.
+
+        Args:
+            joint_id (int): Joint ID, 1 ~ 4; 0 - all joints
+            threshold (float): Collision threshold
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_number=joint_id, threshold_value=threshold)
+        with self.lock:
+            command = ProtocolCode.SET_COLLISION_THRESHOLD_P1
+            command += f"J {str(joint_id)}"
+            command += f"P {str(threshold)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)

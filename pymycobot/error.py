@@ -112,9 +112,15 @@ def check_rgb_value(value, exception_class, class_name):
 
 
 def check_value_type(parameter, value_type, exception_class, _type):
-    if value_type is not _type:
-        raise exception_class(
-            "The acceptable parameter {} should be an {}, but the received {}".format(parameter, _type, value_type))
+    if isinstance(_type, tuple):
+
+        if value_type not in _type:
+            raise exception_class(
+                "The acceptable parameter {} should be one of {}, but the received {}".format(parameter, _type, value_type))
+    else:
+        if value_type is not _type:
+            raise exception_class(
+                "The acceptable parameter {} should be an {}, but the received {}".format(parameter, _type, value_type))
 
 
 def check_coords(parameter_name, value, robot_limit, class_name, exception_class, serial_port=None):
@@ -2519,6 +2525,11 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP1DataException(
                         f"The servo_id not right, should be in [0, 1, 2, 3, 4], but received {value}."
                     )
+            elif parameter == 'threshold_value':
+                check_value_type(parameter, value_type, ultraArmP1DataException, (int,float))
+                if not (0.5 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"threshold_value out of range, should be 0.5 ~ 100, but received {value}")
 
 
 def restrict_serial_port(func):
