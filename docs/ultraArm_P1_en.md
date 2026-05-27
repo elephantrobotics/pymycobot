@@ -370,25 +370,25 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Function:** Set pwm laser mode.
 - **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
-- **Return Value:** `ok` - Success; `error` - Failure.
+- **Return Value:** `ok` - Success; `0` - Failure.
 
 ### 22 `set_pwm_laser(p_value)`
 
 - **Function:** Set the PWM level (Laser).
 - **Parameters:** `p_value` (`int`) 0 ~ 255.
-- **Return Value:** `ok` - Success; `error` - Failure.
+- **Return Value:** `ok` - Success; `0` - Failure.
 
 ### 23 `set_pwm_custom_mode(state)`
 
 - **Function:** Set pwm custom mode.
 - **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
-- **Return Value:** `ok` - Success; `error` - Failure.
+- **Return Value:** `ok` - Success; `0` - Failure.
 
 ### 24 `set_pwm_custom(p_value)`
 
 - **Function:** Set the PWM level (Custom).
 - **Parameters:** `p_value` (`int`) 0 ~ 255.
-- **Return Value:** `ok` - Success; `error` - Failure.
+- **Return Value:** `ok` - Success; `0` - Failure.
 
 ### 25 `set_gripper_angle(gripper_angle, gripper_speed)`
 
@@ -430,7 +430,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 ### 29 `set_gripper_enable_status(state):`
 
-- **Function:** Sets the gripper parameters
+- **Function:** Set the gripper enable state
 
 - **Parameter Description:**
 
@@ -580,7 +580,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `ok`: SD card present
 
-  - `error:0`: SD card not present
+  - `0`: SD card not present
 
 ### 42 `download_firmware_sd(filename, show_progress=True)`
 
@@ -712,13 +712,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Function:** Unlocks after collision detection.
 
-- **Return Value:** OK - Success; error - Failure.
+- **Return Value:** OK - Success; 0 - Failure.
 
 ### 58 `clear_error_status()`
 
 - **Function:** Clears the error status. If a limit has been exceeded, the joint must be manually moved back within the limit boundaries.
 
-- **Return Value:** OK - Success; error - Failure
+- **Return Value:** OK - Success; 0 - Failure
 
 ### 59 `get_queue_size()`
 
@@ -794,11 +794,35 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** `int` signal strength, in dBm, e.g., `-62`
 
-### 67 `get_bluetooth_signal_strength()`
+### 68 `get_bluetooth_signal_strength()`
 
 - **Function:** Reads Bluetooth signal strength (only available when Bluetooth is connected)
 
 - **Return Value:** `int` signal strength, in dBm, e.g., `-52`
+
+### 69 `set_collision_threshold(joint_id, threshold)`
+
+- **Function:** Sets the joint collision threshold.
+
+- **Parameter Description:**
+
+- `joint_id` `(int)` : 0 ~ 4
+
+  - 0 : All joint
+
+  - 1: J1
+
+  - 2: J2
+
+  - 3: J3
+
+  - 4: J4
+
+- `threshold` (float/int): Threshold value, range 0.5 ~ 100
+
+- **Return Value:**
+
+  - `ok`
 
 ---
 

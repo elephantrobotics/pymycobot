@@ -284,25 +284,25 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **功能：** 设置pwm激光模式
 - **参数：** `state (`int`)` 0 ~ 1， 0 - 关闭；1 - 开启。
-- **返回值：** ok - 成功；error - 失败
+- **返回值：** ok - 成功；0 - 失败
 
 ### 22 `set_pwm_laser(p_value)`
 
 - **功能：** 设置PWM档位（激光）
 - **参数：** `p_value (`int`)` 0 ~ 255。
-- **返回值：** ok - 成功；error - 失败
+- **返回值：** ok - 成功；0 - 失败
 
 ### 23 `set_pwm_custom_mode(state)`
 
 - **功能：** 设置PWM自定义模式。
 - **参数：** `state (`int`)` 0 ~ 1， 0 - 关闭；1 - 开启。
-- **返回值：** ok - 成功；error - 失败
+- **返回值：** ok - 成功；0 - 失败
 
 ### 24 `set_pwm_custom(p_value)`
 
 - **功能：** 设置PWM档位（自定义）
 - **参数：** `p_value (`int`)` 0 ~ 255。
-- **返回值：** ok - 成功；error - 失败
+- **返回值：** ok - 成功；0 - 失败
 
 ### 25 `set_gripper_angle(gripper_angle, gripper_speed)`
 
@@ -342,7 +342,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 ### 29 `set_gripper_enable_status(state):`
 
-- **功能：** 设置夹爪参数
+- **功能：** 设置夹爪使能状态
 
 - **参数说明:** 
   - `state`： `int`
@@ -461,7 +461,7 @@ ua.set_angles([0, 0, 90, 0],50)
 - **功能：** 检查是否有SD卡。
 - **返回值：** (`str`)
   - `ok`: 有SD卡
-  - `error:0`: 无SD卡
+  - `0`: 无SD卡
 
 ### 42 `download_firmware_sd(filename, show_progress=True)`
 
@@ -588,13 +588,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **功能：** 碰撞检测后解锁
 
-- **返回值：** OK - 成功；error - 失败
+- **返回值：** OK - 成功；0 - 失败
 
 ### 58 `clear_error_status()`
 
 - **功能：** 清除错误状态，若超限需手动将关节移动到限位内。
 
-- **返回值：** OK - 成功；error - 失败
+- **返回值：** OK - 成功；0 - 失败
 
 ### 59 `get_queue_size()`
 
@@ -653,10 +653,24 @@ ua.set_angles([0, 0, 90, 0],50)
 - **功能：** 读取WiFi信号强度（仅在WiFi连接时才能读取）
 - **返回值：** `int` 信号强度，单位 dbm，比如 `-62`
 
-### 67 `get_bluetooth_signal_strength()`
+### 68 `get_bluetooth_signal_strength()`
 
 - **功能：** 读取蓝牙信号强度（仅在蓝牙连接时才能读取）
 - **返回值：** `int` 信号强度，单位 dbm，比如 `-52`
+
+### 69 `set_collision_threshold(joint_id, threshold)`
+
+- **功能：** 设置关节碰撞阈值。
+- **参数说明：**
+  - `joint_id` `(int)` : 0 ~ 4
+    - 0 : All joint
+    - 1: J1
+    - 2: J2
+    - 3: J3
+    - 4: J4
+  - `threshold` (float/int): 阈值，范围 0.5 ~ 100
+- **返回值：** 
+  - `ok`
 
 ---
 

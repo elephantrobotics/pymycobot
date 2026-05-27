@@ -321,19 +321,11 @@ class UltraArmP1:
                         if flag == "angle":
                             r = self._parse_colon_values(lower, "angles", float, 2)
                             if r is not None and len(r) ==4:
-                                if not self._validate_angles(r):
-                                    if self.debug:
-                                        self.log.warning(f"Discard invalid angle packet: {r}")
-                                    continue
                                 return r
 
                         elif flag == "coord":
                             r = self._parse_colon_values(lower, "coords", float, 2)
                             if r is not None and len(r) ==4:
-                                if not self._validate_coords(r):
-                                    if self.debug:
-                                        self.log.warning(f"Discard invalid coord packet: {r}")
-                                    continue
                                 return r
 
                         elif flag == "error_information":
@@ -480,7 +472,7 @@ class UltraArmP1:
         return -1
 
     def _verify_checksum(self, line):
-
+        """ Verify XOR checksum of received frame."""
         try:
             line = line.strip()
             if not line.startswith("$"):
@@ -502,46 +494,6 @@ class UltraArmP1:
 
         except Exception:
             return False
-
-    def _validate_angles(self, angles):
-        """
-        Validate joint angles against software limits.
-        """
-
-        limits = RobotLimit.robot_limit["UltraArmP1"]
-
-        angles_min = limits["angles_min"]
-        angles_max = limits["angles_max"]
-
-        for i, value in enumerate(angles):
-            if value < angles_min[i] or value > angles_max[i]:
-                if self.debug:
-                    self.log.warning(
-                        f"Invalid angle data: joint{i + 1}={value}, "
-                        f"limit=[{angles_min[i]}, {angles_max[i]}]"
-                    )
-                return False
-        return True
-
-    def _validate_coords(self, coords):
-        """
-        Validate coords against software limits.
-        """
-
-        limits = RobotLimit.robot_limit["UltraArmP1"]
-
-        coords_min = limits["coords_min"]
-        coords_max = limits["coords_max"]
-
-        for i, value in enumerate(coords):
-            if value < coords_min[i] or value > coords_max[i]:
-                if self.debug:
-                    self.log.warning(
-                        f"Invalid coord data: axis{i}={value}, "
-                        f"limit=[{coords_min[i]}, {coords_max[i]}]"
-                    )
-                return False
-        return True
 
     def _request_with_retry(self, command, flag, attempts=3):
         for attempt in range(attempts):
@@ -621,7 +573,6 @@ class UltraArmP1:
 
     def _query_error_information(self, timeout=0.3):
 
-        self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
         time.sleep(0.15)
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
 
@@ -771,8 +722,20 @@ class UltraArmP1:
             else f"Unknown error ({value})"
         )
 
+    def _append_checksum(self, command):
+        """Append XOR checksum to command frame."""
+        xor_value = 0
+        for c in command:
+            xor_value ^= ord(c)
+
+        checksum = f"{xor_value:02X}"
+
+        return f"${command}*{checksum}"
+
     def _send_command(self, command: str):
         """Send commands to serial port"""
+        # append checksum
+        command = self._append_checksum(command)
         command += ProtocolCode.END
         self._debug_write(command)
         self._serial_port.write(command.encode())
@@ -2069,5 +2032,22 @@ class UltraArmP1:
             command = ProtocolCode.SET_COLLISION_THRESHOLD_P1
             command += f"J {str(joint_id)}"
             command += f"P {str(threshold)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def open_spi_log_mode(self, state):
+        """Internal interface: Enable logging of SPI data forwarding
+        (enabling this will show all instructions forwarded to the STM32).
+
+        Args:
+            state (int):
+                0 - Disable
+                1 - Enable serial port 0 logging
+                2 - Enable serial port 1 logging
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, spi_state=state)
+        with self.lock:
+            command = ProtocolCode.SET_SPI_LOG_MODE
+            command += f" S{str(state)}"
             self._send_command(command)
             return self._response(_async=True, is_set=True)

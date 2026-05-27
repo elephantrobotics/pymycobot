@@ -2402,7 +2402,7 @@ def calibration_parameters(**kwargs):
                 if not (0 <= value <= 65535):
                     raise ultraArmP1DataException(
                         f"The parameter_value only supports 0 ~ 65535, but received {value}")
-            elif parameter in ["pump_state"]:
+            elif parameter in ["pump_state", "spi_state"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if value not in [0, 1, 2]:
                     raise ultraArmP1DataException(

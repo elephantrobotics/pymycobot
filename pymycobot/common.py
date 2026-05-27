@@ -607,6 +607,7 @@ class ProtocolCode(object):
     GET_BLUETOOTH_MAC_P1 = 'M609'
     GET_WIFI_SIGNAL_P1 = 'M613'
     GET_BLUETOOTH_SIGNAL_P1 = 'M614'
+    SET_SPI_LOG_MODE = 'M610'
 
 
 

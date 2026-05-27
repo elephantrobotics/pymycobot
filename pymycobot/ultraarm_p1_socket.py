@@ -309,19 +309,11 @@ class UltraArmP1Socket:
                         if flag == "angle":
                             r = self._parse_colon_values(lower, "angles", float, 2)
                             if r is not None and len(r) ==4:
-                                if not self._validate_angles(r):
-                                    if self.debug:
-                                        self.log.warning(f"Discard invalid angle packet: {r}")
-                                    continue
                                 return r
 
                         elif flag == "coord":
                             r = self._parse_colon_values(lower, "coords", float, 2)
                             if r is not None and len(r) ==4:
-                                if not self._validate_coords(r):
-                                    if self.debug:
-                                        self.log.warning(f"Discard invalid coord packet: {r}")
-                                    continue
                                 return r
 
                         elif flag == "error_information":
@@ -494,46 +486,6 @@ class UltraArmP1Socket:
         except Exception:
             return False
 
-    def _validate_angles(self, angles):
-        """
-        Validate joint angles against software limits.
-        """
-
-        limits = RobotLimit.robot_limit["UltraArmP1"]
-
-        angles_min = limits["angles_min"]
-        angles_max = limits["angles_max"]
-
-        for i, value in enumerate(angles):
-            if value < angles_min[i] or value > angles_max[i]:
-                if self.debug:
-                    self.log.warning(
-                        f"Invalid angle data: joint{i + 1}={value}, "
-                        f"limit=[{angles_min[i]}, {angles_max[i]}]"
-                    )
-                return False
-        return True
-
-    def _validate_coords(self, coords):
-        """
-        Validate coords against software limits.
-        """
-
-        limits = RobotLimit.robot_limit["UltraArmP1"]
-
-        coords_min = limits["coords_min"]
-        coords_max = limits["coords_max"]
-
-        for i, value in enumerate(coords):
-            if value < coords_min[i] or value > coords_max[i]:
-                if self.debug:
-                    self.log.warning(
-                        f"Invalid coord data: axis{i}={value}, "
-                        f"limit=[{coords_min[i]}, {coords_max[i]}]"
-                    )
-                return False
-        return True
-
     def _request_with_retry(self, command, flag, attempts=3):
         for attempt in range(attempts):
             self._send_command(command)
@@ -688,8 +640,19 @@ class UltraArmP1Socket:
             else f"Unknown error ({value})"
         )
 
+    def _append_checksum(self, command):
+        """Append XOR checksum to command frame."""
+        xor_value = 0
+        for c in command:
+            xor_value ^= ord(c)
+
+        checksum = f"{xor_value:02X}"
+
+        return f"${command}*{checksum}"
+
     def _send_command(self, command: str):
         """Send commands to serial port"""
+        command = self._append_checksum(command)
         command += ProtocolCode.END
         self._debug_write(command)
         try:
