@@ -37,6 +37,7 @@ class ProtocolCode(enum.Enum):
     GET_LIFT_CONTROL_MSG = 0x3f
     GET_LIFT_ENCODER = 0x29
     GET_LIFT_RECV_LOSS_COUNT = 0x30
+    SET_LIFT_CALIBRATION = 0x54
 
     # aided
     SET_MOTOR_ENABLED = 0x30
@@ -923,3 +924,8 @@ class MercuryL1Chassis(MercuryL1ChassisCommand):
         """
 
         return self._merge(ProtocolCode.GET_LIFT_RECV_LOSS_COUNT)
+
+    def set_lift_calibration(self):
+        """Set Lift Calibration"""
+
+        return self._merge(ProtocolCode.SET_LIFT_CALIBRATION)

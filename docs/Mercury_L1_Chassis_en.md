@@ -270,6 +270,14 @@
 
   - **int:** For example, 1.
 
+### set_lift_calibration()
+
+- **Function:** Sets the lift/lift zero-point calibration
+
+  - **Return Value:**
+
+- **int:** For example, 1.
+
 ### 7 Use Cases
 
 #### 7.1 Get Chassis System Version
