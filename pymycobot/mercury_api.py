@@ -642,3 +642,22 @@ class MercuryCommandGenerator(CloseLoop):
             class_name=self.__class__.__name__, axis=axis, direction=direction, speed=speed)
         return self._mesg(ProtocolCode.JOG_BASE_RPY, axis, direction, speed, _async=_async, has_reply=True)
 
+    def set_fresh_mode(self, mode):
+        """Set command refresh mode
+
+        Args:
+            mode: int.
+                1 - Always execute the latest command first.
+                0 - Execute instructions sequentially in the form of a queue.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        return self._mesg(ProtocolCode.SET_FRESH_MODE, mode)
+
+    def get_fresh_mode(self):
+        """Query sports mode
+
+        Returns:
+            0 - interpolation mode, 1 - refresh mode
+        """
+        return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
+
