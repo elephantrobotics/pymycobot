@@ -64,8 +64,8 @@ class Pro450Client(Pro450CloseLoop):
         res = []
         if genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
             res = [i for i in valid_data]
-        elif data_len in [8, 12, 14, 16, 26, 60]:
-            if data_len == 8 and (genre == ProtocolCode.IS_INIT_CALIBRATION):
+        elif data_len in [8, 12, 14, 16, 26, 29, 60]:
+            if data_len == 8 and genre == ProtocolCode.IS_INIT_CALIBRATION:
                 if valid_data[0] == 1:
                     return 1
                 n = len(valid_data)
@@ -1707,7 +1707,7 @@ class Pro450Client(Pro450CloseLoop):
         """ Set the end 485 baud rate
 
             Args:
-                baud_rate (int): Standard baud rates, such as 115200, 1000000, 57600, 19200, 9600, 4800.
+                baud_rate (int): Standard baud rates, such as 115200, 1000000, 2000000.
                                 defaults to 115200
             """
         self.calibration_parameters(class_name=self.__class__.__name__, end_485_baud_rate=baud_rate)
