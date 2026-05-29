@@ -901,6 +901,26 @@ class MyCobot280(CommandGenerator):
         """Stop gripper"""
         return self.set_gripper_value(0, 0, gripper_type=1, is_torque=1)
 
+    def backup_servo_params(self, servo_id):
+        """To back up servo parameters, the firmware version must be greater than 7.4.0.
+        (Confirm use of existing parameters.)
+
+        Args:
+            servo_id (int): 1 - 6, 254 - all servo
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
+        return self._mesg(ProtocolCode.BACKUP_SERVO_PARAMS, servo_id)
+
+    def restore_servo_params(self, servo_id):
+        """To restore servo parameters, the firmware version must be greater than 7.4.0.
+        (This function is effective only if a parameter backup has been performed.)
+
+        Args:
+            servo_id (int): 1 - 6, 254 - all servo
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=servo_id)
+        return self._mesg(ProtocolCode.RESUME_SERVO_PARAMS, servo_id)
+
     # Other
     def wait(self, t):
         time.sleep(t)

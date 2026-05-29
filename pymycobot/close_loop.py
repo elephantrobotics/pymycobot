@@ -625,7 +625,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
     def drag_teach_execute(self):
         """Start dragging the teaching point and only execute it once."""
-        if self.get_drag_fifo_len() == 0:
+        if self.is_drag_fifo_empty() == 0:
             return_value = 'There is currently no trajectory path. Please record first!'
             return return_value
         return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, has_reply=True)
@@ -942,6 +942,8 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_POS_OVER)
 
     def clear_encoders_error(self, joint_id):
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.CLEAR_ENCODERS_ERROR, joint_id)
 
     def get_down_encoders(self):
@@ -1040,6 +1042,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             joint_id (int): joint ID, 1 ~ 7.
             direction (int): 0 - forward, 1 - backward
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction)
         return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
 
     def get_filter_len(self, rank):
@@ -1199,20 +1202,20 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             -1 - Error
         """
         self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
-        # if mode == 1:
-        #     self.calibration_parameters(
-        #         class_name=self.__class__.__name__, coords=data)
-        #     data_list = []
-        #     for idx in range(3):
-        #         data_list.append(self._coord2int(data[idx]))
-        #     for idx in range(3, 6):
-        #         data_list.append(self._angle2int(data[idx]))
-        # elif mode == 0:
-        #     self.calibration_parameters(
-        #         class_name=self.__class__.__name__, angles=data)
-        #     data_list = [self._angle2int(i) for i in data]
-        #
-        # return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
+        data_list = []
+        if mode == 1:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, coords=data)
+            for idx in range(3):
+                data_list.append(self._coord2int(data[idx]))
+            for idx in range(3, 6):
+                data_list.append(self._angle2int(data[idx]))
+        elif mode == 0:
+            self.calibration_parameters(
+                class_name=self.__class__.__name__, angles=data)
+            data_list = [self._angle2int(i) for i in data]
+
+        return self._mesg(ProtocolCode.IS_IN_POSITION, data_list, mode)
 
     def is_moving(self):
         """Detect if the robot is moving
@@ -1653,6 +1656,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_MONITOR_MODE)
 
     def set_monitor_mode(self, mode):
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_MONITOR_MODE, mode)
 
     def set_limit_switch(self, limit_mode, state):
@@ -1664,11 +1668,15 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, limit_mode=limit_mode, state=state)
-        if limit_mode == 2 and state == 0:
-            self.sync_mode = False
-        elif limit_mode == 2 and state == 1:
-            self.sync_mode = True
-        return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
+        if self.is_power_on() == 1:
+            if limit_mode == 2 and state == 0:
+                self.sync_mode = False
+            elif limit_mode == 2 and state == 1:
+                self.sync_mode = True
+            return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
+        else:
+            self.sync_mode = self.sync_mode
+            return -1
 
     def get_limit_switch(self):
         """Get the limit switches
@@ -1703,6 +1711,13 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
     def get_drag_fifo_len(self):
         return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN)
+
+    def is_drag_fifo_empty(self):
+        """Determine whether the drag-to-teach execution queue is empty.
+
+        Returns: 0 - empty, 1 - not empty.
+        """
+        return self._mesg(ProtocolCode.IS_DRAG_FIFO_EMPTY)
 
     def jog_rpy(self, axis, direction, speed, _async=True):
         """Rotate the end point around the fixed axis of the base coordinate system
@@ -1769,22 +1784,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             class_name=self.__class__.__name__, pin_no_base=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
 
-    def set_world_reference(self, coords):
-        """Set the world coordinate system
-
-        Args:
-            coords: a list of coords value(List[float])
-                for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords)
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
-
     def set_identify_mode(self, mode):
         """Set the kinetic parameter identification mode
 
@@ -1799,16 +1798,18 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
 
     def write_move_c_r(self, coords, r, speed, rank=0):
-        """_summary_
+        """Circular Arc Motion (Specified Radius)
 
         Args:
-            coords (_type_): _description_
-            r (_type_): _description_
-            speed (_type_): _description_
-            rank (_type_): _description_
+            coords (list): coords value list
+            r (float): Radius range is 0 ~ 655.5
+            speed (int): 1 ~ 100
+            rank (int): 0 ~ 2, default 0
+                1 - Major Arc
+                2 - Minor arc
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords, r=r, speed=speed, rank=rank)
+            class_name=self.__class__.__name__, coords=coords, r=r, speed=speed, move_rank=rank)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -1854,6 +1855,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return res
 
     def clear_encoder_error(self, joint_id):
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.CLEAR_ENCODER_ERROR, joint_id)
 
     def get_motors_run_err(self):
@@ -1881,6 +1883,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         rank_mode: 1 ~ 4
         value: 0 ~ 10000
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, set_fusion_rank_mode=rank_mode, set_fusion_value=value)
         return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
 
     def get_system_version(self):
