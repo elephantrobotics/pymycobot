@@ -462,6 +462,14 @@ class UltraArmP1:
                             r = self._parse_colon_values(lower, "mode", str, single=True)
                             if r is not None:
                                 return r
+                        elif flag == 'get_collision_threshold':
+                            r = self._parse_colon_values(lower, "collisionthreshold", float, 2)
+                            if r is not None and len(r) == 4:
+                                return r
+                        elif flag == 'get_pwm_status':
+                            r = self._parse_colon_values(lower, "pwm", int)
+                            if r is not None and len(r) == 4:
+                                return r
 
                         elif flag is None:
                             return -1
@@ -512,14 +520,14 @@ class UltraArmP1:
                 )
         return -1
 
-    def _parse_colon_values(self, lower: str, keyword: str, value_type=float, round_ndigits=None, single=False):
+    def _parse_colon_values(self, lower: str, keyword: str, value_type=float, round_digits=None, single=False):
         """
         Parse keyword:value1,value2,... format
         Args:
             lower (str): lower-case received buffer
             keyword (str): keyword to search (lower-case)
             value_type: int or float or str
-            round_ndigits (int|None): rounding digits for float
+            round_digits (int|None): rounding digits for float
             single (bool): return first value only
         Returns:
             list | int | float | None
@@ -545,8 +553,8 @@ class UltraArmP1:
             values = []
             for x in items:
                 v = value_type(x)
-                if value_type is float and round_ndigits is not None:
-                    v = round(v, round_ndigits)
+                if value_type is float and round_digits is not None:
+                    v = round(v, round_digits)
                 values.append(v)
 
             return values[0] if single else values
@@ -938,7 +946,11 @@ class UltraArmP1:
         """Download complete"""
         command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
         self._send_command(command)
-        return self._response(_async=True, is_set=True)
+        res = self._response(_async=True, is_set=True)
+        if res == "ok":
+            self.log.debug("Waiting 3 seconds for controller restart...")
+            time.sleep(3)
+        return res
 
     def _download_progress(self, percent):
         print(f"Download progress: {percent}%")
@@ -2084,3 +2096,27 @@ class UltraArmP1:
             command += f" S{str(state)}"
             self._send_command(command)
             return self._response(_async=True, is_set=True)
+
+    def get_collision_threshold(self):
+        """Get collision threshold.
+
+        Returns:
+            collision threshold (list), for all joints, such as [0, 0, 0, 0]
+        """
+        with self.lock:
+            command = ProtocolCode.GET_COLLISION_THRESHOLD_P1
+            return self._request_with_retry(command, 'get_collision_threshold')
+
+    def get_pwm_status(self):
+        """Get pwm status.
+
+        Returns:
+            PWM Status (list), such as [0, 0, 0, 0]
+                - [0]: Laser mode status, 0 - Off, 1 - On
+                - [1]: Laser mode PWM value, range 0 ~ 255
+                - [2]: Custom mode status, 0 - Off, 1 - On
+                - [3]: Custom mode PWM value, range 0 ~ 255
+        """
+        with self.lock:
+            command = ProtocolCode.GET_PWM_STATUS_P1
+            return self._request_with_retry(command, 'get_pwm_status')

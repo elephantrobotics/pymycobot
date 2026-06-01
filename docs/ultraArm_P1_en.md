@@ -850,6 +850,26 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `ok`
 
+### 72 `get_collision_threshold()`
+
+- **Function:** Reads the collision threshold of a joint.
+
+- **Return value:** `(list[float])`: The collision threshold for all joints, e.g., [0.5, 0.5, 0.5, 0.5]
+
+### 73 `get_pwm_status()`
+
+- **Function:** Gets the PWM output status.
+
+- **Return value:** `(list[int])`, length 4, e.g., [0, 0, 0, 0]
+
+  - [0]: Laser mode status, 0 - Off, 1 - On
+
+  - [1]: PWM value for laser mode, range 0 ~ 255
+
+  - [2]: Custom mode status, 0 - Off, 1 - On
+
+  - [3]: PWM value for custom mode, range 0 ~ 255
+
 ---
 
 ## TCP Socket Communication
