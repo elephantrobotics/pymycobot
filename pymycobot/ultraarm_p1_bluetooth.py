@@ -1725,3 +1725,31 @@ class UltraArmP1Bluetooth:
             command += f"P {str(threshold)}"
             self._send_command(command)
             return self._response(_async=True, is_set=True)
+
+    def get_communication_mode(self):
+        """Get communication mode.
+
+        Returns: mode (str)
+                Uart0 - Communicates via serial port 0
+                Uart1 - Communicates via serial port 1
+                WiFi - Communicates via Wi-Fi
+                Bluetooth - Communicates via Bluetooth
+        """
+        with self.lock:
+            command = ProtocolCode.GET_COMMUNICATION_MODE_P1
+            return self._request_with_retry(command, 'get_communication_mode')
+
+    def set_uart1_communication(self, state):
+        """Set UART1 communication.
+
+        Args:
+            state (int):
+                0 - Disable
+                1 - Enable serial port 1 communication
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_UART1_COMMUNICATION_MODE
+            command += f" S{str(state)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)

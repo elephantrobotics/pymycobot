@@ -672,6 +672,25 @@ ua.set_angles([0, 0, 90, 0],50)
 - **返回值：** 
   - `ok`
 
+### 70 `get_communication_mode()`
+
+- **功能：** 获取当前通信模式。
+
+- **返回值：** 
+  - Uart0 - 用串口0通信
+  - Uart1 - 用串口1通信
+  - WiFi - 用wifi通信
+  - Bluetooth - 用蓝牙通信
+
+### 71 `set_uart1_communication(state)`
+
+- **功能：** 设置串口1通信。
+- **参数说明：**
+  - `state` `(int)` : 0 ~ 1; 0 - 关闭；1 - 打开
+
+- **返回值：** 
+  - `ok`
+
 ---
 
 ## TCP Socket 通信

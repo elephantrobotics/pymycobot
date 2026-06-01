@@ -824,6 +824,32 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `ok`
 
+### 70 `get_communication_mode()`
+
+- **Function:** Retrieves the current communication mode.
+
+- **Return Value:**
+
+  - Uart0 - Communicates using serial port 0
+
+  - Uart1 - Communicates using serial port 1
+
+  - WiFi - Communicates using WiFi
+
+  - Bluetooth - Communicates using Bluetooth
+
+### 71 `set_uart1_communication(state)`
+
+- **Function:** Sets communication using serial port 1.
+
+- **Parameter Description:**
+
+  - `state` `(int)` : 0 ~ 1; 0 - Off; 1 - On
+
+- **Return Value:**
+
+  - `ok`
+
 ---
 
 ## TCP Socket Communication
