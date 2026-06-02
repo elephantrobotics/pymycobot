@@ -1817,4 +1817,135 @@ print(mc.get_angles())
   * 0 - left hand
   * 1 - right hand
 
+### 21 MIT Motion Control
+
+#### `set_mit_control(arm_id, joint_id, joint_pos, rad_speed, kp, kd, torque)`
+
+- **Function**: MIT Single Joint Control
+
+- **Parameters**:
+
+  - `arm_id` `int`: Robotic arm type
+
+    - `0`: Simultaneous control of left and right arms (using the same set of MIT parameters)
+
+    - `1`: Left arm
+
+    - `2`: Right arm
+
+  - `joint_id` `int`: Joint ID, range `1 ~ 7`
+
+  - `joint_pos` `float`: Target joint position, unit `rad`
+
+    | Joint | Range (rad) |
+    |------|-----------|
+    | J1 | -3.16 ~ 2.36 |
+    | J2 | -0.80 ~ 1.68 |
+    | J3 | -2.71 ~ 2.71 |
+    | J4 | -2.36 ~ 0.31 |
+    | J5 | -2.71 ~ 2.71 |
+    | J6 | -2.01 ~ 2.01 |
+    | J7 | -2.39 ~ 2.39 |
+
+  - `rad_speed` `float`: Target joint velocity, unit `rad/s`
+
+    - J1 ~ J6: Range `-20 ~ 20`
+
+    - J7: Range `-30 ~ 30`
+
+  - `kp` `float`: Position gain, range `0 ~ 500`
+
+  - `kd` `float`: Velocity gain, range `0 ~ 5`
+
+  - `torque` `float`: Feedforward torque, unit `Nm`
+
+    - J1 ~ J3: Range `-120 ~ 120`
+
+    - J4 ~ J6: Range `-28 ~ 28`
+
+    - J7: Range `-10 ~ 10`
+
+#### `set_mit_controls(arm_id, left_controls=None, right_controls=None)`
+
+- **Function**: MIT Multi-Joint Control
+
+- **Parameters**:
+
+  - `arm_id` `int`: Robotic arm type
+
+    - `0`: Simultaneous control of both arms
+
+    - `1`: Left arm
+
+    - `2`: Right arm
+
+  - `left_controls` `list`: List of MIT control parameters for the left arm, used only when `arm_id=0` or `arm_id=1`
+
+  - `right_controls` `list`: List of MIT control parameters for the right arm, used only when `arm_id=0` or `arm_id=2`
+
+- **Control Group Format**:
+
+  ```python
+  [joint_pos, rad_speed, kp, kd, torque]
+  ```
+
+- **Notes**:
+
+  - Each control group corresponds to one joint
+
+  - Each robotic arm requires 7... Group control parameters, corresponding to J1 ~ J7
+
+  - The value ranges of `joint_pos`, `rad_speed`, `kp`, `kd`, and `torque` are the same as those of `set_mit_control()`
+
+  - When `arm_id=1`, only the left arm parameter is sent, and the right arm is automatically padded with zeros.
+
+  - When `arm_id=2`, only the right arm parameter is sent, and the left arm is automatically padded with zeros.
+
+  - When `arm_id=0`, both left and right arm control parameters need to be provided.
+
+- **Example**:
+
+Left arm MIT control:
+
+```python
+mc.set_mit_controls(
+    arm_id=1,
+    left_controls=[
+        [0.0, 0, 10, 1, 0],
+        [0.5, 0, 10, 1, 0],
+        [0.0, 0, 10, 1, 0],
+        [-1.0, 0, 10, 1, 0],
+        [0.0, 0, 10, 1, 0],
+        [0.0, 0, 10, 1, 0],
+        [1.2, 0, 10, 1, 0]
+    ]
+)
+```
+
+Dual-arm MIT control:
+
+```python
+mc.set_mit_controls(
+    arm_id=0,
+    left_controls=[
+        [0.0, 0, 10, 1, 0],
+        [0.5, 0, 10, 1, 0],
+        [0.0, 0, 10, 1, 0],
+        [-1.0, 0, 10, 1, 0],
+        [0.0, 0, 10, 1, 0],
+        [0.0, 0, 10, 1, 0],
+        [1.2, 0, 10, 1, 0]
+    ],
+    right_controls=[
+        [0.0, 0, 15, 1, 0],
+        [0.8, 0, 15, 1, 0],
+        [0.0, 0, 15, 1, 0],
+        [-0.5, 0, 15, 1, 0],
+        [0.0, 0, 15, 1, 0],
+        [0.0, 0, 15, 1, 0],
+        [0.8, 0, 15, 1, 0]
+    ]
+)
+```
+
 ---

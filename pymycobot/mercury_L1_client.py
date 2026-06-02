@@ -1198,3 +1198,76 @@ class MercuryL1Client(L1CloseLoop):
     #         0 - Low speed, 1 - High speed.
     #     """
     #     return self._mesg(ProtocolCode.GET_FRESH_SPEED_MODE, has_reply=True)
+
+    def _mit_value2bytes(self, value):
+        value = int(value * 100)
+        return [(value >> 8) & 0xFF, value & 0xFF]
+
+    def _encode_mit_control(self, q, dq, kp, kd, tau):
+        data = []
+        for value in [q, dq, kp, kd, tau]:
+            data.extend(self._mit_value2bytes(value))
+        return data
+
+    def set_mit_control(self, arm_id, joint_id, joint_pos, rad_speed, kp, kd, torque):
+        """MIT single-joint control.
+
+        Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
+            joint_id (int): joint ID, range 1 ~ 7.
+            joint_pos (float): target joint position, unit rad, multiplied by 100 before sending.
+            rad_speed (float): target joint velocity, unit rad/s, multiplied by 100 before sending.
+                J1 ~ J6 range: -20 ~ 20 rad/s; J7 range: -30 ~ 30 rad/s.
+            kp (float): position gain, range 0 ~ 500, multiplied by 100 before sending.
+            kd (float): velocity gain, range 0 ~ 5, multiplied by 100 before sending.
+            torque (float): torque feedforward, unit Nm, multiplied by 100 before sending.
+                J1 ~ J3 range: -120 ~ 120 Nm; J4 ~ J6 range: -28 ~ 28 Nm;
+                J7 range: -10 ~ 10 Nm.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, arm_id=arm_id, arm_joint_id=joint_id, mit_q=joint_pos, mit_dq=rad_speed, mit_kp=kp, mit_kd=kd, mit_tau=torque)
+        data = self._encode_mit_control(joint_pos, rad_speed, kp, kd, torque)
+        return self._mesg(ProtocolCode.SET_MIT_CONTROL, arm_id, joint_id, *data)
+
+    def set_mit_controls(self, arm_id, left_controls=None, right_controls=None):
+        """MIT all-joint control.
+
+        Args:
+            arm_id (int):
+                0 - left and right arm
+                1 - left arm
+                2 - right arm
+            left_controls (list): 7 MIT control gr oups. Each group can be
+                [joint_pos, rad_speed, kp, kd, tau] or a dict containing joint_pos, rad_speed, kp, kd, torque.
+                Every value is multiplied by 100 before sending.
+            right_controls (list): 7 MIT control groups. Like the left arm
+        """
+        data = []
+        if arm_id == 0:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id,
+                                        left_mit_controls=left_controls, right_mit_controls=right_controls)
+            all_controls = left_controls + right_controls
+
+        elif arm_id == 1:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, left_mit_controls=left_controls)
+            all_controls = left_controls + [[0, 0, 0, 0, 0] for _ in range(7)]
+
+        else:
+            self.calibration_parameters(class_name=self.__class__.__name__, arm_id=arm_id, right_mit_controls=right_controls)
+            all_controls = [[0, 0, 0, 0, 0] for _ in range(7)] + right_controls
+
+        for idx, control in enumerate(all_controls):
+            if isinstance(control, dict):
+                joint_pos = control["joint_pos"]
+                rad_speed = control["rad_speed"]
+                kp = control["kp"]
+                kd = control["kd"]
+                torque = control["torque"]
+            else:
+                joint_pos, rad_speed, kp, kd, torque = control
+            data.extend(self._encode_mit_control(joint_pos, rad_speed, kp, kd, torque))
+
+        return self._mesg(ProtocolCode.SET_MIT_CONTROLS, arm_id, *data)

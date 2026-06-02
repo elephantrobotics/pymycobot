@@ -2713,6 +2713,115 @@ def calibration_parameters(**kwargs):
 
             elif parameter == 'hand_idle_flag':
                 check_0_or_1(parameter, value, [0, 1], value_type, MercuryL1ClientDataException, int)
+            elif parameter in ['arm_joint_id']:
+                parameter = 'joint_id'
+                if value not in robot_limit[class_name][parameter]:
+                    check_id(value, robot_limit[class_name][parameter], MercuryL1ClientDataException)
+            elif parameter in ["mit_q"]:
+                joint_id = kwargs.get('arm_joint_id', None)
+                index = robot_limit[class_name]['joint_id'][joint_id - 1] - 1
+                radius_min = robot_limit[class_name]["radius_min"][index]
+                radius_max = robot_limit[class_name]["radius_max"][index]
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                if value < radius_min or value > radius_max:
+                    raise MercuryL1ClientDataException(
+                        "Joint {} q value of {} exceeds the limit, with a limit range of {} ~ {} rad.".format(
+                            joint_id, value, radius_min, radius_max)
+                    )
+            elif parameter in ["mit_dq"]:
+                joint_id = kwargs.get('arm_joint_id', None)
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                dq_max = 30 if joint_id == 7 else 20
+                if value < -dq_max or value > dq_max:
+                    raise MercuryL1ClientDataException( "Joint {} dq value of {} exceeds the limit, with a limit range of {} ~ {} rad/s.".format(
+                        joint_id, value, -dq_max, dq_max))
+            elif parameter in ["mit_kp"]:
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                if value < 0 or value > 500:
+                    raise MercuryL1ClientDataException(
+                        "kp value not right, should be 0 ~ 500, but received {}".format(value))
+            elif parameter in ["mit_kd"]:
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                if value < 0 or value > 5:
+                    raise MercuryL1ClientDataException(
+                        "kd value not right, should be 0 ~ 5, but received {}".format(value))
+            elif parameter in ["mit_tau"]:
+                joint_id = kwargs.get('arm_joint_id', None)
+                if not isinstance(value, (int, float)):
+                    raise MercuryL1ClientDataException(
+                        "The acceptable parameter {} should be an int or float, but the received {}".format(parameter, value_type))
+                tau_max = 120 if joint_id <= 3 else 28 if joint_id <= 6 else 10
+                if value < -tau_max or value > tau_max:
+                    raise MercuryL1ClientDataException(
+                        "Joint {} tau value of {} exceeds the limit, with a limit range of {} ~ {} Nm.".format(
+                            joint_id, value, -tau_max, tau_max)
+                    )
+            elif parameter in ["left_mit_controls", "right_mit_controls"]:
+                if not isinstance(value, list):
+                    raise MercuryL1ClientDataException(
+                        "mit_controls must be a list, but received {}".format(value_type))
+                if len(value) != 7:
+                    raise MercuryL1ClientDataException(
+                        "The length of mit_controls must be 7, but received {}".format(len(value)))
+                for idx, control in enumerate(value):
+                    joint_id = idx + 1
+                    if isinstance(control, dict):
+                        missing_keys = [key for key in ["joint_pos", "rad_speed", "kp", "kd", "torque"] if key not in control]
+                        if missing_keys:
+                            raise MercuryL1ClientDataException(
+                                "MIT control dict of joint {} is missing key: {}".format(joint_id, missing_keys[0]))
+                        joint_pos = control["joint_pos"]
+                        rad_speed = control["rad_speed"]
+                        kp = control["kp"]
+                        kd = control["kd"]
+                        torque = control["torque"]
+                    elif isinstance(control, (list, tuple)):
+                        if len(control) != 5:
+                            raise MercuryL1ClientDataException(
+                                "MIT control group of joint {} length must be 5, but the received len is {}".format(joint_id, len(control)))
+                        joint_pos, rad_speed, kp, kd, torque = control
+                    else:
+                        raise MercuryL1ClientDataException(
+                            "MIT control group of joint {} must be a list, tuple, or dict.".format(joint_id))
+
+                    radius_min = robot_limit[class_name]["radius_min"][idx]
+                    radius_max = robot_limit[class_name]["radius_max"][idx]
+                    for name, item in [("joint_pos", joint_pos), ("rad_speed", rad_speed), ("kp", kp), ("kd", kd), ("torque", torque)]:
+                        if not isinstance(item, (int, float)):
+                            raise MercuryL1ClientDataException(
+                                "The acceptable MIT parameter {} of joint {} should be an int or float, but the received {}".format(
+                                    name, joint_id, type(item)))
+                    if joint_pos < radius_min or joint_pos > radius_max:
+                        raise MercuryL1ClientDataException(
+                            "Joint {} joint_pos value of {} exceeds the limit, with a limit range of {} ~ {} rad.".format(
+                                joint_id, joint_pos, radius_min, radius_max)
+                        )
+                    dq_max = 30 if joint_id == 7 else 20
+                    if rad_speed < -dq_max or rad_speed > dq_max:
+                        raise MercuryL1ClientDataException(
+                            "Joint {} rad_speed value of {} exceeds the limit, with a limit range of {} ~ {} rad/s.".format(
+                                joint_id, rad_speed, -dq_max, dq_max)
+                        )
+                    if kp < 0 or kp > 500:
+                        raise MercuryL1ClientDataException(
+                            "Joint {} kp value not right, should be 0 ~ 500, but received {}".format(joint_id, kp))
+                    if kd < 0 or kd > 5:
+                        raise MercuryL1ClientDataException(
+                            "Joint {} kd value not right, should be 0 ~ 5, but received {}".format(joint_id, kd))
+                    tau_max = 120 if joint_id <= 3 else 28 if joint_id <= 6 else 10
+                    if torque < -tau_max or torque > tau_max:
+                        raise MercuryL1ClientDataException(
+                            "Joint {} torque value of {} exceeds the limit, with a limit range of {} ~ {} Nm.".format(
+                                joint_id, torque, -tau_max, tau_max)
+                        )
 
 
 def restrict_serial_port(func):
