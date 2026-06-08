@@ -870,6 +870,14 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - [3]: PWM value for custom mode, range 0 ~ 255
 
+### 74 `set_conveyor_stop()`
+
+- **Function:** Sets the conveyor belt to stop moving.
+
+- **Return Value:**
+
+  - `ok`
+
 ---
 
 ## TCP Socket Communication

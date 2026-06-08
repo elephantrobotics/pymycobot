@@ -695,6 +695,10 @@ class UltraArmP1Base:
                             r = self._parse_colon_values(lower, "pwm", int)
                             if r is not None and len(r) == 4:
                                 return r
+                        elif flag == 'get_encoder_calibration_state':
+                            r = self._parse_colon_values(lower, "730state", int, single=True)
+                            if r is not None:
+                                return r
 
                         elif flag is None:
                             return -1
@@ -1056,6 +1060,17 @@ class UltraArmP1Base:
         with self.lock:
             self._send_command(ProtocolCode.SET_J1_ENCODER_CALIBRATION_P1)
             return self._response(_async=True, is_set=True)
+
+    def set_joint1_encoder_current_calibration(self):
+        """Configure the 730 encoder current calibration for joint 1 for internal use only."""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_J1_ENCODER_CURRENT_CALIBRATION_P1)
+            return self._response(_async=True, is_set=True)
+
+    def get_joint1_encoder_calibration_state(self):
+        """Read the MA730 encoder calibration status of joint 1.(Internal Interface)"""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_J1_ENCODER_CALIBRATION_STATUS, "get_encoder_calibration_state")
 
     def get_run_status(self):
         """Read running status."""
@@ -1476,6 +1491,12 @@ class UltraArmP1Base:
             command += " L" + str(speed)
             command += " S" + str(distance)
             self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_conveyor_stop(self):
+        """Stop the conveyor belt."""
+        with self.lock:
+            self._send_command(ProtocolCode.CONVEYOR_BELT_STOP)
             return self._response(_async=True, is_set=True)
 
     def set_color(self, r, g, b):
