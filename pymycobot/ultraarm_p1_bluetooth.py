@@ -24,9 +24,9 @@ class UltraArmP1Bluetooth(UltraArmP1Base):
     QUEUE_TIMEOUT = 0.15
     SET_RESPONSE_TIMEOUT = 7
 
-    def __init__(self, address, timeout=0.05, debug=False):
+    def __init__(self, address, timeout=0.05, debug=False, _internal_mode=False):
 
-        super().__init__(debug)
+        super().__init__(debug, _internal_mode)
         self.address = address
         self.timeout = timeout
 

@@ -1,5 +1,21 @@
 # ultraArm P1 API 方法详细说明
 
+## 使用前准备
+
+在使用 Python API 之前，请先确认以下硬件和环境准备齐全：
+
+- **硬件设备**  
+  - ultraArm P1 机械臂  
+  - USB-Type-C 串口线（用于连接机械臂与电脑）  
+  - 电源适配器  
+
+- **软件与环境**  
+  - 已安装 Python 3.6 及以上版本  
+  - 已安装 `pymycobot` 库（通过 `pip install pymycobot` 终端命令安装）  
+  - 确保 ultraArm P1 已正确接通电源，并处于待机状态
+
+---
+
 ## USB串口通信
 
 [toc]
@@ -75,15 +91,15 @@ ua.set_angles([0, 0, 90, 0],50)
         </tr>
         <tr>
             <td text-align: center>1</td>
-            <td>-158 ~ 158</td>
+            <td>-165 ~ 165</td>
         </tr>
         <tr>
             <td>2</td>
-            <td>-18 ~ 80</td>
+            <td>-18 ~ 85</td>
         </tr>
         <tr>
             <td>3</td>
-            <td>89 ~ 190</td>
+            <td>89 ~ 200</td>
         </tr>
         <tr>
             <td>4</td>
@@ -124,11 +140,11 @@ ua.set_angles([0, 0, 90, 0],50)
         </tr>
         <tr>
             <td text-align: center>X</td>
-            <td>-301.7 ~ 362.7</td>
+            <td>-301.7 ~ 360.5</td>
         </tr>
         <tr>
             <td>Y</td>
-            <td>-362.7 ~ 362.7</td>
+            <td>-360.5 ~ 360.5</td>
         </tr>
         <tr>
             <td>Z</td>
@@ -157,11 +173,11 @@ ua.set_angles([0, 0, 90, 0],50)
         </tr>
         <tr>
             <td text-align: center>X</td>
-            <td>-301.7 ~ 362.7</td>
+            <td>-301.7 ~ 360.5</td>
         </tr>
         <tr>
             <td>Y</td>
-            <td>-362.7 ~ 362.7</td>
+            <td>-360.5 ~ 360.5</td>
         </tr>
         <tr>
             <td>Z</td>
@@ -178,13 +194,48 @@ ua.set_angles([0, 0, 90, 0],50)
   - `_async`: 运动到位反馈，默认开启。
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-### 12 `stop()`
+### 12 `set_coord(coord_id, coord, speed, _async=True)`
+
+- **功能：** 发送单个轴坐标,让机械臂头部从原来点移动到您指定点。
+- **参数说明：**
+  - `coord_id`: (`str`)，坐标轴 ID，'X', 'Y', 'Z', 'R'
+  - `coords`: 坐标值
+
+      <table>
+        <tr>
+            <th>坐标 Id</th>
+            <th>范围</th>
+        </tr>
+        <tr>
+            <td text-align: center>X</td>
+            <td>-301.7 ~ 360.5</td>
+        </tr>
+        <tr>
+            <td>Y</td>
+            <td>-360.5 ~ 360.5</td>
+        </tr>
+        <tr>
+            <td>Z</td>
+            <td>-157 ~ 91</td>
+        </tr>
+        <tr>
+            <td>Rx</td>
+            <td>-180 ~ 180</td>
+        </tr>
+
+      </table>
+
+  - `speed`: 表示机械臂运动的速度，范围是1-100。
+  - `_async`: 运动到位反馈，默认开启。
+- **返回值：** 闭环返回 "ok"，开环返回1
+
+### 13 `stop()`
 
 - **功能：** 机械臂停止运动
 
 - **返回值：** ok
 
-### 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
+### 14 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG角度运动
 
@@ -200,7 +251,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-### 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
+### 15 `set_jog_coord(axis_id, direction, speed, _async=True)`
 
 - **功能：** 设置JOG坐标运动。
 
@@ -216,7 +267,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-### 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
+### 16 `jog_increment_angle(joint_id, increment, speed, _async=True)`
 
 - **功能：** 设置角度步进运动
 
@@ -232,7 +283,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-### 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
+### 17 `jog_increment_coord(coord_id, increment, speed, _async=True)`
 
 - **功能：** 设置坐标步进运动。
 
@@ -248,13 +299,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** 闭环返回 "ok"，开环返回1
 
-### 17 `get_error_information()`	
+### 18 `get_error_information()`	
 
 - **功能：** 读取错误信息
 
 - **返回值：** 错误信息
 
-### 18 `set_zero_calibration(joint_number)` 
+### 19 `set_zero_calibration(joint_number)` 
 
 - **功能：** 设置零位校准
 
@@ -268,43 +319,43 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 19 `get_zero_calibration_state(joint_number)` 
+### 20 `get_zero_calibration_state(joint_number)` 
 
 - **功能：** 读取零位校准状态
 
 - **返回值：**  `list` [1, 1, 1, 1]
 
-### 20 `get_run_status()` 
+### 21 `get_run_status()` 
 
 - **功能：** 读取运行状态
 
 - **返回值：**  运行状态
 
-### 21 `set_pwm_laser_mode(state)`
+### 22 `set_pwm_laser_mode(state)`
 
 - **功能：** 设置pwm激光模式
 - **参数：** `state (`int`)` 0 ~ 1， 0 - 关闭；1 - 开启。
 - **返回值：** ok - 成功；0 - 失败
 
-### 22 `set_pwm_laser(p_value)`
+### 23 `set_pwm_laser(p_value)`
 
 - **功能：** 设置PWM档位（激光）
 - **参数：** `p_value (`int`)` 0 ~ 255。
 - **返回值：** ok - 成功；0 - 失败
 
-### 23 `set_pwm_custom_mode(state)`
+### 24 `set_pwm_custom_mode(state)`
 
 - **功能：** 设置PWM自定义模式。
 - **参数：** `state (`int`)` 0 ~ 1， 0 - 关闭；1 - 开启。
 - **返回值：** ok - 成功；0 - 失败
 
-### 24 `set_pwm_custom(p_value)`
+### 25 `set_pwm_custom(p_value)`
 
 - **功能：** 设置PWM档位（自定义）
 - **参数：** `p_value (`int`)` 0 ~ 255。
 - **返回值：** ok - 成功；0 - 失败
 
-### 25 `set_gripper_angle(gripper_angle, gripper_speed)`
+### 26 `set_gripper_angle(gripper_angle, gripper_speed)`
 
 - **功能：** 设置夹爪运动角度
 
@@ -315,13 +366,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 26 `get_gripper_angle()`
+### 27 `get_gripper_angle()`
 
 - **功能：** 读取夹爪角度
 
 - **返回值：** 夹爪角度，1 ~ 100
 
-### 27 `set_gripper_parameter(addr, parameter_value)`
+### 28 `set_gripper_parameter(addr, parameter_value)`
 
 - **功能：** 设置夹爪参数
 
@@ -331,7 +382,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 28 `get_gripper_parameter(addr)`
+### 29 `get_gripper_parameter(addr)`
 
 - **功能：** 读取夹爪参数
 
@@ -340,7 +391,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** (int) 夹爪参数 0 ~ 65535
 
-### 29 `set_gripper_enable_status(state):`
+### 30 `set_gripper_enable_status(state):`
 
 - **功能：** 设置夹爪使能状态
 
@@ -351,13 +402,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 30 `set_gripper_zero()`
+### 31 `set_gripper_zero()`
 
 - **功能：** 设置夹爪零位
 
 - **返回值：** ok
 
-### 31 `set_pump_state(pump_state)`
+### 32 `set_pump_state(pump_state)`
 
 - **功能：** 设置吸泵状态
 
@@ -369,7 +420,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 32 `set_base_io_output(pin_no, pin_status, pin_signal)`
+### 33 `set_base_io_output(pin_no, pin_status, pin_signal)`
 
 - **功能：** 设置底座IO引脚输出状态
 
@@ -384,7 +435,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 33 `set_digital_io_output(pin_no, pin_signal)`
+### 34 `set_digital_io_output(pin_no, pin_signal)`
 
 - **功能：** 设置末端IO引脚输出状态
 
@@ -396,7 +447,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 34 `set_i2c_data(data_state, data_addr, data_len, data_value)`
+### 35 `set_i2c_data(data_state, data_addr, data_len, data_value)`
 
 - **功能：** 设置i2c数据
 
@@ -413,26 +464,26 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 35 `play_gcode_file(filename)`
+### 36 `play_gcode_file(filename)`
 
 - **功能：** 播放导入的轨迹文件。
 - **参数说明：**
   - `filename` ：轨迹文件名称
 - **返回值：** 无
 
-### 36 `get_system_screen_version()`
+### 37 `get_system_screen_version()`
 
 - **功能：** 读取屏幕固件主版本号
 
 - **返回值：** 主版本号
 
-### 37 `get_modify_screen_version()`
+### 38 `get_modify_screen_version()`
 
 - **功能：** 读取屏幕固件更正版本号
 
 - **返回值：** 更正版本号
 
-### 38 `set_communication_baud_rate(baud_rate)`
+### 39 `set_communication_baud_rate(baud_rate)`
 
 - **功能：** 设置通信波特率
 
@@ -441,14 +492,14 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 39 `receive_485_data()`
+### 40 `receive_485_data()`
 
 - **功能：** 接收485数据
 
 - **返回值：** 485数据
 
 
-### 40 `set_wifi_password(wifi_name, password)`
+### 41 `set_wifi_password(wifi_name, password)`
 
 - **功能：** 设置屏幕WiFi密码。
 - **参数说明：**
@@ -456,14 +507,14 @@ ua.set_angles([0, 0, 90, 0],50)
   - `password` ：(`str`) WiFi字符串密码，长度 8 ~ 15位。
 - **返回值：** ok
 
-### 41 `check_sd_card()`
+### 42 `check_sd_card()`
 
 - **功能：** 检查是否有SD卡。
 - **返回值：** (`str`)
   - `ok`: 有SD卡
   - `0`: 无SD卡
 
-### 42 `download_firmware_sd(filename, show_progress=True)`
+### 43 `download_firmware_sd(filename, show_progress=True)`
 
 - **功能：** 下载固件数据到SD卡中。
 - **参数说明：**
@@ -471,24 +522,24 @@ ua.set_angles([0, 0, 90, 0],50)
   - `show_progress` ：(`bool`) 是否显示下载进度，默认显示。
 - **返回值：** 如果 `show_progress=True`，则返回下载进度，否则无返回值。
 
-### 43 `upgrade_restart()`
+### 44 `upgrade_restart()`
 
 - **功能：** 固件升级重启。
 - **返回值：** ok
 
-### 44 `get_motor_enable_status()`
+### 45 `get_motor_enable_status()`
 
 - **功能：** 读取电机使能状态。
 
 - **返回值：** `list`，5个电机使能状态。
 
-### 45 `finish_firmware_upgrade()`
+### 46 `finish_firmware_upgrade()`
 
 - **功能：** 结束下载固件数据到SD卡中。（下载升级固件到SD卡的过程中，可以中途结束升级）
 
 - **返回值：** ok。
 
-### 46 `get_all_base_io_states()`
+### 47 `get_all_base_io_states()`
 
 - **功能：** 获取底部所有IO引脚状态
   
@@ -499,7 +550,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: 输出，电平=0（低电平）
   - `3`: 输出，电平=1（高电平）
 
-### 47 `get_base_io_state(pin_no)`
+### 48 `get_base_io_state(pin_no)`
 
 - **功能：** 获取底部IO引脚状态
 - **参数：** (`int`) 底部IO引脚号，范围 1 ~ 10。
@@ -510,7 +561,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: 输出，电平=0（低电平）
   - `3`: 输出，电平=1（高电平）
 
-### 48 `get_all_end_io_states()`
+### 49 `get_all_end_io_states()`
 
 - **功能：** 获取末端所有IO引脚状态
 
@@ -521,7 +572,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: 输出，电平=0（低电平）
   - `3`: 输出，电平=1（高电平）
 
-### 49 `get_end_io_state(pin_no)`
+### 50 `get_end_io_state(pin_no)`
 
 - **功能：** 获取末端IO引脚状态
 - **参数：** (`int`) 末端IO引脚号，范围 1 ~ 4。
@@ -532,25 +583,25 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: 输出，电平=0（低电平）
   - `3`: 输出，电平=1（高电平）
 
-### 50 `set_end_button_enable()`
+### 51 `set_end_button_enable()`
 
 - **功能：** 设置末端按钮使能
   
 - **返回值：** ok
 
-### 51 `set_end_button_disable()`
+### 52 `set_end_button_disable()`
 
 - **功能：** 设置末端按钮掉使能
 
 - **返回值：** ok
 
-### 52 `forced_reset_zero()`
+### 53 `forced_reset_zero()`
 
 - **功能：** 设置强制回零
   
 - **返回值：** ok
 
-### 53 `set_conveyor_control(state, direction, speed, distance)`
+### 54 `set_conveyor_control(state, direction, speed, distance)`
 
 - **功能：** 传送带控制
 - **参数说明：**
@@ -560,7 +611,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `distance:` (`int`) 传送带距，范围1~500000
 - **返回值：** ok
 
-### 54 `set_color(r, g, b)`
+### 55 `set_color(r, g, b)`
 
 - **功能：** 设置灯板RGB颜色
 - **参数说明：**
@@ -570,7 +621,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 55 `set_preview_mode(coords)`
+### 56 `set_preview_mode(coords)`
 
 - **功能：** 设置坐标轨迹预览模式
 - **参数说明：**
@@ -578,31 +629,31 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 56 `get_sd_card_space()`
+### 57 `get_sd_card_space()`
 
 - **功能：** 获取SD卡总内存空间和剩余内存空间。
 
 - **返回值：** `list`，总内存空间和剩余空间，单位字节。例如：[总空间, 剩余空间]
 
-### 57 `collision_unlock()`
+### 58 `collision_unlock()`
 
 - **功能：** 碰撞检测后解锁
 
 - **返回值：** OK - 成功；0 - 失败
 
-### 58 `clear_error_status()`
+### 59 `clear_error_status()`
 
 - **功能：** 清除错误状态，若超限需手动将关节移动到限位内。
 
 - **返回值：** OK - 成功；0 - 失败
 
-### 59 `get_queue_size()`
+### 60 `get_queue_size()`
 
 - **功能：** 读取缓冲区队列大小。
 
 - **返回值：** `int` 队列大小
 
-### 60 `set_robot_id(robot_id)`
+### 61 `set_robot_id(robot_id)`
 
 - **功能：** 设置设备机器码
 - **参数说明：**
@@ -610,29 +661,29 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 61 `get_robot_id()`
+### 62 `get_robot_id()`
 
 - **功能：** 读取设备机器码
 - **返回值：** 机器码ID，范围 001 ~ 254，长度是3
 
-### 62 `get_wifi_ip()`
+### 63 `get_wifi_ip()`
 
 - **功能：** 读取WiFi IP地址（仅在WiFi连接时才能读取）
 - **返回值：** `str` WiFi IP地址
 
-### 63 `get_bluetooth_mac()`
+### 64 `get_bluetooth_mac()`
 
 - **功能：** 读取蓝牙通信的MAC地址（仅在蓝牙打开时才能读取）
 - **返回值：** `str` 蓝牙Mac地址
 
-### 64 `get_end_button_state()`
+### 65 `get_end_button_state()`
 
 - **功能：** 读取末端按钮状态
 - **返回值：** 
   - `0`: 未按下
   - `1`: 按下
 
-### 65 `coord_inverse_solution(coords)`
+### 64 `coord_inverse_solution(coords)`
 
 - **功能：** 坐标逆解，输入坐标读取角度。
 - **参数说明：**
@@ -640,7 +691,7 @@ ua.set_angles([0, 0, 90, 0],50)
 - **返回值：** 
   - `angles` (list[float]): 角度值列表 [J1, J2, J3, J4]
 
-### 66 `angle_correct_solution(angles)`
+### 67 `angle_correct_solution(angles)`
 
 - **功能：** 角度正解，输入角度读取坐标。
 - **参数说明：**
@@ -648,17 +699,17 @@ ua.set_angles([0, 0, 90, 0],50)
 - **返回值：** 
   - `coords` (list[float]): 坐标值列表 [X, Y, Z, R]
 
-### 67 `get_wifi_signal_strength()`
+### 68 `get_wifi_signal_strength()`
 
 - **功能：** 读取WiFi信号强度（仅在WiFi连接时才能读取）
 - **返回值：** `int` 信号强度，单位 dbm，比如 `-62`
 
-### 68 `get_bluetooth_signal_strength()`
+### 69 `get_bluetooth_signal_strength()`
 
 - **功能：** 读取蓝牙信号强度（仅在蓝牙连接时才能读取）
 - **返回值：** `int` 信号强度，单位 dbm，比如 `-52`
 
-### 69 `set_collision_threshold(joint_id, threshold)`
+### 70 `set_collision_threshold(joint_id, threshold)`
 
 - **功能：** 设置关节碰撞阈值。
 - **参数说明：**
@@ -672,7 +723,7 @@ ua.set_angles([0, 0, 90, 0],50)
 - **返回值：** 
   - `ok`
 
-### 70 `get_communication_mode()`
+### 71 `get_communication_mode()`
 
 - **功能：** 获取当前通信模式。
 
@@ -682,7 +733,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - WiFi - 用wifi通信
   - Bluetooth - 用蓝牙通信
 
-### 71 `set_uart1_communication(state)`
+### 72 `set_uart1_communication(state)`
 
 - **功能：** 设置串口1通信。
 - **参数说明：**
@@ -691,12 +742,12 @@ ua.set_angles([0, 0, 90, 0],50)
 - **返回值：** 
   - `ok`
 
-### 72 `get_collision_threshold()`
+### 73 `get_collision_threshold()`
 
 - **功能：** 读取关节碰撞阈值。
 - **返回值：** `(list[float])` : 所有关节的碰撞阈值，比如 [0.5, 0.5, 0.5, 0.5]
 
-### 73 `get_pwm_status()`
+### 74 `get_pwm_status()`
 
 - **功能：** 获取PWM输出状态。
 
@@ -706,7 +757,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - [2]: 自定义模式状态，0 - 关闭, 1 - 打开
   - [3]: 自定义模式的PWM值，范围 0 ~ 255
 
-### 74 `set_conveyor_stop()`
+### 75 `set_conveyor_stop()`
 
 - **功能：** 设置传送带停止运动。
 
@@ -766,3 +817,5 @@ print(res)
 ua.set_angles([0, 0, 90, 0],50)
 ...
 ```
+
+---

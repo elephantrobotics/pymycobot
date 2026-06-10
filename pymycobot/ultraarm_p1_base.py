@@ -15,9 +15,10 @@ from pymycobot.common import ProtocolCode
 from pymycobot.error import calibration_parameters
 from pymycobot.log import setup_logging
 from pymycobot.robot_info import UltraArmP1RobotInfo
+from pymycobot.ultraarm_p1_internal import UltraArmP1InternalMixin
 
 
-class UltraArmP1Base:
+class UltraArmP1Base(UltraArmP1InternalMixin):
 
     # Default configuration (subclass override)
     REQUEST_TIMEOUT = 0.3
@@ -32,7 +33,7 @@ class UltraArmP1Base:
 
     END_COUNT = 2
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, _internal_mode=False):
 
         self.debug = debug
         setup_logging(debug)
@@ -45,6 +46,7 @@ class UltraArmP1Base:
 
         self._queue_blocked = False
         self._queue_invalid = False
+        self._internal_mode = _internal_mode
 
     def _send_command(self, command):
         raise NotImplementedError
@@ -68,6 +70,12 @@ class UltraArmP1Base:
     def _debug_read(self, data: str):
         if self.debug:
             self.log.debug(" _read: {}".format(data))
+
+    def _check_internal_mode(self):
+        if not self._internal_mode:
+            self.log.error("This API is for internal use only.!!!!!!")
+            return False
+        return True
 
     def _append_checksum(self, command):
         """Append XOR checksum to command frame."""
@@ -713,12 +721,6 @@ class UltraArmP1Base:
         return -1
 
     # ---------------------- Control methods ----------------------
-    def set_reboot(self):
-        """Reboot the robot controller board.(Internal Interface)"""
-        with self.lock:
-            self._send_command(ProtocolCode.SET_REBOOT)
-            return self._response(_async=True, is_set=True)
-
     def set_joint_release(self, joint_id):
         """release the robot joints.
         Args:
@@ -1055,23 +1057,6 @@ class UltraArmP1Base:
                 "zero_calibration_state"
             )
 
-    def set_joint1_encoder_calibration(self):
-        """Set the 730 encoder calibration for J1.(Internal Interface)"""
-        with self.lock:
-            self._send_command(ProtocolCode.SET_J1_ENCODER_CALIBRATION_P1)
-            return self._response(_async=True, is_set=True)
-
-    def set_joint1_encoder_current_calibration(self):
-        """Configure the 730 encoder current calibration for joint 1 for internal use only."""
-        with self.lock:
-            self._send_command(ProtocolCode.SET_J1_ENCODER_CURRENT_CALIBRATION_P1)
-            return self._response(_async=True, is_set=True)
-
-    def get_joint1_encoder_calibration_state(self):
-        """Read the MA730 encoder calibration status of joint 1.(Internal Interface)"""
-        with self.lock:
-            return self._request_with_retry(ProtocolCode.GET_J1_ENCODER_CALIBRATION_STATUS, "get_encoder_calibration_state")
-
     def get_run_status(self):
         """Read running status."""
         with self.lock:
@@ -1356,12 +1341,6 @@ class UltraArmP1Base:
             command = ProtocolCode.CHECK_SD_CARD
             return self._request_with_retry(command, "check_sd_card")
 
-    def upgrade_restart(self):
-        """Upgrade and restart"""
-        with self.lock:
-            self._send_command(ProtocolCode.UPGRADE_RESTART)
-            return self._response(_async=True, is_set=True)
-
     def get_motor_enable_status(self):
         """Retrieve motor enable status"""
         with self.lock:
@@ -1571,24 +1550,6 @@ class UltraArmP1Base:
         return self._request_with_retry(
             ProtocolCode.GET_QUEUE_SIZE_P1, 'get_queue_size')
 
-    def set_sn_code(self, sn_code):
-        """Set SN Code.
-
-        Args:
-            sn_code (str): SN Code, len is 11
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, sn_code=sn_code)
-        with self.lock:
-            command = ProtocolCode.SET_SN_CODE
-            command += f" {str(sn_code)}"
-            self._send_command(command)
-            return self._response(_async=True, is_set=True)
-
-    def get_sn_code(self):
-        """Get SN Code."""
-        with self.lock:
-            return self._request_with_retry(ProtocolCode.GET_SN_CODE, 'get_sn_code')
-
     def set_robot_id(self, robot_id):
         """Set Robot ID.
 
@@ -1689,23 +1650,6 @@ class UltraArmP1Base:
             command = ProtocolCode.SET_COLLISION_THRESHOLD_P1
             command += f"J {str(joint_id)}"
             command += f"P {str(threshold)}"
-            self._send_command(command)
-            return self._response(_async=True, is_set=True)
-
-    def open_spi_log_mode(self, state):
-        """Internal interface: Enable logging of SPI data forwarding
-        (enabling this will show all instructions forwarded to the STM32).
-
-        Args:
-            state (int):
-                0 - Disable
-                1 - Enable serial port 0 logging
-                2 - Enable serial port 1 logging
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, spi_state=state)
-        with self.lock:
-            command = ProtocolCode.SET_SPI_LOG_MODE
-            command += f" S{str(state)}"
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 

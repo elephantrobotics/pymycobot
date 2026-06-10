@@ -26,7 +26,7 @@ class UltraArmP1Socket(UltraArmP1Base):
     QUEUE_TIMEOUT = 0.15
     SET_RESPONSE_TIMEOUT = 5
 
-    def __init__(self, ip, netport=9000, timeout=0.05, debug=False):
+    def __init__(self, ip, netport=9000, timeout=0.05, debug=False, _internal_mode=False):
         """Initialize the ultraArmP1 robot communication.
 
         Args:
@@ -35,7 +35,7 @@ class UltraArmP1Socket(UltraArmP1Base):
             timeout (float, optional): Serial read timeout in seconds. Defaults to 0.05.
             debug (bool, optional): Whether to print debug information. Defaults to False.
         """
-        super().__init__(debug)
+        super().__init__(debug, _internal_mode)
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
         self.sock = self.connect_socket()

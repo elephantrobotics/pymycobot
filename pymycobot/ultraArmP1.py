@@ -29,7 +29,7 @@ class UltraArmP1(UltraArmP1Base):
     QUEUE_TIMEOUT = 0.02
     SET_RESPONSE_TIMEOUT = 5
 
-    def __init__(self, port, baudrate=1000000, timeout=0.05, debug=False):
+    def __init__(self, port, baudrate=1000000, timeout=0.05, debug=False, _internal_mode=False):
         """Initialize the ultraArmP1 robot communication.
 
         Args:
@@ -38,7 +38,7 @@ class UltraArmP1(UltraArmP1Base):
             timeout (float, optional): Serial read timeout in seconds. Defaults to 0.05.
             debug (bool, optional): Whether to print debug information. Defaults to False.
         """
-        super().__init__(debug)
+        super().__init__(debug, _internal_mode)
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
@@ -261,3 +261,9 @@ class UltraArmP1(UltraArmP1Base):
                     raise RuntimeError(msg)
             # Finish
             return self.finish_firmware_upgrade()
+
+    def upgrade_restart(self):
+        """Upgrade and restart"""
+        with self.lock:
+            self._send_command(ProtocolCode.UPGRADE_RESTART)
+            return self._response(_async=True, is_set=True)
