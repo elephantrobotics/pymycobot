@@ -2071,7 +2071,7 @@ def calibration_parameters(**kwargs):
                         "The parameter {} only supports 0 ~ 1, but received {}".format(parameter, value))
             elif parameter in ["end_485_baud_rate"]:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                baud_list = [115200, 1000000]
+                baud_list = [115200, 1000000, 2000000]
                 if value not in baud_list:
                     raise MyCobotPro450DataException(
                         "The parameter {} only supports {}, but received {}".format(parameter, baud_list, value))

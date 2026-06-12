@@ -754,7 +754,7 @@ print(mc.get_angles())
 #### `set_tool_serial_baud_rate(baud_rate=115200)`
 
 - **功能：** 设置末端485波特率，默认115200
-- **参数**: `baud_rate` (`int`): 标准波特率，仅支持115200和1000000
+- **参数**: `baud_rate` (`int`): 标准波特率，仅支持115200和1000000、2000000
 - **返回值:** 1
 
 #### `set_tool_serial_timeout(timeou=10000)`

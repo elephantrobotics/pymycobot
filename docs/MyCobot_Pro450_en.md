@@ -777,7 +777,7 @@ print(mc.get_angles())
 
 - **Function:** Sets the terminal 485 baud rate, default 115200
 
-- **Parameter:** `baud_rate` (`int`): Standard baud rate, only supports 115200 and 1000000
+- **Parameter:** `baud_rate` (`int`): Standard baud rate, only supports 115200 and 1000000, 2000000
 
 - **Return Value:** 1
 
