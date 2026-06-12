@@ -2106,7 +2106,7 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == "id":
                 check_0_or_1(parameter, value, [4, 7], value_type, ultraArmP340DataException, int)
-            elif parameter == "system_mode":
+            elif parameter in ["system_mode", "gripper_type"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, ultraArmP340DataException, int)
             elif parameter == "speed_mode":
                 check_0_or_1(parameter, value, [0, 2], value_type, ultraArmP340DataException, int)
@@ -2170,10 +2170,16 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP340DataException(
                         "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
             elif parameter == 'gripper_speed':
+                gripper_type_value = kwargs.get('gripper_type', None)
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
-                if not 1 <= value <= 1500:
-                    raise ultraArmP340DataException(
-                        "gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
+                if gripper_type_value == 1:
+                    if not 1 <= value <= 1500:
+                        raise ultraArmP340DataException(
+                            "Non-force-controlled gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
+                else:
+                    if not 1 <= value <= 65:
+                        raise ultraArmP340DataException(
+                            "force-controlled gripper speed not right, should be 1 ~ 65, the error gripper_speed is {}".format(value))
             elif parameter == 'address':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 7 <= value <= 69:
