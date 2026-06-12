@@ -2,7 +2,6 @@
 
 # ruff: noqa: F401
 import datetime
-import sys
 from pymycobot.mycobot280 import MyCobot280
 from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5, MyCobot280RDKX5Socket
 from pymycobot.mypalletizer260 import MyPalletizer260
@@ -104,7 +103,7 @@ __all__ = [
     "UltraArmP1",
 ]
 
-__version__ = "4.0.5b1+x1"
+__version__ = "4.0.5"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

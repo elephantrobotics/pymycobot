@@ -1,5 +1,12 @@
 # ChangeLog for pymycobot
 
+## v4.0.5  (2026-6-12)
+
+- release v4.0.5
+- Fixed bugs on Mercury A1/B1/X1 and added an interface for reading refresh mode settings.
+- 280 adds servo backup/restore parameter interface
+- The P340 has an updated gripper control interface, supporting force control type.
+
 ## v4.0.4  (2026-2-3)
 
 - release v4.0.4
