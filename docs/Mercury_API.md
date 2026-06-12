@@ -31,6 +31,11 @@ print(mc.get_angles())
 - **function：** Get the end version number
 - **Return value：** End parameters(`float`)
 
+#### `get_atom_modify_version()`
+
+- **function：** Get the end modify version number
+- **Return value：** End parameters(`int`)
+
 #### `get_robot_status()`
 
 - **function:** Upper computer error security status
@@ -82,6 +87,23 @@ print(mc.get_angles())
     - `1`: complete
     - `0`: failed
     - `-1`: error
+
+#### `get_fresh_mode()`
+
+- **function:** Query sports mode
+
+- **Return value:** 
+  - `0`: Interpolation mode
+  - `1`: Refresh mode
+
+#### `set_fresh_mode()`
+
+- **function:** Set command refresh mode
+  
+- **Parameters:**
+  - `1`: Always execute the latest command first.
+  - `0`: Execute instructions sequentially in the form of a queue.
+
 
 ### 3.MDI Mode and Operation
 

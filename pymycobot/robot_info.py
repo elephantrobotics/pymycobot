@@ -167,6 +167,7 @@ def _interpret_status_code(language, status_code):
             5: "错误：关节5临近限位，",
             6: "错误：关节6临近限位，",
             7: "错误：关节7临近限位，",
+            8: "提示：设置运动模式结束。",
             10: "提示：运动缓停结束。",
             11: "提示：运动急停结束。",
             32: "错误：坐标无解，请检查机器人手臂跨度是否接近极限。",
@@ -246,7 +247,8 @@ def _interpret_status_code(language, status_code):
             4: "Error: Joint 4 proximity limit.",
             5: "Error: Joint 5 proximity limit.",
             6: "Error: Joint 6 proximity limit.",
-            7: "Error: Joint 7 proximity limit.",
+            7: "Tip: Joint 7 proximity limit.",
+            8: "Error: Setting sports mode has ended.",
             10: "Tip: Motion slow stop is over.",
             11: "Tip: Motion emergency stop is over.",
             32: "ERROR: Invkinematics no solution, please check if the robot arm span approach limit.",
@@ -326,8 +328,9 @@ class RobotLimit:
     robot_limit = {
         "Mercury": {
             "joint_id": [1, 2, 3, 4, 5, 6, 7, 11, 12, 13],
+            "coord_id": [1, 2, 3, 4, 5, 6],
             "angles_min": [-165, -50, -165, -165, -165, -75, -165, -55, -70, -160],
-            "angles_max": [165, 120, 165, 1, 165, 255, 165, 0, 245, 160],
+            "angles_max": [165, 120, 165, 1, 165, 255, 165, 0, 220, 160],
             "coords_min": [-459, -459, -300, -180, -180, -180],
             "coords_max": [459, 459, 542, 180, 180, 180],
             "left_coords_min": [-351.11, -272.12, -262.91, -180, -180, -180],
@@ -337,6 +340,7 @@ class RobotLimit:
         },
         "MercurySocket": {
             "joint_id": [1, 2, 3, 4, 5, 6, 7, 11, 12, 13],
+            "coord_id": [1, 2, 3, 4, 5, 6],
             "angles_min": [-165, -50, -165, -165, -165, -75, -165, -55, -70, -160],
             "angles_max": [165, 120, 165, 1, 165, 255, 165, 0, 245, 160],
             "coords_min": [-459, -459, -300, -180, -180, -180],
