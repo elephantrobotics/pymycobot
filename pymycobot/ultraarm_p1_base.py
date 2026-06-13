@@ -440,6 +440,11 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                         if res is not None:
                             return self._parse_mapped_error_code(
                                 res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language)
+                    # Coord No Solution
+                    if "nosolution" in text_lower:
+                        res = self._parse_colon_values(text_lower, "nosolution", int, single=True)
+                        if res is not None:
+                            return self._parse_mapped_error_code(res, UltraArmP1RobotInfo.ERROR_NO_SOLUTION_MAP, self.language)
                     try:
                         # Motion closed-loop feedback
                         if text_lower.lower().count(keyword.decode()) >= 2:
@@ -1321,7 +1326,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
     def go_home(self, speed=20, _async=True):
         return self.set_angles([0, 0, 90, 0], speed, _async=_async)
 
-    def set_wifi_password(self, wifi_name, password):
+    def set_wifi_password(self, wifi_name, password=None):
         """Set WiFi password
 
         Args:
@@ -1329,9 +1334,12 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             password (str) : WiFi password
         """
         self.calibration_parameters(class_name=self.__class__.__name__, password=password)
+        if password is None:
+            password = ''
         with self.lock:
             command = ProtocolCode.SET_WIFI_PASSWORD
             command += " " + str(wifi_name) + '|' + str(password)
+            print('command:', command)
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
@@ -1458,8 +1466,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         Args:
             state (int): 0 ~ 1, Conveyor belt state, 0 - close; 1 - open
             direction (int): 0 ~ 1, Conveyor belt direction, 0 - forward; 1 - backward
-            speed (int): Conveyor belt speed (50~500000)
-            distance (int): Conveyor belt distance (1~500000)
+            speed (int): Conveyor belt speed (1 ~ 125 mm/s)
+            distance (int): Conveyor belt distance (1~1200 mm)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state, direction=direction,
                                     conveyor_speed=speed, conveyor_distance=distance)

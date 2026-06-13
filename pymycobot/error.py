@@ -2244,10 +2244,10 @@ def calibration_parameters(**kwargs):
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
             value_type = type(value)
-            if parameter == "joint_id":
+            if parameter in ["joint_id"]:
                 if value not in [1, 2, 3, 4]:
                     check_id(value, [1, 2, 3, 4], ultraArmP1DataException)
-            elif parameter == "axis_id":
+            elif parameter in ["axis_id", "jog_coord_id"]:
                 if value not in [1, 2, 3, 4]:
                     raise ultraArmP1DataException(
                         f"The axis_id not right, should be in [1, 2, 3, 4], but received {value}."
@@ -2459,8 +2459,8 @@ def calibration_parameters(**kwargs):
                         f"Unsupported file format, please use .gcode, .ngc, or .nc, but received {value}"
                     )
             elif parameter == "password":
-                check_value_type(parameter, value_type, ultraArmP1DataException, str)
-                if not (8 <= len(value) <= 15):
+                check_value_type(parameter, value_type, ultraArmP1DataException, (str, type(None)))
+                if value is not None and value != "" and not (8 <= len(value) <= 15):
                     raise ultraArmP1DataException(
                         f"The parameter password length must be 8 to 15 characters, but received len {len(value)}")
             elif parameter == "download_filename":
@@ -2482,15 +2482,15 @@ def calibration_parameters(**kwargs):
             elif parameter == "conveyor_speed":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
 
-                if not (50 <= value <= 500000):
+                if not (1 <= value <= 125):
                     raise ultraArmP1DataException(
-                        f"Speed out of range, should be 50 ~ 500000, but received {value}")
+                        f"Speed out of range, should be 1 ~ 125, but received {value}")
             elif parameter == "conveyor_distance":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
 
-                if not (1 <= value <= 500000):
+                if not (1 <= value <= 1200):
                     raise ultraArmP1DataException(
-                        f"Speed out of range, should be 1 ~ 500000, but received {value}")
+                        f"Speed out of range, should be 1 ~ 1200, but received {value}")
             elif parameter == 'rgb':
                 check_rgb_value(value, ultraArmP1DataException, class_name)
             elif parameter == "sn_code":

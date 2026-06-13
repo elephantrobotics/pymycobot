@@ -47,13 +47,7 @@ ua.set_angles([0, 0, 90, 0],50)
 ...
 ```
 
-### 1 `set_reboot()`
-
-- **Function:** Sets the robotic arm development board to restart.
-
-- **Return value：** ok
-
-### 2 `set_joint_release(joint_id)`
+### 1 `set_joint_release(joint_id)`
 
 - **Function:** Releases the joint
 
@@ -63,7 +57,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 3 `set_joint_enable(joint_id)`
+### 2 `set_joint_enable(joint_id)`
 
 - **Function:** Locks the joint
 
@@ -73,25 +67,25 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 4 `get_system_version()`
+### 3 `get_system_version()`
 
 - **Function:** Reads the firmware major version number
 
 - **Return Value:** `float`, the correction version number
 
-### 5 `get_modify_version()`
+### 4 `get_modify_version()`
 
 - **Function:** Reads the firmware correction version number
 
 - **Return Value:** `int`, the correction version number
 
-### 6 `get_angles_info()`
+### 5 `get_angles_info()`
 
 - **Function:** Gets the current angle of the robotic arm.
 
 - **Return Value:** `list` is a list of floating-point values ​​representing the angles of all joints. [J1, J2, J3, J4]
 
-### 7 `set_angle(id, angle, speed, _async=True)`
+### 6 `set_angle(id, angle, speed, _async=True)`
 
 - **Function:** Sends the specified single joint to the specified angle.
 
@@ -152,7 +146,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** Returns "ok" in closed-loop mode, 1 in open-loop mode.
 
-### 8 `set_angles(angles, speed, _async=True)`
+### 7 `set_angles(angles, speed, _async=True)`
 
 - **Function:** Sends all angles to all joints of the robotic arm.
 
@@ -166,13 +160,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** Returns "ok" in closed-loop mode, 1 in open-loop mode.
 
-### 9 `get_coords_info()`
+### 8 `get_coords_info()`
 
 - **Function:** Gets the current coordinates of the robotic arm.
 
 - **Return Value:** A list of coordinates, with a length of 4, in the format [x, y, z, rx].
 
-### 10 `set_coords_max_speed(coords, _async=True)`
+### 9 `set_coords_max_speed(coords, _async=True)`
 
 - **Function:** Sends coordinate motion at maximum speed.
 
@@ -194,7 +188,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
       <td text-align: center>X</td>
 
-      <td>-301.7 ~ 360.5</td>
+      <td>-350 ~ 362.43</td>
 
       </tr>
 
@@ -202,13 +196,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
       <td>Y</td>
 
-      <td>-360.5 ~ 360.5</td>
+      <td>-362.43 ~ 362.43</td>
 
       </tr> <tr>
 
       <td>Z</td>
 
-      <td>-157 ~ 91</td>
+      <td>-186.265 ~ 93.44</td>
 
       </tr>
 
@@ -227,7 +221,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value:** Closed-loop returns "ok", open-loop returns 1
 
-### 11 `set_coords(coords, speed, _async=True)`
+### 10 `set_coords(coords, speed, _async=True)`
 
 - **Function:** Sends global coordinates, allowing the robotic arm head to move from its original point to a specified point.
 
@@ -249,7 +243,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
       <td text-align: center>X</td>
 
-      <td>-301.7 ~ 360.5</td>
+      <td>-350 ~ 362.43</td>
 
       </tr>
 
@@ -257,14 +251,14 @@ ua.set_angles([0, 0, 90, 0],50)
 
       <td>Y</td>
 
-      <td>-360.5 ~ 360.5</td>
+      <td>-362.43 ~ 362.43</td>
 
       </tr>
 
       <tr>
       <td>Z</td>
 
-      <td>-157 ~ 91</td>
+      <td>-186.265 ~ 93.44</td>
 
       </tr>
 
@@ -286,7 +280,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value:** Closed-loop returns "ok", open-loop returns 1.
 
-### 12 `set_coord(coord_id, coord, speed, _async=True)`
+### 11`set_coord(coord_id, coord, speed, _async=True)`
 
 - **Function:** Sends a single axis coordinate, allowing the robotic arm head to move from its original point to a specified point.
 
@@ -310,7 +304,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
       <td text-align: center>X</td>
 
-      <td>-301.7 ~ 360.5</td>
+      <td>-350 ~ 362.43</td>
 
       </tr>
 
@@ -318,7 +312,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
       <td>Y</td>
 
-      <td>-360.5 ~ 360.5</td>
+      <td>-362.43 ~ 362.43</td>
 
       </tr>
 
@@ -326,7 +320,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
       <td>Z</td>
 
-      <td>-157 ~ 91</td>
+      <td>-186.265 ~ 93.44</td>
 
       </tr>
 
@@ -344,13 +338,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value:** Closed-loop returns "ok", open-loop returns 1.
 
-### 13 `stop()`
+### 12 `stop()`
 
 - **Function:** Stops the robotic arm's movement.
 
 - **Return value：** ok
 
-### 14 `set_jog_angle(joint_id, direction, speed, _async=True)`
+### 13 `set_jog_angle(joint_id, direction, speed, _async=True)`
 
 - **Function:** Sets the JOG angle.
 
@@ -366,7 +360,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-### 15 `set_jog_coord(axis_id, direction, speed, _async=True)`
+### 14 `set_jog_coord(axis_id, direction, speed, _async=True)`
 
 - **Function:** Sets the JOG coordinate motion.
 
@@ -382,7 +376,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-### 16 `jog_increment_angle(joint_id, increment, speed, _async=True)`
+### 15 `jog_increment_angle(joint_id, increment, speed, _async=True)`
 
 - **Function:** Sets the angle step motion
 
@@ -398,7 +392,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-### 17 `jog_increment_coord(coord_id, increment, speed, _async=True)`
+### 16 `jog_increment_coord(coord_id, increment, speed, _async=True)`
 
 - **Function:** Sets the coordinate stepping motion.
 
@@ -414,63 +408,55 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** Closed-loop returns "ok", open-loop returns 1
 
-### 18 `get_error_information()`
+### 17 `get_error_information()`
 
 - **Function:** Reads error information
 
 - **Return Value:** Error information
 
-### 19 `set_pwm(p_value)`
-
-- **Function:** Sets PWM control
-
-- **Parameter Description:** `p_value` Duty cycle, range: 0-5
-
-- **Return value：** ok
-
-### 20 `set_zero_calibration()`
+### 18 `set_zero_calibration()`
 
 - **Function:** Sets zero-point calibration
 
 - **Return value：** ok
 
-### 21 `get_zero_calibration_state()`
+### 19 `get_zero_calibration_state()`
 
 - **Function:** Reads zero-point calibration status
 
 - **Return Value:** `list` [1, 1, 1, 1]
 
-### 22 `get_run_status()`
+### 20 `get_run_status()`
 
 - **Function:** Read Running Status
 
 - **Return Value:** Running Status
 
-### 23 `set_pwm_laser_mode(state)`
+### 21 `set_pwm_laser_mode(state)`
 
 - **Function:** Set pwm laser mode.
 - **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
 - **Return Value:** `ok` - Success; `0` - Failure.
 
-### 24 `set_pwm_laser(p_value)`
+### 22 `set_pwm_laser(p_value)`
 
 - **Function:** Set the PWM level (Laser).
 - **Parameters:** `p_value` (`int`) 0 ~ 255.
 - **Return Value:** `ok` - Success; `0` - Failure.
 
-### 25 `set_pwm_custom_mode(state)`
+### 23 `set_pwm_custom_mode(state)`
 
 - **Function:** Set pwm custom mode.
 - **Parameters:** `state` (`int`) 0 ~ 1; 0 - Off; 1 - On.
 - **Return Value:** `ok` - Success; `0` - Failure.
 
-### 26 `set_pwm_custom(p_value)`
+### 24 `set_pwm_custom(p_value)`
 
 - **Function:** Set the PWM level (Custom).
 - **Parameters:** `p_value` (`int`) 0 ~ 255.
 - **Return Value:** `ok` - Success; `0` - Failure.
 
-### 27 `set_gripper_angle(gripper_angle, gripper_speed)`
+### 25 `set_gripper_angle(gripper_angle, gripper_speed)`
 
 - **Function:** Sets the gripper's movement angle
 
@@ -482,13 +468,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 28 `get_gripper_angle()`
+### 26 `get_gripper_angle()`
 
 - **Function:** Reads the gripper angle
 
 - **Return value:** Gripper angle, 1 ~ 100
 
-### 29 `set_gripper_parameter(addr, parameter_value)`
+### 27 `set_gripper_parameter(addr, parameter_value)`
 
 - **Function:** Sets the gripper parameter
 
@@ -499,7 +485,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `parameter_value` (`int`): 0 ~ 65535
 - **Return value：** ok
 
-### 30 `get_gripper_parameter(addr)`
+### 28 `get_gripper_parameter(addr)`
 
 - **Function:** Reads the gripper parameter
 - **Parameter description:**
@@ -508,7 +494,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `mode:` (`int`): 1 ~ 2
 - **Return value:** (int) Gripper parameter 0 ~ 65535
 
-### 31 `set_gripper_enable_status(state):`
+### 29 `set_gripper_enable_status(state):`
 
 - **Function:** Set the gripper enable state
 
@@ -522,13 +508,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 32 `set_gripper_zero()`
+### 30 `set_gripper_zero()`
 
 - **Function:** Sets the gripper to zero position
 
 - **Return value：** ok
 
-### 33 `set_pump_state(pump_state)`
+### 31 `set_pump_state(pump_state)`
 
 - **Function:** Sets the pump status
 
@@ -544,7 +530,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 34 `set_base_io_output(pin_no, pin_status, pin_signal)`
+### 32 `set_base_io_output(pin_no, pin_status, pin_signal)`
 
 - **Function:** Sets the base IO pin output status
 
@@ -566,7 +552,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 35 `set_digital_io_output(pin_no, pin_signal)`
+### 33 `set_digital_io_output(pin_no, pin_signal)`
 
 - **Function:** Sets the output state of the final I/O pin
 
@@ -582,7 +568,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 36 `set_i2c_data(data_state, data_addr, data_len, data_value)`
+### 34 `set_i2c_data(data_state, data_addr, data_len, data_value)`
 
 - **Function:** Sets I2C data
 
@@ -602,7 +588,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 37 `play_gcode_file(filename)`
+### 35 `play_gcode_file(filename)`
 
 - **Function:** Plays the imported track file.
 
@@ -612,19 +598,19 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** None
 
-### 38 `get_system_screen_version()`
+### 36 `get_system_screen_version()`
 
 - **Function:** Reads the screen firmware major version number
 
 - **Return Value:** Major version number
 
-### 38 `get_modify_screen_version()`
+### 37 `get_modify_screen_version()`
 
 - **Function:** Reads the screen firmware correction version number
 
 - **Return Value:** Correction version number
 
-### 39 `set_communication_baud_rate(baud_rate)`
+### 38 `set_communication_baud_rate(baud_rate)`
 
 - **Function:** Sets the communication baud rate
 
@@ -634,14 +620,14 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 40 `receive_485_data()`
+### 39 `receive_485_data()`
 
 - **Function:** Receives 485 data
 
 - **Return Value:** 485 data
 
 
-### 41 `set_wifi_password(wifi_name, password)`
+### 40 `set_wifi_password(wifi_name, password=None)`
 
 - **Function:** Sets the on-screen WiFi password.
 
@@ -652,7 +638,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 42 `check_sd_card()`
+### 41 `check_sd_card()`
 
 - **Function:** Checks if an SD card is present.
 
@@ -662,7 +648,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `0`: SD card not present
 
-### 43 `download_firmware_sd(filename, show_progress=True)`
+### 42 `download_firmware_sd(filename, show_progress=True)`
 
 - **Function:** Downloads firmware data to the SD card.
 
@@ -674,25 +660,25 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** If `show_progress=True`, the download progress is returned; otherwise, no value is returned.
 
-### 44 `upgrade_restart()`
+### 43 `upgrade_restart()`
 
 - **Function:** Firmware upgrade and restart.
 
 - **Return value：** ok
 
-### 45 `get_motor_enable_status()`
+### 44 `get_motor_enable_status()`
 
 - **Function:** Reads the motor enable status.
 
 - **Return Value:** `list`, 5 motor enable statuses.
 
-### 46 `finish_firmware_upgrade()`
+### 45 `finish_firmware_upgrade()`
 
 - **Function:** Ends the download of firmware data to the SD card. (The upgrade can be terminated midway through the firmware download process.)
 
 - **Return value：** ok.
 
-### 47 `get_base_io_state()`
+### 46 `get_base_io_state()`
 
 - **Function:** Get the state of the base IO pins
   
@@ -703,7 +689,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: Output, level = 0 (low level)
   - `3`: Output, level = 1 (high level)
 
-### 48 `get_base_io_state(pin_no)`
+### 47 `get_base_io_state(pin_no)`
 
 - **Function:** Get the state of the base IO pins
 - **Parameter:** (`int`) Bottom IO pin number, range: 1 to 10.
@@ -714,7 +700,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: Output, level = 0 (low level)
   - `3`: Output, level = 1 (high level)
 
-### 49 `get_end_io_state()`
+### 48 `get_end_io_state()`
 
 - **Function:** Get the state of the end IO pins
 
@@ -725,7 +711,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: Output, level = 0 (low level)
   - `3`: Output, level = 1 (high level)
 
-### 50 `get_end_io_state(pin_no)`
+### 49 `get_end_io_state(pin_no)`
 
 - **Function:** Get the state of the end IO pins
 - **Parameter:** (`int`) End IO pin number, range: 1 to 4.
@@ -736,35 +722,35 @@ ua.set_angles([0, 0, 90, 0],50)
   - `2`: Output, level = 0 (low level)
   - `3`: Output, level = 1 (high level)
 
-### 51 `set_end_button_enable()`
+### 50 `set_end_button_enable()`
 
 - **Function:** Enable the end button
   
 - **Return value：** ok
 
-### 52 `set_end_button_disable()`
+### 51 `set_end_button_disable()`
 
 - **Function:** Disable the end button
 
 - **Return value：** ok
 
-### 53 `forced_reset_zero()`
+### 52 `forced_reset_zero()`
 
 - **Function:** Set forced homing (reset to zero)
   
 - **Return value：** ok
 
-### 54 `set_conveyor_control(state, direction, speed, distance)`
+### 53 `set_conveyor_control(state, direction, speed, distance)`
 
 - **Function:** Conveyor belt control
 - **Parameter Description:**
   - `state`: (`int`) 0~1, conveyor state: 0 - off; 1 - on
   - `direction`: (`int`) 0~1, conveyor direction: 0 - forward; 1 - backward
-  - `speed`: (`int`) conveyor speed, range 50~500000
-  - `distance`: (`int`) conveyor distance, range 1~500000
+  - `speed`: (`int`) conveyor speed, range 1~125 mm/s
+  - `distance`: (`int`) conveyor distance, range 1~1200 mm
 - **Return value：** ok
 
-### 55 `set_color(r, g, b)`
+### 54 `set_color(r, g, b)`
 
 - **Function:** Sets the RGB color of the light panel.
 - **Parameter Description:**
@@ -774,7 +760,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 56 `set_preview_mode(coords)`
+### 55 `set_preview_mode(coords)`
 
 - **Function:** Sets the coordinate trajectory preview mode.
 - **Parameter Description:**
@@ -782,31 +768,31 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 57 `get_sd_card_space()`
+### 56 `get_sd_card_space()`
 
 - **Function:** Retrieves the total and available storage space on the SD card.
 
 - **Return Value:** `list` containing the total space and available space, in bytes. Example: [Total Space, Available Space]
 
-### 58 `collision_unlock()`
+### 57 `collision_unlock()`
 
 - **Function:** Unlocks after collision detection.
 
 - **Return Value:** OK - Success; 0 - Failure.
 
-### 59 `clear_error_status()`
+### 58 `clear_error_status()`
 
 - **Function:** Clears the error status. If a limit has been exceeded, the joint must be manually moved back within the limit boundaries.
 
 - **Return Value:** OK - Success; 0 - Failure
 
-### 60 `get_queue_size()`
+### 59 `get_queue_size()`
 
 - **Function:** Reads the size of the buffer queue.
 
 - **Return Value:** `int` Queue size
 
-### 61 `set_robot_id(robot_id)`
+### 60 `set_robot_id(robot_id)`
 
 - **Function:** Sets the device machine code
 
@@ -816,25 +802,25 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return Value:** ok
 
-### 62 `get_robot_id()`
+### 61 `get_robot_id()`
 
 - **Function:** Reads the device machine code
 
 - **Return Value:** Machine code ID, range 001 ~ 254, length 3
 
-### 63 `get_wifi_ip()`
+### 62 `get_wifi_ip()`
 
 - **Function:** Reads the WiFi IP address (only available when WiFi is connected)
 
 - **Return Value:** `str` WiFi IP address
 
-### 64 `get_bluetooth_mac()`
+### 63 `get_bluetooth_mac()`
 
 - **Function:** Reads the Bluetooth communication MAC address (only available when Bluetooth is enabled)
 
 - **Return Value:** `str` Bluetooth MAC address
 
-### 65 `get_end_button_state()`
+### 64 `get_end_button_state()`
 
 - **Function:** Reads the state of the end button
 
@@ -844,7 +830,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `1`: Pressed
 
-### 66 `coord_inverse_solution(coords)`
+### 65 `coord_inverse_solution(coords)`
 
 - **Function:** Inverse coordinate solution; input coordinates and read angles.
 
@@ -856,7 +842,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `angles` (list[float]): List of angle values ​​[J1, J2, J3, J4]
 
-### 67 `angle_correct_solution(angles)`
+### 66 `angle_correct_solution(angles)`
 
 - **Function:** Correct angle solution; input angles and read coordinates.
 
@@ -868,19 +854,19 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `coords` (list[float]): List of coordinate values ​​[X, Y, Z, R]
 
-### 68 `get_wifi_signal_strength()`
+### 67 `get_wifi_signal_strength()`
 
 - **Function:** Reads WiFi signal strength (only available when WiFi is connected)
 
 - **Return Value:** `int` signal strength, in dBm, e.g., `-62`
 
-### 69 `get_bluetooth_signal_strength()`
+### 68 `get_bluetooth_signal_strength()`
 
 - **Function:** Reads Bluetooth signal strength (only available when Bluetooth is connected)
 
 - **Return Value:** `int` signal strength, in dBm, e.g., `-52`
 
-### 70 `set_collision_threshold(joint_id, threshold)`
+### 69 `set_collision_threshold(joint_id, threshold)`
 
 - **Function:** Sets the joint collision threshold.
 
@@ -904,7 +890,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `ok`
 
-### 71 `get_communication_mode()`
+### 70 `get_communication_mode()`
 
 - **Function:** Retrieves the current communication mode.
 
@@ -918,7 +904,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - Bluetooth - Communicates using Bluetooth
 
-### 72 `set_uart1_communication(state)`
+### 71 `set_uart1_communication(state)`
 
 - **Function:** Sets communication using serial port 1.
 
@@ -930,13 +916,13 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - `ok`
 
-### 73 `get_collision_threshold()`
+### 72 `get_collision_threshold()`
 
 - **Function:** Reads the collision threshold of a joint.
 
 - **Return value:** `(list[float])`: The collision threshold for all joints, e.g., [0.5, 0.5, 0.5, 0.5]
 
-### 74 `get_pwm_status()`
+### 73 `get_pwm_status()`
 
 - **Function:** Gets the PWM output status.
 
@@ -950,7 +936,7 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - [3]: PWM value for custom mode, range 0 ~ 255
 
-### 75 `set_conveyor_stop()`
+### 74 `set_conveyor_stop()`
 
 - **Function:** Sets the conveyor belt to stop moving.
 

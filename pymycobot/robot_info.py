@@ -196,6 +196,9 @@ class UltraArmP1RobotInfo(object):
         2: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
         3: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
     }
+    ERROR_NO_SOLUTION_MAP = {
+        1: {"zh_CN": "目标坐标无解", "en_US": "No solution for target coordinates."},
+    }
     ERROR_M450_MAP = {
         0: {"zh_CN": "SD卡不存在", "en_US": "SD card not present"},
         1: {"zh_CN": "无固件文件名", "en_US": "No firmware file name"},
@@ -610,20 +613,20 @@ class RobotLimit:
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z'],
             "jog_coord_id": [1, 2, 3, 4],
-            "angles_min": [-158, -18, 89, -179],
-            "angles_max": [158, 85, 190, 179],
-            "coords_min": [-301.7, -362.7, -157, -180],
-            "coords_max": [362.7, 362.7, 91, 180]
+            "angles_min": [-165, -18, 89, -179],
+            "angles_max": [165, 85, 200, 179],
+            "coords_min": [-350, -362.43, -186.265, -180],
+            "coords_max": [362.43, 362.43, 93.44, 180]
         },
         "UltraArmP1Socket": {
             "joint_id": [1, 2, 3, 4],
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z'],
             "jog_coord_id": [1, 2, 3, 4],
-            "angles_min": [-158, -18, 89, -179],
-            "angles_max": [158, 85, 190, 179],
-            "coords_min": [-301.7, -362.7, -157, -180],
-            "coords_max": [362.7, 362.7, 91, 180]
+            "angles_min": [-165, -18, 89, -179],
+            "angles_max": [165, 85, 200, 179],
+            "coords_min": [-350, -362.43, -186.265, -180],
+            "coords_max": [362.43, 362.43, 93.44, 180]
         },
         "UltraArmP1Bluetooth": {
             "joint_id": [1, 2, 3, 4],
@@ -632,7 +635,7 @@ class RobotLimit:
             "jog_coord_id": [1, 2, 3, 4],
             "angles_min": [-165, -18, 89, -179],
             "angles_max": [165, 85, 200, 179],
-            "coords_min": [-301.7, -360.5, -157, -180],
-            "coords_max": [360.5, 360.5, 91, 180]
+            "coords_min": [-350, -362.43, -186.265, -180],
+            "coords_max": [362.43, 362.43, 93.44, 180]
         },
     }
