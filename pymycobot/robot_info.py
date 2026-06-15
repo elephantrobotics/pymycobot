@@ -218,6 +218,11 @@ class UltraArmP1RobotInfo(object):
         2: {"zh_CN": "SSID为空", "en_US": "SSID is empty"},
         3: {"zh_CN": "写入/Wifi/wifi.txt文件失败", "en_US": "Failed to write to /Wifi/wifi.txt file"},
     }
+    SOLUTION_ERROR_MAP = {
+        1: {"zh_CN": "超限", "en_US": "Exceeding limits"},
+        2: {"zh_CN": "关节耦合", "en_US": "Joint coupling"},
+        3: {"zh_CN": "无解", "en_US": "No solution"},
+    }
 
 # coding=utf-8
 

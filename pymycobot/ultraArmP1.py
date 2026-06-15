@@ -73,8 +73,18 @@ class UltraArmP1(UltraArmP1Base):
         command = self._append_checksum(command)
         command += ProtocolCode.END
         self._debug_write(command)
-        self._serial_port.write(command.encode())
-        self._serial_port.flush()
+        try:
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+        except serial.SerialException as e:
+            self.log.error(
+                f"Serial write failed. "
+                f"port={self._serial_port.port}, "
+                f"is_open={self._serial_port.is_open}, "
+                f"cmd={command}, "
+                f"error={e}"
+            )
+            raise
 
     def _send_raw_command(self, command: str):
         self._serial_port.write(command.encode())
@@ -168,11 +178,15 @@ class UltraArmP1(UltraArmP1Base):
         if self.debug:
             self.log.info(f"Download progress: {percent}%")
 
+    def is_open(self):
+        return self._serial_port is not None and self._serial_port.is_open
+
     def close(self):
         """Close the serial port."""
         with self.lock:
             try:
-                self._serial_port.close()
+                if self._serial_port and self._serial_port.is_open:
+                    self._serial_port.close()
             except Exception as e:
                 self.log.error(f"Failed to close serial port: {e}")
 

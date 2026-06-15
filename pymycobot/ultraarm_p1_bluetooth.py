@@ -98,9 +98,13 @@ class UltraArmP1Bluetooth(UltraArmP1Base):
         command = self._append_checksum(command)
         command += ProtocolCode.END
         self._debug_write(command)
-        future = asyncio.run_coroutine_threadsafe(
-            self.client.write_gatt_char(self.handle,command.encode(), response=False), self.loop)
-        future.result()
+        try:
+            future = asyncio.run_coroutine_threadsafe(
+                self.client.write_gatt_char(self.handle,command.encode(), response=False), self.loop)
+            future.result()
+        except Exception as e:
+            self.log.exception(f"bluetooth send error: {e}")
+            raise
 
     def _send_raw_command(self, command: str):
         self.recv_buffer.clear()

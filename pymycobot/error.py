@@ -2458,6 +2458,11 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP1DataException(
                         f"Unsupported file format, please use .gcode, .ngc, or .nc, but received {value}"
                     )
+            elif parameter == 'wifi_name':
+                check_value_type(parameter, value_type, ultraArmP1DataException, str)
+                if value == "" :
+                    raise ultraArmP1DataException(
+                        f"The length of the parameter wifi_name must be greater than 0 characters and cannot be empty, but the received length is {len(value)}")
             elif parameter == "password":
                 check_value_type(parameter, value_type, ultraArmP1DataException, (str, type(None)))
                 if value is not None and value != "" and not (8 <= len(value) <= 15):
@@ -2488,9 +2493,9 @@ def calibration_parameters(**kwargs):
             elif parameter == "conveyor_distance":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
 
-                if not (1 <= value <= 1200):
+                if not (0 <= value <= 1200):
                     raise ultraArmP1DataException(
-                        f"Speed out of range, should be 1 ~ 1200, but received {value}")
+                        f"Speed out of range, should be 0 ~ 1200, but received {value}")
             elif parameter == 'rgb':
                 check_rgb_value(value, ultraArmP1DataException, class_name)
             elif parameter == "sn_code":

@@ -747,7 +747,7 @@ ua.set_angles([0, 0, 90, 0],50)
   - `state`: (`int`) 0~1, conveyor state: 0 - off; 1 - on
   - `direction`: (`int`) 0~1, conveyor direction: 0 - forward; 1 - backward
   - `speed`: (`int`) conveyor speed, range 1~125 mm/s
-  - `distance`: (`int`) conveyor distance, range 1~1200 mm
+  - `distance`: (`int`) conveyor distance, range 0~1200 mm, 0: Continuous movement; 1-1200: Movement 1-1200mm (maximum stroke)
 - **Return value：** ok
 
 ### 54 `set_color(r, g, b)`

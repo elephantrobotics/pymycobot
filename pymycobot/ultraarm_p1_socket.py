@@ -72,7 +72,8 @@ class UltraArmP1Socket(UltraArmP1Base):
         try:
             self.sock.sendall(command.encode())
         except Exception as e:
-            self.log.error(f"socket send error: {e}")
+            self.log.exception(f"socket send error: {e}")
+            raise
 
     def _send_raw_command(self, command: str):
         self.sock.sendall(command.encode())

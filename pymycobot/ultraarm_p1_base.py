@@ -688,10 +688,26 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                             if r is not None:
                                 return r
                         elif flag == 'get_inverse_solution_angles':
+                            if 'error' in lower:
+                                res = self._parse_colon_values(lower, "error", int, single=True)
+                                if res is not None:
+                                    msg = UltraArmP1RobotInfo.SOLUTION_ERROR_MAP.get(res)
+                                    if msg:
+                                        return msg.get(self.language, msg["en_US"])
+                                    self.log.warning(f"Unknown solution error code: {res}")
+                                    return f"Unknown error({res})"
                             r = self._parse_solution_values(lower, ["a", "b", "c", "d"])
                             if r is not None and len(r) ==4:
                                 return r
                         elif flag == 'get_correct_solution_coords':
+                            if 'error:' in lower:
+                                res = self._parse_colon_values(lower, "error", int, single=True)
+                                if res is not None:
+                                    msg = UltraArmP1RobotInfo.SOLUTION_ERROR_MAP.get(res)
+                                    if msg:
+                                        return msg.get(self.language, msg["en_US"])
+                                    self.log.warning(f"Unknown solution error code: {res}")
+                                    return f"Unknown error({res})"
                             r = self._parse_solution_values(lower,["x", "y", "z", "r"])
                             if r is not None and len(r) ==4:
                                 return r
@@ -1333,7 +1349,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             wifi_name (str) : ssid, WiFi name
             password (str) : WiFi password
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, password=password)
+        self.calibration_parameters(class_name=self.__class__.__name__, wifi_name=wifi_name, password=password)
         if password is None:
             password = ''
         with self.lock:
@@ -1467,7 +1483,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             state (int): 0 ~ 1, Conveyor belt state, 0 - close; 1 - open
             direction (int): 0 ~ 1, Conveyor belt direction, 0 - forward; 1 - backward
             speed (int): Conveyor belt speed (1 ~ 125 mm/s)
-            distance (int): Conveyor belt distance (1~1200 mm)
+            distance (int): Conveyor belt distance (0~1200 mm)，0: Continuous movement; 1-1200: Movement 1-1200mm (maximum stroke)
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state, direction=direction,
                                     conveyor_speed=speed, conveyor_distance=distance)
