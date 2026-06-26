@@ -2261,6 +2261,27 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP340DataException(
                         "Unsupported file format, please use .gcode, .ngc, or .nc, but received {}".format(value))
 
+    elif class_name in ["MyAGVPlus", "MyAGVPlusSocket", "MyAGVPlusApi"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            if parameter in ["motor_id", "single_motor_id", "state", "mode", "pin", "communication_state"]:
+                if value not in robot_limit[class_name][parameter]:
+                    raise MyAgvDataException(
+                        f"The {parameter} must be in {robot_limit[class_name][parameter]}, but received {value}"
+                    )
+            elif parameter == "speed":
+                v_str = str(value)
+                if '.' in v_str and len(v_str.split('.')[-1]) > 2:
+                    raise MyAgvDataException(f"move speed must have at most 2 decimal places, got {value}")
+                if not (robot_limit[class_name]["speed_min"] <= float(value) <= robot_limit[class_name]["speed_max"]):
+                    raise MyAgvDataException(f"move speed must be between {robot_limit[class_name]['speed_min']} and {robot_limit[class_name]['speed_max']} m/s, got {value}")
+            elif parameter == "angular_speed":
+                v_str = str(value)
+                if '.' in v_str and len(v_str.split('.')[-1]) > 2:
+                    raise MyAgvDataException(f"turn angular speed must have at most 2 decimal places, got {value}")
+                if not (robot_limit[class_name]["angular_speed_min"] <= float(value) <= robot_limit[class_name]["angular_speed_max"]):
+                    raise MyAgvDataException(f"turn angular speed must be between {robot_limit[class_name]['angular_speed_min']} and {robot_limit[class_name]['angular_speed_max']} rad/s, got {value}")
+
 def restrict_serial_port(func):
     """
     装饰器，用于限制特定串口号、socket的函数调用。
