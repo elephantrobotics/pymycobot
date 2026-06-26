@@ -537,6 +537,27 @@ class ProtocolCode(object):
     IS_SD_INSERT = 0xC4
 
 
+class MyagvPlusCommand(object):
+    """MyAGV Plus ESP32 Serial Protocol Command Codes"""
+    GET_MODIFY_VERSION = 0x01
+    GET_SYSTEM_VERSION = 0x02
+    SET_DEBUG_STATE = 0x03
+    GET_DEBUG_STATE = 0x04
+    GET_ROBOT_STATUS = 0x05
+    POWER_CONTROL = 0x10
+    IS_POWER_ON = 0x12
+    GET_ALL_MSG = 0x14
+    SET_AUTO_REPORT_STATE = 0x23
+    GET_AUTO_REPORT_STATE = 0x24
+    SET_COMMUNICATION_STATE = 0x32
+    GET_COMMUNICATION_STATE = 0x33
+    SET_LED_COLOR = 0x34
+    SET_LED_MODE = 0x3A
+    SET_PIN_OUTPUT = 0x40
+    GET_PIN_INPUT = 0x41
+    SET_FAN_STATE = 0x42
+
+
 class DataProcessor(object):
     crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client"]
 

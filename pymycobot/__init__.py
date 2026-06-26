@@ -30,6 +30,8 @@ from pymycobot.myagv import MyAgv
 from pymycobot.myagvpro import MyAGVPro
 from pymycobot.myagvpro_socket import MyAGVProSocket
 from pymycobot.myagvpro_bluetooth import MyAGVProBluetooth
+from pymycobot.myagvplus import MyAGVPlus
+from pymycobot.myagvplussocket import MyAGVPlusSocket
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
 
@@ -78,6 +80,8 @@ __all__ = [
     "MyAGVPro",
     "MyAGVProSocket",
     "MyAGVProBluetooth",
+    "MyAGVPlus",
+    "MyAGVPlusSocket",
     "MechArmSocket",
     "MyArmSocket",
     "MercurySocket",
