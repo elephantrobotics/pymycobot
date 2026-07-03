@@ -283,8 +283,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                     time.sleep(0.005)
                     continue
 
-                # The difference from the previous value is too large.
-                if last_queue_size is not None and abs(queue_size - last_queue_size) >= 10:
+                # During waiting we do not send new motion commands, so a large
+                # upward jump is abnormal; fast downward consumption is normal.
+                if last_queue_size is not None and queue_size - last_queue_size >= 15:
                     # print("current & last too large", queue_size, last_queue_size)
                     retry += 1
                     time.sleep(0.005)
@@ -316,6 +317,21 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                     return True
 
             time.sleep(0.01)
+
+    def _wait_motion_stop(self, interval=0.005, timeout=None):
+        start_time = time.time()
+        while True:
+            status = self._request_with_retry(
+                ProtocolCode.GET_RUNNING_STATUS_P1, "run_status"
+            )
+            if status == 0:
+                return True
+
+            if timeout is not None and time.time() - start_time >= timeout:
+                self.log.error("wait motion stop timeout")
+                return False
+
+            time.sleep(interval)
 
     def _normalize_gcode_line(self, line):
         line = line.strip()
@@ -1026,20 +1042,32 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             return
 
         with self.lock:
+            skip_queue_once = False
             for raw_line in lines:
                 line = self._normalize_gcode_line(raw_line)
 
                 if line is None:
                     continue
 
+                is_m80 = line.split()[0].upper() == "M80"
+                if is_m80:
+                    if not self._wait_motion_stop():
+                        self.log.error("wait M80 motion stop error")
+                        break
+
                 command = line + ProtocolCode.END
                 # Queue Protection
-                if self._wait_queue_safe() != 1:
+                if skip_queue_once:
+                    skip_queue_once = False
+                elif self._wait_queue_safe() != 1:
                     self.log.error("queue play error")
                     break
 
                 self._send_raw_command(command)
                 self._debug_write(command)
+
+                if is_m80:
+                    skip_queue_once = True
 
     def get_error_information(self):
         """Read error message"""
