@@ -1,5 +1,10 @@
 # ChangeLog for pymycobot
 
+## v4.0.6  (2026-7-7)
+
+- release v4.0.6
+- Added myAGV Plus Python API interface
+
 ## v4.0.5  (2026-6-12)
 
 - release v4.0.5

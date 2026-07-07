@@ -107,7 +107,7 @@ __all__ = [
     "UltraArmP1",
 ]
 
-__version__ = "4.0.5"
+__version__ = "4.0.6"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
