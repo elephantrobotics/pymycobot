@@ -671,6 +671,21 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                             r = self._parse_colon_values(lower, "queue_size", int, single=True)
                             if r is not None:
                                 return r
+                        elif flag == "get_limit_switch_state":
+                            r = self._parse_colon_values(lower, "sig", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == "i2c_data":
+                            if "ok" in lower:
+                                return "ok"
+                            if "error:" in lower:
+                                r = self._parse_colon_values(lower, "error", int, single=True)
+                                if r is not None:
+                                    return r
+                            data_idx = lower.find("data:")
+                            if data_idx != -1:
+                                data = line_data[data_idx + len("data:"):].strip()
+                                return data.split() if data else []
                         elif flag == 'get_sn_code':
                             r = self._parse_colon_values(lower, "sn", int, single=True)
                             if r is not None:
@@ -1310,27 +1325,67 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
-    def set_i2c_data(self, data_state, data_addr, data_len, data_value):
+    def set_i2c_data(self, session_id, package_id, data_state, data_addr,
+                     register_addr, data_len, data_value):
         """Set i2c data.
 
         Args:
+            session_id (int): session id, 0 ~ 255.
+            package_id (int): package id, 0 ~ 255.
             data_state (int) : 0 ~ 1
                 0 - read
                 1 - write
             data_addr (int) : 0 ~ 255
-            data_len (int) : 0 ~ 64
-            data_value (int) : 0 ~ 255
+            register_addr (int | str): register address, 0 ~ 65535. 0xFFFF means no register.
+            data_len (int) : 0 ~ 255
+            data_value (int | list[int] | bytes | str | None): write data, max 32 bytes
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, data_state=data_state,
-                                    data_addr=data_addr, data_len=data_len, data_value=data_value)
+        if data_value is None:
+            data_items = []
+        elif isinstance(data_value, int):
+            data_items = [data_value]
+        elif isinstance(data_value, (bytes, bytearray)):
+            data_items = list(data_value)
+        elif isinstance(data_value, str):
+            data_items = data_value.split()
+        else:
+            data_items = list(data_value)
+
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,
+            session_id=session_id,
+            package_id=package_id,
+            data_state=data_state,
+            data_addr=data_addr,
+            register_addr=register_addr,
+            data_len=data_len,
+            i2c_data=data_items)
+
+        formatted_data = []
+        for item in data_items:
+            if isinstance(item, int):
+                formatted_data.append(f"{item:02X}")
+            else:
+                formatted_data.append(str(item))
+
+        if isinstance(register_addr, int) and register_addr == 0xFFFF:
+            register_addr = "FFFF"
+
         with self.lock:
             command = ProtocolCode.SET_I2C_P1
+            command += " I" + str(session_id)
+            command += " U" + str(package_id)
             command += " S" + str(data_state)
             command += " L" + str(data_addr)
+            command += " H" + str(register_addr)
             command += " N" + str(data_len)
-            command += " M" + str(data_value)
+            command += " K"
+            if formatted_data:
+                command += formatted_data[0]
+                if len(formatted_data) > 1:
+                    command += " " + " ".join(formatted_data[1:])
             self._send_command(command)
-            return self._response(_async=True, is_set=True)
+            return self._request("i2c_data")
 
     def get_system_screen_version(self):
         """Read system screen version.
@@ -1756,3 +1811,22 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         with self.lock:
             command = ProtocolCode.GET_PWM_STATUS_P1
             return self._request_with_retry(command, 'get_pwm_status')
+
+    def get_limit_switch_state(self):
+        """Get limit switch state."""
+        with self.lock:
+            command = ProtocolCode.GET_LIMIT_SWITCH_STATE_P1
+            return self._request_with_retry(command, 'get_limit_switch_state')
+
+    def laser_engraving_pause_time(self, pause_time):
+        """Laser engraving pause time.
+
+        Args:
+            pause_time (int): Laser engraving pause time, range is 1 ~ 1000 ms
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pause_time=pause_time)
+        with self.lock:
+            command = ProtocolCode.LASER_ENGRAVING_PAUSE_TIME
+            command += f" Q{str(pause_time)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)

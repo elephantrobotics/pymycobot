@@ -568,25 +568,37 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **Return value：** ok
 
-### 34 `set_i2c_data(data_state, data_addr, data_len, data_value)`
+### 34 `set_i2c_data(session_id, package_id, data_state, data_addr, register_addr, data_len, data_value)`
 
-- **Function:** Sets I2C data
+- **Function:** Communicates with sensors through the I2C protocol.
 
 - **Parameter description:**
 
-  - `data_state`: `int` 0 ~ 1
+  - `session_id`: `int` 0 ~ 255, session ID, protocol parameter `I`
+  - `package_id`: `int` 0 ~ 255, package ID, protocol parameter `U`
+  - `data_state`: `int` 0 ~ 1, protocol parameter `S`
+    - `0`: Read
+    - `1`: Write
+  - `data_addr`: `int` 0 ~ 125, slave address, protocol parameter `L`
+  - `register_addr`: `int | str` 0 ~ 65535, register address, protocol parameter `H`; `0xFFFF` or `"FFFF"` means no register parameter
+  - `data_len`: `int` 0 ~ 255, data length, protocol parameter `N`
+  - `data_value`: `int | list[int] | bytes | str | None`, write data, protocol parameter `K`, maximum 32 bytes per command; use `None` or `[]` when reading with no write data
 
-  - `0`: Read
+- **Return value:**
 
-  - `1`: Write
+  - Returns `ok` when write succeeds
+  - Returns `list[str]` when read succeeds, for example `['8f', '15']`
+  - Returns an error code on failure, for example `1 ~ 7`
 
-  - `data_addr`: `int` 0 ~ 255
+- **Example:**
 
-  - `data_len`: `int`: 0 ~ 64
+```python
+# Write data, sends: M300 I1 U1 S1 L13 H45 N2 K8F 1E
+ua.set_i2c_data(1, 1, 1, 13, 45, 2, [0x8f, 0x1e])
 
-  - `data_value`: `int` 0 ~ 255
-
-- **Return value：** ok
+# Read 2 bytes, no register, no write data, sends: M300 I1 U1 S0 L23 HFFFF N2 K
+ua.set_i2c_data(1, 1, 0, 23, "FFFF", 2, None)
+```
 
 ### 35 `play_gcode_file(filename)`
 
@@ -936,7 +948,27 @@ ua.set_angles([0, 0, 90, 0],50)
 
   - [3]: PWM value for custom mode, range 0 ~ 255
 
-### 74 `set_conveyor_stop()`
+### 74 `get_limit_switch_state()`
+
+- **Function:** Gets the limit switch state.
+
+- **Return value:** `int`
+
+  - `0`: Not triggered
+
+  - `1`: Triggered
+
+### 75 `laser_engraving_pause_time(pause_time)`
+
+- **Function:** Sets the laser engraving pause time.
+
+- **Parameter description:**
+
+  - `pause_time`: `int`, pause time, range 1 ~ 1000 ms
+
+- **Return value:** `ok`
+
+### 76 `set_conveyor_stop()`
 
 - **Function:** Sets the conveyor belt to stop moving.
 

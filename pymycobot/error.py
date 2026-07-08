@@ -2427,6 +2427,59 @@ def calibration_parameters(**kwargs):
                 if not (0 <= value <= 255):
                     raise ultraArmP1DataException(
                         f"The parameter {parameter} only supports 0 ~ 255, but received {value}")
+            elif parameter in ["session_id", "package_id"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 255):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 255, but received {value}")
+            elif parameter == "pause_time":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 1000):
+                    raise ultraArmP1DataException(
+                        f"The parameter pause_time only supports 1 ~ 1000, but received {value}")
+            elif parameter == "data_state":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [0, 1]:
+                    raise ultraArmP1DataException(
+                        f"The parameter data_state only supports 0 or 1, but received {value}")
+            elif parameter == "data_addr":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 125):
+                    raise ultraArmP1DataException(
+                        f"The parameter data_addr only supports 0 ~ 125, but received {value}")
+            elif parameter == "register_addr":
+                if not isinstance(value, (int, str)):
+                    raise ultraArmP1DataException(
+                        f"The parameter register_addr must be an integer or hex string, but received {type(value)}")
+                try:
+                    register_value = int(value, 16) if isinstance(value, str) else value
+                except ValueError:
+                    raise ultraArmP1DataException(
+                        f"The parameter register_addr must be an integer or hex string, but received {value}")
+                if not (0 <= register_value <= 65535):
+                    raise ultraArmP1DataException(
+                        f"The parameter register_addr only supports 0 ~ 65535, but received {value}")
+            elif parameter == "data_len":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 255):
+                    raise ultraArmP1DataException(
+                        f"The parameter data_len only supports 0 ~ 255, but received {value}")
+            elif parameter == "i2c_data":
+                if len(value) > 32:
+                    raise ultraArmP1DataException(
+                        f"The parameter i2c_data length only supports 0 ~ 32 bytes, but received {len(value)}")
+                for item in value:
+                    if not isinstance(item, (int, str)):
+                        raise ultraArmP1DataException(
+                            f"The parameter i2c_data item must be an integer or hex string, but received {type(item)}")
+                    try:
+                        item_value = int(item, 16) if isinstance(item, str) else item
+                    except ValueError:
+                        raise ultraArmP1DataException(
+                            f"The parameter i2c_data item must be an integer or hex string, but received {item}")
+                    if not (0 <= item_value <= 255):
+                        raise ultraArmP1DataException(
+                            f"The parameter i2c_data item only supports 0 ~ 255, but received {item}")
             elif parameter in ["baud_rate"]:
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if value not in [115200, 1000000]:

@@ -442,22 +442,37 @@ ua.set_angles([0, 0, 90, 0],50)
 
 - **返回值：** ok
 
-### 34 `set_i2c_data(data_state, data_addr, data_len, data_value)`
+### 34 `set_i2c_data(session_id, package_id, data_state, data_addr, register_addr, data_len, data_value)`
 
-- **功能：** 设置i2c数据
+- **功能：** 主控通过I2C协议与传感器通信。
 
 - **参数说明：**
 
-  - `data_state`: `int` 0 ~ 1
+  - `session_id`: `int` 0 ~ 255，会话号，对应参数 `I`
+  - `package_id`: `int` 0 ~ 255，包号，对应参数 `U`
+  - `data_state`: `int` 0 ~ 1，读写状态，对应参数 `S`
     - `0`: 读
     - `1`: 写
+  - `data_addr`: `int` 0 ~ 125，从机地址，对应参数 `L`
+  - `register_addr`: `int | str` 0 ~ 65535，寄存器地址，对应参数 `H`，`0xFFFF` 或 `"FFFF"` 表示无寄存器参数
+  - `data_len`: `int` 0 ~ 255，数据长度，对应参数 `N`
+  - `data_value`: `int | list[int] | bytes | str | None`，写入数据，对应参数 `K`，单次最大32字节；读数据时可传入 `None` 或 `[]`
 
-  - `data_addr`: `int` 0 ~ 255
+- **返回值：**
 
-  - `data_len`: `int`: 0 ~ 64
-  - `data_value`: `int` 0 ~ 255
+  - 写数据成功返回 `ok`
+  - 读数据成功返回 `list[str]`，例如 `['8f', '15']`
+  - 通信异常时返回错误码 `1 ~ 7`
 
-- **返回值：** ok
+- **示例：**
+
+```python
+# 写2字节数据: M300 I1 U1 S1 L13 H45 N2 K8F 1E
+ua.set_i2c_data(1, 1, 1, 13, 45, 2, [0x8f, 0x1e])
+
+# 读2字节数据，无寄存器参数: M300 I1 U1 S0 L23 HFFFF N2 K
+ua.set_i2c_data(1, 1, 0, 23, "FFFF", 2, None)
+```
 
 ### 35 `play_gcode_file(filename)`
 
@@ -752,7 +767,25 @@ ua.set_angles([0, 0, 90, 0],50)
   - [2]: 自定义模式状态，0 - 关闭, 1 - 打开
   - [3]: 自定义模式的PWM值，范围 0 ~ 255
 
-### 74 `set_conveyor_stop()`
+### 74 `get_limit_switch_state()`
+
+- **功能：** 获取限位开关状态。
+
+- **返回值：** `int`
+  - `0`: 未触发
+  - `1`: 已触发
+
+### 75 `laser_engraving_pause_time(pause_time)`
+
+- **功能：** 设置激光雕刻暂停时间。
+
+- **参数说明：**
+
+  - `pause_time`: `int`，暂停时间，范围 1 ~ 1000 ms
+
+- **返回值：** `ok`
+
+### 76 `set_conveyor_stop()`
 
 - **功能：** 设置传送带停止运动。
 
