@@ -183,6 +183,7 @@ class UltraArmP1RobotInfo(object):
         20: {"zh_CN": "J5驱动板过温", "en_US": "J5 driver over temperature"},
         21: {"zh_CN": "J2、J3耦合", "en_US": "J2-J3 coupling error"},
         22: {"zh_CN": "坐标无解", "en_US": "No inverse kinematics solution"},
+        23: {"zh_CN": "坐标运动受限", "en_US": "Coordinate motion restricted"},
     }
     ERROR_MOTION_MAP = {
         1: {"zh_CN": "J1关节超限", "en_US": "J1 joint limit exceeded"},
@@ -190,6 +191,7 @@ class UltraArmP1RobotInfo(object):
         4: {"zh_CN": "J3关节超限", "en_US": "J3 joint limit exceeded"},
         8: {"zh_CN": "J4关节超限", "en_US": "J4 joint limit exceeded"},
         16: {"zh_CN": "J2、J3 关节耦合", "en_US": "J2-J3 joint coupling error"},
+        40: {"zh_CN": "坐标运动受限", "en_US": "Coordinate motion restricted"},
     }
     ERROR_COLLISION_MAP = {
         1: {"zh_CN": "J1关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J1 collision detected,please use the collision_unlock() interface to unlock."},
