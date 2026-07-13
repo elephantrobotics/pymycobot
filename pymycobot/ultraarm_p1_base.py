@@ -12,7 +12,7 @@ import threading
 import time
 
 from pymycobot.common import ProtocolCode
-from pymycobot.error import calibration_parameters
+from pymycobot.error import calibration_parameters, ultraArmP1DataException
 from pymycobot.log import setup_logging
 from pymycobot.robot_info import UltraArmP1RobotInfo
 from pymycobot.ultraarm_p1_internal import UltraArmP1InternalMixin
@@ -1337,9 +1337,16 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                 1 - write
             data_addr (int) : 0 ~ 255
             register_addr (int | str): register address, 0 ~ 65535. 0xFFFF means no register.
-            data_len (int) : 0 ~ 255
-            data_value (int | list[int] | bytes | str | None): write data, max 32 bytes
+                Pass a hex string such as "14" to preserve hex text in the command.
+            data_len (int | str) : 0 ~ 255
+                Pass a hex string such as "0C" to preserve hex text in the command.
+            data_value (int | list[int] | bytes | str | None): write data, max 32 bytes.
+                Pass a contiguous hex string such as "000C" to preserve raw K payload text.
         """
+        def _normalize_hex_token(value):
+            return str(value).strip().upper().removeprefix("0X")
+
+        raw_payload = None
         if data_value is None:
             data_items = []
         elif isinstance(data_value, int):
@@ -1347,7 +1354,18 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         elif isinstance(data_value, (bytes, bytearray)):
             data_items = list(data_value)
         elif isinstance(data_value, str):
-            data_items = data_value.split()
+            normalized_value = _normalize_hex_token(data_value)
+            if " " in normalized_value:
+                data_items = normalized_value.split()
+            else:
+                if len(normalized_value) % 2 != 0:
+                    raise ultraArmP1DataException(
+                        "The parameter data_value hex string must contain an even number of characters.")
+                data_items = [
+                    normalized_value[index:index + 2]
+                    for index in range(0, len(normalized_value), 2)
+                ]
+                raw_payload = normalized_value
         else:
             data_items = list(data_value)
 
@@ -1366,10 +1384,20 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             if isinstance(item, int):
                 formatted_data.append(f"{item:02X}")
             else:
-                formatted_data.append(str(item))
+                formatted_data.append(_normalize_hex_token(item))
+
+        if raw_payload is None and len(formatted_data) > 1:
+            raw_payload = " ".join(formatted_data)
+        elif raw_payload is None and len(formatted_data) == 1:
+            raw_payload = formatted_data[0]
 
         if isinstance(register_addr, int) and register_addr == 0xFFFF:
             register_addr = "FFFF"
+        elif isinstance(register_addr, str):
+            register_addr = _normalize_hex_token(register_addr)
+
+        if isinstance(data_len, str):
+            data_len = _normalize_hex_token(data_len)
 
         with self.lock:
             command = ProtocolCode.SET_I2C_P1
@@ -1380,10 +1408,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             command += " H" + str(register_addr)
             command += " N" + str(data_len)
             command += " K"
-            if formatted_data:
-                command += formatted_data[0]
-                if len(formatted_data) > 1:
-                    command += " " + " ".join(formatted_data[1:])
+            if raw_payload:
+                command += raw_payload
             self._send_command(command)
             return self._request("i2c_data")
 

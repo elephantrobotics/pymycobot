@@ -2460,8 +2460,15 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP1DataException(
                         f"The parameter register_addr only supports 0 ~ 65535, but received {value}")
             elif parameter == "data_len":
-                check_value_type(parameter, value_type, ultraArmP1DataException, int)
-                if not (0 <= value <= 255):
+                if not isinstance(value, (int, str)):
+                    raise ultraArmP1DataException(
+                        f"The parameter data_len must be an integer or hex string, but received {type(value)}")
+                try:
+                    data_len_value = int(value, 16) if isinstance(value, str) else value
+                except ValueError:
+                    raise ultraArmP1DataException(
+                        f"The parameter data_len must be an integer or hex string, but received {value}")
+                if not (0 <= data_len_value <= 255):
                     raise ultraArmP1DataException(
                         f"The parameter data_len only supports 0 ~ 255, but received {value}")
             elif parameter == "i2c_data":

@@ -580,9 +580,9 @@ ua.set_angles([0, 0, 90, 0],50)
     - `0`: Read
     - `1`: Write
   - `data_addr`: `int` 0 ~ 125, slave address, protocol parameter `L`
-  - `register_addr`: `int | str` 0 ~ 65535, register address, protocol parameter `H`; `0xFFFF` or `"FFFF"` means no register parameter
-  - `data_len`: `int` 0 ~ 255, data length, protocol parameter `N`
-  - `data_value`: `int | list[int] | bytes | str | None`, write data, protocol parameter `K`, maximum 32 bytes per command; use `None` or `[]` when reading with no write data
+  - `register_addr`: `int | str` 0 ~ 65535, register address, protocol parameter `H`; `0xFFFF` or `"FFFF"` means no register parameter; pass a hex string such as `"14"` to preserve `H14`
+  - `data_len`: `int | str` 0 ~ 255, data length, protocol parameter `N`; pass a hex string such as `"0C"` to preserve `N0C`
+  - `data_value`: `int | list[int] | bytes | str | None`, write data, protocol parameter `K`, maximum 32 bytes per command; use `None` or `[]` when reading with no write data; pass a contiguous hex string such as `"000C"` to preserve `K000C`
 
 - **Return value:**
 
@@ -598,6 +598,9 @@ ua.set_i2c_data(1, 1, 1, 13, 45, 2, [0x8f, 0x1e])
 
 # Read 2 bytes, no register, no write data, sends: M300 I1 U1 S0 L23 HFFFF N2 K
 ua.set_i2c_data(1, 1, 0, 23, "FFFF", 2, None)
+
+# Send raw hex text, sends: M300 I1 U12 S1 L29 H14 N0C K000C
+ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 ```
 
 ### 35 `play_gcode_file(filename)`

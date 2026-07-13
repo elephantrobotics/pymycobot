@@ -454,9 +454,9 @@ ua.set_angles([0, 0, 90, 0],50)
     - `0`: 读
     - `1`: 写
   - `data_addr`: `int` 0 ~ 125，从机地址，对应参数 `L`
-  - `register_addr`: `int | str` 0 ~ 65535，寄存器地址，对应参数 `H`，`0xFFFF` 或 `"FFFF"` 表示无寄存器参数
-  - `data_len`: `int` 0 ~ 255，数据长度，对应参数 `N`
-  - `data_value`: `int | list[int] | bytes | str | None`，写入数据，对应参数 `K`，单次最大32字节；读数据时可传入 `None` 或 `[]`
+  - `register_addr`: `int | str` 0 ~ 65535，寄存器地址，对应参数 `H`，`0xFFFF` 或 `"FFFF"` 表示无寄存器参数；传入 `"14"` 这类十六进制字符串时会按原样生成 `H14`
+  - `data_len`: `int | str` 0 ~ 255，数据长度，对应参数 `N`；传入 `"0C"` 这类十六进制字符串时会按原样生成 `N0C`
+  - `data_value`: `int | list[int] | bytes | str | None`，写入数据，对应参数 `K`，单次最大32字节；读数据时可传入 `None` 或 `[]`；传入 `"000C"` 这类连续十六进制字符串时会按原样生成 `K000C`
 
 - **返回值：**
 
@@ -472,6 +472,9 @@ ua.set_i2c_data(1, 1, 1, 13, 45, 2, [0x8f, 0x1e])
 
 # 读2字节数据，无寄存器参数: M300 I1 U1 S0 L23 HFFFF N2 K
 ua.set_i2c_data(1, 1, 0, 23, "FFFF", 2, None)
+
+# 按十六进制文本发送: M300 I1 U12 S1 L29 H14 N0C K000C
+ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 ```
 
 ### 35 `play_gcode_file(filename)`
