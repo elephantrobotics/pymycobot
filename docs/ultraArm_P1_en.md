@@ -605,7 +605,7 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 
 ### 35 `play_gcode_file(filename)`
 
-- **Function:** Plays the imported track file.
+- **Function:** Plays the imported track file.For laser engraving, please use the `play_gcode_file_laser(filename)` interface.
 
 - **Parameter Description:**
 

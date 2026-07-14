@@ -285,10 +285,52 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
 
                 # During waiting we do not send new motion commands, so a large
                 # upward jump is abnormal; fast downward consumption is normal.
-                if last_queue_size is not None and queue_size - last_queue_size >= 15:
+                if last_queue_size is not None and queue_size - last_queue_size >= 20:
                     # print("current & last too large", queue_size, last_queue_size)
                     retry += 1
                     time.sleep(0.005)
+                    continue
+
+                # Truly effective data
+                valid_queue_size = queue_size
+                break
+
+            # Continuous anomalies
+            if valid_queue_size is None:
+                self.log.error("queue size abnormal, exit play")
+                return False
+
+            last_queue_size = valid_queue_size
+            queue_size = valid_queue_size
+
+            # Unblocked
+            if not self._queue_blocked:
+                if queue_size >= 80:
+                    self._queue_blocked = True
+                    continue
+                else:
+                    return True
+            # Blocked
+            else:
+                if queue_size <= 40:
+                    self._queue_blocked = False
+                    return True
+
+            time.sleep(0.01)
+
+    def _wait_queue_safe_laser(self):
+        last_queue_size = None
+        while True:
+            retry = 0
+            valid_queue_size = None
+
+            while retry < 3:
+                queue_size = self.get_queue_size()
+                # print("M600 Queue_size:", queue_size)
+                # Basic anomalies
+                if queue_size is None or queue_size < 0:
+                    retry += 1
+                    time.sleep(0.02)
                     continue
 
                 # Truly effective data
@@ -1076,6 +1118,48 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                     skip_queue_once = False
                 elif self._wait_queue_safe() != 1:
                     self.log.error("queue play error")
+                    break
+
+                self._send_raw_command(command)
+                self._debug_write(command)
+
+                if is_m80:
+                    skip_queue_once = True
+
+    def play_gcode_file_laser(self, filename):
+        """Play the imported track file laser
+
+        Args:
+            filename (str): Path to a G-code file (.gcode or .nc or .ngc)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, filename=filename)
+        try:
+            with open(filename) as f:
+                lines = f.readlines()
+        except Exception as e:
+            self.log.warning(f"There is no such file! {e}")
+            return
+
+        with self.lock:
+            skip_queue_once = False
+            for raw_line in lines:
+                line = self._normalize_gcode_line(raw_line)
+
+                if line is None:
+                    continue
+
+                is_m80 = line.split()[0].upper() == "M80"
+                if is_m80:
+                    if not self._wait_motion_stop():
+                        self.log.error("wait M80 motion stop error")
+                        break
+
+                command = line + ProtocolCode.END
+                # Queue Protection
+                if skip_queue_once:
+                    skip_queue_once = False
+                elif self._wait_queue_safe_laser() != 1:
+                    self.log.error("queue play laser error")
                     break
 
                 self._send_raw_command(command)

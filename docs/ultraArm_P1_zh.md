@@ -479,7 +479,7 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 
 ### 35 `play_gcode_file(filename)`
 
-- **功能：** 播放导入的轨迹文件。
+- **功能：** 播放导入的轨迹文件。激光雕刻请使用 `play_gcode_file_laser(filename)` 接口。
 - **参数说明：**
   - `filename` ：轨迹文件名称
 - **返回值：** 无
