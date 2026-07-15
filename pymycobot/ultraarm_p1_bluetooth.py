@@ -92,9 +92,10 @@ class UltraArmP1Bluetooth(UltraArmP1Base):
         with self.lock:
             self.recv_buffer.clear()
 
-    def _send_command(self, command: str):
+    def _send_command(self, command: str, clear_input=True):
         """Send commands to bluetooth server"""
-        self.recv_buffer.clear()
+        if clear_input:
+            self.recv_buffer.clear()
         command = self._append_checksum(command)
         command += ProtocolCode.END
         self._debug_write(command)

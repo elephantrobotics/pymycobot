@@ -30,6 +30,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
     MOTION_WAIT_TIMEOUT = 300
     STATUS_TIMEOUT = 3
     STATUS_QUERY_INTERVAL = 0.2
+    STATUS_QUERY_GRACE_PERIOD = 0.05
 
     END_COUNT = 2
 
@@ -48,7 +49,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self._queue_invalid = False
         self._internal_mode = _internal_mode
 
-    def _send_command(self, command):
+    def _send_command(self, command, clear_input=True):
         raise NotImplementedError
 
     def _read_available_bytes(self):
@@ -186,7 +187,6 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             return None
 
     def _query_error_information(self, timeout=0.3):
-        time.sleep(0.15)
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
 
         raw_data = ""
@@ -409,6 +409,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         received_data = b""
         # line buffer
         text_buffer = ""
+        end_count = 0
 
         if _gcode:
             keyword = b"start"
@@ -503,18 +504,12 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                         res = self._parse_colon_values(text_lower, "nosolution", int, single=True)
                         if res is not None:
                             return self._parse_mapped_error_code(res, UltraArmP1RobotInfo.ERROR_NO_SOLUTION_MAP, self.language)
-                    try:
-                        # Motion closed-loop feedback
-                        if text_lower.lower().count(keyword.decode()) >= 2:
+                    if text_lower == keyword.decode():
+                        end_count += 1
+                        if end_count >= self.END_COUNT:
                             return 'ok'
-                    except Exception:
-                        # fallback to raw bytes check
-                        if received_data.lower().count(keyword) >= 2:
-                            return 'ok'
-
                     if movement_status_wait:
                         # M200 returns mainmoving:0/1.  Treat 0 as the same
-                        # closed-loop completion signal as the firmware's end text.
                         run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
                         if run_status is not None:
                             last_status_time = time.time()
@@ -527,22 +522,23 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                                 return 'ok'
 
             if movement_status_wait:
-                time.sleep(0.1)
                 now = time.time()
                 if now - last_status_time >= status_timeout:
                     error_info = self._query_error_information()
                     if error_info and error_info != "ok":
                         return error_info
                     break
-                if now - last_status_query_time >= status_query_interval:
+                if (
+                    now - start_time >= self.STATUS_QUERY_GRACE_PERIOD
+                    and now - last_status_query_time >= status_query_interval
+                ):
                     # Query run status without calling get_run_status(), since
                     # callers already hold self.lock while waiting here.
-                    self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1)
+                    self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1, clear_input=False)
                     last_status_query_time = now
 
-                time.sleep(0.01)
             elif is_set and response_timeout != wait_time:
-                time.sleep(0.01)
+                time.sleep(0.001)
         # Timeout
         if self.debug:
             try:

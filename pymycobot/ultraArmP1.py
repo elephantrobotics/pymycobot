@@ -66,9 +66,10 @@ class UltraArmP1(UltraArmP1Base):
         except Exception:
             return b""
 
-    def _send_command(self, command: str):
+    def _send_command(self, command: str, clear_input=True):
         """Send commands to serial port"""
-        self._clear_serial_buffer()
+        if clear_input:
+            self._clear_serial_buffer()
         # append checksum
         command = self._append_checksum(command)
         command += ProtocolCode.END
