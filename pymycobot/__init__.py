@@ -2,7 +2,6 @@
 
 # ruff: noqa: F401
 import datetime
-import sys
 from pymycobot.mycobot280 import MyCobot280
 from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5, MyCobot280RDKX5Socket
 from pymycobot.mypalletizer260 import MyPalletizer260
@@ -31,6 +30,8 @@ from pymycobot.myagv import MyAgv
 from pymycobot.myagvpro import MyAGVPro
 from pymycobot.myagvpro_socket import MyAGVProSocket
 from pymycobot.myagvpro_bluetooth import MyAGVProBluetooth
+from pymycobot.myagvplus import MyAGVPlus
+from pymycobot.myagvplussocket import MyAGVPlusSocket
 from pymycobot.myarmsocket import MyArmSocket
 from pymycobot.mecharmsocket import MechArmSocket
 
@@ -79,6 +80,8 @@ __all__ = [
     "MyAGVPro",
     "MyAGVProSocket",
     "MyAGVProBluetooth",
+    "MyAGVPlus",
+    "MyAGVPlusSocket",
     "MechArmSocket",
     "MyArmSocket",
     "MercurySocket",
@@ -104,7 +107,7 @@ __all__ = [
     "UltraArmP1",
 ]
 
-__version__ = "4.0.4"
+__version__ = "4.0.6"
 __author__ = "Elephantrobotics"
 __email__ = "weiquan.xu@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"

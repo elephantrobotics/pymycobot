@@ -296,17 +296,24 @@ from pymycobot.ultraArmP340 import ultraArmP340
   - `state` (int)：输入0表示开启吸泵，输入1表示关闭吸泵。
 - **返回值：** 无
 
-**4.2** `set_gripper_zero()`
+**4.2** `set_gripper_zero(gripper_type=1)`
 
 - **功能：** 设置夹爪零位（设置当前位置为零位）。
+- **参数说明:**
+  - `gripper_type`: `int`, 1 ~ 2。 默认 1
+    - 1 - 非力控夹爪
+    - 2 - 力控夹爪
 - **返回值：** 无
 
-**4.3** `set_gripper_state(gripper_value, gripper_speed):`
+**4.3** `set_gripper_state(gripper_value, gripper_speed, gripper_type=1):`
 
 - **功能：** 设置夹爪张开位置
 - **参数说明:** 
   - `gripper_value`： `int`, 0 ~ 100。
-  - `gripper_speed:` 0 ~ 1500 RPM/s
+  - `gripper_speed:` 非力控：1 ~ 1500 RPM/s；力控：1 ~ 65。
+  - `gripper_type`: `int`, 1 ~ 2。 默认 1
+    - 1 - 非力控夹爪
+    - 2 - 力控夹爪
 - **返回值：** 无
 
 **4.4** `get_gripper_angle():`

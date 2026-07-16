@@ -89,6 +89,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["pyserial"],
+    install_requires=["pyserial", "numpy"],
     python_requires=">2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*",
 )

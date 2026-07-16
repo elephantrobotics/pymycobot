@@ -87,6 +87,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
                 ProtocolCode.JOG_BASE_INCREMENT_COORD,
                 ProtocolCode.WRITE_MOVE_C,
                 ProtocolCode.JOG_RPY,
+                ProtocolCode.JOG_BASE_RPY,
                 ProtocolCode.WRITE_MOVE_C_R,
                 ProtocolCode.MERCURY_DRAG_TECH_EXECUTE] and self.sync_mode:
             wait_time = 300
@@ -105,17 +106,15 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
         need_break = False
         data = None
+        timeout = 0.5
 
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
-        elif self.__class__.__name__ == "Pro450Client":
-            if genre == ProtocolCode.SET_FRESH_MODE:
-                timeout = 4
-            elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
-                timeout = 5
-                wait_time = 4
-            else:
-                timeout = 3
+        elif self.__class__.__name__ == "Mercury":
+            if genre == ProtocolCode.MERCURY_SET_TOQUE_GRIPPER:
+                if real_command[6] in [13, 36]:
+                    timeout = 3
+                    wait_time = 10
         elif self.__class__.__name__ == "MercuryArmsSocket":
             timeout = 1
         else:
@@ -196,24 +195,15 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             if is_in_position and time.time() - interval_time > check_is_moving_t and wait_time == 300:
                 interval_time = time.time()
                 moving = self.is_moving()
-                # if isinstance(moving, int) and moving == 0:
-                #     print("停止运动，退出")
-                #     is_moving += 1
-                #     # 由于is_moving接口比到位反馈更快，所以第一次收到停止运动后，将下一次的检测时间更改为0.25s，防止此处先退出，返回-2
-                #     check_is_moving_t = 0.25
-                #     if is_moving > 1:
-                #         # 累计两次才退出
-                #         with self.lock:
-                #             if genre in self.write_command:
-                #                 self.write_command.remove(genre)
-                #         return -2
                 if isinstance(moving, int) and moving == 0:
+                    # print("停止运动，退出")
                     is_moving += 1
                     if is_moving == 1:
                         # 第一次检测到停止，只是标记，不退出
-                        check_is_moving_t = 0.25
-                    elif is_moving > 1:
-                        # 第二次检测到停止才真正退出
+                        # 由于is_moving接口比到位反馈更快，所以第一次收到停止运动后，将下一次的检测时间更改为0.35s，防止此处先退出，返回-2
+                        check_is_moving_t = 0.35
+                    elif is_moving > 2:
+                        # 第三次检测到停止才真正退出
                         with self.lock:
                             if genre in self.write_command:
                                 self.write_command.remove(genre)
@@ -233,13 +223,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             data_len -= 1
             if self.__class__.__name__ == "Pro630Client":
                 data_len += 1
-            elif self.__class__.__name__ == "Pro450Client":
-                data_len += 1
-                data_pos -= 1
-        elif genre == ProtocolCode.GET_DIGITAL_INPUT:
-            if self.__class__.__name__ == "Pro450Client":
-                data_len = 1
-                data_pos = 4
         else:
             data_pos = 4
         if is_get_return:
@@ -465,6 +448,14 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         return self._mesg(ProtocolCode.GET_ATOM_VERSION)
 
+    def get_atom_modify_version(self):
+        """Get atom firmware modify version.
+
+        Returns:
+            float: version number.
+        """
+        return self._mesg(ProtocolCode.GET_ATOM_MODIFY_VERSION)
+
     def is_power_on(self):
         """Adjust robot arm status
 
@@ -634,6 +625,9 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
     def drag_teach_execute(self):
         """Start dragging the teaching point and only execute it once."""
+        if self.is_drag_fifo_empty() == 0:
+            return_value = 'There is currently no trajectory path. Please record first!'
+            return return_value
         return self._mesg(ProtocolCode.MERCURY_DRAG_TECH_EXECUTE, has_reply=True)
 
     def drag_teach_pause(self):
@@ -848,27 +842,31 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
         Args:
             joint_id: Joint id 1 - 7.
-            increment: 
+            increment: Angle increment value
             speed: int (1 - 100)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, joint_id=joint_id, speed=speed)
-
-        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [self._angle2int(increment)], speed, has_reply=True,
+            class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, speed=speed)
+        scaled_increment = self._angle2int(increment)
+        scaled_increment = max(min(scaled_increment, 32767), -32768)
+        return self._mesg(ProtocolCode.JOG_INCREMENT, joint_id, [scaled_increment], speed, has_reply=True,
                           _async=_async)
 
     def jog_increment_coord(self, coord_id, increment, speed, _async=False):
         """Single coordinate incremental motion control. This interface is based on a single arm 1-axis coordinate system. If you are using a dual arm robot, it is recommended to use the job_base_increment_coord interface
 
         Args:
-            joint_id: axis id 1 - 6.
-            increment: 
+            coord_id: axis id 1 - 6.
+            increment: Coord increment value
             speed: int (1 - 100)
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, speed=speed)
-        value = self._coord2int(
-            increment) if coord_id <= 3 else self._angle2int(increment)
+            class_name=self.__class__.__name__, coord_id=coord_id, increment_coord=increment, speed=speed, serial_port=self._serial_port.port)
+        if coord_id <= 3:
+            value = self._coord2int(increment)
+        else:
+            scaled_increment = self._angle2int(increment)
+            value = max(min(scaled_increment, 32767), -32768)
         return self._mesg(ProtocolCode.JOG_INCREMENT_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
 
     def get_quick_move_info(self):
@@ -944,6 +942,8 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_POS_OVER)
 
     def clear_encoders_error(self, joint_id):
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.CLEAR_ENCODERS_ERROR, joint_id)
 
     def get_down_encoders(self):
@@ -1042,6 +1042,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             joint_id (int): joint ID, 1 ~ 7.
             direction (int): 0 - forward, 1 - backward
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction)
         return self._mesg(ProtocolCode.SET_MODEL_DIRECTION, joint_id, direction)
 
     def get_filter_len(self, rank):
@@ -1133,7 +1134,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
 
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed)
+            class_name=self.__class__.__name__, coord_id=coord_id, coord=coord, speed=speed, serial_port=self._serial_port.port)
         value = self._coord2int(
             coord) if coord_id <= 3 else self._angle2int(coord)
         return self._mesg(ProtocolCode.SEND_COORD, coord_id, [value], speed, has_reply=True, _async=_async)
@@ -1152,7 +1153,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             speed : (int) 1 ~ 100
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords, speed=speed)
+            class_name=self.__class__.__name__, coords=coords, speed=speed, serial_port=self._serial_port.port)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -1160,9 +1161,19 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             coord_list.append(self._angle2int(angle))
         return self._mesg(ProtocolCode.SEND_COORDS, coord_list, speed, has_reply=True, _async=_async)
 
-    def resume(self):
-        """Recovery movement"""
-        return self._mesg(ProtocolCode.RESUME)
+    def resume(self, deceleration=0):
+        """Recovery movement
+
+        Args:
+            deceleration (bool, optional): Whether to slow up and resume. Defaults to False.
+
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, deceleration=deceleration)
+        if deceleration == 1:
+            return self._mesg(ProtocolCode.RESUME, 1)
+        else:
+            return self._mesg(ProtocolCode.RESUME)
 
     def set_servo_calibration(self, joint_id):
         """The current position of the calibration joint actuator is the angle zero point, 
@@ -1191,10 +1202,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             -1 - Error
         """
         self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
+        data_list = []
         if mode == 1:
             self.calibration_parameters(
                 class_name=self.__class__.__name__, coords=data)
-            data_list = []
             for idx in range(3):
                 data_list.append(self._coord2int(data[idx]))
             for idx in range(3, 6):
@@ -1341,7 +1352,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
+        res = self._mesg(ProtocolCode.SET_JOINT_MAX, joint_id, degree)
+        self.max_joint = 0
+        self.min_joint = 0
+        return res
 
     def set_joint_min_angle(self, joint_id, degree):
         """Set the minimum angle of the joint (must not be less than the minimum angle specified by the joint)
@@ -1355,7 +1369,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, degree=degree)
-        return self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
+        res = self._mesg(ProtocolCode.SET_JOINT_MIN, joint_id, degree)
+        self.max_joint = 0
+        self.min_joint = 0
+        return res
 
     def is_servo_enable(self, joint_id):
         """To detect the connection state of a single joint
@@ -1639,6 +1656,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_MONITOR_MODE)
 
     def set_monitor_mode(self, mode):
+        self.calibration_parameters(class_name=self.__class__.__name__, mode=mode)
         return self._mesg(ProtocolCode.SET_MONITOR_MODE, mode)
 
     def set_limit_switch(self, limit_mode, state):
@@ -1650,11 +1668,15 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         self.calibration_parameters(
             class_name=self.__class__.__name__, limit_mode=limit_mode, state=state)
-        if limit_mode == 2 and state == 0:
-            self.sync_mode = False
-        elif limit_mode == 2 and state == 1:
-            self.sync_mode = True
-        return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
+        if self.is_power_on() == 1:
+            if limit_mode == 2 and state == 0:
+                self.sync_mode = False
+            elif limit_mode == 2 and state == 1:
+                self.sync_mode = True
+            return self._mesg(ProtocolCode.SET_LIMIT_SWITCH, limit_mode, state)
+        else:
+            self.sync_mode = self.sync_mode
+            return -1
 
     def get_limit_switch(self):
         """Get the limit switches
@@ -1689,6 +1711,13 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
     def get_drag_fifo_len(self):
         return self._mesg(ProtocolCode.GET_DRAG_FIFO_LEN)
+
+    def is_drag_fifo_empty(self):
+        """Determine whether the drag-to-teach execution queue is empty.
+
+        Returns: 0 - empty, 1 - not empty.
+        """
+        return self._mesg(ProtocolCode.IS_DRAG_FIFO_EMPTY)
 
     def jog_rpy(self, axis, direction, speed, _async=True):
         """Rotate the end point around the fixed axis of the base coordinate system
@@ -1726,8 +1755,10 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         """
         return self._mesg(ProtocolCode.INIT_ELECTRIC_GRIPPER)
 
-    def get_servo_encoder(self, id):
-        return self._mesg(ProtocolCode.GET_ENCODER, id)
+    def get_servo_encoder(self, joint_id):
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id)
+        return self._mesg(ProtocolCode.GET_ENCODER, joint_id)
 
     def get_servo_encoders(self):
         return self._mesg(ProtocolCode.GET_ENCODERS)
@@ -1740,7 +1771,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             pin_signal: 0 - low. 1 - high.
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
+            class_name=self.__class__.__name__, pin_no_base=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_BASIC_OUTPUT, pin_no, pin_signal)
 
     def get_base_io_input(self, pin_no):
@@ -1750,24 +1781,8 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
             pin_no: (int) pin port number. range 1 ~ 6
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, pin_no=pin_no)
+            class_name=self.__class__.__name__, pin_no_base=pin_no)
         return self._mesg(ProtocolCode.GET_BASIC_INPUT, pin_no)
-
-    def set_world_reference(self, coords):
-        """Set the world coordinate system
-
-        Args:
-            coords: a list of coords value(List[float])
-                for mycobot / mecharm / myArm: [x(mm), y, z, rx(angle), ry, rz]\n
-        """
-        self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords)
-        coord_list = []
-        for idx in range(3):
-            coord_list.append(self._coord2int(coords[idx]))
-        for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
-        return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
 
     def set_identify_mode(self, mode):
         """Set the kinetic parameter identification mode
@@ -1783,16 +1798,18 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return self._mesg(ProtocolCode.GET_IDENTIFY_MODE)
 
     def write_move_c_r(self, coords, r, speed, rank=0):
-        """_summary_
+        """Circular Arc Motion (Specified Radius)
 
         Args:
-            coords (_type_): _description_
-            r (_type_): _description_
-            speed (_type_): _description_
-            rank (_type_): _description_
+            coords (list): coords value list
+            r (float): Radius range is 0 ~ 655.5
+            speed (int): 1 ~ 100
+            rank (int): 0 ~ 2, default 0
+                1 - Major Arc
+                2 - Minor arc
         """
         self.calibration_parameters(
-            class_name=self.__class__.__name__, coords=coords, r=r, speed=speed, rank=rank)
+            class_name=self.__class__.__name__, coords=coords, r=r, speed=speed, move_rank=rank)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -1838,6 +1855,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         return res
 
     def clear_encoder_error(self, joint_id):
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
         return self._mesg(ProtocolCode.CLEAR_ENCODER_ERROR, joint_id)
 
     def get_motors_run_err(self):
@@ -1865,6 +1883,7 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
         rank_mode: 1 ~ 4
         value: 0 ~ 10000
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, set_fusion_rank_mode=rank_mode, set_fusion_value=value)
         return self._mesg(ProtocolCode.SET_FUSION_PARAMETERS, rank_mode, [value])
 
     def get_system_version(self):

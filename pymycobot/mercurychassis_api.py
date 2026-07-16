@@ -17,10 +17,10 @@ class ProtocolCode(object):
 
 class ChassisControl:
 
-    def __init__(self, port, baudrate=115200, timeout=0.1, debug=False):
+    def __init__(self, port='/dev/wheeltec_controller', baudrate=115200, timeout=0.1, debug=False):
         """
         Args:
-            port     : port string
+            port     : port string, defaults to /dev/wheeltec_controller
             baudrate : baud rate string, default '115200'
             timeout  : default 0.1
             debug    : whether show debug info, default: False
@@ -38,17 +38,27 @@ class ChassisControl:
 
     def _read(self):
         data = b""
-        time.sleep(0.1)
         if self._serial_port.inWaiting() > 0:
+            time.sleep(0.02)
             data = self._serial_port.read(self._serial_port.inWaiting())
         return data
 
-    def _debug(self, data):
-        """whether show info."""
+    def _debug(self, data, direction="Read"):
+        """
+        Debug print for serial data
+        :param data: iterable of bytes
+        :param direction: 'Read' or 'Write'
+        """
+        if not self.debug:
+            return
         hex_data = " ".join(f"{value:02X}" for value in data)
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if self.debug:
-            print(f"\n***** Debug Info *****\n{current_time} send command: {hex_data}")
+        now = datetime.now()
+        timestamp = now.strftime("%Y-%m-%d %H:%M:%S.") + f"{now.microsecond // 1000:03d}"
+
+        print(
+            f"\n***** Debug Info *****\n"
+            f"{timestamp} [{direction}] {hex_data}"
+        )
 
     def close(self):
         self._serial_port.close()
@@ -84,12 +94,22 @@ class ChassisControl:
                     return return_data
 
             elif flag == "ultrasonic":
-                receive_data = self._extract_frame(receive_all_data, ProtocolCode.ultrasound_header, ProtocolCode.ultrasound_footer, expected_lengths)
+                # receive_data = self._extract_frame(receive_all_data, ProtocolCode.ultrasound_header, ProtocolCode.ultrasound_footer, expected_lengths)
                 # print(receive_data, len(receive_data))
-                if receive_data:
-                    self._debug(receive_data)
-                    return_data = [receive_data[1] * 256 + receive_data[2], receive_data[3] * 256 + receive_data[4], receive_data[5] * 256 + receive_data[6]]
-                    return return_data
+                # if receive_data:
+                #     self._debug(receive_data)
+                #     return_data = [receive_data[1] * 256 + receive_data[2], receive_data[3] * 256 + receive_data[4], receive_data[5] * 256 + receive_data[6]]
+                #     return return_data
+                frames = self._extract_ultrasonic_frame(receive_all_data)
+
+                if frames:
+                    frame = frames[-1]  # 取最新一帧
+                    self._debug(frame)
+                    return [
+                        frame[1] * 256 + frame[2],
+                        frame[3] * 256 + frame[4],
+                        frame[5] * 256 + frame[6],
+                    ]
 
             elif flag == "version":
                 receive_data = self._extract_frame(receive_all_data, ProtocolCode.header, ProtocolCode.footer, expected_lengths)
@@ -104,6 +124,24 @@ class ChassisControl:
                     return return_data
 
         return None
+
+    def _extract_ultrasonic_frame(self, data):
+        HEADER = ProtocolCode.ultrasound_header
+        FOOTER = ProtocolCode.ultrasound_footer
+        FRAME_LEN = 19
+
+        frames = []
+
+        i = 0
+        while i <= len(data) - FRAME_LEN:
+            if data[i] == HEADER and data[i + FRAME_LEN - 1] == FOOTER:
+                frame = data[i:i + FRAME_LEN]
+                frames.append(frame)
+                i += FRAME_LEN
+            else:
+                i += 1
+
+        return frames
 
     def _extract_frame(self, data, frame_header, frame_tail, expected_length=None):
         """
@@ -197,7 +235,7 @@ class ChassisControl:
         try:
             self._serial_port.write(bytes(self.Send_Data))
             self._serial_port.flush()
-            self._debug(self.Send_Data)
+            self._debug(self.Send_Data, 'Write')
         except serial.SerialException as e:
             e = traceback.format_exc()
             print('Unable to send data through serial port: {}'.format(e))
@@ -233,7 +271,7 @@ class ChassisControl:
         try:
             self._serial_port.write(bytes(self.Send_Data))
             self._serial_port.flush()
-            self._debug(self.Send_Data)
+            self._debug(self.Send_Data, 'Write')
         except serial.SerialException as e:
             e = traceback.format_exc()
             print('Unable to send data through serial port: {}'.format(e))
@@ -268,7 +306,7 @@ class ChassisControl:
         try:
             self._serial_port.write(bytes(self.Send_Data))
             self._serial_port.flush()
-            self._debug(self.Send_Data)
+            self._debug(self.Send_Data, 'Write')
         except serial.SerialException as e:
             e = traceback.format_exc()
             print('Unable to send data through serial port: {}'.format(e))
@@ -305,7 +343,7 @@ class ChassisControl:
         try:
             self._serial_port.write(bytes(self.Send_Data))
             self._serial_port.flush()
-            self._debug(self.Send_Data)
+            self._debug(self.Send_Data, 'Write')
         except serial.SerialException as e:
             e = traceback.format_exc()
             print('Unable to send data through serial port: {}'.format(e))
@@ -335,7 +373,7 @@ class ChassisControl:
         try:
             self._serial_port.write(bytes(self.Send_Data))
             self._serial_port.flush()
-            self._debug(self.Send_Data)
+            self._debug(self.Send_Data, 'Write')
         except serial.SerialException as e:
             e = traceback.format_exc()
             print('Unable to send data through serial port: {}'.format(e))
@@ -370,7 +408,7 @@ class ChassisControl:
         try:
             self._serial_port.write(bytes(self.Send_Data))
             self._serial_port.flush()
-            self._debug(self.Send_Data)
+            self._debug(self.Send_Data, 'Write')
         except serial.SerialException as e:
             e = traceback.format_exc()
             print('Unable to send data through serial port: {}'.format(e))

@@ -123,6 +123,7 @@ class FingerGripper(object):
     GET_HAND_ALL_ANGLES = 0x32
     SET_HAND_GRIPPER_PINCH_ACTION = 0x33
     SET_HAND_GRIPPER_PINCH_ACTION_SPEED_CONSORT = 0x34
+    GET_HAND_GRIPPER_MODEL = 0x35
 
 
 class ProtocolCode(object):
@@ -143,6 +144,7 @@ class ProtocolCode(object):
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
+    GET_ATOM_MODIFY_VERSION = 0x06
 
     CLEAR_ZERO_POS = 0x0A
     SET_MONITOR_STATE = 0x0A
@@ -237,6 +239,7 @@ class ProtocolCode(object):
     GET_DRAG_FIFO = 0x44
     SET_DRAG_FIFO = 0x45
     GET_DRAG_FIFO_LEN = 0x46
+    IS_DRAG_FIFO_EMPTY = 0x47
     GET_MAX_ACC = 0x42
     SET_MAX_ACC = 0x43
     GET_ACCELERATION = 0x44
@@ -404,12 +407,15 @@ class ProtocolCode(object):
     SET_ERROR_DETECT_MODE = 0xE8
     GET_ERROR_DETECT_MODE = 0xE9
     IS_MOTOR_PAUSE = 0xEC
+    BACKUP_SERVO_PARAMS = 0xEA
+    RESUME_SERVO_PARAMS = 0xEB
 
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
     JOG_RPY = 0xF5
+    JOG_BASE_RPY = 0xEB
 
     GET_MONITOR_MODE = 0xFB
     SET_MONITOR_MODE = 0xFC
@@ -529,6 +535,27 @@ class ProtocolCode(object):
 
     # MyArm M750
     IS_SD_INSERT = 0xC4
+
+
+class MyagvPlusCommand(object):
+    """MyAGV Plus ESP32 Serial Protocol Command Codes"""
+    GET_MODIFY_VERSION = 0x01
+    GET_SYSTEM_VERSION = 0x02
+    SET_DEBUG_STATE = 0x03
+    GET_DEBUG_STATE = 0x04
+    GET_ROBOT_STATUS = 0x05
+    POWER_CONTROL = 0x10
+    IS_POWER_ON = 0x12
+    GET_ALL_MSG = 0x14
+    SET_AUTO_REPORT_STATE = 0x23
+    GET_AUTO_REPORT_STATE = 0x24
+    SET_COMMUNICATION_STATE = 0x32
+    GET_COMMUNICATION_STATE = 0x33
+    SET_LED_COLOR = 0x34
+    SET_LED_MODE = 0x3A
+    SET_PIN_OUTPUT = 0x40
+    GET_PIN_INPUT = 0x41
+    SET_FAN_STATE = 0x42
 
 
 class DataProcessor(object):
