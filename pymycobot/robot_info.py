@@ -545,39 +545,39 @@ class RobotLimit:
             "coords_max": [366.55, 365.55, 130, 180]
         },
         "MyAGVPlus": {
-            "motor_id": [1, 2, 3, 4],
+            "motor_id": [1, 2, 3, 4,254],
             "single_motor_id": [1, 2, 3, 4],
             "state": [0, 1],
-            "mode": [0, 1, 2],
-            "pin": [1, 2, 3, 4, 5, 6],
+            "mode": [0, 1],
+            "pin": [0,1, 2, 3, 4, 5, 6],
             "communication_state": [0, 1],
-            "speed_min": -0.8,
-            "speed_max": 0.8,
-            "angular_speed_min": -1.8,
-            "angular_speed_max": 1.8
+            "speed_min": 0.01,
+            "speed_max": 1.6,
+            "angular_speed_min": 0.01,
+            "angular_speed_max": 7.27
         },
         "MyAGVPlusSocket": {
-            "motor_id": [1, 2, 3, 4],
+            "motor_id": [1, 2, 3, 4,254],
             "single_motor_id": [1, 2, 3, 4],
             "state": [0, 1],
-            "mode": [0, 1, 2],
-            "pin": [1, 2, 3, 4, 5, 6],
+            "mode": [0, 1],
+            "pin": [0,1, 2, 3, 4, 5, 6],
             "communication_state": [0, 1],
-            "speed_min": -0.8,
-            "speed_max": 0.8,
-            "angular_speed_min": -1.8,
-            "angular_speed_max": 1.8
+            "speed_min": 0.01,
+            "speed_max": 1.6,
+            "angular_speed_min": 0.01,
+            "angular_speed_max": 7.27
         },
         "MyAGVPlusApi": {
-            "motor_id": [1, 2, 3, 4],
+            "motor_id": [1, 2, 3, 4,254],
             "single_motor_id": [1, 2, 3, 4],
             "state": [0, 1],
-            "mode": [0, 1, 2],
-            "pin": [1, 2, 3, 4, 5, 6],
+            "mode": [0, 1],
+            "pin": [0,1, 2, 3, 4, 5, 6],
             "communication_state": [0, 1],
-            "speed_min": -0.8,
-            "speed_max": 0.8,
-            "angular_speed_min": -1.8,
-            "angular_speed_max": 1.8
+            "speed_min": 0.01,
+            "speed_max": 1.6,
+            "angular_speed_min": 0.01,
+            "angular_speed_max": 7.27
         }
     }
