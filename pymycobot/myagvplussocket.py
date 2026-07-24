@@ -774,8 +774,6 @@ class MyAGVPlusSocket(object):
         Returns:
             int: firmware response, or -1 if failed.
         """
-        if state not in (0, 1):
-            raise ValueError("Invalid state. Range must be 0 or 1")
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         return self._rpc_call("set_pump_state", state)
 
@@ -791,8 +789,6 @@ class MyAGVPlusSocket(object):
         """
         if pin not in (2, 5):
             raise ValueError("Invalid pin. Range must be 2 or 5")
-        if state not in (0, 1):
-            raise ValueError("Invalid state. Range must be 0 or 1")
         self.calibration_parameters(class_name=self.__class__.__name__, pin=pin, state=state)
         return self._rpc_call("set_pump_io", pin, state)
 
