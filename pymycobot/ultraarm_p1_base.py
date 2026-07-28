@@ -363,9 +363,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
     def _wait_motion_stop(self, interval=0.005, timeout=None):
         start_time = time.time()
         while True:
-            status = self._request_with_retry(
-                ProtocolCode.GET_RUNNING_STATUS_P1, "run_status"
-            )
+            status = self.get_run_status()
             if status == 0:
                 return True
 
@@ -1094,33 +1092,33 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             self.log.warning(f"There is no such file! {e}")
             return
 
-        with self.lock:
-            skip_queue_once = False
-            for raw_line in lines:
-                line = self._normalize_gcode_line(raw_line)
+        skip_queue_once = False
+        for raw_line in lines:
+            line = self._normalize_gcode_line(raw_line)
 
-                if line is None:
-                    continue
+            if line is None:
+                continue
 
-                is_m80 = line.split()[0].upper() == "M80"
-                if is_m80:
-                    if not self._wait_motion_stop():
-                        self.log.error("wait M80 motion stop error")
-                        break
-
-                command = line + ProtocolCode.END
-                # Queue Protection
-                if skip_queue_once:
-                    skip_queue_once = False
-                elif self._wait_queue_safe() != 1:
-                    self.log.error("queue play error")
+            is_m80 = line.split()[0].upper() == "M80"
+            if is_m80:
+                if not self._wait_motion_stop():
+                    self.log.error("wait M80 motion stop error")
                     break
 
+            command = line + ProtocolCode.END
+            # Queue Protection
+            if skip_queue_once:
+                skip_queue_once = False
+            elif self._wait_queue_safe() != 1:
+                self.log.error("queue play error")
+                break
+
+            with self.lock:
                 self._send_raw_command(command)
                 self._debug_write(command)
 
-                if is_m80:
-                    skip_queue_once = True
+            if is_m80:
+                skip_queue_once = True
 
     def play_gcode_file_laser(self, filename):
         """Play the imported track file laser
@@ -1136,33 +1134,33 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             self.log.warning(f"There is no such file! {e}")
             return
 
-        with self.lock:
-            skip_queue_once = False
-            for raw_line in lines:
-                line = self._normalize_gcode_line(raw_line)
+        skip_queue_once = False
+        for raw_line in lines:
+            line = self._normalize_gcode_line(raw_line)
 
-                if line is None:
-                    continue
+            if line is None:
+                continue
 
-                is_m80 = line.split()[0].upper() == "M80"
-                if is_m80:
-                    if not self._wait_motion_stop():
-                        self.log.error("wait M80 motion stop error")
-                        break
-
-                command = line + ProtocolCode.END
-                # Queue Protection
-                if skip_queue_once:
-                    skip_queue_once = False
-                elif self._wait_queue_safe_laser() != 1:
-                    self.log.error("queue play laser error")
+            is_m80 = line.split()[0].upper() == "M80"
+            if is_m80:
+                if not self._wait_motion_stop():
+                    self.log.error("wait M80 motion stop error")
                     break
 
+            command = line + ProtocolCode.END
+            # Queue Protection
+            if skip_queue_once:
+                skip_queue_once = False
+            elif self._wait_queue_safe_laser() != 1:
+                self.log.error("queue play laser error")
+                break
+
+            with self.lock:
                 self._send_raw_command(command)
                 self._debug_write(command)
 
-                if is_m80:
-                    skip_queue_once = True
+            if is_m80:
+                skip_queue_once = True
 
     def get_error_information(self):
         """Read error message"""
@@ -1760,8 +1758,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         Returns:
             `int` queue size
         """
-        return self._request_with_retry(
-            ProtocolCode.GET_QUEUE_SIZE_P1, 'get_queue_size')
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_QUEUE_SIZE_P1, 'get_queue_size')
 
     def set_robot_id(self, robot_id):
         """Set Robot ID.
