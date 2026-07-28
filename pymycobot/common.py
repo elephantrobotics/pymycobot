@@ -523,7 +523,6 @@ class ProtocolCode(object):
     GET_MODIFY_VERSION = "G7"
 
     # ultraArm P1
-    SET_COORDS_MAX_SPEED = 'G0'
     SET_COORDS = 'G1'
     COLLISION_UNLOCK = 'M5'
     SET_ANGLES_P1 = 'G1'

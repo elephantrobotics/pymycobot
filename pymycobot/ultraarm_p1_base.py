@@ -373,6 +373,10 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
 
             time.sleep(interval)
 
+    def _map_coord_speed(self, speed):
+        mapped = int(1 + (speed - 1) * 34 / 99 + 0.5)
+        return max(1, min(35, mapped))
+
     def _normalize_gcode_line(self, line):
         line = line.strip()
 
@@ -387,7 +391,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         return " ".join(tokens)
 
     # ---------------------- Response waiting & parsing ----------------------
-    def _response(self, _async=True, _gcode=False, is_set=False):
+    def _response(self, _async=True, _gcode=False, is_set=False, timeout=None):
         """Wait for device response from the serial buffer.
 
         Returns 'ok' when keyword is found, False on timeout.
@@ -420,6 +424,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         )
         if is_set:
             response_timeout = self.SET_RESPONSE_TIMEOUT
+        if timeout is not None:
+            response_timeout = timeout
 
         status_timeout = self.STATUS_TIMEOUT
         status_query_interval = self.STATUS_QUERY_INTERVAL
@@ -849,30 +855,6 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         with self.lock:
             return self._request_with_retry(ProtocolCode.GET_COORDS_P1, "coord")
 
-    def set_coords_max_speed(self, coords, _async=True, _gcode=False):
-        """The robot moves at its maximum speed using Cartesian coordinates.
-
-        Args:
-            coords (list[float]): Coordinates [X, Y, Z, RX].
-            _async: (bool): Closed-loop switch
-            _gcode: (bool): GCode switch
-        """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
-        with self.lock:
-            self._clear_serial_buffer()
-            command = ProtocolCode.SET_COORDS_MAX_SPEED
-            if len(coords) > 0 and coords[0] is not None:
-                command += f" X{coords[0]}"
-            if len(coords) > 1 and coords[1] is not None:
-                command += f" Y{coords[1]}"
-            if len(coords) > 2 and coords[2] is not None:
-                command += f" Z{coords[2]}"
-            if len(coords) > 3 and coords[3] is not None:
-                command += f" R{coords[3]}"
-
-            self._send_command(command)
-            return self._response(_async=_async, _gcode=_gcode)
-
     def set_coords(self, coords, speed, _async=True, _gcode=False):
         """Move the robot using Cartesian coordinate control.
 
@@ -896,7 +878,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             if len(coords) > 3 and coords[3] is not None:
                 command += f" R{coords[3]}"
             if speed is not None and 1 <= speed <= 100:
-                command += f" F{speed}"
+                command += f" F{self._map_coord_speed(speed)}"
 
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
@@ -914,7 +896,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS
             command += f" {coord_id}{coord}"
-            command += f" F{speed}"
+            command += f" F{self._map_coord_speed(speed)}"
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
@@ -1036,7 +1018,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             command = ProtocolCode.SET_JOG_COORD_P1
             command += " J" + str(axis_id)
             command += " D" + str(direction)
-            command += " F" + str(speed)
+            command += " F" + str(self._map_coord_speed(speed))
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 
@@ -1074,7 +1056,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             command = ProtocolCode.JOG_INCREMENT_COORD_P1
             command += " J" + str(coord_id)
             command += " T" + str(increment)
-            command += " F" + str(speed)
+            command += " F" + str(self._map_coord_speed(speed))
             self._send_command(command)
             return self._response(_async=_async, _gcode=_gcode)
 

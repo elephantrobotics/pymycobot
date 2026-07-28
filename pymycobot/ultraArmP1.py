@@ -281,4 +281,4 @@ class UltraArmP1(UltraArmP1Base):
         """Upgrade and restart"""
         with self.lock:
             self._send_command(ProtocolCode.UPGRADE_RESTART)
-            return self._response(_async=True, is_set=True)
+            return self._response(_async=True, is_set=True, timeout=15)
