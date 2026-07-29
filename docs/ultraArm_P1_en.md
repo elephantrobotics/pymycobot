@@ -970,7 +970,14 @@ ua.set_joint_acc(1, 100)
 
 - **Function:** Gets default sensor initialization parameters.
 - **Parameter description:**
-  - `sensor_type`: `int`, sensor type, range 1 ~ 7
+  - `sensor_type`: `int`, sensor type:
+    - `1`: Photosensitive sensor
+    - `2`: Ultrasonic ranging
+    - `3`: Infrared ranging
+    - `4`: Temperature and humidity sensor
+    - `5`: Temperature and air pressure sensor
+    - `6`: RFID card
+    - `7`: Remote sensing sensor
 - **Return value:** `int | list[int]`, sensor initialization parameters.
 
 ```python
