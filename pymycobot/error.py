@@ -2595,6 +2595,12 @@ def calibration_parameters(**kwargs):
                 if not (0.5 <= value <= 100):
                     raise ultraArmP1DataException(
                         f"threshold_value out of range, should be 0.5 ~ 100, but received {value}")
+            elif parameter == "sensor_type":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 7):
+                    raise ultraArmP1DataException(
+                        f"The sensor type not right, should be 1 ~ 7, but received {value}."
+                    )
 
 
 def restrict_serial_port(func):

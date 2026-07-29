@@ -837,7 +837,12 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                             r = self._parse_colon_values(lower, "730state", int, single=True)
                             if r is not None:
                                 return r
-
+                        elif flag == 'get_default_sensor_initialize':
+                            r = self._parse_colon_values(lower, "data", int, single=False)
+                            if r is not None and len(r) == 1:
+                                return r[0]
+                            if r is not None and len(r) == 2:
+                                return r
                         elif flag is None:
                             return -1
 
@@ -1953,3 +1958,15 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             command += f" Q{str(pause_time)}"
             self._send_command(command)
             return self._response(_async=True, is_set=True)
+
+    def get_default_sensor_initialize(self, sensor_type):
+        """GET default sensor initialize.
+        Args:
+            sensor_type (int): sensor type, range 1 ~ 7
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, sensor_type=sensor_type)
+        with self.lock:
+            command = ProtocolCode.GET_DEFAULT_SENSOR_INITIALIZE_P1
+            command += f" J{str(sensor_type)}"
+            return self._request_with_retry(command, 'get_default_sensor_initialize')
