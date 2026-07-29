@@ -135,15 +135,21 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             list | int | float | None
         Example:
             angles:0.00,0.00,89.90,0.20
+
+        Note:
+            Keyword must be a whole token before ':' (not a substring).
+            Otherwise ``error`` would match inside ``collisiondetectionerror``
+            / ``limiterror`` and mis-map collision/limit frames.
         """
-        idx = lower.find(keyword)
-        if idx == -1:
+        # Whole-token match: avoid find("error") hitting "...collisiondetectionerror:1"
+        match = re.search(
+            rf"(?:^|[^a-z0-9_]){re.escape(keyword)}\s*:",
+            lower,
+        )
+        if not match:
             return None
 
-        colon_idx = lower.find(":", idx)
-        if colon_idx == -1:
-            return None
-
+        colon_idx = match.end() - 1
         end_idx = lower.find("\n", colon_idx)
         if end_idx == -1:
             end_idx = len(lower)
@@ -164,6 +170,37 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             if self.debug:
                 self.log.error(f"serial read exception: {e}")
             return None
+
+    def _interpret_error_information_line(self, lower: str):
+        """Map one G8 / error-status reply line to human-readable text.
+
+        Handles dedicated frames first (collision / limit / no-solution), then
+        the bitmask ``error:N`` used by ``GET_ERROR_INFO_P1`` (G8).
+        """
+        if "collisiondetectionerror" in lower:
+            res = self._parse_colon_values(
+                lower, "collisiondetectionerror", int, single=True
+            )
+            if res is not None:
+                return self._parse_mapped_error_code(
+                    res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language
+                )
+        if "limiterror" in lower:
+            res = self._parse_colon_values(lower, "limiterror", int, single=True)
+            if res is not None:
+                return self._parse_mapped_error_code(
+                    res, UltraArmP1RobotInfo.ERROR_MOTION_MAP, self.language
+                )
+        if "nosolution" in lower:
+            res = self._parse_colon_values(lower, "nosolution", int, single=True)
+            if res is not None:
+                return self._parse_mapped_error_code(
+                    res, UltraArmP1RobotInfo.ERROR_NO_SOLUTION_MAP, self.language
+                )
+        r = self._parse_colon_values(lower, "error", int, single=True)
+        if r is not None:
+            return self._parse_error_code(r, self.language)
+        return None
 
     def _parse_solution_values(self, text, keys):
         """
@@ -225,10 +262,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                     if self.debug:
                         self._debug_read(origin_line)
 
-                    r = self._parse_colon_values(line_data.lower(),"error", int, single=True)
-
-                    if r is not None:
-                        return self._parse_error_code(r, self.language)
+                    mapped = self._interpret_error_information_line(line_data.lower())
+                    if mapped is not None:
+                        return mapped
             time.sleep(0.01)
         return None
 
@@ -625,9 +661,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                                 return r
 
                         elif flag == "error_information":
-                            r = self._parse_colon_values(lower, "error", int, single=True)
-                            if r is not None:
-                                return self._parse_error_code(r, self.language)
+                            mapped = self._interpret_error_information_line(lower)
+                            if mapped is not None:
+                                return mapped
 
                         elif flag == "get_gripper_angle":
                             r = self._parse_colon_values(lower, "gripperangle", int, single=True)
