@@ -602,6 +602,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             timeout = self.ANGLE_COORD_TIMEOUT
         elif flag in ["get_queue_size"]:
             timeout = self.QUEUE_TIMEOUT
+        elif flag == "get_default_sensor_initialize":
+            timeout = 0.5
 
         raw_data = ""
         start_time = time.time()
@@ -843,7 +845,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                             if r is not None:
                                 return r
                         elif flag == 'get_default_sensor_initialize':
-                            r = self._parse_colon_values(lower, "data", int, single=False)
+                            r = self._parse_colon_values(lower, "data", float, 2, single=False)
                             if r is not None and len(r) == 1:
                                 return r[0]
                             if r is not None and len(r) == 2:

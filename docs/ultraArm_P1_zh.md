@@ -814,7 +814,7 @@ ua.set_joint_acc(1, 100)
     - `5`: 温度、气压传感器
     - `6`: RFID卡
     - `7`: 遥感传感器
-- **返回值:** `int | list[int]`，返回传感器初始化参数。
+- **返回值:** `float | list[float]`，返回传感器初始化参数。
 
 ```python
 data = ua.get_default_sensor_initialize(1)

@@ -978,7 +978,7 @@ ua.set_joint_acc(1, 100)
     - `5`: Temperature and air pressure sensor
     - `6`: RFID card
     - `7`: Remote sensing sensor
-- **Return value:** `int | list[int]`, sensor initialization parameters.
+- **Return value:** `float | list[float]`, sensor initialization parameters.
 
 ```python
 data = ua.get_default_sensor_initialize(1)
