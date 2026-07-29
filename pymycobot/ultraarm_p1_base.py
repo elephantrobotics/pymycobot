@@ -660,6 +660,11 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                             if r is not None and len(r) ==4:
                                 return r
 
+                        elif flag == "get_joint_acc":
+                            r = self._parse_colon_values(lower, "acc", float, 3)
+                            if r is not None and len(r) == 4:
+                                return r
+
                         elif flag == "error_information":
                             mapped = self._interpret_error_information_line(lower)
                             if mapped is not None:
@@ -1017,6 +1022,49 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         """Stop movement"""
         with self.lock:
             self._send_command(ProtocolCode.SET_STOP_P1)
+            return self._response(_async=True, is_set=True)
+
+    def move_pause(self):
+        """Pause movement."""
+        with self.lock:
+            self._send_command(ProtocolCode.MOVE_PAUSE_P1)
+            return self._response(_async=True, is_set=True)
+
+    def move_resume(self):
+        """Resume movement."""
+        with self.lock:
+            self._send_command(ProtocolCode.MOVE_RESUME_P1)
+            return self._response(_async=True, is_set=True)
+
+    def get_joint_acc(self):
+        """Get all joint acceleration parameters.
+
+        Returns:
+            list[float] or int: Joint accelerations [J1, J2, J3, J4],
+                or -1 if failed.
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_JOINT_ACC_P1, "get_joint_acc"
+            )
+
+    def set_joint_acc(self, joint_id, acc):
+        """Set a single joint acceleration.
+
+        Args:
+            joint_id (int): Joint number, range is 1 ~ 4.
+            acc (int | float): Acceleration, range is 1 ~ 600.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,
+            joint_id=joint_id,
+            joint_acc=acc
+        )
+        with self.lock:
+            command = ProtocolCode.SET_JOINT_ACC_P1
+            command += f" J{joint_id}"
+            command += f" F{acc}"
+            self._send_command(command)
             return self._response(_async=True, is_set=True)
 
     def set_jog_angle(self, joint_id, direction, speed, _async=True, _gcode=False):

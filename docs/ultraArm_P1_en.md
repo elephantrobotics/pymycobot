@@ -926,6 +926,60 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 
 ---
 
+### 76 `move_pause()`
+
+- **Function:** Pauses the current movement.
+- **Return value:** `ok`
+
+```python
+ua.move_pause()
+```
+
+### 77 `move_resume()`
+
+- **Function:** Resumes movement from the paused position.
+- **Return value:** `ok`
+
+```python
+ua.move_resume()
+```
+
+### 78 `get_joint_acc()`
+
+- **Function:** Gets all joint acceleration parameters.
+- **Return value:** `list[float]`, for example `[2000.0, 400.0, 400.0, 400.0]`
+
+```python
+acc = ua.get_joint_acc()
+print(acc)
+```
+
+### 79 `set_joint_acc(joint_id, acc)`
+
+- **Function:** Sets a single joint acceleration.
+- **Parameter description:**
+  - `joint_id`: `int`, joint ID, range 1 ~ 4
+  - `acc`: `int | float`, acceleration, range 1 ~ 600
+- **Return value:** `ok`
+
+```python
+ua.set_joint_acc(1, 100)
+```
+
+### 80 `get_default_sensor_initialize(sensor_type)`
+
+- **Function:** Gets default sensor initialization parameters.
+- **Parameter description:**
+  - `sensor_type`: `int`, sensor type, range 1 ~ 7
+- **Return value:** `int | list[int]`, sensor initialization parameters.
+
+```python
+data = ua.get_default_sensor_initialize(1)
+print(data)
+```
+
+---
+
 ## TCP Socket Communication
 
 Uses TCP/IP to control the robotic arm.

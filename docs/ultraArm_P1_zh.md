@@ -762,6 +762,58 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 - **返回值：**
   - `ok`
 
+### 76 `move_pause()`
+
+- **功能:** 暂停当前运动。
+- **返回值:** `ok`
+
+```python
+ua.move_pause()
+```
+
+### 77 `move_resume()`
+
+- **功能:** 从暂停位置恢复当前运动。
+- **返回值:** `ok`
+
+```python
+ua.move_resume()
+```
+
+### 78 `get_joint_acc()`
+
+- **功能:** 获取所有关节加速度参数。
+- **返回值:** `list[float]`，例如 `[2000.0, 400.0, 400.0, 400.0]`
+
+```python
+acc = ua.get_joint_acc()
+print(acc)
+```
+
+### 79 `set_joint_acc(joint_id, acc)`
+
+- **功能:** 设置单个关节加速度。
+- **参数说明:**
+  - `joint_id`: `int`，关节 ID，范围 1 ~ 4
+  - `acc`: `int | float`，加速度，范围 1 ~ 600
+- **返回值:** `ok`
+
+```python
+ua.set_joint_acc(1, 100)
+```
+
+### 80 `get_default_sensor_initialize(sensor_type)`
+
+- **功能:** 获取默认传感器初始化参数。
+- **参数说明:**
+  - `sensor_type`: `int`，传感器类型，范围 1 ~ 7
+- **返回值:** `int | list[int]`，返回传感器初始化参数。
+
+```python
+data = ua.get_default_sensor_initialize(1)
+print(data)
+```
+
 ---
 
 ## TCP Socket 通信

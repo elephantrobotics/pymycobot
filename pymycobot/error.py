@@ -2295,6 +2295,15 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP1DataException(
                         f"Speed out of range, should be 1 ~ 100, but received {value}"
                     )
+            elif parameter == "joint_acc":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, (int, float)
+                )
+
+                if not (1 <= value <= 600):
+                    raise ultraArmP1DataException(
+                        f"joint_acc out of range, should be 1 ~ 600, but received {value}"
+                    )
             elif parameter == "wait_time":
                 check_value_type(
                     parameter, value_type, ultraArmP1DataException, int
