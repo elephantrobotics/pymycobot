@@ -32,6 +32,8 @@ class UltraArmP1(UltraArmP1Base):
             )
         elif command == "M110 J1":
             self.recv_buffer.extend(b"M110 J1 Data:0.00\n")
+        elif command == "M110 J4":
+            self.recv_buffer.extend(b"M110 Data:0.00,0.00\n")
         elif command.startswith("M9"):
             self.recv_buffer.extend(b"M9 OK\n")
 
@@ -83,6 +85,13 @@ def test_ultraarm_p1_get_default_sensor_initialize_parses_float_data():
 
     assert arm.get_default_sensor_initialize(1) == 0.0
     assert arm.sent_commands == ["M110 J1"]
+
+
+def test_ultraarm_p1_get_default_sensor_initialize_parses_float_list():
+    arm = UltraArmP1()
+
+    assert arm.get_default_sensor_initialize(4) == [0.0, 0.0]
+    assert arm.sent_commands == ["M110 J4"]
 
 
 @pytest.mark.parametrize("joint_id", [0, 5])

@@ -846,10 +846,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                                 return r
                         elif flag == 'get_default_sensor_initialize':
                             r = self._parse_colon_values(lower, "data", float, 2, single=False)
-                            if r is not None and len(r) == 1:
-                                return r[0]
-                            if r is not None and len(r) == 2:
-                                return r
+                            if r is not None:
+                                return r[0] if len(r) == 1 else r
                         elif flag is None:
                             return -1
 
