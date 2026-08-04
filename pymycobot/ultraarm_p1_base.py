@@ -223,6 +223,29 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                 self.log.error(f"serial read exception: {e}")
             return None
 
+    def _parse_default_sensor_initialize_data(self, line):
+        match = re.search(r"(?:^|[^a-z0-9_])data\s*:", line, re.IGNORECASE)
+        if not match:
+            return None
+
+        data = line[match.end():].strip()
+        if not data:
+            return []
+
+        hex_items = data.split()
+        if (
+            len(hex_items) > 1
+            and all(re.fullmatch(r"[0-9a-fA-F]{2}", item) for item in hex_items)
+        ):
+            return "".join(item.upper() for item in hex_items)
+
+        try:
+            items = [item.strip() for item in data.split(",") if item.strip()]
+            values = [round(float(item), 2) for item in items]
+            return values[0] if len(values) == 1 else values
+        except ValueError:
+            return data
+
     def _query_error_information(self, timeout=0.3):
         self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
 
@@ -845,9 +868,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                             if r is not None:
                                 return r
                         elif flag == 'get_default_sensor_initialize':
-                            r = self._parse_colon_values(lower, "data", float, 2, single=False)
+                            r = self._parse_default_sensor_initialize_data(line_data)
                             if r is not None:
-                                return r[0] if len(r) == 1 else r
+                                return r
                         elif flag is None:
                             return -1
 
