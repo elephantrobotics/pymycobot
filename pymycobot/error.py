@@ -2264,7 +2264,7 @@ def calibration_parameters(**kwargs):
     elif class_name in ["MyAGVPlus", "MyAGVPlusSocket", "MyAGVPlusApi"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
-            if parameter in ["motor_id", "single_motor_id", "state", "mode", "pin", "communication_state"]:
+            if parameter in ["motor_id", "single_motor_id", "state", "mode", "pin", "pump_pin", "communication_state"]:
                 if value not in robot_limit[class_name][parameter]:
                     raise MyAgvDataException(
                         f"The {parameter} must be in {robot_limit[class_name][parameter]}, but received {value}"

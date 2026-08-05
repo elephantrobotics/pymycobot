@@ -280,7 +280,8 @@ class MyAGVPlus(MyAGVPlusApi):
             self.stop()
             time.sleep(0.1)
 
-        self.motor_driver.set_motors_state(target_motors, state)
+        with self._dm_lock:
+            self.motor_driver.set_motors_state(target_motors, state)
         return 1
 
     @motor_api
@@ -290,9 +291,10 @@ class MyAGVPlus(MyAGVPlusApi):
         Returns:
             list[int]: [rl_wheel_joint, fl_wheel_joint, fr_wheel_joint, rr_wheel_joint] (1=enabled, 0=disabled), or -1 if not ready.
         """
-        for m in self.motors:
-            self.motor_driver.refresh_motor_status(m)
-        status = [1 if m.isEnable else 0 for m in self.motors]
+        with self._dm_lock:
+            for m in self.motors:
+                self.motor_driver.refresh_motor_status(m)
+            status = [1 if m.isEnable else 0 for m in self.motors]
         if 0 in status and 1 in status:
             self.stop()
         return status
@@ -305,10 +307,11 @@ class MyAGVPlus(MyAGVPlusApi):
             list[int]: [rl_wheel_joint, fl_wheel_joint, fr_wheel_joint, rr_wheel_joint] error codes (0=normal), or -1 if not ready.
         """
         stall, uv = getattr(self, '_stall_locked_motors', [False]*4), getattr(self, '_undervoltage_locked_motors', [False]*4)
-        for i, m in enumerate(self.motors):
-            if not uv[i] and not stall[i]: 
-                self.motor_driver.refresh_motor_status(m)
-        status = [9 if uv[i] else 10 if stall[i] else self.motors[i].getError() for i in range(4)]
+        with self._dm_lock:
+            for i, m in enumerate(self.motors):
+                if not uv[i] and not stall[i]: 
+                    self.motor_driver.refresh_motor_status(m)
+            status = [9 if uv[i] else 10 if stall[i] else self.motors[i].getError() for i in range(4)]
         if any(status): self.stop()
         return status
 
@@ -325,10 +328,11 @@ class MyAGVPlus(MyAGVPlusApi):
         self.calibration_parameters(class_name=self.__class__.__name__, motor_id=motor_id)
         target_motors = self.motors if motor_id == 254 else [self.motors[motor_id - 1]]
 
-        self.motor_driver.set_motors_state(target_motors, 0)
-        time.sleep(0.1)
-        self.motor_driver.set_motors_state(target_motors, 1)
-        for m in target_motors: self.motor_driver.refresh_motor_status(m)
+        with self._dm_lock:
+            self.motor_driver.set_motors_state(target_motors, 0)
+            time.sleep(0.1)
+            self.motor_driver.set_motors_state(target_motors, 1)
+            for m in target_motors: self.motor_driver.refresh_motor_status(m)
             
         global_uv = False
         try:
@@ -729,3 +733,30 @@ class MyAGVPlus(MyAGVPlusApi):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         return self._merge(MyagvPlusCommand.SET_FAN_STATE, state)
+
+    # ============== Pump Control ==============
+
+    def set_pump_state(self, state: int) -> int:
+        """Set suction pump state (Command 0x43).
+
+        Args:
+            state (int): 1 to open pump, 0 to close pump.
+
+        Returns:
+            int: firmware response, or -1 if failed.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        return self._merge(MyagvPlusCommand.SET_PUMP_STATE, state)
+
+    def set_pump_io(self, pin: int, state: int) -> int:
+        """Set suction pump control IO pin level (Command 0x44).
+
+        Args:
+            pin (int): Pin index (2 or 5).
+            state (int): 0 for Low (pump working), 1 for High (pump closed).
+
+        Returns:
+            int: firmware response, or -1 if failed.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pump_pin=pin, state=state)
+        return self._merge(MyagvPlusCommand.SET_PUMP_IO, pin, state)

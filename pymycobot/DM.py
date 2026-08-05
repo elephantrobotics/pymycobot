@@ -8,9 +8,10 @@ class Motor:
     def __init__(self, MotorType, SlaveID, MasterID):
         """
         define Motor object
-        :param MotorType: Motor type
-        :param SlaveID: CANID Motor ID
-        :param MasterID: MasterID Master ID (suggest not setting it to 0)
+        Args:
+            MotorType: Motor type
+            SlaveID: CANID Motor ID
+            MasterID: MasterID Master ID (suggest not setting it to 0)
         """
         self.Pd = float(0)
         self.Vd = float(0)
@@ -38,7 +39,8 @@ class Motor:
         is only refreshed after sending a control frame or calling
         `MotorControl.refresh_motor_status(motor)`.
         This function returns the cached value from the last refresh and does not actively poll the device.
-        :return: the position of the motor (cached)
+        Returns:
+            the position of the motor (cached)
         """
         return self.state_q
 
@@ -47,7 +49,8 @@ class Motor:
         get the velocity of the motor (cached value)
         Note: Only updated after sending a control frame or calling `refresh_motor_status`.
         This function returns the cached value and does not actively poll the device.
-        :return: the velocity of the motor (cached)
+        Returns:
+            the velocity of the motor (cached)
         """
         return self.state_dq
 
@@ -56,7 +59,8 @@ class Motor:
         get the torque of the motor (cached value)
         Note: Only updated after sending a control frame or calling `refresh_motor_status`.
         This function returns the cached value and does not actively poll the device.
-        :return: the torque of the motor (cached)
+        Returns:
+            the torque of the motor (cached)
         """
         return self.state_tau
 
@@ -65,15 +69,18 @@ class Motor:
         get the error of the motor (cached value)
         Note: Only updated after sending a control frame or calling `refresh_motor_status`.
         This function returns the cached value and does not actively poll the device.
-        :return: the error of the motor (cached)
+        Returns:
+            the error of the motor (cached)
         """
         return self.state_err
     
     def getParam(self, RID):
         """
         get the parameter of the motor, which needs to be read beforehand
-        :param RID: DM_variable Motor parameter
-        :return: the parameter of the motor
+        Args:
+            RID: DM_variable Motor parameter
+        Returns:
+            the parameter of the motor
         """
         if RID in self.temp_param_dict:
             return self.temp_param_dict[RID]
@@ -105,7 +112,8 @@ class MotorControl:
     def __init__(self, serial_device):
         """
         define MotorControl object
-        :param serial_device: serial object
+        Args:
+            serial_device: serial object
         """
         self.serial_ = serial_device
         self.motors_map = dict()
@@ -117,13 +125,13 @@ class MotorControl:
     def controlMIT(self, DM_Motor, kp: float, kd: float, q: float, dq: float, tau: float):
         """
         MIT Control Mode Function for DM motor
-        :param DM_Motor: Motor object
-        :param kp: kp
-        :param kd:  kd
-        :param q:  position  desired position
-        :param dq:  velocity  desired velocity
-        :param tau: torque  desired torque
-        :return: None
+        Args:
+            DM_Motor: Motor object
+            kp: kp
+            kd: kd
+            q: position  desired position
+            dq: velocity  desired velocity
+            tau: torque  desired torque
         """
         if DM_Motor.SlaveID not in self.motors_map:
             print("controlMIT ERROR : Motor ID not found")
@@ -152,13 +160,14 @@ class MotorControl:
     def control_delay(self, DM_Motor, kp: float, kd: float, q: float, dq: float, tau: float, delay: float):
         """
         MIT Control Mode Function with delay for DM motor
-        :param DM_Motor: Motor object
-        :param kp: kp
-        :param kd: kd
-        :param q:  position  desired position
-        :param dq:  velocity  desired velocity
-        :param tau: torque  desired torque
-        :param delay: delay time (seconds)
+        Args:
+            DM_Motor: Motor object
+            kp: kp
+            kd: kd
+            q: position  desired position
+            dq: velocity  desired velocity
+            tau: torque  desired torque
+            delay: delay time (seconds)
         """
         self.controlMIT(DM_Motor, kp, kd, q, dq, tau)
         sleep(delay)
@@ -166,10 +175,10 @@ class MotorControl:
     def control_Pos_Vel(self, Motor, P_desired: float, V_desired: float):
         """
         control the motor in position and velocity control mode
-        :param Motor: Motor object
-        :param P_desired: desired position
-        :param V_desired: desired velocity
-        :return: None
+        Args:
+            Motor: Motor object
+            P_desired: desired position
+            V_desired: desired velocity
         """
         if Motor.SlaveID not in self.motors_map:
             print("Control Pos_Vel Error : Motor ID not found")
@@ -187,8 +196,9 @@ class MotorControl:
     def control_Vel(self, Motor, Vel_desired):
         """
         control the motor in velocity control mode
-        :param Motor: Motor object
-        :param Vel_desired: desired velocity
+        Args:
+            Motor: Motor object
+            Vel_desired: desired velocity
         """
         if Motor.SlaveID not in self.motors_map:
             print("control_VEL ERROR : Motor ID not found")
@@ -203,9 +213,10 @@ class MotorControl:
     def control_pos_force(self, Motor, Pos_des: float, Vel_des, i_des):
         """
         control the motor in EMIT control mode
-        :param Pos_des: desired position in rad
-        :param Vel_des: desired velocity in rad/s, scaled up by 100 times
-        :param i_des: desired current range 0-10000 (per-unit current scaled up by 10000 times)
+        Args:
+            Pos_des: desired position in rad
+            Vel_des: desired velocity in rad/s, scaled up by 100 times
+            i_des: desired current range 0-10000 (per-unit current scaled up by 10000 times)
         Per-unit current: actual current divided by maximum current, see power-on printout for max current
         """
         if Motor.SlaveID not in self.motors_map:
@@ -227,10 +238,10 @@ class MotorControl:
     def control_Pos_Vel_CSP(self, Motor, P_desired: float, V_desired: float):  # Harmonic JH11 motor has this mode
         """
         control the motor in position and velocity control mode
-        :param Motor: Motor object
-        :param P_desired: desired position
-        :param V_desired: desired velocity
-        :return: None
+        Args:
+            Motor: Motor object
+            P_desired: desired position
+            V_desired: desired velocity
         """
         if Motor.SlaveID not in self.motors_map:
             print("Control Pos_Vel Error : Motor ID not found")
@@ -248,8 +259,9 @@ class MotorControl:
     def control_Vel_CSP(self, Motor, Vel_desired):  # Harmonic JH11 motor has this mode
         """
         control the motor in velocity control mode
-        :param Motor: Motor object
-        :param Vel_desired: desired velocity
+        Args:
+            Motor: Motor object
+            Vel_desired: desired velocity
         """
         if Motor.SlaveID not in self.motors_map:
             print("control_VEL ERROR : Motor ID not found")
@@ -264,8 +276,9 @@ class MotorControl:
     def control_Tor_CSP(self, Motor, Tor_desired):  # Harmonic JH11 motor has this mode
         """
         control the motor in velocity control mode
-        :param Motor: Motor object
-        :param Tor_desired: desired torque
+        Args:
+            Motor: Motor object
+            Tor_desired: desired torque
         """
         if Motor.SlaveID not in self.motors_map:
             print("control_VEL ERROR : Motor ID not found")
@@ -281,7 +294,8 @@ class MotorControl:
         """
         enable motor
         It is recommended to enable the motor a few seconds after powering it on.
-        :param Motor: Motor object
+        Args:
+            Motor: Motor object
         """
         self.__control_cmd(Motor, np.uint8(0xFC))
         sleep(0.1)
@@ -292,7 +306,8 @@ class MotorControl:
         enable motor old firmware, for compatibility with old motor firmware versions
         The old firmware version requires an offset to enable
         It is recommended to enable the motor a few seconds after powering it on.
-        :param Motor: Motor object
+        Args:
+            Motor: Motor object
         """
         data_buf = np.array([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc], np.uint8)
         enable_id = ((int(ControlMode)-1) << 2) + Motor.SlaveID
@@ -303,7 +318,8 @@ class MotorControl:
     def disable(self, Motor):
         """
         disable motor
-        :param Motor: Motor object
+        Args:
+            Motor: Motor object
         """
         self.__control_cmd(Motor, np.uint8(0xFD))
         sleep(0.01)
@@ -311,7 +327,8 @@ class MotorControl:
     def set_zero_position(self, Motor):
         """
         set the zero position of the motor
-        :param Motor: Motor object
+        Args:
+            Motor: Motor object
         """
         self.__control_cmd(Motor, np.uint8(0xFE))
         sleep(0.1)
@@ -398,7 +415,8 @@ class MotorControl:
     def addMotor(self, Motor):
         """
         add motor to the motor control object
-        :param Motor: Motor object
+        Args:
+            Motor: Motor object
         """
         self.motors_map[Motor.SlaveID] = Motor
         if Motor.MasterID != 0:
@@ -412,9 +430,9 @@ class MotorControl:
     def __send_data(self, motor_id, data):
         """
         send data to the motor
-        :param motor_id:
-        :param data:
-        :return:
+        Args:
+            motor_id: 
+            data: 
         """
         # Print the transmitted raw HEX data
         # print(f"Sent raw HEX data (MotorID 0x{motor_id:02X}): {data.tobytes().hex()}")
@@ -444,8 +462,9 @@ class MotorControl:
     def switchControlMode(self, Motor, ControlMode):
         """
         switch the control mode of the motor
-        :param Motor: Motor object
-        :param ControlMode: Control_Type Motor control mode, e.g. MIT: Control_Type.MIT
+        Args:
+            Motor: Motor object
+            ControlMode: Control_Type Motor control mode, e.g. MIT: Control_Type.MIT
         """
         max_retries = 10
         retry_interval = 0.05  #retry times
@@ -465,8 +484,8 @@ class MotorControl:
     def save_motor_param(self, Motor):
         """
         save all parameters to flash
-        :param Motor: Motor object
-        :return:
+        Args:
+            Motor: Motor object
         """
         can_id_l = Motor.SlaveID & 0xff #id low 8 bits
         can_id_h = (Motor.SlaveID >> 8)& 0xff  #id high 8 bits
@@ -478,11 +497,11 @@ class MotorControl:
     def change_limit_param(self, Motor_Type, PMAX, VMAX, TMAX):
         """
         change the PMAX, VMAX, TMAX limits of the motor
-        :param Motor_Type:
-        :param PMAX: Motor PMAX
-        :param VMAX: Motor VMAX
-        :param TMAX: Motor TMAX
-        :return:
+        Args:
+            Motor_Type: 
+            PMAX: Motor PMAX
+            VMAX: Motor VMAX
+            TMAX: Motor TMAX
         """
         self.Limit_Param[Motor_Type][0] = PMAX
         self.Limit_Param[Motor_Type][1] = VMAX
@@ -501,10 +520,12 @@ class MotorControl:
     def change_motor_param(self, Motor, RID, data):
         """
         change the parameter RID of the motor
-        :param Motor: Motor object
-        :param RID: DM_variable motor parameter
-        :param data: motor parameter value
-        :return: True or False ,True means success, False means fail
+        Args:
+            Motor: Motor object
+            RID: DM_variable motor parameter
+            data: motor parameter value
+        Returns:
+            True or False ,True means success, False means fail
         """
         max_retries = 20
         retry_interval = 0.05  #retry times
@@ -523,9 +544,11 @@ class MotorControl:
     def read_motor_param(self, Motor, RID):
         """
         read the parameter RID of the motor, such as version number etc.
-        :param Motor: Motor object
-        :param RID: DM_variable motor parameter
-        :return: motor parameter value
+        Args:
+            Motor: Motor object
+            RID: DM_variable motor parameter
+        Returns:
+            motor parameter value
         """
         max_retries = 20
         retry_interval = 0.05  #retry times
@@ -606,8 +629,10 @@ def data_to_uint8s(value):
 def is_in_ranges(number):
     """
     check if the number is in the range of uint32
-    :param number:
-    :return:
+    Args:
+        number: 
+    Returns:
+        bool: True if in range, False otherwise
     """
     if (7 <= number <= 10) or (13 <= number <= 16) or (35 <= number <= 36):
         return True
