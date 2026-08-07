@@ -36,6 +36,8 @@ _ESP32_CMD_MAP = {
     "set_pin_output":          (MyagvPlusCommand.SET_PIN_OUTPUT, None),
     "get_pin_input":           (MyagvPlusCommand.GET_PIN_INPUT, None),
     "set_fan_state":           (MyagvPlusCommand.SET_FAN_STATE, None),
+    "set_pump_state":          (MyagvPlusCommand.SET_PUMP_STATE, None),
+    "set_pump_io":             (MyagvPlusCommand.SET_PUMP_IO, None),
     "get_auto_report_message": (0x25, None),
 }
 
@@ -644,6 +646,8 @@ class MyAGVPlusSocket(object):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, single_motor_id=motor_id)
         res = self._rpc_call("get_motor_torque", motor_id)
+        if res == -1:
+            return -1
         if isinstance(res, (int, float)):
             return float(round(res, 2))
         return res
@@ -758,6 +762,33 @@ class MyAGVPlusSocket(object):
         """
         self.calibration_parameters(class_name=self.__class__.__name__, state=state)
         return self._rpc_call("set_fan_state", state)
+
+    # ============== Pump Control ==============
+
+    def set_pump_state(self, state: int) -> int:
+        """Set suction pump state (Command 0x43).
+
+        Args:
+            state (int): 1 to open pump, 0 to close pump.
+
+        Returns:
+            int: firmware response, or -1 if failed.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        return self._rpc_call("set_pump_state", state)
+
+    def set_pump_io(self, pin: int, state: int) -> int:
+        """Set suction pump control IO pin level (Command 0x44).
+
+        Args:
+            pin (int): Pin index (2 or 5).
+            state (int): 0 for Low (pump working), 1 for High (pump closed).
+
+        Returns:
+            int: firmware response, or -1 if failed.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pump_pin=pin, state=state)
+        return self._rpc_call("set_pump_io", pin, state)
 
     # ============== Communication ==============
 
