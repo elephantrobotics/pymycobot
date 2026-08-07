@@ -190,8 +190,7 @@ class MyAGVPlusApi(object):
                 self.esp32_serial.reset_input_buffer()
             except Exception as e:
                 raise IOError("Failed to open ESP32 port: {}".format(e))
-
-        atexit.register(self._cleanup)
+        # atexit.register(self._cleanup)  
 
         # Determine initial communication state
         # Prefer persisted state saved in temp file, so if user manually set it to 1, it is preserved.
@@ -234,6 +233,16 @@ class MyAGVPlusApi(object):
         # Automatically start stall protection in the background by default
         self.set_stall_protection(True)
         
+        # Ensure serial input buffers are clean and settled for immediate user queries
+        time.sleep(0.1)
+        try:
+            if self.motor_serial and self.motor_serial.is_open:
+                self.motor_serial.reset_input_buffer()
+            if self.esp32_serial and self.esp32_serial.is_open:
+                self.esp32_serial.reset_input_buffer()
+        except Exception:
+            pass
+
         if self._debug:
             self.log.info("MyAGVPlus initialized successfully. Max current protection enabled.")
 
@@ -308,13 +317,21 @@ class MyAGVPlusApi(object):
         if getattr(self, 'socket_server', False):
             return True
         import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        lock = getattr(self, '_lock', None)
+        if lock:
+            lock.acquire()
         try:
-            s.bind(('127.0.0.1', 20235))
-            s.close()
-            return False
-        except Exception:
-            return True
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.bind(('127.0.0.1', 20235))
+                s.close()
+                return False
+            except Exception:
+                return True
+        finally:
+            if lock:
+                lock.release()
 
     def _check_comm_state(self):
         """Check serial-socket communication mutual exclusion status.
@@ -663,6 +680,12 @@ class MyAGVPlusApi(object):
             self.log.warning(msg)
             return msg
 
+        if is_motion and hasattr(self, 'motors') and not all(getattr(m, 'isEnable', True) for m in self.motors):
+            disabled_ids = [i + 1 for i, m in enumerate(self.motors) if not getattr(m, 'isEnable', True)]
+            msg = f"Warning: Motor(s) {disabled_ids} are disabled. Motion blocked to protect chassis."
+            self.log.warning(msg)
+            return msg
+
         w1 = 0 if abs(w1) < 0.01 else w1
         w2 = 0 if abs(w2) < 0.01 else w2
         w3 = 0 if abs(w3) < 0.01 else w3
@@ -764,10 +787,10 @@ class MyAGVPlusApi(object):
                                     self._save_error_state()
                                     break
                                 
-                                # Torque overload stall detection (> 0.55 N.m)
+                                # Torque overload stall detection (> 0.8 N.m)
                                 actual_t = m.getTorque()
-                                if abs(actual_t) > 0.55:
-                                    self.log.warning(f"STALL DETECTED! Motor {i+1} torque overload ({actual_t:.2f} > 0.55). Emergency Stop!")
+                                if abs(actual_t) > 0.8:
+                                    self.log.warning(f"STALL DETECTED! Motor {i+1} torque overload ({actual_t:.2f} > 0.8). Emergency Stop!")
                                     stall_detected = True
                                     self._stall_locked_motors[i] = True
                                     self._save_error_state()
