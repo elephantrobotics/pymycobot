@@ -137,8 +137,6 @@ class MotorControl:
             q: position  
             dq: velocity  
             tau: torque  
-        Returns:
-            None
         """
         if DM_Motor.SlaveID not in self.motors_map:
             print("controlMIT ERROR : Motor ID not found")
@@ -186,8 +184,6 @@ class MotorControl:
             Motor: Motor object Motor object
             P_desired: desired position 
             V_desired: desired velocity 
-        Returns:
-            None
         """
         if Motor.SlaveID not in self.motors_map:
             print("Control Pos_Vel Error : Motor ID not found")
@@ -252,8 +248,6 @@ class MotorControl:
             Motor: Motor object Motor object
             P_desired: desired position 
             V_desired: desired velocity 
-        Returns:
-            None
         """
         if Motor.SlaveID not in self.motors_map:
             print("Control Pos_Vel Error : Motor ID not found")
@@ -504,7 +498,6 @@ class MotorControl:
         Args:
             motor_id: 
             data: 
-        Returns:
             
         """
         # hex
@@ -574,7 +567,6 @@ class MotorControl:
         save the all parameter  to flash 
         Args:
             Motor: Motor object Motor object
-        Returns:
             
         """
         can_id_l = Motor.SlaveID & 0xff #id low 8 bits
@@ -592,7 +584,6 @@ class MotorControl:
             PMAX: PMAX
             VMAX: VMAX
             TMAX: TMAX
-        Returns:
             
         """
         self.Limit_Param[Motor_Type][0] = PMAX
@@ -651,7 +642,6 @@ class MotorControl:
         Args:
             Motor: Motor object Motor object
             RID: DM_variable 
-        Returns:
             
         """
         max_retries = 20
@@ -735,7 +725,6 @@ def is_in_ranges(number):
     check if the number is in the range of uint32
     Args:
         number: 
-    Returns:
         
     """
     if (7 <= number <= 10) or (13 <= number <= 16) or (35 <= number <= 36):
