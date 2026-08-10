@@ -1,0 +1,2043 @@
+"""
+ultraarm_p1_base.py
+This module controls the robotic arm movements.
+
+Author: Wang Weijian
+Date: 2026-06-01
+"""
+import locale
+import logging
+import re
+import threading
+import time
+
+from pymycobot.common import ProtocolCode
+from pymycobot.error import calibration_parameters, ultraArmP1DataException
+from pymycobot.log import setup_logging
+from pymycobot.robot_info import UltraArmP1RobotInfo
+from pymycobot.ultraarm_p1_internal import UltraArmP1InternalMixin
+
+
+class UltraArmP1Base(UltraArmP1InternalMixin):
+
+    # Default configuration (subclass override)
+    REQUEST_TIMEOUT = 0.3
+    ANGLE_COORD_TIMEOUT = 0.02
+    QUEUE_TIMEOUT = 0.02
+    CHECK_SD_TIMEOUT = 3
+
+    SET_RESPONSE_TIMEOUT = 5
+    MOTION_WAIT_TIMEOUT = 300
+    STATUS_TIMEOUT = 3
+    STATUS_QUERY_INTERVAL = 0.2
+    STATUS_QUERY_GRACE_PERIOD = 0.05
+
+    END_COUNT = 2
+
+    def __init__(self, debug=False, _internal_mode=False):
+
+        self.debug = debug
+        setup_logging(debug)
+        self.log = logging.getLogger(__name__)
+        self.calibration_parameters = calibration_parameters
+        self.lock = threading.Lock()
+        self.language, _ = locale.getdefaultlocale()
+        if self.language not in ["zh_CN", "en_US"]:
+            self.language = "en_US"
+
+        self._queue_blocked = False
+        self._queue_invalid = False
+        self._internal_mode = _internal_mode
+
+    def _send_command(self, command, clear_input=True):
+        raise NotImplementedError
+
+    def _read_available_bytes(self):
+        raise NotImplementedError
+
+    def _clear_serial_buffer(self):
+        pass
+
+    def _clear_input_buffer(self):
+        pass
+
+    def _send_raw_command(self, command: str):
+        raise NotImplementedError
+
+    def _debug_write(self, data: str):
+        if self.debug:
+            self.log.debug("_write: {}".format(data))
+
+    def _debug_read(self, data: str):
+        if self.debug:
+            self.log.debug(" _read: {}".format(data))
+
+    def _check_internal_mode(self):
+        if not self._internal_mode:
+            self.log.error("This API is for internal use only.!!!!!!")
+            return False
+        return True
+
+    def _append_checksum(self, command):
+        """Append XOR checksum to command frame."""
+        xor_value = 0
+        for c in command:
+            xor_value ^= ord(c)
+
+        checksum = f"{xor_value:02X}"
+
+        return f"${command}*{checksum}"
+
+    def _verify_checksum(self, line):
+        """ Verify XOR checksum of received frame."""
+        try:
+            line = line.strip()
+            if not line.startswith("$"):
+                return False
+
+            if "*" not in line:
+                return False
+
+            data, recv_checksum = line.rsplit("*", 1)
+            data = data[1:]
+            xor_value = 0
+
+            for c in data:
+                xor_value ^= ord(c)
+
+            calc_checksum = f"{xor_value:02X}"
+
+            return calc_checksum.upper() == recv_checksum.upper()
+
+        except Exception:
+            return False
+
+    def _request_with_retry(self, command, flag, attempts=3):
+        for attempt in range(attempts):
+            self._send_command(command)
+            result = self._request(flag)
+            if result != -1:
+                return result
+            if self.debug and attempt < attempts - 1:
+                self.log.warning(f"request retry {attempt + 1}/{attempts - 1}, flag: {flag}")
+        return -1
+
+    def _parse_colon_values(self, lower: str, keyword: str, value_type=float, round_digits=None, single=False):
+        """
+        Parse keyword:value1,value2,... format
+        Args:
+            lower (str): lower-case received buffer
+            keyword (str): keyword to search (lower-case)
+            value_type: int or float or str
+            round_digits (int|None): rounding digits for float
+            single (bool): return first value only
+        Returns:
+            list | int | float | None
+        Example:
+            angles:0.00,0.00,89.90,0.20
+
+        Note:
+            Keyword must be a whole token before ':' (not a substring).
+            Otherwise ``error`` would match inside ``collisiondetectionerror``
+            / ``limiterror`` and mis-map collision/limit frames.
+        """
+        # Whole-token match: avoid find("error") hitting "...collisiondetectionerror:1"
+        match = re.search(
+            rf"(?:^|[^a-z0-9_]){re.escape(keyword)}\s*:",
+            lower,
+        )
+        if not match:
+            return None
+
+        colon_idx = match.end() - 1
+        end_idx = lower.find("\n", colon_idx)
+        if end_idx == -1:
+            end_idx = len(lower)
+
+        try:
+            sub = lower[colon_idx + 1:end_idx].strip()
+            items = [x.strip() for x in sub.split(",") if x.strip() != ""]
+
+            values = []
+            for x in items:
+                v = value_type(x)
+                if value_type is float and round_digits is not None:
+                    v = round(v, round_digits)
+                values.append(v)
+
+            return values[0] if single else values
+        except Exception as e:
+            if self.debug:
+                self.log.error(f"serial read exception: {e}")
+            return None
+
+    def _interpret_error_information_line(self, lower: str):
+        """Map one G8 / error-status reply line to human-readable text.
+
+        Handles dedicated frames first (collision / limit / no-solution), then
+        the bitmask ``error:N`` used by ``GET_ERROR_INFO_P1`` (G8).
+        """
+        if "collisiondetectionerror" in lower:
+            res = self._parse_colon_values(
+                lower, "collisiondetectionerror", int, single=True
+            )
+            if res is not None:
+                return self._parse_mapped_error_code(
+                    res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language
+                )
+        if "limiterror" in lower:
+            res = self._parse_colon_values(lower, "limiterror", int, single=True)
+            if res is not None:
+                return self._parse_mapped_error_code(
+                    res, UltraArmP1RobotInfo.ERROR_MOTION_MAP, self.language
+                )
+        if "nosolution" in lower:
+            res = self._parse_colon_values(lower, "nosolution", int, single=True)
+            if res is not None:
+                return self._parse_mapped_error_code(
+                    res, UltraArmP1RobotInfo.ERROR_NO_SOLUTION_MAP, self.language
+                )
+        r = self._parse_colon_values(lower, "error", int, single=True)
+        if r is not None:
+            return self._parse_error_code(r, self.language)
+        return None
+
+    def _parse_solution_values(self, text, keys):
+        """
+        Example:angle:A+0.000 B+0.000 C+90.000 D+0.000
+        """
+        try:
+            result = []
+            for key in keys:
+                match = re.search(
+                    rf"{key}([+-]?\d+(?:\.\d+)?)",
+                    text,
+                    re.IGNORECASE
+                )
+                if not match:
+                    return None
+                result.append(float(match.group(1)))
+            return result
+        except Exception as e:
+            if self.debug:
+                self.log.error(f"serial read exception: {e}")
+            return None
+
+    def _parse_default_sensor_initialize_data(self, line):
+        match = re.search(r"(?:^|[^a-z0-9_])data\s*:", line, re.IGNORECASE)
+        if not match:
+            return None
+
+        data = line[match.end():].strip()
+        if not data:
+            return []
+
+        hex_items = data.split()
+        if (
+            len(hex_items) > 1
+            and all(re.fullmatch(r"[0-9a-fA-F]{2}", item) for item in hex_items)
+        ):
+            return "".join(item.upper() for item in hex_items)
+
+        try:
+            items = [item.strip() for item in data.split(",") if item.strip()]
+            values = [round(float(item), 2) for item in items]
+            return values[0] if len(values) == 1 else values
+        except ValueError:
+            return data
+
+    def _query_error_information(self, timeout=0.3):
+        self._send_command(ProtocolCode.GET_ERROR_INFO_P1)
+
+        raw_data = ""
+
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            chunk = self._read_available_bytes()
+
+            if chunk:
+                try:
+                    chunk_text = chunk.decode(errors="ignore")
+                except Exception:
+                    chunk_text = str(chunk)
+                raw_data += chunk_text
+                while "\n" in raw_data:
+                    line_data, raw_data = raw_data.split("\n", 1)
+                    line_data = line_data.strip()
+
+                    if not line_data:
+                        continue
+                    # keep original frame
+                    origin_line = line_data
+                    # checksum verify
+                    if "*" in line_data:
+                        if not self._verify_checksum(line_data):
+                            # if self.debug:
+                            #     self.log.warning(f"Checksum failed: {repr(line_data)}")
+                            continue
+
+                        # remove checksum
+                        line_data = line_data.split("*", 1)[0]
+                    # remove '$'
+                    line_data = line_data.lstrip("$")
+                    # debug original frame
+                    if self.debug:
+                        self._debug_read(origin_line)
+
+                    mapped = self._interpret_error_information_line(line_data.lower())
+                    if mapped is not None:
+                        return mapped
+            time.sleep(0.01)
+        return None
+
+    def _parse_error_code(self, value: int, lang="en_US"):
+        if value == 0:
+            return "ok" if lang == "zh_CN" else "ok"
+
+        errors = []
+
+        for i in range(32):
+            if value & (1 << i):
+                info = UltraArmP1RobotInfo.ERROR_MAP.get(i)
+                if info:
+                    errors.append(info.get(lang, info["en_US"]))
+                else:
+                    errors.append(
+                        f"未知错误(bit{i})" if lang == "zh_CN"
+                        else f"Unknown error (bit{i})"
+                    )
+
+        return "; ".join(errors)
+
+    def _parse_mapped_error_code(self, value: int, error_map, lang="en_US"):
+        # if value == 0:
+        #     return "ok"
+
+        info = error_map.get(value)
+        if info:
+            return info.get(lang, info["en_US"])
+
+        return (f"未知错误({value})" if lang == "zh_CN" else f"Unknown error ({value})")
+
+    def _wait_queue_safe(self):
+        last_queue_size = None
+        while True:
+            retry = 0
+            valid_queue_size = None
+
+            while retry < 3:
+                queue_size = self.get_queue_size()
+                # print("M600 Queue_size:", queue_size)
+                # Basic anomalies
+                if queue_size is None or queue_size < 0:
+                    retry += 1
+                    time.sleep(0.02)
+                    continue
+
+                # Out-of-range anomaly
+                if queue_size > 100:
+                    # print("queue size overflow", queue_size)
+                    retry += 1
+                    time.sleep(0.005)
+                    continue
+
+                # During waiting we do not send new motion commands, so a large
+                # upward jump is abnormal; fast downward consumption is normal.
+                if last_queue_size is not None and queue_size - last_queue_size >= 20:
+                    # print("current & last too large", queue_size, last_queue_size)
+                    retry += 1
+                    time.sleep(0.005)
+                    continue
+
+                # Truly effective data
+                valid_queue_size = queue_size
+                break
+
+            # Continuous anomalies
+            if valid_queue_size is None:
+                self.log.error("queue size abnormal, exit play")
+                return False
+
+            last_queue_size = valid_queue_size
+            queue_size = valid_queue_size
+
+            # Unblocked
+            if not self._queue_blocked:
+                if queue_size >= 80:
+                    self._queue_blocked = True
+                    continue
+                else:
+                    return True
+            # Blocked
+            else:
+                if queue_size <= 40:
+                    self._queue_blocked = False
+                    return True
+
+            time.sleep(0.01)
+
+    def _wait_queue_safe_laser(self):
+        last_queue_size = None
+        while True:
+            retry = 0
+            valid_queue_size = None
+
+            while retry < 3:
+                queue_size = self.get_queue_size()
+                # print("M600 Queue_size:", queue_size)
+                # Basic anomalies
+                if queue_size is None or queue_size < 0:
+                    retry += 1
+                    time.sleep(0.02)
+                    continue
+
+                # Truly effective data
+                valid_queue_size = queue_size
+                break
+
+            # Continuous anomalies
+            if valid_queue_size is None:
+                self.log.error("queue size abnormal, exit play")
+                return False
+
+            last_queue_size = valid_queue_size
+            queue_size = valid_queue_size
+
+            # Unblocked
+            if not self._queue_blocked:
+                if queue_size >= 80:
+                    self._queue_blocked = True
+                    continue
+                else:
+                    return True
+            # Blocked
+            else:
+                if queue_size <= 40:
+                    self._queue_blocked = False
+                    return True
+
+            time.sleep(0.01)
+
+    def _wait_motion_stop(self, interval=0.005, timeout=None):
+        start_time = time.time()
+        while True:
+            status = self.get_run_status()
+            if status == 0:
+                return True
+
+            if timeout is not None and time.time() - start_time >= timeout:
+                self.log.error("wait motion stop timeout")
+                return False
+
+            time.sleep(interval)
+
+    def _map_coord_speed(self, speed):
+        mapped = int(1 + (speed - 1) * 34 / 99 + 0.5)
+        return max(1, min(35, mapped))
+
+    def _normalize_gcode_line(self, line):
+        line = line.strip()
+
+        if not line or line.startswith(";"):
+            return None
+
+        tokens = line.strip().split()
+
+        if tokens[0].upper() == "G0":
+            tokens[0] = "G1"
+
+        return " ".join(tokens)
+
+    # ---------------------- Response waiting & parsing ----------------------
+    def _response(self, _async=True, _gcode=False, is_set=False, timeout=None):
+        """Wait for device response from the serial buffer.
+
+        Returns 'ok' when keyword is found, False on timeout.
+        """
+        if _gcode:
+            _async = False
+
+        if not _async and not _gcode:
+            return 1
+        start_time = time.time()
+        wait_time = self.MOTION_WAIT_TIMEOUT
+
+        response_timeout = wait_time
+        if is_set and wait_time == 300:
+            response_timeout = self.SET_RESPONSE_TIMEOUT
+
+        received_data = b""
+        # line buffer
+        text_buffer = ""
+        end_count = 0
+
+        if _gcode:
+            keyword = b"start"
+        else:  # _async=True
+            keyword = b"end"
+        # Keep the public default timeout for compatibility, but do not let
+        # normal motion commands block for 300s when the controller is silent.
+        movement_status_wait = (
+            _async and not _gcode and not is_set and wait_time == 300
+        )
+        if is_set:
+            response_timeout = self.SET_RESPONSE_TIMEOUT
+        if timeout is not None:
+            response_timeout = timeout
+
+        status_timeout = self.STATUS_TIMEOUT
+        status_query_interval = self.STATUS_QUERY_INTERVAL
+        last_status_time = start_time
+        last_status_query_time = start_time - status_query_interval
+
+        while time.time() - start_time < response_timeout:
+            chunk = self._read_available_bytes()
+            if chunk:
+                received_data += chunk
+                # try decode for debug
+                try:
+                    chunk_text = chunk.decode("utf-8", errors="ignore")
+                except Exception:
+                    chunk_text = str(chunk)
+
+                # accumulate text buffer
+                text_buffer += chunk_text
+
+                while "\n" in text_buffer:
+                    line, text_buffer = text_buffer.split("\n", 1)
+
+                    line = line.strip()
+
+                    if not line:
+                        continue
+
+                    # keep original frame for debug
+                    origin_line = line
+
+                    # ----------------------------------------------------------
+                    # checksum verify (compatible old protocol)
+                    # ----------------------------------------------------------
+                    if "*" in line:
+                        if not self._verify_checksum(line):
+                            if self.debug:
+                                self.log.warning(f"Checksum failed: {repr(line)}")
+                            continue
+                        # remove checksum
+                        line = line.split("*", 1)[0]
+                    # remove '$'
+                    line = line.lstrip("$")
+                    # debug original frame
+                    if self.debug:
+                        self._debug_read(origin_line)
+
+                    text_lower = line.lower()
+
+                    if is_set:
+                        if "ok" in text_lower:
+                            return 'ok'
+                        elif "error:" in text_lower:
+                            r = self._parse_colon_values(text_lower, "error", int, single=True)
+                            if r is not None:
+                                if 'm450' in text_lower:
+                                    return self._parse_mapped_error_code(
+                                        r, UltraArmP1RobotInfo.ERROR_M450_MAP, self.language)
+                                elif 'g11' in text_lower:
+                                    return self._parse_mapped_error_code(
+                                        r, UltraArmP1RobotInfo.ERROR_G11_MAP, self.language)
+                                elif 'm431' in text_lower:
+                                    return self._parse_mapped_error_code(
+                                        r, UltraArmP1RobotInfo.ERROR_M431_MAP, self.language)
+                                return r
+                    # Limit error
+                    if "limiterror" in text_lower:
+                        res = self._parse_colon_values(text_lower, "limiterror", int, single=True)
+                        if res is not None:
+                            return self._parse_mapped_error_code(
+                                res, UltraArmP1RobotInfo.ERROR_MOTION_MAP, self.language)
+
+                    # Collision detection
+                    if "collisiondetectionerror" in text_lower:
+                        res = self._parse_colon_values(text_lower, "collisiondetectionerror", int, single=True)
+                        if res is not None:
+                            return self._parse_mapped_error_code(
+                                res, UltraArmP1RobotInfo.ERROR_COLLISION_MAP, self.language)
+                    # Coord No Solution
+                    if "nosolution" in text_lower:
+                        res = self._parse_colon_values(text_lower, "nosolution", int, single=True)
+                        if res is not None:
+                            return self._parse_mapped_error_code(res, UltraArmP1RobotInfo.ERROR_NO_SOLUTION_MAP, self.language)
+                    if text_lower == keyword.decode():
+                        end_count += 1
+                        if end_count >= self.END_COUNT:
+                            return 'ok'
+                    if movement_status_wait:
+                        # M200 returns mainmoving:0/1.  Treat 0 as the same
+                        run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
+                        if run_status is not None:
+                            last_status_time = time.time()
+                            if run_status == 0:
+                                # If the robot was already in an error state before
+                                # this motion command, it may only report not moving.
+                                error_info = self._query_error_information()
+                                if error_info and error_info != "ok":
+                                    return error_info
+                                return 'ok'
+
+            if movement_status_wait:
+                now = time.time()
+                if now - last_status_time >= status_timeout:
+                    error_info = self._query_error_information()
+                    if error_info and error_info != "ok":
+                        return error_info
+                    break
+                if (
+                    now - start_time >= self.STATUS_QUERY_GRACE_PERIOD
+                    and now - last_status_query_time >= status_query_interval
+                ):
+                    # Query run status without calling get_run_status(), since
+                    # callers already hold self.lock while waiting here.
+                    self._send_command(ProtocolCode.GET_RUNNING_STATUS_P1, clear_input=False)
+                    last_status_query_time = now
+
+            elif is_set and response_timeout != wait_time:
+                time.sleep(0.001)
+        # Timeout
+        if self.debug:
+            try:
+                self.log.error(f"_timeout read: {received_data}")
+            except Exception:
+                self.log.error(f"_timeout received data")
+
+        return -1
+
+    def _request(self, flag=""):
+        """
+        Improved request handler:
+        - clear input before reading
+        - accumulate chunks
+        - parse by flag until success or timeout
+        """
+        timeout = self.REQUEST_TIMEOUT
+        if flag == "check_sd_card":
+            timeout = self.CHECK_SD_TIMEOUT
+        elif flag in ['angle', 'coord']:
+            timeout = self.ANGLE_COORD_TIMEOUT
+        elif flag in ["get_queue_size"]:
+            timeout = self.QUEUE_TIMEOUT
+        elif flag == "get_default_sensor_initialize":
+            timeout = 0.5
+
+        raw_data = ""
+        start_time = time.time()
+
+        self._clear_input_buffer()
+
+        while time.time() - start_time < timeout:
+            chunk = self._read_available_bytes()
+            if chunk:
+                try:
+                    chunk_str = chunk.decode(errors="ignore")
+                    raw_data += chunk_str
+
+                    while "\n" in raw_data:
+                        # print('raw_data:', repr(raw_data))
+                        line_data, raw_data = raw_data.split("\n", 1)
+                        line_data = line_data.strip()
+
+                        if not line_data:
+                            continue
+                        # keep original line for debug
+                        origin_line_data = line_data
+
+                        # checksum verify
+                        if "*" in line_data:
+                            if not self._verify_checksum(line_data):
+                                if self.debug:
+                                    self.log.warning(f"Checksum failed: {repr(line_data)}")
+                                continue
+
+                            # remove checksum part
+                            line_data = line_data.split("*", 1)[0]
+
+                        # remove checksum part
+                        if "*" in line_data:
+                            line_data = line_data.split("*", 1)[0]
+
+                        # remove '$'
+                        line_data = line_data.lstrip("$")
+
+                        lower = line_data.lower()
+
+                        # debug
+                        if self.debug:
+                            display = origin_line_data if len(origin_line_data) < 1000 else origin_line_data[-1000:]
+                            self._debug_read(display)
+
+                        # -------- dispatch by flag --------
+                        if flag == "angle":
+                            r = self._parse_colon_values(lower, "angles", float, 2)
+                            if r is not None and len(r) ==4:
+                                return r
+
+                        elif flag == "coord":
+                            r = self._parse_colon_values(lower, "coords", float, 2)
+                            if r is not None and len(r) ==4:
+                                return r
+
+                        elif flag == "get_joint_acc":
+                            r = self._parse_colon_values(lower, "acc", float, 3)
+                            if r is not None and len(r) == 4:
+                                return r
+
+                        elif flag == "error_information":
+                            mapped = self._interpret_error_information_line(lower)
+                            if mapped is not None:
+                                return mapped
+
+                        elif flag == "get_gripper_angle":
+                            r = self._parse_colon_values(lower, "gripperangle", int, single=True)
+                            if r is not None:
+                                return r
+
+                        elif flag == "zero_calibration_state":
+                            r = self._parse_colon_values(lower, "zerostate", int)
+                            if r is not None:
+                                return r
+
+                        elif flag == "system_version":
+                            r = self._parse_colon_values(lower, "getsystemversion", float, 1, single=True)
+                            if r is not None:
+                                return r / 10
+
+                        elif flag == "modify_version":
+                            r = self._parse_colon_values(
+                                lower, "getmodifyversion", int, single=True
+                            )
+                            if r is not None:
+                                return r
+
+                        elif flag == "get_screen_version":
+                            r = self._parse_colon_values(
+                                lower, "getscreenversion", float, 1, single=True
+                            )
+                            if r is not None:
+                                return r
+
+                        elif flag == "get_screen_modify_version":
+                            r = self._parse_colon_values(
+                                lower, "getscreenmodifyversion", int, single=True
+                            )
+                            if r is not None:
+                                return r
+
+                        elif flag == "run_status":
+                            r = self._parse_colon_values(
+                                lower, "mainmoving", int, single=True
+                            )
+                            if r is not None:
+                                return r
+
+                        elif flag == "get_gripper_run_status":
+                            r = self._parse_colon_values(
+                                lower, "motionstate", int, single=True
+                            )
+                            if r is not None:
+                                return r
+
+                        elif flag == "get_gripper_parameter":
+                            r = self._parse_colon_values(
+                                lower, "gripperparameters", int, single=True
+                            )
+                            if r is not None:
+                                return r
+                        elif flag == "check_sd_card":
+                            if "ok" in lower:
+                                return 'ok'
+                            if "error:" in lower:
+                                r = self._parse_colon_values(lower, "error", int, single=True)
+                                if r is not None:
+                                    print('SD 卡不存在' if self.language == "zh_CN" else 'SD card not present')
+                                    return r
+                        elif flag == "get_motor_enable_status":
+                            r = self._parse_colon_values(lower, "motorenable", int)
+                            if r is not None:
+                                return r
+                        elif flag == "get_base_io_state":
+                            r = self._parse_colon_values(lower, "io", int)
+                            if r is not None and len(r) == 10:
+                                return r
+                        elif flag == "get_end_io_state":
+                            r = self._parse_colon_values(lower, "io", int)
+                            if r is not None and len(r) == 4:
+                                return r
+                        elif flag == "get_sd_space":
+                            r = self._parse_colon_values(lower, "space", int)
+                            if r is not None:
+                                return r
+                        elif flag == "get_queue_size":
+                            r = self._parse_colon_values(lower, "queue_size", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == "get_limit_switch_state":
+                            r = self._parse_colon_values(lower, "sig", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == "i2c_data":
+                            if "ok" in lower:
+                                return "ok"
+                            if "error:" in lower:
+                                r = self._parse_colon_values(lower, "error", int, single=True)
+                                if r is not None:
+                                    return r
+                            data_idx = lower.find("data:")
+                            if data_idx != -1:
+                                data = line_data[data_idx + len("data:"):].strip()
+                                return data.split() if data else []
+                        elif flag == 'get_sn_code':
+                            r = self._parse_colon_values(lower, "sn", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_robot_id':
+                            r = self._parse_colon_values(lower, "id", str, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_wifi_ip':
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "ip", str, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_bluetooth_mac':
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "mac", str, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_end_button_state':
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "btn", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag in ['get_bluetooth_signal_strength','get_wifi_signal_strength']:
+                            if 'error' in lower:
+                                return None
+                            r = self._parse_colon_values(lower, "dbm", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_inverse_solution_angles':
+                            if 'error' in lower:
+                                res = self._parse_colon_values(lower, "error", int, single=True)
+                                if res is not None:
+                                    msg = UltraArmP1RobotInfo.SOLUTION_ERROR_MAP.get(res)
+                                    if msg:
+                                        return msg.get(self.language, msg["en_US"])
+                                    self.log.warning(f"Unknown solution error code: {res}")
+                                    return f"Unknown error({res})"
+                            r = self._parse_solution_values(lower, ["a", "b", "c", "d"])
+                            if r is not None and len(r) ==4:
+                                return r
+                        elif flag == 'get_correct_solution_coords':
+                            if 'error:' in lower:
+                                res = self._parse_colon_values(lower, "error", int, single=True)
+                                if res is not None:
+                                    msg = UltraArmP1RobotInfo.SOLUTION_ERROR_MAP.get(res)
+                                    if msg:
+                                        return msg.get(self.language, msg["en_US"])
+                                    self.log.warning(f"Unknown solution error code: {res}")
+                                    return f"Unknown error({res})"
+                            r = self._parse_solution_values(lower,["x", "y", "z", "r"])
+                            if r is not None and len(r) ==4:
+                                return r
+
+                        elif flag == 'get_communication_mode':
+                            r = self._parse_colon_values(lower, "mode", str, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_collision_threshold':
+                            r = self._parse_colon_values(lower, "collisionthreshold", float, 2)
+                            if r is not None and len(r) == 4:
+                                return r
+                        elif flag == 'get_pwm_status':
+                            r = self._parse_colon_values(lower, "pwm", int)
+                            if r is not None and len(r) == 4:
+                                return r
+                        elif flag == 'get_encoder_calibration_state':
+                            r = self._parse_colon_values(lower, "730state", int, single=True)
+                            if r is not None:
+                                return r
+                        elif flag == 'get_default_sensor_initialize':
+                            r = self._parse_default_sensor_initialize_data(line_data)
+                            if r is not None:
+                                return r
+                        elif flag is None:
+                            return -1
+
+                except Exception as e:
+                    if self.debug:
+                        self.log.error(f"serial read exception: {e}")
+                    return -1
+
+        if self.debug:
+            self.log.warning(f"request timeout, received buffer: {raw_data}")
+        return -1
+
+    # ---------------------- Control methods ----------------------
+    def set_joint_release(self, joint_id):
+        """release the robot joints.
+        Args:
+            joint_id (int): Joint number (1~4). 0 for all joints."""
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=joint_id)
+        with self.lock:
+            command = ProtocolCode.SET_JOINT_DISABLE
+            command += f" J{joint_id}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_joint_enable(self, joint_id):
+        """Enable the robot joints.
+        Args:
+            joint_id (int): Joint number (1~4). 0 for all joints."""
+        self.calibration_parameters(class_name=self.__class__.__name__, servo_id=joint_id)
+        with self.lock:
+            command = ProtocolCode.SET_JOINT_ENABLE
+            command += f" J{joint_id}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_angles_info(self):
+        """Get the current joint angles of the robot.
+
+        Returns:
+            list[float] or int: Joint angles [J1, J2, J3, J4] or -1 if failed.
+        """
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_ANGLES_P1, "angle")
+
+    def get_coords_info(self):
+        """Get the current Cartesian coordinates of the robot.
+
+        Returns:
+            list[float] or int: Coordinates [X, Y, Z, E] or -1 if failed.
+        """
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_COORDS_P1, "coord")
+
+    def set_coords(self, coords, speed, _async=True, _gcode=False):
+        """Move the robot using Cartesian coordinate control.
+
+        Args:
+            coords (list[float]): Coordinates [X, Y, Z].
+            speed (int): Movement speed (1~100).
+            _async: (bool): Closed-loop switch
+            _gcode: (bool): GCode switch
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords, speed=speed)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.SET_COORDS
+            if len(coords) > 0 and coords[0] is not None:
+                command += f" X{coords[0]}"
+            if len(coords) > 1 and coords[1] is not None:
+                command += f" Y{coords[1]}"
+            if len(coords) > 2 and coords[2] is not None:
+                command += f" Z{coords[2]}"
+            if len(coords) > 3 and coords[3] is not None:
+                command += f" R{coords[3]}"
+            if speed is not None and 1 <= speed <= 100:
+                command += f" F{self._map_coord_speed(speed)}"
+
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def set_coord(self, coord_id, coord, speed, _async=True, _gcode=False):
+        """Set single coordinate.
+
+        Args:
+            coord_id (str): 'X', 'Y', 'Z', 'R'
+            coord (float): coordinate value
+            speed (int): movement speed 1 ~ 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.SET_COORDS
+            command += f" {coord_id}{coord}"
+            command += f" F{self._map_coord_speed(speed)}"
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def set_angle(self, joint_id, angle, speed, _async=True, _gcode=False):
+        """Set a single joint angle.
+
+        Args:
+            joint_id (int): Joint number (1~4).
+            angle (float): Angle value.
+            speed (int): Movement speed (1~100).
+            _async: (bool): Closed-loop switch
+            _gcode: (bool): Closed-loop switch
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.SET_ANGLE_P1
+            joint_map = {1: "A", 2: "B", 3: "C", 4: "D"}
+            if joint_id in joint_map:
+                command += f" {joint_map[joint_id]}{angle}"
+            if speed > 0:
+                command += f" F{speed}"
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def set_angles(self, angles, speed, _async=True, _gcode=False):
+        """Move robot using joint angle control.
+
+        Args:
+            angles (list[float]): Joint angles [J1, J2, J3, J4].
+            speed (int): Movement speed (1~100).
+            _async: (bool): Closed-loop switch
+            _gcode: (bool): Closed-loop switch
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, angles=angles, speed=speed)
+        with self.lock:
+            command = ProtocolCode.SET_ANGLES_P1
+            if len(angles) > 0 and angles[0] is not None:
+                command += f" A{angles[0]}"
+            if len(angles) > 1 and angles[1] is not None:
+                command += f" B{angles[1]}"
+            if len(angles) > 2 and angles[2] is not None:
+                command += f" C{angles[2]}"
+            if len(angles) > 3 and angles[3] is not None:
+                command += f" D{angles[3]}"
+            if speed is not None and 1 <= speed <= 100:
+                command += f" F{speed}"
+
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def get_system_version(self):
+        """Get system firmware version
+
+        Returns:
+            (float) Firmware version
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_SYSTEM_VERSION_P1, "system_version"
+            )
+
+    def get_modify_version(self):
+        """Get firmware modify version
+
+        Returns:
+            (int) modify version
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_MODIFY_VERSION_P1, "modify_version"
+            )
+
+    def stop(self):
+        """Stop movement"""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_STOP_P1)
+            return self._response(_async=True, is_set=True)
+
+    def move_pause(self):
+        """Pause movement."""
+        with self.lock:
+            self._send_command(ProtocolCode.MOVE_PAUSE_P1)
+            return self._response(_async=True, is_set=True)
+
+    def move_resume(self):
+        """Resume movement."""
+        with self.lock:
+            self._send_command(ProtocolCode.MOVE_RESUME_P1)
+            return self._response(_async=True, is_set=True)
+
+    def get_joint_acc(self):
+        """Get all joint acceleration parameters.
+
+        Returns:
+            list[float] or int: Joint accelerations [J1, J2, J3, J4],
+                or -1 if failed.
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_JOINT_ACC_P1, "get_joint_acc"
+            )
+
+    def set_joint_acc(self, joint_id, acc):
+        """Set a single joint acceleration.
+
+        Args:
+            joint_id (int): Joint number, range is 1 ~ 4.
+            acc (int | float): Acceleration, range is 1 ~ 600.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,
+            joint_id=joint_id,
+            joint_acc=acc
+        )
+        with self.lock:
+            command = ProtocolCode.SET_JOINT_ACC_P1
+            command += f" J{joint_id}"
+            command += f" F{acc}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_jog_angle(self, joint_id, direction, speed, _async=True, _gcode=False):
+        """Start jog movement with angle
+
+        Args:
+            joint_id : 1 ~ 4
+
+            direction :
+                0 : Negative motion
+                1 : Positive motion
+            speed : (int) 1-100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
+                                    jog_speed=speed)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.SET_JOG_ANGLE_P1
+            command += " J" + str(joint_id)
+            command += " D" + str(direction)
+            command += " F" + str(speed)
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def set_jog_coord(self, axis_id, direction, speed, _async=True, _gcode=False):
+        """Start jog movement with coord
+
+        Args:
+            axis_id(int) : axis 1-X, 2-Y, 3-Z, 4-RX
+
+            direction:
+                0 : Negative motion
+                1 : Positive motion
+            speed : (int) 1-100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
+                                    jog_speed=speed)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.SET_JOG_COORD_P1
+            command += " J" + str(axis_id)
+            command += " D" + str(direction)
+            command += " F" + str(self._map_coord_speed(speed))
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def jog_increment_angle(self, joint_id, increment, speed, _async=True, _gcode=False):
+        """Single angle incremental motion control.
+
+        Args:
+            joint_id: Joint id 1 - 4
+            increment: Angle increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.JOG_INCREMENT_ANGLE_P1
+            command += " J" + str(joint_id)
+            command += " T" + str(increment)
+            command += " F" + str(speed)
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def jog_increment_coord(self, coord_id, increment, speed, _async=True, _gcode=False):
+        """Single coordinate incremental motion control.
+
+        Args:
+            coord_id: axis id 1 - 4.
+            increment: Coord increment value
+            speed: int (1 - 100)
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.JOG_INCREMENT_COORD_P1
+            command += " J" + str(coord_id)
+            command += " T" + str(increment)
+            command += " F" + str(self._map_coord_speed(speed))
+            self._send_command(command)
+            return self._response(_async=_async, _gcode=_gcode)
+
+    def play_gcode_file(self, filename):
+        """Play the imported track file
+
+        Args:
+            filename (str): Path to a G-code file (.gcode or .nc or .ngc)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, filename=filename)
+        try:
+            with open(filename) as f:
+                lines = f.readlines()
+        except Exception as e:
+            self.log.warning(f"There is no such file! {e}")
+            return
+
+        skip_queue_once = False
+        for raw_line in lines:
+            line = self._normalize_gcode_line(raw_line)
+
+            if line is None:
+                continue
+
+            is_m80 = line.split()[0].upper() == "M80"
+            if is_m80:
+                if not self._wait_motion_stop():
+                    self.log.error("wait M80 motion stop error")
+                    break
+
+            command = line + ProtocolCode.END
+            # Queue Protection
+            if skip_queue_once:
+                skip_queue_once = False
+            elif self._wait_queue_safe() != 1:
+                self.log.error("queue play error")
+                break
+
+            with self.lock:
+                self._send_raw_command(command)
+                self._debug_write(command)
+
+            if is_m80:
+                skip_queue_once = True
+
+    def play_gcode_file_laser(self, filename):
+        """Play the imported track file laser
+
+        Args:
+            filename (str): Path to a G-code file (.gcode or .nc or .ngc)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, filename=filename)
+        try:
+            with open(filename) as f:
+                lines = f.readlines()
+        except Exception as e:
+            self.log.warning(f"There is no such file! {e}")
+            return
+
+        skip_queue_once = False
+        for raw_line in lines:
+            line = self._normalize_gcode_line(raw_line)
+
+            if line is None:
+                continue
+
+            is_m80 = line.split()[0].upper() == "M80"
+            if is_m80:
+                if not self._wait_motion_stop():
+                    self.log.error("wait M80 motion stop error")
+                    break
+
+            command = line + ProtocolCode.END
+            # Queue Protection
+            if skip_queue_once:
+                skip_queue_once = False
+            elif self._wait_queue_safe_laser() != 1:
+                self.log.error("queue play laser error")
+                break
+
+            with self.lock:
+                self._send_raw_command(command)
+                self._debug_write(command)
+
+            if is_m80:
+                skip_queue_once = True
+
+    def get_error_information(self):
+        """Read error message"""
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_ERROR_INFO_P1, "error_information"
+            )
+
+    def set_zero_calibration(self, joint_number):
+        """Set zero-point calibration.
+
+        Args:
+            joint_number (int) : 0 ~ 4
+                0 : All joint
+                1: J1
+                2: J2
+                3: J3
+                4: J4
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_number=joint_number)
+        with self.lock:
+            command = ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1
+            command += " J" + str(joint_number)
+            self._send_command(command)
+            return self._response(_async=True)
+
+    def get_zero_calibration_state(self):
+        """Read zero-point calibration status.
+
+        Returns:
+            (list) zero-point calibration status, len 4
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_BACK_ZERO_STATUS_P1,
+                "zero_calibration_state"
+            )
+
+    def get_run_status(self):
+        """Read running status."""
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_RUNNING_STATUS_P1, "run_status"
+            )
+
+    def set_pwm_laser_mode(self, state):
+        """Set PWM Laser mode.
+
+        Args:
+            state (int): 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_PWM_LASER_MODE
+            command += " K" + str(state)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_pwm_laser(self, p_value):
+        """Set PWM Level - Laser
+
+        Args:
+            p_value (int) : Duty cycle 0 ~ 255;
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,  p_value=p_value)
+        with self.lock:
+            command = ProtocolCode.SET_PWM_LASER
+            command += " S" + str(p_value)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_pwm_custom_mode(self, state):
+        """Set PWM custom mode
+
+        Args:
+            state (int): 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_PWM_CUSTOM_MODE
+            command += " K" + str(state)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_pwm_custom(self, p_value):
+        """Set PWM Level - Custom
+
+        Args:
+            p_value (int) : Duty cycle 0 ~ 255;
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,  p_value=p_value)
+        with self.lock:
+            command = ProtocolCode.SET_PWM_CUSTOM
+            command += " S" + str(p_value)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_gripper_angle(self, gripper_angle, gripper_speed):
+        """Set gripper angle.
+
+        Args:
+            gripper_angle (int): 1 - 100
+            gripper_speed(int): 1 - 100
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_angle=gripper_angle,
+                                    gripper_speed=gripper_speed)
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_ANGLE_P1
+            command += " P" + str(gripper_angle)
+            command += " F" + str(gripper_speed)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_gripper_angle(self):
+        """Read gripper angle.
+
+        Returns: (int) gripper angle.
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_GRIPPER_ANGLE_P1, "get_gripper_angle"
+            )
+
+    def set_gripper_parameter(self, addr, parameter_value):
+        """Set gripper parameter
+
+        Args:
+            addr (int) : 1 ~ 69
+            parameter_value (int) : 0 ~ 65535
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr, parameter_value=parameter_value)
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_PARAMETER_P1
+            command += " J" + str(addr)
+            command += " L" + str(parameter_value)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_gripper_parameter(self, addr):
+        """Get gripper parameter.
+
+        Args:
+            addr (int) : 1 ~ 69
+
+        Returns: (int) gripper parameter. 0 ~ 65535
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_addr=addr)
+        with self.lock:
+            command = ProtocolCode.GET_GRIPPER_PARAMETER_P1
+            command += " J" + str(addr)
+            return self._request_with_retry(command, "get_gripper_parameter")
+
+    def get_gripper_run_status(self):
+        """Get gripper running status.
+
+        Returns: gripper status.
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_GRIPPER_RUN_STATUS_P1,
+                "get_gripper_run_status"
+            )
+
+    def set_gripper_enable_status(self, state):
+        """set gripper enable status.
+
+        Args:
+            state (int) :
+                0 - disabled
+                1 - enabled
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_ENABLE_STATUS_P1
+            command += " S" + str(state)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_gripper_zero(self):
+        """Set gripper zero."""
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_ZERO_P1
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_pump_state(self, pump_state):
+        """Set the suction pump's on/off state.
+
+        Args:
+            pump_state (int) :
+                0 - open
+                1 - release
+                2 - closed
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pump_state=pump_state)
+        with self.lock:
+            command = ProtocolCode.SET_PUMP_STATE_P1
+            command += " S" + str(pump_state)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_base_io_output(self, pin_no, pin_status, pin_signal):
+        """Set the status of the base output pin.
+
+        Args:
+            pin_no (int) : 1 ~ 10
+            pin_status (int) : 0 ~ 1
+                0 - input
+                1 - output
+            pin_signal (int) : 0 ~ 1
+                0 - Low level
+                1 - High level
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no,
+                                    basic_pin_status=pin_status, pin_signal=pin_signal)
+        with self.lock:
+            command = ProtocolCode.SET_BASIC_OUTPUT_P1
+            command += " P" + str(pin_no)
+            command += " K" + str(pin_status)
+            command += " S" + str(pin_signal)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_digital_io_output(self, pin_no, pin_signal):
+        """Set the state of the end output pin.
+
+        Args:
+            pin_no (int) : 3 ~ 4
+            pin_signal (int) : 0 ~ 1
+                0 - Low level
+                1 - High level
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, set_end_pin_no=pin_no, pin_signal=pin_signal)
+        with self.lock:
+            command = ProtocolCode.SET_DIGITAL_OUTPUT_P1
+            command += " P" + str(pin_no)
+            command += " S" + str(pin_signal)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_i2c_data(self, session_id, package_id, data_state, data_addr,
+                     register_addr, data_len, data_value):
+        """Set i2c data.
+
+        Args:
+            session_id (int): session id, 0 ~ 255.
+            package_id (int): package id, 0 ~ 255.
+            data_state (int) : 0 ~ 1
+                0 - read
+                1 - write
+            data_addr (int) : 0 ~ 255
+            register_addr (int | str): register address, 0 ~ 65535. 0xFFFF means no register.
+                Pass a hex string such as "14" to preserve hex text in the command.
+            data_len (int | str) : 0 ~ 255
+                Pass a hex string such as "0C" to preserve hex text in the command.
+            data_value (int | list[int] | bytes | str | None): write data, max 32 bytes.
+                Pass a contiguous hex string such as "000C" to preserve raw K payload text.
+        """
+        def _normalize_hex_token(value):
+            return str(value).strip().upper().removeprefix("0X")
+
+        raw_payload = None
+        if data_value is None:
+            data_items = []
+        elif isinstance(data_value, int):
+            data_items = [data_value]
+        elif isinstance(data_value, (bytes, bytearray)):
+            data_items = list(data_value)
+        elif isinstance(data_value, str):
+            normalized_value = _normalize_hex_token(data_value)
+            if " " in normalized_value:
+                data_items = normalized_value.split()
+            else:
+                if len(normalized_value) % 2 != 0:
+                    raise ultraArmP1DataException(
+                        "The parameter data_value hex string must contain an even number of characters.")
+                data_items = [
+                    normalized_value[index:index + 2]
+                    for index in range(0, len(normalized_value), 2)
+                ]
+                raw_payload = normalized_value
+        else:
+            data_items = list(data_value)
+
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,
+            session_id=session_id,
+            package_id=package_id,
+            data_state=data_state,
+            data_addr=data_addr,
+            register_addr=register_addr,
+            data_len=data_len,
+            i2c_data=data_items)
+
+        formatted_data = []
+        for item in data_items:
+            if isinstance(item, int):
+                formatted_data.append(f"{item:02X}")
+            else:
+                formatted_data.append(_normalize_hex_token(item))
+
+        if raw_payload is None and len(formatted_data) > 1:
+            raw_payload = " ".join(formatted_data)
+        elif raw_payload is None and len(formatted_data) == 1:
+            raw_payload = formatted_data[0]
+
+        if isinstance(register_addr, int) and register_addr == 0xFFFF:
+            register_addr = "FFFF"
+        elif isinstance(register_addr, str):
+            register_addr = _normalize_hex_token(register_addr)
+
+        if isinstance(data_len, str):
+            data_len = _normalize_hex_token(data_len)
+
+        with self.lock:
+            command = ProtocolCode.SET_I2C_P1
+            command += " I" + str(session_id)
+            command += " U" + str(package_id)
+            command += " S" + str(data_state)
+            command += " L" + str(data_addr)
+            command += " H" + str(register_addr)
+            command += " N" + str(data_len)
+            command += " K"
+            if raw_payload:
+                command += raw_payload
+            self._send_command(command)
+            return self._request("i2c_data")
+
+    def get_system_screen_version(self):
+        """Read system screen version.
+
+        Returns: (float) screen version.
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_SYSTEM_SCREEN_VERSION_P1,
+                "get_screen_version"
+            )
+
+    def get_screen_modify_version(self):
+        """Read screen modify version.
+
+        Returns: (float) modify screen version.
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_MODIFY_SCREEN_VERSION_P1,
+                "get_screen_modify_version"
+            )
+
+    def set_communication_baud_rate(self, baud_rate):
+        """set communication baud rate
+
+        Args:
+            baud_rate (int) : 115200 or 1000000
+            """
+        self.calibration_parameters(class_name=self.__class__.__name__, baud_rate=baud_rate)
+        with self.lock:
+            command = ProtocolCode.SET_COMMUNICATION_BAUD_RATE_P1
+            command += " B" + str(baud_rate)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def go_home(self, speed=20, _async=True):
+        return self.set_angles([0, 0, 90, 0], speed, _async=_async)
+
+    def set_wifi_password(self, wifi_name, password=None):
+        """Set WiFi password
+
+        Args:
+            wifi_name (str) : ssid, WiFi name
+            password (str) : WiFi password
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, wifi_name=wifi_name, password=password)
+        if password is None:
+            password = ''
+        with self.lock:
+            command = ProtocolCode.SET_WIFI_PASSWORD
+            command += " " + str(wifi_name) + '|' + str(password)
+            print('command:', command)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def check_sd_card(self):
+        """Check if there is an SD card."""
+        with self.lock:
+            command = ProtocolCode.CHECK_SD_CARD
+            return self._request_with_retry(command, "check_sd_card")
+
+    def get_motor_enable_status(self):
+        """Retrieve motor enable status"""
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_MOTOR_ENABLE_STATUS,
+                'get_motor_enable_status'
+            )
+
+    def clear_zero_calibration_status(self, joint_id):
+        """Clear zero calibration status
+
+        Args:
+            joint_id (int): joint ID, range is 1 ~ 4
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id)
+        with self.lock:
+            command = ProtocolCode.CLEAR_ZERO_CALIBRATION_STATUS
+            command += " J" + str(joint_id)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_all_base_io_states(self):
+        """Get All bottom I/O pin status.
+
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 10
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_BASE_IO_STATE_P1, 'get_base_io_state'
+            )
+
+    def get_base_io_state(self, pin_no):
+        """Get bottom I/O pin status.
+
+        Args:
+            pin_no (int): bottom pin number, range is 1 ~ 10
+        Returns:
+            pin_status (int) : range is 0 ~ 3
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, basic_pin_no=pin_no)
+        with self.lock:
+            res_data = self._request_with_retry(
+                ProtocolCode.GET_BASE_IO_STATE_P1, 'get_base_io_state'
+            )
+            if isinstance(res_data, list):
+                return res_data[pin_no - 1]
+            return -1
+
+    def get_all_end_io_states(self):
+        """Get end I/O pin status.
+
+        Returns:
+            pin_status (list) : List of numbers in the range 0 to 3, len is 4
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_END_IO_STATE_P1, 'get_end_io_state'
+            )
+
+    def get_end_io_state(self, pin_no):
+        """Get end I/O pin status.
+
+        Args:
+            pin_no (int): end pin number, range is 1 ~ 4
+        Returns:
+            pin_status (int) : range 0 to 3
+                0: Input, level = 0 (low level)
+                1: Input, level = 1 (high level)
+                2: Output, level = 0 (low level)
+                3: Output, level = 1 (high level)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, end_pin_no=pin_no)
+        with self.lock:
+            res_data = self._request_with_retry(
+                ProtocolCode.GET_END_IO_STATE_P1, 'get_end_io_state'
+            )
+            if isinstance(res_data, list):
+                return res_data[pin_no - 1]
+            return -1
+
+    def set_end_button_disable(self):
+        """Disable the settings end button."""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_BUTTON_DISABLE)
+            return self._response(_async=True, is_set=True)
+
+    def set_end_button_enable(self):
+        """Enable the settings end button."""
+        with self.lock:
+            self._send_command(ProtocolCode.SET_BUTTON_ENABLE)
+            return self._response(_async=True, is_set=True)
+
+    def forced_reset_zero(self, _async=True):
+        """Forced reset to zero."""
+        with self.lock:
+            self._send_command(ProtocolCode.FORCED_RESET_ZERO)
+            return self._response(_async=_async)
+
+    def set_conveyor_control(self, state, direction, speed, distance):
+        """Conveyor belt control.
+
+        Args:
+            state (int): 0 ~ 1, Conveyor belt state, 0 - close; 1 - open
+            direction (int): 0 ~ 1, Conveyor belt direction, 0 - forward; 1 - backward
+            speed (int): Conveyor belt speed (1 ~ 125 mm/s)
+            distance (int): Conveyor belt distance (0~1200 mm)，0: Continuous movement; 1-1200: Movement 1-1200mm (maximum stroke)
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state, direction=direction,
+                                    conveyor_speed=speed, conveyor_distance=distance)
+        with self.lock:
+            command = ProtocolCode.CONVEYOR_BELT_CONTROL
+            command += " J" + str(state)
+            command += " K" + str(direction)
+            command += " L" + str(speed)
+            command += " S" + str(distance)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_conveyor_stop(self):
+        """Stop the conveyor belt."""
+        with self.lock:
+            self._send_command(ProtocolCode.CONVEYOR_BELT_STOP)
+            return self._response(_async=True, is_set=True)
+
+    def set_color(self, r, g, b):
+        """Set the color of the RGB light panel
+
+        Args:
+            r (int): Red color, range is 0 ~ 255
+            g (int): Green color, range is 0 ~ 255
+            b (int): Blue color, range is 0 ~ 255
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, rgb=[r, g, b])
+        with self.lock:
+            command = ProtocolCode.SET_RGB_COLOR
+            command += " R" + str(r)
+            command += " G" + str(g)
+            command += " B" + str(b)
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_preview_mode(self, coords):
+        """Set Coordinate Trajectory Preview Mode
+
+        Args:
+            coords (list[float]): Coordinates [X, Y, Z, R].
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, coords=coords)
+        with self.lock:
+            self._clear_serial_buffer()
+            command = ProtocolCode.SET_PREVIEW_MODE
+            if len(coords) > 0 and coords[0] is not None:
+                command += f" X{coords[0]}"
+            if len(coords) > 1 and coords[1] is not None:
+                command += f" Y{coords[1]}"
+            if len(coords) > 2 and coords[2] is not None:
+                command += f" Z{coords[2]}"
+            if len(coords) > 3 and coords[3] is not None:
+                command += f" R{coords[3]}"
+
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_sd_card_space(self):
+        """Get SD Card Total and Remaining Memory
+
+        Returns:
+            space (list) : Total Memory and Remaining Memory, For example: [Total Memory, Remaining Memory]
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_SD_CARD_MEMORY, 'get_sd_space'
+            )
+
+    def collision_unlock(self):
+        """Unlock After Collision Detection."""
+        with self.lock:
+            self._send_command(ProtocolCode.COLLISION_UNLOCK)
+            return self._response(_async=True, is_set=True)
+
+    def clear_error_status(self):
+        """Clear Error Status."""
+        with self.lock:
+            self._send_command(ProtocolCode.CLEAR_ERROR_STATUS)
+            return self._response(_async=True, is_set=True)
+
+    def get_queue_size(self):
+        """Get Buffer Queue Size.
+
+        Returns:
+            `int` queue size
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_QUEUE_SIZE_P1, 'get_queue_size')
+
+    def set_robot_id(self, robot_id):
+        """Set Robot ID.
+
+        Args:
+              robot_id (str): Robot ID, len is 3
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, robot_id=robot_id)
+        with self.lock:
+            command = ProtocolCode.SET_ROBOT_ID_P1
+            command += f" {str(robot_id)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_robot_id(self):
+        """Get Robot ID."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_ROBOT_ID_P1, 'get_robot_id')
+
+    def get_wifi_ip(self):
+        """Get WiFi IP Address"""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_WIFI_IP_PORT_P1, 'get_wifi_ip')
+
+    def get_bluetooth_mac(self):
+        """Get Bluetooth MAC."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_BLUETOOTH_MAC_P1, 'get_bluetooth_mac')
+
+    def get_end_button_state(self):
+        """Get end button status.
+        Returns:
+            1 - pressed
+            0 - released
+        """
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_END_BUTTON_STATUS, 'get_end_button_state')
+
+    def coord_inverse_solution(self, coords):
+        """Inverse coordinate system: Input coordinates and read angles
+
+        Args:
+            coords (list) : Coordinates [X, Y, Z, RX]
+        Returns:
+            angles (list) : Angles list, len is 4
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        with self.lock:
+            command = ProtocolCode.SET_COORD_INVERSE_SOLUTION
+            command += f" X{coords[0]} Y{coords[1]} Z{coords[2]} R{coords[3]}"
+            return self._request_with_retry(command, 'get_inverse_solution_angles')
+
+    def angle_correct_solution(self, angles):
+        """Angle Correction: Input angle and read coordinates
+
+        Args:
+            angles (list) : Angles list, len is 4
+        Returns:
+            coords (list) : Coordinates [X, Y, Z, RX]
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles)
+        with self.lock:
+            command = ProtocolCode.SET_ANGLE_CORRECT_SOLUTION
+            command += f" A{angles[0]} B{angles[1]} C{angles[2]} D{angles[3]}"
+            return self._request_with_retry(command,'get_correct_solution_coords')
+
+    def get_wifi_signal_strength(self):
+        """Get WiFi signal strength."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_WIFI_SIGNAL_P1, 'get_wifi_signal_strength')
+
+    def get_bluetooth_signal_strength(self):
+        """Get Bluetooth signal strength."""
+        with self.lock:
+            return self._request_with_retry(ProtocolCode.GET_BLUETOOTH_SIGNAL_P1, 'get_bluetooth_signal_strength')
+
+    def set_modbus_mode(self, state):
+        """Set modbus mode.
+
+        Args:
+              state (int): 0 - close; 1 - open
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_MODBUS_MODE_P1
+            command += f" S{str(state)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def set_collision_threshold(self, joint_id, threshold):
+        """Set collision threshold.
+
+        Args:
+            joint_id (int): Joint ID, 1 ~ 4; 0 - all joints
+            threshold (float): Collision threshold
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, joint_number=joint_id, threshold_value=threshold)
+        with self.lock:
+            command = ProtocolCode.SET_COLLISION_THRESHOLD_P1
+            command += f"J {str(joint_id)}"
+            command += f"P {str(threshold)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_communication_mode(self):
+        """Get communication mode.
+
+        Returns: mode (str)
+                Uart0 - Communicates via serial port 0
+                Uart1 - Communicates via serial port 1
+                WiFi - Communicates via Wi-Fi
+                Bluetooth - Communicates via Bluetooth
+        """
+        with self.lock:
+            command = ProtocolCode.GET_COMMUNICATION_MODE_P1
+            return self._request_with_retry(command, 'get_communication_mode')
+
+    def set_uart1_communication(self, state):
+        """Set UART1 communication.
+
+        Args:
+            state (int):
+                0 - Disable
+                1 - Enable serial port 1 communication
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, state=state)
+        with self.lock:
+            command = ProtocolCode.SET_UART1_COMMUNICATION_MODE
+            command += f" S{str(state)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_collision_threshold(self):
+        """Get collision threshold.
+
+        Returns:
+            collision threshold (list), for all joints, such as [0, 0, 0, 0]
+        """
+        with self.lock:
+            command = ProtocolCode.GET_COLLISION_THRESHOLD_P1
+            return self._request_with_retry(command, 'get_collision_threshold')
+
+    def get_pwm_status(self):
+        """Get pwm status.
+
+        Returns:
+            PWM Status (list), such as [0, 0, 0, 0]
+                - [0]: Laser mode status, 0 - Off, 1 - On
+                - [1]: Laser mode PWM value, range 0 ~ 255
+                - [2]: Custom mode status, 0 - Off, 1 - On
+                - [3]: Custom mode PWM value, range 0 ~ 255
+        """
+        with self.lock:
+            command = ProtocolCode.GET_PWM_STATUS_P1
+            return self._request_with_retry(command, 'get_pwm_status')
+
+    def get_limit_switch_state(self):
+        """Get limit switch state."""
+        with self.lock:
+            command = ProtocolCode.GET_LIMIT_SWITCH_STATE_P1
+            return self._request_with_retry(command, 'get_limit_switch_state')
+
+    def laser_engraving_pause_time(self, pause_time):
+        """Laser engraving pause time.
+
+        Args:
+            pause_time (int): Laser engraving pause time, range is 1 ~ 1000 ms
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, pause_time=pause_time)
+        with self.lock:
+            command = ProtocolCode.LASER_ENGRAVING_PAUSE_TIME
+            command += f" Q{str(pause_time)}"
+            self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def get_default_sensor_initialize(self, sensor_type):
+        """GET default sensor initialize.
+        Args:
+            sensor_type (int): sensor type, range 1 ~ 7
+
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, sensor_type=sensor_type)
+        with self.lock:
+            command = ProtocolCode.GET_DEFAULT_SENSOR_INITIALIZE_P1
+            command += f" J{str(sensor_type)}"
+            return self._request_with_retry(command, 'get_default_sensor_initialize')

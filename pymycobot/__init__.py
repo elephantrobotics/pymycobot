@@ -52,6 +52,9 @@ from pymycobot.ultraArmP1 import UltraArmP1
 from pymycobot.exoskeleton import Exoskeleton
 from pymycobot.exoskeletonsocket import ExoskeletonSocket
 from pymycobot.mybuddyemoticon import MyBuddyEmoticon
+from pymycobot.Pro320_Modbus import Pro320Modbus
+from pymycobot.ultraarm_p1_socket import UltraArmP1Socket
+from pymycobot.ultraarm_p1_bluetooth import UltraArmP1Bluetooth
 
 
 __all__ = [
@@ -105,11 +108,14 @@ __all__ = [
     "MyBuddyEmoticon",
     "Pro450Client",
     "UltraArmP1",
+    "Pro320Modbus",
+    "UltraArmP1Socket",
+    "UltraArmP1Bluetooth"
 ]
 
 __version__ = "4.0.6"
 __author__ = "Elephantrobotics"
-__email__ = "weiquan.xu@elephantrobotics.com"
+__email__ = "weijian.wang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
 __copyright__ = f"CopyRight (c) 2020-{datetime.datetime.now().year} Shenzhen Elephantrobotics technology"
 
