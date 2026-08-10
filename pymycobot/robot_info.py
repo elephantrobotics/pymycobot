@@ -153,6 +153,79 @@ class RobotStatusPro450Info(object):
         }
     }
 
+class UltraArmP1RobotInfo(object):
+    ERROR_MAP = {
+        0: {"zh_CN": "J1关节超限", "en_US": "J1 joint limit exceeded"},
+        1: {"zh_CN": "J2关节超限", "en_US": "J2 joint limit exceeded"},
+        2: {"zh_CN": "J3关节超限", "en_US": "J3 joint limit exceeded"},
+        3: {"zh_CN": "J4关节超限", "en_US": "J4 joint limit exceeded"},
+
+        4: {"zh_CN": "J1关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J1 collision detected,please use the collision_unlock() interface to unlock."},
+        5: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
+        6: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
+        7: {"zh_CN": "J4关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J4 collision detected,please use the collision_unlock() interface to unlock."},
+
+        8: {"zh_CN": "J1编码器报错", "en_US": "J1 encoder error"},
+        9: {"zh_CN": "J2编码器报错", "en_US": "J2 encoder error"},
+        10: {"zh_CN": "J3编码器报错", "en_US": "J3 encoder error"},
+        11: {"zh_CN": "J4编码器报错", "en_US": "J4 encoder error"},
+
+        12: {"zh_CN": "J1关节失能", "en_US": "J1 disabled"},
+        13: {"zh_CN": "J2关节失能", "en_US": "J2 disabled"},
+        14: {"zh_CN": "J3关节失能", "en_US": "J3 disabled"},
+        15: {"zh_CN": "J4关节失能", "en_US": "J4 disabled"},
+
+        16: {"zh_CN": "J1驱动板过温", "en_US": "J1 driver over temperature"},
+        17: {"zh_CN": "J2驱动板过温", "en_US": "J2 driver over temperature"},
+        18: {"zh_CN": "J3驱动板过温", "en_US": "J3 driver over temperature"},
+        19: {"zh_CN": "J4驱动板过温", "en_US": "J4 driver over temperature"},
+
+        20: {"zh_CN": "J5驱动板过温", "en_US": "J5 driver over temperature"},
+        21: {"zh_CN": "J2、J3耦合", "en_US": "J2-J3 coupling error"},
+        22: {"zh_CN": "坐标无解", "en_US": "No inverse kinematics solution"},
+        23: {"zh_CN": "坐标运动受限", "en_US": "Coordinate motion restricted"},
+    }
+    ERROR_MOTION_MAP = {
+        1: {"zh_CN": "J1关节超限", "en_US": "J1 joint limit exceeded"},
+        2: {"zh_CN": "J2关节超限", "en_US": "J2 joint limit exceeded"},
+        4: {"zh_CN": "J3关节超限", "en_US": "J3 joint limit exceeded"},
+        8: {"zh_CN": "J4关节超限", "en_US": "J4 joint limit exceeded"},
+        16: {"zh_CN": "J2、J3 关节耦合", "en_US": "J2-J3 joint coupling error"},
+        40: {"zh_CN": "坐标运动受限", "en_US": "Coordinate motion restricted"},
+    }
+    ERROR_COLLISION_MAP = {
+        1: {"zh_CN": "J1关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J1 collision detected,please use the collision_unlock() interface to unlock."},
+        2: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
+        3: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
+    }
+    ERROR_NO_SOLUTION_MAP = {
+        1: {"zh_CN": "目标坐标无解", "en_US": "No solution for target coordinates."},
+    }
+    ERROR_M450_MAP = {
+        0: {"zh_CN": "SD卡不存在", "en_US": "SD card not present"},
+        1: {"zh_CN": "无固件文件名", "en_US": "No firmware file name"},
+        2: {"zh_CN": "无法打开固件文件写入", "en_US": "Unable to open firmware file write"},
+        3: {"zh_CN": "非固定升级文件名称", "en_US": "Non-fixed upgrade file name"},
+    }
+    ERROR_G11_MAP = {
+        0: {"zh_CN": "未找到.bin 文件", "en_US": ".bin file not found"},
+        1: {"zh_CN": "升级固件打开文件失败", "en_US": "Failed to open firmware upgrade file"},
+        2: {"zh_CN": "STM32 进入升级模式失败", "en_US": "Failed to enter STM32 upgrade mode"},
+        3: {"zh_CN": "SD卡打开失败", "en_US": "Failed to open SD card"},
+        4: {"zh_CN": "固件文件名不匹配", "en_US": "Firmware filename mismatch"},
+    }
+    ERROR_M431_MAP = {
+        0: {"zh_CN": "SD卡不存在，无法保存wifi.txt文件", "en_US": "SD card not found, unable to save wifi.txt file"},
+        1: {"zh_CN": "指令格式错误，缺少|分隔符或者|在开头", "en_US": "The instruction format is incorrect; the | separator is missing or | is at the beginning."},
+        2: {"zh_CN": "SSID为空", "en_US": "SSID is empty"},
+        3: {"zh_CN": "写入/Wifi/wifi.txt文件失败", "en_US": "Failed to write to /Wifi/wifi.txt file"},
+    }
+    SOLUTION_ERROR_MAP = {
+        1: {"zh_CN": "超限", "en_US": "Exceeding limits"},
+        2: {"zh_CN": "关节耦合", "en_US": "Joint coupling"},
+        3: {"zh_CN": "无解", "en_US": "No solution"},
+    }
+
 # coding=utf-8
 
 def _interpret_status_code(language, status_code):
@@ -543,6 +616,36 @@ class RobotLimit:
             "angles_max": [170, 90, 110, 179],
             "coords_min": [-360, -365.55, -140, -180],
             "coords_max": [366.55, 365.55, 130, 180]
+        },
+        "UltraArmP1": {
+            "joint_id": [1, 2, 3, 4],
+            "servo_id": [1, 2, 3, 4],
+            "coord_id": ['X', 'Y', 'Z'],
+            "jog_coord_id": [1, 2, 3, 4],
+            "angles_min": [-165, -18, 89, -179],
+            "angles_max": [165, 85, 200, 179],
+            "coords_min": [-350, -362.43, -186.265, -180],
+            "coords_max": [362.43, 362.43, 93.44, 180]
+        },
+        "UltraArmP1Socket": {
+            "joint_id": [1, 2, 3, 4],
+            "servo_id": [1, 2, 3, 4],
+            "coord_id": ['X', 'Y', 'Z'],
+            "jog_coord_id": [1, 2, 3, 4],
+            "angles_min": [-165, -18, 89, -179],
+            "angles_max": [165, 85, 200, 179],
+            "coords_min": [-350, -362.43, -186.265, -180],
+            "coords_max": [362.43, 362.43, 93.44, 180]
+        },
+        "UltraArmP1Bluetooth": {
+            "joint_id": [1, 2, 3, 4],
+            "servo_id": [1, 2, 3, 4],
+            "coord_id": ['X', 'Y', 'Z'],
+            "jog_coord_id": [1, 2, 3, 4],
+            "angles_min": [-165, -18, 89, -179],
+            "angles_max": [165, 85, 200, 179],
+            "coords_min": [-350, -362.43, -186.265, -180],
+            "coords_max": [362.43, 362.43, 93.44, 180]
         },
         "MyAGVPlus": {
             "motor_id": [1, 2, 3, 4,254],

@@ -85,6 +85,8 @@ class MyCobotPro450DataException(Exception):
 class ultraArmP340DataException(Exception):
     pass
 
+class ultraArmP1DataException(Exception):
+    pass
 
 def check_boolean(b):
     if b != 0 and b != 1:
@@ -110,9 +112,15 @@ def check_rgb_value(value, exception_class, class_name):
 
 
 def check_value_type(parameter, value_type, exception_class, _type):
-    if value_type is not _type:
-        raise exception_class(
-            "The acceptable parameter {} should be an {}, but the received {}".format(parameter, _type, value_type))
+    if isinstance(_type, tuple):
+
+        if value_type not in _type:
+            raise exception_class(
+                "The acceptable parameter {} should be one of {}, but the received {}".format(parameter, _type, value_type))
+    else:
+        if value_type is not _type:
+            raise exception_class(
+                "The acceptable parameter {} should be an {}, but the received {}".format(parameter, _type, value_type))
 
 
 def check_coords(parameter_name, value, robot_limit, class_name, exception_class, serial_port=None):
@@ -2260,6 +2268,378 @@ def calibration_parameters(**kwargs):
                 if not value.lower().endswith((".gcode", ".ngc", ".nc")):
                     raise ultraArmP340DataException(
                         "Unsupported file format, please use .gcode, .ngc, or .nc, but received {}".format(value))
+
+    elif class_name in ["UltraArmP1", "UltraArmP1Socket", "UltraArmP1Bluetooth"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            value_type = type(value)
+            if parameter in ["joint_id"]:
+                if value not in [1, 2, 3, 4]:
+                    check_id(value, [1, 2, 3, 4], ultraArmP1DataException)
+            elif parameter in ["axis_id", "jog_coord_id"]:
+                if value not in [1, 2, 3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The axis_id not right, should be in [1, 2, 3, 4], but received {value}."
+                    )
+            elif parameter == ["servo_restore", "set_motor_enabled"]:
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MyCobotPro450DataException(
+                        f"The joint_id should be in [1,2,3,4,5,6,254], but received {value}"
+                    )
+            elif parameter in ["angle"]:
+                joint_id = kwargs.get("joint_id", None)
+                index = robot_limit[class_name]["joint_id"][joint_id - 1] - 1
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                if value < min_angle[index] or value > max_angle[index]:
+                    raise ultraArmP1DataException(
+                        f"angle value not right, should be {min_angle[index]} ~ {max_angle[index]}, but received {value}"
+                    )
+            elif parameter == "coord":
+                coord_id = kwargs.get("coord_id", None)
+                coord_map = {"X": 0, "Y": 1, "Z": 2, "R": 3}
+                index = coord_map[coord_id]
+
+                min_val = robot_limit[class_name]["coords_min"][index]
+                max_val = robot_limit[class_name]["coords_max"][index]
+
+                if not (min_val <= value <= max_val):
+                    raise ultraArmP1DataException(
+                        f"Coordinate {coord_id} out of range: should be {min_val} ~ {max_val}, but received {value}"
+                    )
+            elif parameter == "coord_id":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, str
+                )
+                if value not in ["X", "Y", "Z", 'R']:
+                    raise ultraArmP1DataException(
+                        f"coord_id must be 'X', 'Y', 'Z', or 'R', but received {value}"
+                    )
+            elif parameter == "speed":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, int
+                )
+
+                if not (1 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"Speed out of range, should be 1 ~ 100, but received {value}"
+                    )
+            elif parameter == "joint_acc":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, (int, float)
+                )
+
+                if not (1 <= value <= 600):
+                    raise ultraArmP1DataException(
+                        f"joint_acc out of range, should be 1 ~ 600, but received {value}"
+                    )
+            elif parameter == "wait_time":
+                check_value_type(
+                    parameter, value_type, ultraArmP1DataException, int
+                )
+                if not 1 <= value <= 65535:
+                    raise ultraArmP340DataException(
+                        f"wait time value not right, should be 1 ~ 65535, the error time is {value}"
+                    )
+            elif parameter == "angles":
+                if not isinstance(value, list):
+                    raise ultraArmP1DataException(
+                        f"`angles` must be a list, but the received {type(value)}"
+                    )
+                if len(value) not in [3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The length of `angles` must be 3 or 4, but received length is {len(value)}"
+                    )
+                min_angle = robot_limit[class_name]["angles_min"]
+                max_angle = robot_limit[class_name]["angles_max"]
+                for idx, angle in enumerate(value):
+                    if not min_angle[idx] <= angle <= max_angle[idx]:
+                        raise ultraArmP1DataException(
+                            f"Has invalid angle value, error on index {idx}. Received {angle} but angle should be {min_angle[idx]} ~ {max_angle[idx]}."
+                        )
+            elif parameter == "coords":
+                if not isinstance(value, list):
+                    raise ultraArmP1DataException(
+                        f"`{parameter}` must be a list, but the received {type(value)}"
+                    )
+                if len(value) not in [3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The length of `{parameter}` must be 3 or 4, but the received length is {len(value)}"
+                    )
+                min_coord = robot_limit[class_name]["coords_min"]
+                max_coord = robot_limit[class_name]["coords_max"]
+                for idx, coord in enumerate(value):
+                    if not min_coord[idx] <= coord <= max_coord[idx]:
+                        raise ultraArmP1DataException(
+                            f"Has invalid coord value, error on index {idx}, received {coord}, but coord should be {min_coord[idx]} ~ {max_coord[idx]}."
+                        )
+            elif parameter == "increment_angle":
+                joint_id = kwargs.get("joint_id", None)
+                index = robot_limit[class_name]["joint_id"][joint_id - 1] - 1
+                span = abs(
+                    robot_limit[class_name]["angles_max"][index]
+                    - robot_limit[class_name]["angles_min"][index]
+                )
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise ultraArmP1DataException(
+                        f"increment angle value not right, should be {increment_min} ~ {increment_max}, but received {value}"
+                    )
+
+            elif parameter == "increment_coord":
+                jog_coord_id = kwargs.get("jog_coord_id", None)
+                index = (
+                        robot_limit[class_name]["jog_coord_id"][jog_coord_id - 1] - 1
+                )  # Get the index based on the ID
+                span = abs(
+                    robot_limit[class_name]["coords_max"][index]
+                    - robot_limit[class_name]["coords_min"][index]
+                )
+
+                increment_min = -span
+                increment_max = span
+                if value < increment_min or value > increment_max:
+                    raise ultraArmP1DataException(
+                        f"Coordinate increment value not right, should be {increment_min} ~ {increment_max}, but received {value}"
+                    )
+            elif parameter == "jog_speed":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (1 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"Speed out of range, should be 1 ~ 100, but received {value}")
+            elif parameter in ["direction", "state", "pin_signal", "basic_pin_status"]:
+                check_0_or_1(parameter, value, [0, 1], value_type, ultraArmP1DataException, int)
+            elif parameter == "gripper_speed":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (1 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"gripper_speed out of range, should be 1 ~ 100, but received {value}")
+            elif parameter == "gripper_angle":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (1 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"gripper_angle out of range, should be 1 ~ 100, but received {value}")
+            elif parameter in ["gripper_addr"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 69):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 69, but received {value}")
+            elif parameter in ["gripper_mode"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [1, 2]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 2, but received {value}")
+
+            elif parameter in ["parameter_value"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 65535):
+                    raise ultraArmP1DataException(
+                        f"The parameter_value only supports 0 ~ 65535, but received {value}")
+            elif parameter in ["pump_state", "spi_state"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [0, 1, 2]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 2, but received {value}")
+            elif parameter in ["end_pin_no", "color_id"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [1, 2, 3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 4, but received {value}")
+            elif parameter in ["set_end_pin_no"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 3 ~ 4, but received {value}")
+            elif parameter in ["basic_pin_no"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 10):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 1 ~ 10, but received {value}")
+            elif parameter in ["p_value"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 255):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 255, but received {value}")
+            elif parameter in ["session_id", "package_id"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 255):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 255, but received {value}")
+            elif parameter == "pause_time":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 1000):
+                    raise ultraArmP1DataException(
+                        f"The parameter pause_time only supports 1 ~ 1000, but received {value}")
+            elif parameter == "data_state":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [0, 1]:
+                    raise ultraArmP1DataException(
+                        f"The parameter data_state only supports 0 or 1, but received {value}")
+            elif parameter == "data_addr":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 125):
+                    raise ultraArmP1DataException(
+                        f"The parameter data_addr only supports 0 ~ 125, but received {value}")
+            elif parameter == "register_addr":
+                if not isinstance(value, (int, str)):
+                    raise ultraArmP1DataException(
+                        f"The parameter register_addr must be an integer or hex string, but received {type(value)}")
+                try:
+                    register_value = int(value, 16) if isinstance(value, str) else value
+                except ValueError:
+                    raise ultraArmP1DataException(
+                        f"The parameter register_addr must be an integer or hex string, but received {value}")
+                if not (0 <= register_value <= 65535):
+                    raise ultraArmP1DataException(
+                        f"The parameter register_addr only supports 0 ~ 65535, but received {value}")
+            elif parameter == "data_len":
+                if not isinstance(value, (int, str)):
+                    raise ultraArmP1DataException(
+                        f"The parameter data_len must be an integer or hex string, but received {type(value)}")
+                try:
+                    data_len_value = int(value, 16) if isinstance(value, str) else value
+                except ValueError:
+                    raise ultraArmP1DataException(
+                        f"The parameter data_len must be an integer or hex string, but received {value}")
+                if not (0 <= data_len_value <= 255):
+                    raise ultraArmP1DataException(
+                        f"The parameter data_len only supports 0 ~ 255, but received {value}")
+            elif parameter == "i2c_data":
+                if len(value) > 32:
+                    raise ultraArmP1DataException(
+                        f"The parameter i2c_data length only supports 0 ~ 32 bytes, but received {len(value)}")
+                for item in value:
+                    if not isinstance(item, (int, str)):
+                        raise ultraArmP1DataException(
+                            f"The parameter i2c_data item must be an integer or hex string, but received {type(item)}")
+                    try:
+                        item_value = int(item, 16) if isinstance(item, str) else item
+                    except ValueError:
+                        raise ultraArmP1DataException(
+                            f"The parameter i2c_data item must be an integer or hex string, but received {item}")
+                    if not (0 <= item_value <= 255):
+                        raise ultraArmP1DataException(
+                            f"The parameter i2c_data item only supports 0 ~ 255, but received {item}")
+            elif parameter in ["baud_rate"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if value not in [115200, 1000000]:
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 115200 and 1000000, but received {value}")
+            elif parameter in ["number_data"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 49):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 49, but received {value}")
+
+            elif parameter in ["joint_number"]:
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (0 <= value <= 4):
+                    raise ultraArmP1DataException(
+                        f"The parameter {parameter} only supports 0 ~ 4, but received {value}")
+            elif parameter == "filename":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `filename` must be a string, but received {type(value)}"
+                    )
+
+                if not os.path.isfile(value):
+                    raise ultraArmP1DataException(
+                        f"The file '{value}' does not exist"
+                    )
+
+                if not value.lower().endswith((".gcode", ".ngc", ".nc")):
+                    raise ultraArmP1DataException(
+                        f"Unsupported file format, please use .gcode, .ngc, or .nc, but received {value}"
+                    )
+            elif parameter == 'wifi_name':
+                check_value_type(parameter, value_type, ultraArmP1DataException, str)
+                if value == "" :
+                    raise ultraArmP1DataException(
+                        f"The length of the parameter wifi_name must be greater than 0 characters and cannot be empty, but the received length is {len(value)}")
+            elif parameter == "password":
+                check_value_type(parameter, value_type, ultraArmP1DataException, (str, type(None)))
+                if value is not None and value != "" and not (8 <= len(value) <= 15):
+                    raise ultraArmP1DataException(
+                        f"The parameter password length must be 8 to 15 characters, but received len {len(value)}")
+            elif parameter == "download_filename":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `download_filename` must be a string, but received {type(value)}")
+
+                if not os.path.isfile(value):
+                    raise ultraArmP1DataException(
+                        f"The file '{value}' does not exist")
+
+                if not value.lower().endswith((".bin")):
+                    raise ultraArmP1DataException(
+                        f"Unsupported file format, please use .bin, but received {value}")
+                # Must use fixed firmware filename
+                if os.path.basename(value).lower() != "upstm32.bin":
+                    raise ultraArmP1DataException(
+                        f"Firmware filename must be 'upstm32.bin', but received '{os.path.basename(value)}'")
+            elif parameter == "conveyor_speed":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (1 <= value <= 125):
+                    raise ultraArmP1DataException(
+                        f"Speed out of range, should be 1 ~ 125, but received {value}")
+            elif parameter == "conveyor_distance":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+
+                if not (0 <= value <= 1200):
+                    raise ultraArmP1DataException(
+                        f"Speed out of range, should be 0 ~ 1200, but received {value}")
+            elif parameter == 'rgb':
+                check_rgb_value(value, ultraArmP1DataException, class_name)
+            elif parameter == "sn_code":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `sn_code` must be a string, but received {type(value)}")
+                if len(value) != 11:
+                    raise ultraArmP1DataException(
+                        f"Parameter `sn_code` length must be 11 digits, but received '{len(value)}'")
+                # Must contain only numbers
+                if not value.isdigit():
+                    raise ultraArmP1DataException(
+                        f"Parameter `sn_code` must contain only digits, but received '{value}'")
+            elif parameter == "robot_id":
+                if not isinstance(value, str):
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` must be a string, but received {type(value)}")
+                if len(value) != 3:
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` length must be 3 digits, but received '{len(value)}'")
+                # Must contain only numbers
+                if not value.isdigit():
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` must contain only digits, but received '{value}'")
+                # Range check: 001 ~ 254
+                robot_id = int(value)
+                if robot_id < 1 or robot_id > 254:
+                    raise ultraArmP1DataException(
+                        f"Parameter `robot_id` must be in range 001-254, but received '{value}'")
+            elif parameter == "servo_id":
+                if value not in [0, 1, 2, 3, 4]:
+                    raise ultraArmP1DataException(
+                        f"The servo_id not right, should be in [0, 1, 2, 3, 4], but received {value}."
+                    )
+            elif parameter == 'threshold_value':
+                check_value_type(parameter, value_type, ultraArmP1DataException, (int,float))
+                if not (0.5 <= value <= 100):
+                    raise ultraArmP1DataException(
+                        f"threshold_value out of range, should be 0.5 ~ 100, but received {value}")
+            elif parameter == "sensor_type":
+                check_value_type(parameter, value_type, ultraArmP1DataException, int)
+                if not (1 <= value <= 7):
+                    raise ultraArmP1DataException(
+                        f"The sensor type not right, should be 1 ~ 7, but received {value}."
+                    )
+
 
     elif class_name in ["MyAGVPlus", "MyAGVPlusSocket", "MyAGVPlusApi"]:
         for parameter in parameter_list[1:]:

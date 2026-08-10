@@ -7,292 +7,278 @@ ultraArmP1.py
 Python interface for the ultraArmP1 robotic arm.
 
 Author: weijian.wang
-Date: 2025-09-11
+Date: 2025-11-25
 Description: None
 """
-
-import threading
+import os
 import time
 
+import serial
+
 from pymycobot.common import ProtocolCode
+from pymycobot.ultraarm_p1_base import UltraArmP1Base
 
 
-class UltraArmP1:
+class UltraArmP1(UltraArmP1Base):
     """Class for controlling the ultraArmP1 robotic arm via serial communication.
 
     """
 
-    def __init__(self, port, baudrate=115200, timeout=0.1, debug=False):
+    REQUEST_TIMEOUT = 0.3
+    ANGLE_COORD_TIMEOUT = 0.02
+    QUEUE_TIMEOUT = 0.02
+    SET_RESPONSE_TIMEOUT = 5
+
+    def __init__(self, port, baudrate=1000000, timeout=0.05, debug=False, _internal_mode=False):
         """Initialize the ultraArmP1 robot communication.
 
         Args:
             port (str): Serial port name (e.g., 'COM3' or '/dev/ttyUSB0').
-            baudrate (int, optional): Communication baud rate. Defaults to 115200.
-            timeout (float, optional): Serial read timeout in seconds. Defaults to 0.1.
+            baudrate (int, optional): Communication baud rate. Defaults to 1000000.
+            timeout (float, optional): Serial read timeout in seconds. Defaults to 0.05.
             debug (bool, optional): Whether to print debug information. Defaults to False.
         """
-        import serial
-
+        super().__init__(debug, _internal_mode)
         self._serial_port = serial.Serial()
         self._serial_port.port = port
         self._serial_port.baudrate = baudrate
         self._serial_port.timeout = timeout
-        self._serial_port.rts = True
+        self._serial_port.rts = False
         self._serial_port.dtr = True
         self._serial_port.open()
-        self.debug = debug
-        self.lock = threading.Lock()
-        time.sleep(1)
+        time.sleep(0.5)
 
-    def _respone(self, timeout=90, _async=True):
-        """Wait for device response from the serial buffer.
+    def _serial_in_waiting(self):
+        try:
+            return int(self._serial_port.in_waiting)
+        except Exception:
+            try:
+                return int(self._serial_port.inWaiting())
+            except Exception:
+                return 0
 
-        This method continuously reads data from the serial port until either:
-          - A specific keyword ("timx") is detected in the incoming data, or
-          - The timeout is reached.
+    def _read_available_bytes(self):
+        n = self._serial_in_waiting()
+        if n <= 0:
+            return b""
+        try:
+            return self._serial_port.read(n)
+        except Exception:
+            return b""
 
-        Args:
-            timeout (float): Maximum time (in seconds) to wait for a valid response.
-            _async (bool): Whether to wait for a response.
+    def _send_command(self, command: str, clear_input=True):
+        """Send commands to serial port"""
+        if clear_input:
+            self._clear_serial_buffer()
+        # append checksum
+        command = self._append_checksum(command)
+        command += ProtocolCode.END
+        self._debug_write(command)
+        try:
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+        except serial.SerialException as e:
+            self.log.error(
+                f"Serial write failed. "
+                f"port={self._serial_port.port}, "
+                f"is_open={self._serial_port.is_open}, "
+                f"cmd={command}, "
+                f"error={e}"
+            )
+            raise
 
-        Returns:
-            str: 'ok' if the keyword response ("timx") is detected.
-            bool: False if the timeout occurs without receiving a valid response.
+    def _send_raw_command(self, command: str):
+        self._serial_port.write(command.encode())
+        self._serial_port.flush()
+        time.sleep(0.02)
+
+    def _clear_serial_buffer(self):
+        """Clear the serial port buffer before sending commands."""
+        try:
+            if hasattr(self._serial_port, "reset_input_buffer"):
+                self._serial_port.reset_input_buffer()
+        except Exception:
+            pass
+
+    def _fw_calc_crc(self, payload: bytes):
         """
+        CRC = sum(CMD + IDX_H + IDX_L + LEN_H + LEN_L + DATA) & 0xFF
+        """
+        return sum(payload) & 0xFF
 
-        import time
-        if not _async:
-            return 1
-        start_time = time.time()
-        received_data = b""
-        while time.time() - start_time < timeout:
-            received_data += self._serial_port.read(self._serial_port.inWaiting())
-            # if b"end" in received_data.lower():
-            #     return 'ok'
-            end_count = received_data.lower().count(b"end")
-            if end_count >= 2:
-                return 'ok'
-            time.sleep(0.02)
-        # Timeout
+    def _fw_build_packet(self, idx: int, data: bytes):
+        """Build data packets"""
+        frame = bytearray()
+        frame += b'\xA5\x5A'  # Frame header
+        frame += b'\x01'  # CMD: PC send data
+        frame += idx.to_bytes(2, 'big')  # Packet index
+        frame += len(data).to_bytes(2, 'big')
+        frame += data
+
+        crc = self._fw_calc_crc(frame[2:])  # exclude header
+        frame.append(crc)
+        return bytes(frame)
+
+    def _fw_read_ack(self, timeout=1.0):
+        """Read screen response data"""
+        start = time.time()
+        buf = bytearray()
+
+        while time.time() - start < timeout:
+            n = self._serial_in_waiting()
+            if n > 0:
+                buf += self._serial_port.read(n)
+
+                while True:
+                    # At least 8 bytes
+                    if len(buf) < 8:
+                        break
+
+                    # Search for Frame Header
+                    if buf[0] != 0xA5 or buf[1] != 0x5A:
+                        buf.pop(0)
+                        continue
+
+                    frame = bytes(buf[:8])
+
+                    # ✅ CRC Check
+                    payload = frame[2:7]  # CMD + IDX + LEN?
+                    crc = frame[7]
+                    calc_crc = sum(payload) & 0xFF
+
+                    if crc != calc_crc:
+                        # ❌ CRC error: Discarding 1 byte and continuing the search.
+                        buf.pop(0)
+                        continue
+
+                    # ✅ Valid Frame
+                    buf[:] = buf[8:]
+                    self._debug_read(frame.hex(' ').upper())
+
+                    cmd = frame[2]
+                    idx = int.from_bytes(frame[3:5], 'big')
+
+                    # ✅ Legal Range Filtering (Very Important)
+                    if cmd not in (2, 3):
+                        continue
+
+                    return cmd, idx
+
+            time.sleep(0.002)
+        return None
+
+    def _fw_enter_upgrade(self, filename: str):
+        """Start downloading"""
+        command = ProtocolCode.START_DOWNLOAD_FIRMWARE
+        command += f" {filename}"
+        self._send_command(command)
+        return self._response(_async=True, is_set=True)
+
+    def _download_progress(self, percent):
+        print(f"Download progress: {percent}%")
         if self.debug:
-            print("data (timeout):", received_data)
+            self.log.info(f"Download progress: {percent}%")
 
-        return False
-
-    def _request(self, flag=""):
-        """Send a request and read data from the robot.
-
-        Args:
-            flag (str, optional): Type of data expected ('angle', 'coord', or None).
-
-        Returns:
-            list[float] or int: Parsed angles/coordinates, or -1 if failed.
-        """
-        raw_data = None
-        attempt = 0
-
-        while attempt < 5:
-            if self._serial_port.inWaiting() > 0:
-                raw_data = self._serial_port.read(self._serial_port.inWaiting()).decode()
-                if self.debug:
-                    print("\nReceived data:\n%s**********************\n" % raw_data)
-
-                if "ERROR: COMMAND NOT RECOGNIZED" in raw_data:
-                    flag = None
-
-                if flag == "angle":
-                    data_lower = raw_data.lower()
-                    if "angles" in data_lower:
-                        angle_str = data_lower[data_lower.find("angles"):]
-                        start_idx = angle_str.find("[")
-                        end_idx = angle_str.find("]")
-                        try:
-                            angles_list = list(map(float, angle_str[start_idx + 1:end_idx].split(",")))
-                            angles_list = [round(a, 2) for a in angles_list]
-                            return angles_list
-                        except Exception:
-                            print("Received angles is not completed! Retry receive...")
-                            attempt += 1
-                            continue
-                    else:
-                        return -1
-
-                elif flag == "coord":
-                    data_lower = raw_data.lower()
-                    if "coords" in data_lower:
-                        coord_str = data_lower[data_lower.find("coords"):]
-                        start_idx = coord_str.find("[")
-                        end_idx = coord_str.find("]")
-                        try:
-                            coords_list = list(map(float, coord_str[start_idx + 1:end_idx].split(",")))
-                            coords_list = [round(c, 2) for c in coords_list]
-                            return coords_list
-                        except Exception:
-                            print("Received coords is not completed! Retry receive...")
-                            attempt += 1
-                            continue
-                    else:
-                        return -1
-
-                elif flag is None:
-                    return -1
-
-            attempt += 1
-            time.sleep(0.01)
-
-        return -1
-
-    def _debug(self, data):
-        """Print debug information if debug mode is enabled.
-
-        Args:
-            data (str): Command or data to print.
-        """
-        if self.debug:
-            print("\n***** Debug Info *****\nsend command: %s" % data)
-
-    def set_unlock(self):
-        """Unlock the robot's safety state."""
-        with self.lock:
-            command = ProtocolCode.SET_UNLOCK + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._respone()
-
-    def set_reboot(self):
-        """Reboot the robot controller board."""
-        with self.lock:
-            command = ProtocolCode.SET_REBOOT + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._respone()
-
-    def set_joint_disable(self):
-        """Disable the robot joints."""
-        with self.lock:
-            command = ProtocolCode.SET_JOINT_DISABLE + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._respone()
-
-    def set_joint_enable(self):
-        """Enable the robot joints."""
-        with self.lock:
-            command = ProtocolCode.SET_JOINT_ENABLE + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._respone()
-
-    def get_angles_info(self):
-        """Get the current joint angles of the robot.
-
-        Returns:
-            list[float] or int: Joint angles [J1, J2, J3, J4] or -1 if failed.
-        """
-        with self.lock:
-            command = ProtocolCode.GET_CURRENT_ANGLES_COORDS_INFO + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._request("angle")
-
-    def get_coords_info(self):
-        """Get the current Cartesian coordinates of the robot.
-
-        Returns:
-            list[float] or int: Coordinates [X, Y, Z, E] or -1 if failed.
-        """
-        with self.lock:
-            command = ProtocolCode.GET_CURRENT_ANGLES_COORDS_INFO + ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._request("coord")
-
-    def set_coords(self, coords, speed, _async=True):
-        """Move the robot using Cartesian coordinate control.
-
-        Args:
-            coords (list[float]): Coordinates [X, Y, Z].
-            speed (int): Movement speed (1~5700).
-            _async: (bool): Closed-loop switch
-        """
-        with self.lock:
-            command = ProtocolCode.SET_ANGLES_COORDS
-            if len(coords) > 0 and coords[0] is not None:
-                command += f" X{coords[0]}"
-            if len(coords) > 1 and coords[1] is not None:
-                command += f" Y{coords[1]}"
-            if len(coords) > 2 and coords[2] is not None:
-                command += f" Z{coords[2]}"
-            if speed is not None and 1 <= speed <= 5700:
-                command += f" F{speed}"
-
-            command += ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._respone(_async=_async)
-
-    def set_angle(self, joint_id, angle, speed, _async=True):
-        """Set a single joint angle.
-
-        Args:
-            joint_id (int): Joint number (1~4).
-            angle (float): Angle value.
-            speed (int): Movement speed (1~5700).
-            _async: (bool): Closed-loop switch
-        """
-        with self.lock:
-            command = ProtocolCode.SET_ANGLES_COORDS
-            joint_map = {1: "A", 2: "B", 3: "C", 4: "D"}
-            if joint_id in joint_map:
-                command += f" {joint_map[joint_id]}{angle}"
-            if speed > 0:
-                command += f" F{speed}"
-            command += ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._respone(_async=_async)
-
-    def set_angles(self, angles, speed, _async=True):
-        """Move robot using joint angle control.
-
-        Args:
-            angles (list[float]): Joint angles [J1, J2, J3, J4].
-            speed (int): Movement speed (1~5700).
-            _async: (bool): Closed-loop switch
-        """
-        with self.lock:
-            command = ProtocolCode.SET_ANGLES_COORDS
-            if len(angles) > 0 and angles[0] is not None:
-                command += f" A{angles[0]}"
-            if len(angles) > 1 and angles[1] is not None:
-                command += f" B{angles[1]}"
-            if len(angles) > 2 and angles[2] is not None:
-                command += f" C{angles[2]}"
-            if len(angles) > 3 and angles[3] is not None:
-                command += f" D{angles[3]}"
-            if speed is not None and 1 <= speed <= 5700:
-                command += f" F{speed}"
-
-            command += ProtocolCode.END
-            self._serial_port.write(command.encode())
-            self._serial_port.flush()
-            self._debug(command)
-            return self._respone(_async=_async)
+    def is_open(self):
+        return self._serial_port is not None and self._serial_port.is_open
 
     def close(self):
         """Close the serial port."""
         with self.lock:
-            self._serial_port.close()
+            try:
+                if self._serial_port and self._serial_port.is_open:
+                    self._serial_port.close()
+            except Exception as e:
+                self.log.error(f"Failed to close serial port: {e}")
 
     def open(self):
         """Open the serial port."""
         with self.lock:
-            self._serial_port.open()
+            try:
+                self._serial_port.open()
+            except Exception as e:
+                self.log.error(f"Failed to open serial port: {e}")
+
+    def finish_firmware_upgrade(self):
+        """Download complete"""
+        command = ProtocolCode.FINISH_DOWNLOAD_FIRMWARE
+        self._send_command(command)
+        res = self._response(_async=True, is_set=True)
+        if res == "ok":
+            self.log.debug("Waiting 3 seconds for controller restart...")
+            time.sleep(3)
+        return res
+
+    def download_firmware_sd(self, filename, show_progress=True):
+        """
+        Download firmware to the SD card via M450/M451 commands.
+
+        Args:
+            filename (str): name of the firmware file, and must be a .bin file
+            show_progress (bool): whether to show download progress
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, download_filename=filename)
+
+        local_path = filename  # For local use
+
+        fw_name = os.path.basename(filename)  # For protocol use (M450)
+
+        if show_progress:
+            # callback(percent:int) to report progress
+            progress_cb = self._download_progress
+        else:
+            progress_cb = None
+        with self.lock:
+            self._clear_serial_buffer()
+            self.finish_firmware_upgrade()
+
+            # Entering upgrade mode.
+            res = self._fw_enter_upgrade(fw_name)
+            time.sleep(0.2)
+            if res != 'ok':
+                return res
+
+            # read bin
+            with open(local_path, "rb") as f:
+                bin_data = f.read()
+
+            chunk_size = 512
+            total_packets = (len(bin_data) + chunk_size - 1) // chunk_size
+
+            idx = 1
+            while idx <= total_packets:
+                offset = (idx - 1) * chunk_size
+                data = bin_data[offset: offset + chunk_size]
+
+                pkt = self._fw_build_packet(idx, data)
+                self._debug_write(pkt.hex(' ').upper())
+                self._serial_port.write(pkt)
+                self._serial_port.flush()
+
+                ack = self._fw_read_ack(timeout=1.0)
+                if ack is None:
+                    continue  # timeout -> resend
+                cmd, next_idx = ack
+
+                if cmd == 2:  # success
+                    if next_idx < 1 or next_idx > total_packets + 1:
+                        continue
+                    idx = next_idx
+                    if progress_cb:
+                        progress_cb(int((idx - 1) * 100 / total_packets))
+
+                elif cmd == 3:  # resend
+                    idx = next_idx
+                else:
+                    self.finish_firmware_upgrade()
+                    msg = f"Unknown ACK CMD: {cmd}"
+                    self.log.error(msg)
+                    raise RuntimeError(msg)
+            # Finish
+            return self.finish_firmware_upgrade()
+
+    def upgrade_restart(self):
+        """Upgrade and restart"""
+        with self.lock:
+            self._send_command(ProtocolCode.UPGRADE_RESTART)
+            return self._response(_async=True, is_set=True, timeout=15)
