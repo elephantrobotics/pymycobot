@@ -71,6 +71,8 @@ from pymycobot import MyPalletizerSocket
 from pymycobot import ultraArmP340
 # for mycobot pro450 machine
 from pymycobot import Pro450Client
+# for ultraArm P1 machine
+from pymycobot import UltraArmP1
 ```
 
 The [`demo`](./demo) directory stores some test case files.
@@ -82,26 +84,16 @@ Please go to [here](./docs/README.md).
 
 > Note: Version v3.6.0 differentiates interfaces by model. Starting from this version, the MyCobot class will no longer be maintained. For new usage, please refer to the document: 
 
-![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/chinese.svg)   ![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/english.svg)
-
-[MyCobot 280 API说明](./docs/MyCobot_280_zh.md) | [MyCobot 280 API Description](./docs/MyCobot_280_en.md)
-
-[MyCobot 320 API说明](./docs/MyCobot_320_zh.md) | [MyCobot 320 API Description](./docs/MyCobot_320_en.md)
-
-[MechArm 270 API说明](./docs/MechArm_270_zh.md) | [MechArm 270 API Description](./docs/MechArm_270_en.md)
-
-[MyPalletizer 260 API说明](./docs/MyPalletizer_260_zh.md) | [MyPalletizer 260 API Description](./docs/MyPalletizer_260_en.md)
-
-[myAGV API说明](./docs/myAGV_zh.md) | [myAGV API Description](./docs/myAGV_en.md)
-
-[myArm_M&C API说明](./docs/myArm_M&C_zh.md) | [myArm_M&C API Description](./docs/myArm_M&C_en.md)
-
-[ultraArm P340 API说明](./docs/ultraArm_P340_zh.md) | [ultraArm P340 API Description](./docs/ultraArm_P340_en.md)
-
-[MyBuddy API说明](./docs/MyBuddy_zh.md) | [MyBuddy API Description](./docs/MyBuddy_en.md)
-
-[MyBuddyEmoticon API说明](./docs/mybuddy_emoticon_zh.md) | [MyBuddyEmoticon API Description](./docs/mybuddy_emoticon_en.md)
-
-[MyCobot Pro450 API说明](./docs/MyCobot_Pro450_cn.md) | [MyCobot Pro450 API Description](./docs/MyCobot_Pro450_en.md)
-
-[ultraArm P1 API说明](./docs/ultraArm_P1_zh.md) | [ultraArm P1 API Description](./docs/ultraArm_P1_en.md)
+| ![CN](https://jaywcjlove.github.io/sb/lang/chinese.svg) | ![EN](https://jaywcjlove.github.io/sb/lang/english.svg) |
+|----------|----------------------|
+| [MyCobot 280 API说明](./docs/MyCobot_280_zh.md) | [MyCobot 280 API Description](./docs/MyCobot_280_en.md) |
+| [MyCobot 320 API说明](./docs/MyCobot_320_zh.md) | [MyCobot 320 API Description](./docs/MyCobot_320_en.md) |
+| [MechArm 270 API说明](./docs/MechArm_270_zh.md) | [MechArm 270 API Description](./docs/MechArm_270_en.md) |
+| [MyPalletizer 260 API说明](./docs/MyPalletizer_260_zh.md) | [MyPalletizer 260 API Description](./docs/MyPalletizer_260_en.md) |
+| [myAGV API说明](./docs/myAGV_zh.md) | [myAGV API Description](./docs/myAGV_en.md) |
+| [myArm_M&C API说明](./docs/myArm_M&C_zh.md) | [myArm_M&C API Description](./docs/myArm_M&C_en.md) |
+| [ultraArm P340 API说明](./docs/ultraArm_P340_zh.md) | [ultraArm P340 API Description](./docs/ultraArm_P340_en.md) |
+| [MyBuddy API说明](./docs/MyBuddy_zh.md) | [MyBuddy API Description](./docs/MyBuddy_en.md) |
+| [MyBuddyEmoticon API说明](./docs/mybuddy_emoticon_zh.md) | [MyBuddyEmoticon API Description](./docs/mybuddy_emoticon_en.md) |
+| [MyCobot Pro450 API说明](./docs/MyCobot_Pro450_cn.md) | [MyCobot Pro450 API Description](./docs/MyCobot_Pro450_en.md) |
+| [ultraArm P1 API说明](./docs/ultraArm_P1_zh.md) | [ultraArm P1 API Description](./docs/ultraArm_P1_en.md) |

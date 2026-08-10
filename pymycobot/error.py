@@ -136,6 +136,9 @@ def check_coords(parameter_name, value, robot_limit, class_name, exception_class
         elif serial_port == "/dev/right_arm":
             min_coord = robot_limit[class_name]["right_coords_min"]
             max_coord = robot_limit[class_name]["right_coords_max"]
+        else:
+            min_coord = robot_limit[class_name]["coords_min"]
+            max_coord = robot_limit[class_name]["coords_max"]
     else:
         min_coord = robot_limit[class_name]["coords_min"]
         max_coord = robot_limit[class_name]["coords_max"]
@@ -216,7 +219,6 @@ def public_check(parameter_list, kwargs, robot_limit, class_name, exception_clas
                     "The data supported by parameter {} is 0 or 1 or 2, but the received value is {}".format(parameter,
                                                                                                              value))
         elif parameter == 'pin_signal':
-            print('22222')
             check_0_or_1(parameter, value, [0, 1], value_type, exception_class, int)
         elif parameter == 'speed':
             check_value_type(parameter, value_type, exception_class, int)
@@ -488,6 +490,10 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MercuryDataException, int)
                 if value < 1 or value > 5:
                     raise MercuryDataException("The parameter {} only supports 1 ~ 5, but received {}".format(parameter, value))
+            elif parameter == "move_rank":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value not in [0,1,2]:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 2, but received {}".format(parameter, value))
             elif parameter == 'rank_value':
                 check_value_type(parameter, value_type, MercuryDataException, int)
                 if not 1 <= value <= 100:
@@ -656,6 +662,17 @@ def calibration_parameters(**kwargs):
                 if value < increment_min or value > increment_max:
                     raise MercuryDataException(
                         "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+            elif parameter == "get_rank_mode":
+                check_value_type(parameter, value_type, MercuryDataException, int)
+                if value < 1 or value > 4:
+                    raise MercuryDataException(
+                        "The parameter {} only supports 1 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "set_fusion_rank_mode":
+                if value < 0 or value > 4:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "set_fusion_value":
+                if value < 0 or value > 10000:
+                    raise MercuryDataException("The parameter {} only supports 0 ~ 10000, but received {}".format(parameter, value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MercuryDataException)
     elif class_name == "MyAgv":
@@ -849,6 +866,12 @@ def calibration_parameters(**kwargs):
                 if value < increment_min or value > increment_max:
                     raise MyCobot280DataException(
                         "Coordinate increment value not right, should be {0} ~ {1}, but received {2}".format(increment_min, increment_max,value))
+            elif parameter == 'servo_id':
+                check_value_type(parameter, value_type, MyCobot280DataException, int)
+                if value not in [1, 2, 3, 4, 5, 6, 254]:
+                    raise MyCobot280DataException(
+                        "The value supported by parameter {} is in [1, 2, 3, 4, 5, 6, 254], but the received value is {}".format(
+                            parameter, value))
             else:
                 public_check(parameter_list, kwargs, robot_limit, class_name, MyCobot280DataException)
     elif class_name in ["MyCobot320", "MyCobot320Socket"]:
@@ -1991,8 +2014,8 @@ def calibration_parameters(**kwargs):
                     raise MyCobotPro450DataException("The parameter {} only supports 50 ~ 250, but received {}".format(parameter, value))
             elif parameter == "comp_value":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                if value < 0 or value > 250:
-                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 250, but received {}".format(parameter, value))
+                if value < 0 or value > 50:
+                    raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 50, but received {}".format(parameter, value))
             elif parameter == "trajectory":
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value not in [0,1]:
@@ -2056,7 +2079,7 @@ def calibration_parameters(**kwargs):
                         "The parameter {} only supports 0 ~ 1, but received {}".format(parameter, value))
             elif parameter in ["end_485_baud_rate"]:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
-                baud_list = [115200, 1000000]
+                baud_list = [115200, 1000000, 2000000]
                 if value not in baud_list:
                     raise MyCobotPro450DataException(
                         "The parameter {} only supports {}, but received {}".format(parameter, baud_list, value))
@@ -2091,7 +2114,7 @@ def calibration_parameters(**kwargs):
             value_type = type(value)
             if parameter == "id":
                 check_0_or_1(parameter, value, [4, 7], value_type, ultraArmP340DataException, int)
-            elif parameter == "system_mode":
+            elif parameter in ["system_mode", "gripper_type"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, ultraArmP340DataException, int)
             elif parameter == "speed_mode":
                 check_0_or_1(parameter, value, [0, 2], value_type, ultraArmP340DataException, int)
@@ -2155,10 +2178,16 @@ def calibration_parameters(**kwargs):
                     raise ultraArmP340DataException(
                         "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
             elif parameter == 'gripper_speed':
+                gripper_type_value = kwargs.get('gripper_type', None)
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
-                if not 1 <= value <= 1500:
-                    raise ultraArmP340DataException(
-                        "gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
+                if gripper_type_value == 1:
+                    if not 1 <= value <= 1500:
+                        raise ultraArmP340DataException(
+                            "Non-force-controlled gripper speed not right, should be 1 ~ 1500, the error gripper_speed is {}".format(value))
+                else:
+                    if not 1 <= value <= 65:
+                        raise ultraArmP340DataException(
+                            "force-controlled gripper speed not right, should be 1 ~ 65, the error gripper_speed is {}".format(value))
             elif parameter == 'address':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
                 if not 7 <= value <= 69:
@@ -2611,6 +2640,27 @@ def calibration_parameters(**kwargs):
                         f"The sensor type not right, should be 1 ~ 7, but received {value}."
                     )
 
+
+    elif class_name in ["MyAGVPlus", "MyAGVPlusSocket", "MyAGVPlusApi"]:
+        for parameter in parameter_list[1:]:
+            value = kwargs.get(parameter, None)
+            if parameter in ["motor_id", "single_motor_id", "state", "mode", "pin", "pump_pin", "communication_state"]:
+                if value not in robot_limit[class_name][parameter]:
+                    raise MyAgvDataException(
+                        f"The {parameter} must be in {robot_limit[class_name][parameter]}, but received {value}"
+                    )
+            elif parameter == "speed":
+                v_str = str(value)
+                if '.' in v_str and len(v_str.split('.')[-1]) > 2:
+                    raise MyAgvDataException(f"move speed must have at most 2 decimal places, got {value}")
+                if not (robot_limit[class_name]["speed_min"] <= float(value) <= robot_limit[class_name]["speed_max"]):
+                    raise MyAgvDataException(f"move speed must be between {robot_limit[class_name]['speed_min']} and {robot_limit[class_name]['speed_max']} m/s, got {value}")
+            elif parameter == "angular_speed":
+                v_str = str(value)
+                if '.' in v_str and len(v_str.split('.')[-1]) > 2:
+                    raise MyAgvDataException(f"turn angular speed must have at most 2 decimal places, got {value}")
+                if not (robot_limit[class_name]["angular_speed_min"] <= float(value) <= robot_limit[class_name]["angular_speed_max"]):
+                    raise MyAgvDataException(f"turn angular speed must be between {robot_limit[class_name]['angular_speed_min']} and {robot_limit[class_name]['angular_speed_max']} rad/s, got {value}")
 
 def restrict_serial_port(func):
     """

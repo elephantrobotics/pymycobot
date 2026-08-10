@@ -88,6 +88,23 @@ print(mc.get_angles())
     - `0`: failed
     - `-1`: error
 
+#### `get_fresh_mode()`
+
+- **function:** Query sports mode
+
+- **Return value:** 
+  - `0`: Interpolation mode
+  - `1`: Refresh mode
+
+#### `set_fresh_mode()`
+
+- **function:** Set command refresh mode
+  
+- **Parameters:**
+  - `1`: Always execute the latest command first.
+  - `0`: Execute instructions sequentially in the form of a queue.
+
+
 ### 3.MDI Mode and Operation
 
 #### `get_angles()`

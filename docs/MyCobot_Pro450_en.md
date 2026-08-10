@@ -777,7 +777,7 @@ print(mc.get_angles())
 
 - **Function:** Sets the terminal 485 baud rate, default 115200
 
-- **Parameter:** `baud_rate` (`int`): Standard baud rate, only supports 115200 and 1000000
+- **Parameter:** `baud_rate` (`int`): Standard baud rate, only supports 115200 and 1000000, 2000000
 
 - **Return Value:** 1
 
@@ -1237,3 +1237,10 @@ print(mc.get_angles())
 
   - `False` - Failure
   
+### 21 Force Sensor
+
+#### `get_force_sensor_data()`
+
+- **Function**: Reads force sensor data (requires an external 6D sensor)
+
+- **Return Value**: (`list`) A list of sensor data, length 6
