@@ -73,7 +73,7 @@ class Pro450Client(Pro450CloseLoop):
                     res.append(valid_data[v])
             elif data_len == 8 and genre == ProtocolCode.GET_DOWN_ENCODERS:
                 res = self.bytes4_to_int(valid_data)
-            elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_CURRENTS]:
+            elif data_len == 6 and genre in [ProtocolCode.GET_SERVO_STATUS, ProtocolCode.GET_SERVO_VOLTAGES, ProtocolCode.GET_SERVO_CURRENTS, ProtocolCode.GET_SERVO_TEMPS]:
                 for i in range(data_len):
                     res.append(valid_data[i])
             elif data_len == 8 and genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:

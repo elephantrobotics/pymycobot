@@ -651,6 +651,8 @@ class MyagvPlusCommand(object):
     SET_PIN_OUTPUT = 0x40
     GET_PIN_INPUT = 0x41
     SET_FAN_STATE = 0x42
+    SET_PUMP_STATE = 0x43
+    SET_PUMP_IO = 0x44
 
 
 class DataProcessor(object):

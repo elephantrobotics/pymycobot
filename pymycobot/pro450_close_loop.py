@@ -761,6 +761,14 @@ class Pro450CloseLoop(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_SERVO_STATUS)
 
+    def get_motor_temps(self):
+        """Get motor temperature
+
+        Return:
+            A list unit ℃: [J1, J2, J3, J4, J5, J6]
+        """
+        return self._mesg(ProtocolCode.GET_SERVO_TEMPS)
+
     def set_color(self, r=0, g=0, b=0):
         """Set the light color on the top of the robot end.
 

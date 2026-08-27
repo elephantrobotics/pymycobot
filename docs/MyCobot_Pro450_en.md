@@ -664,6 +664,11 @@ print(mc.get_angles())
 - **function**：Get the movement current of all joints
 - **Return value**： 0 ~ 5000 mA
 
+#### `get_motor_temps()`
+
+- **function**：Get the motor temperature of all joints
+- **Return value**： A list, `[J1, J2, J3, J4, J5, J6]`, unit ℃
+
 #### `get_servo_status()`
 
 - **function**：Get the movement status of all joints
