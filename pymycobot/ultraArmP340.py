@@ -146,6 +146,26 @@ class ultraArmP340:
                     # print(data[read:])
                     end = data[read:].find("]")
                     return data[read : read + end]
+                elif flag == "gripper_position":
+                    header = "GetGripperPosition["
+                    read = data.find(header)
+                    if read != -1:
+                        read += len(header)
+                        end = data[read:].find("]")
+                        values = data[read : read + end].split(",")
+                        return [int(value.strip()) for value in values]
+                elif flag == "calibrate_joint":
+                    if "ERROR: J1 cal failed" in data:
+                        return 0
+                    if "QUEUE SIZE" in data:
+                        return 1
+                elif flag == "calibrate_step":
+                    header = "J1CAL["
+                    read = data.find(header)
+                    if read != -1:
+                        read += len(header)
+                        end = data[read:].find("]")
+                        return int(data[read : read + end])
                 elif flag == "system":
                     header = "ReadSYS["
                     read = data.find(header) + len(header)
@@ -454,7 +474,7 @@ class ultraArmP340:
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
         with self.lock:
-            command = ProtocolCode.GRIPPER_ZERO
+            command = ProtocolCode.SET_GRIPPER_ZERO_P340
             command += " M" + str(gripper_type)
             command += ProtocolCode.END
             self._serial_port.write(command.encode())
@@ -462,7 +482,7 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def set_gripper_state(self, gripper_value, gripper_speed, gripper_type=1):
+    def set_gripper_state(self, gripper_value, gripper_speed, gripper_type=1, gripper_mode=1):
         """Set gripper angle.
 
         Args:
@@ -472,14 +492,16 @@ class ultraArmP340:
                 - not force gripper: 1 - 1500
                 - force gripper: 1 - 65
             gripper_type (int): 1 ~ 2, 1 - not force gripper; 2 - force gripper
+            gripper_mode (int): 1 ~ 3, 1 - adaptive, 2 - flexible, 3 - parallel
         """
         self.calibration_parameters(class_name=self.__class__.__name__,gripper_value=gripper_value,
-                                    gripper_speed=gripper_speed,gripper_type=gripper_type)
+                                    gripper_speed=gripper_speed,gripper_type=gripper_type, gripper_mode=gripper_mode)
         with self.lock:
-            command = ProtocolCode.GIRPPER_OPEN
+            command = ProtocolCode.SET_GRIPPER_ANGLE_P340
             command += " A"+ str(gripper_value)
             command += " F"+ str(gripper_speed)
             command += " M"+ str(gripper_type)
+            command += " T"+ str(gripper_mode)
             command += ProtocolCode.END
 
             self._serial_port.write(command.encode())
@@ -490,11 +512,67 @@ class ultraArmP340:
     def set_gripper_release(self):
         """Set gripper release."""
         with self.lock:
-            command = ProtocolCode.GIRPPER_RELEASE + ProtocolCode.END
+            command = ProtocolCode.SET_GRIPPER_RELEASE_P340 + ProtocolCode.END
             self._serial_port.write(command.encode())
             self._serial_port.flush()
             self._debug(command)
             self._respone()
+
+    def set_gripper_close_position(self, gripper_mode=1, gripper_position=1500):
+        """Set gripper close position.
+
+        Args:
+            gripper_mode (int): 1 ~ 3, 1 - adaptive, 2 - flexible, 3 - parallel
+            gripper_position (int): 0 ~ 4096
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_mode=gripper_mode,
+                                    gripper_position=gripper_position)
+        with self.lock:
+            command = ProtocolCode.SET_GRIPPER_CLOSE_POSITION_P340
+            command += " T" + str(gripper_mode)
+            command += " L" + str(gripper_position)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            self._respone()
+
+    def get_gripper_position(self, gripper_mode=1):
+        """Get gripper position.
+
+        Args:
+            gripper_mode (int): 1 ~ 3, 1 - adaptive, 2 - flexible, 3 - parallel
+
+        Returns:
+            list[int]: [current_position, close_min_position]
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_mode=gripper_mode)
+        with self.lock:
+            command = ProtocolCode.GET_GRIPPER_POSITION_P340
+            command += " T" + str(gripper_mode)
+            command += ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("gripper_position")
+
+    def calibrate_joint(self):
+        """Calibrate J1."""
+        with self.lock:
+            command = ProtocolCode.CALIBRATE_JOINT_P340 + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("calibrate_joint")
+
+    def get_calibrate_step(self):
+        """Get J1 calibration step."""
+        with self.lock:
+            command = ProtocolCode.GET_CALIBRATE_STEP_P340 + ProtocolCode.END
+            self._serial_port.write(command.encode())
+            self._serial_port.flush()
+            self._debug(command)
+            return self._request("calibrate_step")
 
     def set_fan_state(self, state):
         """Set fan state.
@@ -734,7 +812,7 @@ class ultraArmP340:
 
     def get_gripper_angle(self):
         """Get gripper angle"""
-        command = ProtocolCode.GET_GRIPPER_ANGLE + ProtocolCode.END
+        command = ProtocolCode.GET_GRIPPER_ANGLE_P340 + ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
