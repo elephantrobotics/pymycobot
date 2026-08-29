@@ -61,3 +61,6 @@ The [`demo`](./demo) directory stores some test case files.
 You can find out which interfaces pymycobot provides in `pymycobot/README.md`.
 
 Please go to [here](./docs/README.md).
+
+### Running
+Must be in the root folder (not inside demo) in order to run the python demos
