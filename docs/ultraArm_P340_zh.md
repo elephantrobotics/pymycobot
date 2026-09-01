@@ -351,9 +351,14 @@ from pymycobot.ultraArmP340 import ultraArmP340
 - **功能：** 查看校准步数
 - **返回值：** `int`，`0` 表示未校准
 
-**4.8** `get_gripper_angle():`
+**4.8** `get_gripper_angle(gripper_mode):`
 
 - **功能：** 获取夹爪角度
+- **参数说明:**
+  - `gripper_mode`: `int`, 1 ~ 3。
+    - 1 - 自适应夹爪
+    - 2 - 柔性夹爪
+    - 3 - 平行夹爪
 - **返回值：** 夹爪角度值
 
 ## 5 功能接口

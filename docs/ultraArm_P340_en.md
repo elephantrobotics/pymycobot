@@ -352,9 +352,14 @@ from pymycobot.ultraArmP340 import ultraArmP340
 - **Function:** Get the calibration step
 - **Return value:** `int`, `0` means not calibrated
 
-**4.8** `get_gripper_angle():`
+**4.8** `get_gripper_angle(gripper_mode):`
 
 - **Function:** Get the gripper angle
+- **Parameter Description:**
+  - `gripper_mode`: `int`, 1 ~ 3.
+    - 1 - Adaptive gripper;
+    - 2 - Flexible gripper;
+    - 3 - Parallel gripper.
 - **Return value:** Gripper angle value
 
 ## 5 Functional interface

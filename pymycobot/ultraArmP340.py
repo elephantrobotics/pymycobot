@@ -810,9 +810,16 @@ class ultraArmP340:
         while self.is_moving_end() != 1:
             pass
 
-    def get_gripper_angle(self):
-        """Get gripper angle"""
-        command = ProtocolCode.GET_GRIPPER_ANGLE_P340 + ProtocolCode.END
+    def get_gripper_angle(self, gripper_mode):
+        """Get gripper angle.
+
+        Args:
+            gripper_mode (int): 1 ~ 3, 1 - adaptive, 2 - flexible, 3 - parallel
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_mode=gripper_mode)
+        command = ProtocolCode.GET_GRIPPER_ANGLE_P340
+        command += " T" + str(gripper_mode)
+        command += ProtocolCode.END
         self._serial_port.write(command.encode())
         self._serial_port.flush()
         self._debug(command)
