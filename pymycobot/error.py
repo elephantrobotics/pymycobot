@@ -2181,9 +2181,9 @@ def calibration_parameters(**kwargs):
                         "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
             elif parameter == 'gripper_position':
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)
-                if not 0 <= value <= 4096:
+                if not 0 <= value <= 2047:
                     raise ultraArmP340DataException(
-                        "gripper position not right, should be 0 ~ 4096, the error gripper_position is {}".format(value))
+                        "gripper position not right, should be 0 ~ 2047, the error gripper_position is {}".format(value))
             elif parameter == 'gripper_speed':
                 gripper_type_value = kwargs.get('gripper_type', None)
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)

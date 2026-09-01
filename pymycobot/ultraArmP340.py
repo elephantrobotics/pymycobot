@@ -518,12 +518,12 @@ class ultraArmP340:
             self._debug(command)
             self._respone()
 
-    def set_gripper_close_position(self, gripper_mode=1, gripper_position=1500):
+    def set_gripper_close_position(self, gripper_mode, gripper_position):
         """Set gripper close position.
 
         Args:
             gripper_mode (int): 1 ~ 3, 1 - adaptive, 2 - flexible, 3 - parallel
-            gripper_position (int): 0 ~ 4096
+            gripper_position (int): 0 ~ 2047
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_mode=gripper_mode,
                                     gripper_position=gripper_position)

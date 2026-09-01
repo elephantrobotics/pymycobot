@@ -320,15 +320,15 @@ from pymycobot.ultraArmP340 import ultraArmP340
     - 3 - 平行夹爪
 - **返回值：** 无
 
-**4.4** `set_gripper_close_position(gripper_mode=1, gripper_position=1500)`
+**4.4** `set_gripper_close_position(gripper_mode, gripper_position)`
 
 - **功能：** 设置夹爪闭合位置
 - **参数说明:**
-  - `gripper_mode`: `int`, 1 ~ 3。 默认 1
+  - `gripper_mode`: `int`, 1 ~ 3。
     - 1 - 自适应夹爪
     - 2 - 柔性夹爪
     - 3 - 平行夹爪
-  - `gripper_position`: `int`, 0 ~ 4096
+  - `gripper_position`: `int`, 0 ~ 2047
 - **返回值：** 无
 
 **4.5** `get_gripper_position(gripper_mode=1)`

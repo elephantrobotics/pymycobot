@@ -321,15 +321,15 @@ from pymycobot.ultraArmP340 import ultraArmP340
     - 3 - Parallel gripper.
 - **Return Value:** None
 
-**4.4** `set_gripper_close_position(gripper_mode=1, gripper_position=1500)`
+**4.4** `set_gripper_close_position(gripper_mode, gripper_position)`
 
 - **Function:** Set the gripper close position
 - **Parameter Description:**
-  - `gripper_mode`: `int`, 1 ~ 3. Default: 1.
+  - `gripper_mode`: `int`, 1 ~ 3. 
     - 1 - Adaptive gripper;
     - 2 - Flexible gripper;
     - 3 - Parallel gripper.
-  - `gripper_position`: `int`, 0 ~ 4096
+  - `gripper_position`: `int`, 0 ~ 2047
 - **Return Value:** None
 
 **4.5** `get_gripper_position(gripper_mode=1)`
