@@ -329,7 +329,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
     - 1 - Adaptive gripper;
     - 2 - Flexible gripper;
     - 3 - Parallel gripper.
-  - `gripper_position`: `int`, 0 ~ 2047
+  - `gripper_position`: `int`, 1 ~ 2047
 - **Return Value:** None
 
 **4.5** `get_gripper_position(gripper_mode=1)`

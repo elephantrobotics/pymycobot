@@ -328,7 +328,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
     - 1 - 自适应夹爪
     - 2 - 柔性夹爪
     - 3 - 平行夹爪
-  - `gripper_position`: `int`, 0 ~ 2047
+  - `gripper_position`: `int`, 1 ~ 2047
 - **返回值：** 无
 
 **4.5** `get_gripper_position(gripper_mode=1)`

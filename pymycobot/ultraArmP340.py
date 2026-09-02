@@ -523,7 +523,7 @@ class ultraArmP340:
 
         Args:
             gripper_mode (int): 1 ~ 3, 1 - adaptive, 2 - flexible, 3 - parallel
-            gripper_position (int): 0 ~ 2047
+            gripper_position (int): 1 ~ 2047
         """
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_mode=gripper_mode,
                                     gripper_position=gripper_position)
