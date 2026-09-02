@@ -2123,8 +2123,8 @@ def calibration_parameters(**kwargs):
             elif parameter in ['mode', 'state', 'direction']:
                 check_0_or_1(parameter, value, [0, 1], value_type, ultraArmP340DataException, int)
             elif parameter == 'joint_id':
-                if value not in [1, 2, 3]:
-                    check_id(value, [1, 2, 3], ultraArmP340DataException)
+                if value not in [1, 2, 3, 4]:
+                    check_id(value, [1, 2, 3, 4], ultraArmP340DataException)
             elif parameter == 'axis_id':
                 if value not in [1, 2, 3]:
                     raise ultraArmP340DataException(
