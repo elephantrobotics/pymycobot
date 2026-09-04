@@ -33,6 +33,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
     STATUS_QUERY_GRACE_PERIOD = 0.05
 
     END_COUNT = 2
+    MOVE_PAUSE_PROMPT = "Robot is paused, please use move_resume() first."
 
     def __init__(self, debug=False, _internal_mode=False):
 
@@ -121,6 +122,16 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             if self.debug and attempt < attempts - 1:
                 self.log.warning(f"request retry {attempt + 1}/{attempts - 1}, flag: {flag}")
         return -1
+
+    def _check_move_pause_before_motion(self):
+        status = self._request_with_retry(
+            ProtocolCode.GET_MOVE_PAUSE_STATUS_P1,
+            "get_move_pause_status"
+        )
+        if status == 1:
+            self.log.warning(self.MOVE_PAUSE_PROMPT)
+            return self.MOVE_PAUSE_PROMPT
+        return None
 
     def _parse_colon_values(self, lower: str, keyword: str, value_type=float, round_digits=None, single=False):
         """
@@ -943,6 +954,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self.calibration_parameters(
             class_name=self.__class__.__name__, coords=coords, speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS
             if len(coords) > 0 and coords[0] is not None:
@@ -969,6 +983,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         """
         self.calibration_parameters(class_name=self.__class__.__name__,coord_id=coord_id,coord=coord,speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             self._clear_serial_buffer()
             command = ProtocolCode.SET_COORDS
             command += f" {coord_id}{coord}"
@@ -989,6 +1006,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, angle=angle, speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             self._clear_serial_buffer()
             command = ProtocolCode.SET_ANGLE_P1
             joint_map = {1: "A", 2: "B", 3: "C", 4: "D"}
@@ -1011,6 +1031,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self.calibration_parameters(
             class_name=self.__class__.__name__, angles=angles, speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             command = ProtocolCode.SET_ANGLES_P1
             if len(angles) > 0 and angles[0] is not None:
                 command += f" A{angles[0]}"
@@ -1123,6 +1146,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self.calibration_parameters(class_name=self.__class__.__name__, joint_id=joint_id, direction=direction,
                                     jog_speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             self._clear_serial_buffer()
             command = ProtocolCode.SET_JOG_ANGLE_P1
             command += " J" + str(joint_id)
@@ -1145,6 +1171,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self.calibration_parameters(class_name=self.__class__.__name__, axis_id=axis_id, direction=direction,
                                     jog_speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             self._clear_serial_buffer()
             command = ProtocolCode.SET_JOG_COORD_P1
             command += " J" + str(axis_id)
@@ -1164,6 +1193,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self.calibration_parameters(
             class_name=self.__class__.__name__, joint_id=joint_id, increment_angle=increment, jog_speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             self._clear_serial_buffer()
             command = ProtocolCode.JOG_INCREMENT_ANGLE_P1
             command += " J" + str(joint_id)
@@ -1183,6 +1215,9 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         self.calibration_parameters(
             class_name=self.__class__.__name__, jog_coord_id=coord_id, increment_coord=increment, speed=speed)
         with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
             self._clear_serial_buffer()
             command = ProtocolCode.JOG_INCREMENT_COORD_P1
             command += " J" + str(coord_id)
@@ -1204,6 +1239,11 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         except Exception as e:
             self.log.warning(f"There is no such file! {e}")
             return
+
+        with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
 
         skip_queue_once = False
         for raw_line in lines:
@@ -1246,6 +1286,11 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         except Exception as e:
             self.log.warning(f"There is no such file! {e}")
             return
+
+        with self.lock:
+            paused_prompt = self._check_move_pause_before_motion()
+            if paused_prompt:
+                return paused_prompt
 
         skip_queue_once = False
         for raw_line in lines:

@@ -113,7 +113,7 @@ __all__ = [
     "UltraArmP1Bluetooth"
 ]
 
-__version__ = "4.0.7b1+450"
+__version__ = "4.0.7b8+p1"
 __author__ = "Elephantrobotics"
 __email__ = "weijian.wang@elephantrobotics.com"
 __git_url__ = "https://github.com/elephantrobotics/pymycobot"
