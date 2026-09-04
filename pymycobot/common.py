@@ -540,6 +540,7 @@ class ProtocolCode(object):
     MOVE_RESUME_P1 = 'M7'
     GET_JOINT_ACC_P1 = 'M8'
     SET_JOINT_ACC_P1 = 'M9'
+    GET_MOVE_PAUSE_STATUS_P1 = 'M10'
     SET_ANGLES_P1 = 'G1'
     SET_ANGLE_P1 = 'G1'
     GET_JOINT_ANGLES_COORDS = 'M12'

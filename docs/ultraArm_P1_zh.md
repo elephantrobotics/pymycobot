@@ -780,7 +780,19 @@ ua.move_pause()
 ua.move_resume()
 ```
 
-### 78 `get_joint_acc()`
+### 78 `get_move_pause_status()`
+
+- **功能:** 读取运动暂停状态。
+- **返回值:** `int`
+  - `1`: 已暂停
+  - `0`: 未暂停
+
+```python
+status = ua.get_move_pause_status()
+print(status)
+```
+
+### 79 `get_joint_acc()`
 
 - **功能:** 获取所有关节加速度参数。
 - **返回值:** `list[float]`，例如 `[2000.0, 400.0, 400.0, 400.0]`
@@ -790,7 +802,7 @@ acc = ua.get_joint_acc()
 print(acc)
 ```
 
-### 79 `set_joint_acc(joint_id, acc)`
+### 80 `set_joint_acc(joint_id, acc)`
 
 - **功能:** 设置单个关节加速度。
 - **参数说明:**
@@ -802,7 +814,7 @@ print(acc)
 ua.set_joint_acc(1, 100)
 ```
 
-### 80 `get_default_sensor_initialize(sensor_type)`
+### 81 `get_default_sensor_initialize(sensor_type)`
 
 - **功能:** 获取默认传感器初始化参数。
 - **参数说明:**

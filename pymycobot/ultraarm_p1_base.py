@@ -738,6 +738,13 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                             if r is not None:
                                 return r
 
+                        elif flag == "get_move_pause_status":
+                            r = self._parse_colon_values(
+                                lower, "suspend", int, single=True
+                            )
+                            if r is not None:
+                                return r
+
                         elif flag == "get_gripper_run_status":
                             r = self._parse_colon_values(
                                 lower, "motionstate", int, single=True
@@ -1058,6 +1065,18 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         with self.lock:
             self._send_command(ProtocolCode.MOVE_RESUME_P1)
             return self._response(_async=True, is_set=True)
+
+    def get_move_pause_status(self):
+        """Read movement pause status.
+
+        Returns:
+            int: 1 - paused, 0 - not paused, -1 - failed.
+        """
+        with self.lock:
+            return self._request_with_retry(
+                ProtocolCode.GET_MOVE_PAUSE_STATUS_P1,
+                "get_move_pause_status"
+            )
 
     def get_joint_acc(self):
         """Get all joint acceleration parameters.
