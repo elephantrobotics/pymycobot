@@ -305,7 +305,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
     - 2 - 力控夹爪
 - **返回值：** 无
 
-**4.3** `set_gripper_state(gripper_value, gripper_speed, gripper_type=1):`
+**4.3** `set_gripper_state(gripper_value, gripper_speed, gripper_type=1, gripper_mode=1):`
 
 - **功能：** 设置夹爪张开位置
 - **参数说明:** 
@@ -314,11 +314,51 @@ from pymycobot.ultraArmP340 import ultraArmP340
   - `gripper_type`: `int`, 1 ~ 2。 默认 1
     - 1 - 非力控夹爪
     - 2 - 力控夹爪
+  - `gripper_mode`: `int`, 1 ~ 3。 默认 1
+    - 1 - 自适应夹爪
+    - 2 - 柔性夹爪
+    - 3 - 平行夹爪
 - **返回值：** 无
 
-**4.4** `get_gripper_angle():`
+**4.4** `set_gripper_close_position(gripper_mode, gripper_position)`
+
+- **功能：** 设置夹爪闭合位置
+- **参数说明:**
+  - `gripper_mode`: `int`, 1 ~ 3。
+    - 1 - 自适应夹爪
+    - 2 - 柔性夹爪
+    - 3 - 平行夹爪
+  - `gripper_position`: `int`, 1 ~ 2047
+- **返回值：** 无
+
+**4.5** `get_gripper_position(gripper_mode=1)`
+
+- **功能：** 读取夹爪位置，包含当前位置和设置的闭合最小位置
+- **参数说明:**
+  - `gripper_mode`: `int`, 1 ~ 3。 默认 1
+    - 1 - 自适应夹爪
+    - 2 - 柔性夹爪
+    - 3 - 平行夹爪
+- **返回值：** `list`，格式为 `[data, min_data]`，范围 0 ~ 2048
+
+**4.6** `calibrate_joint()`
+
+- **功能：** 校准 J1
+- **返回值：** `1` 表示成功，`0` 表示校准失败
+
+**4.7** `get_calibrate_step()`
+
+- **功能：** 查看校准步数
+- **返回值：** `int`，`0` 表示未校准
+
+**4.8** `get_gripper_angle(gripper_mode):`
 
 - **功能：** 获取夹爪角度
+- **参数说明:**
+  - `gripper_mode`: `int`, 1 ~ 3。
+    - 1 - 自适应夹爪
+    - 2 - 柔性夹爪
+    - 3 - 平行夹爪
 - **返回值：** 夹爪角度值
 
 ## 5 功能接口

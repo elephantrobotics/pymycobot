@@ -165,16 +165,16 @@ class MyCobot320Socket(CommandGenerator):
                 return -1
             if genre == ProtocolCode.SET_TOQUE_GRIPPER:
                 if res == [0]:
-                    self._write(self._flatten(real_command))
-                    data = self._read(genre, real_command=real_command)
+                    self._write(self._flatten(real_command), "socket")
+                    data = self._read(genre, real_command=real_command, method='socket')
                     res = self._process_received(data, genre)
             if genre == ProtocolCode.GET_SERVO_DATA:
                 if res == [255]:
                     return -1
             if genre == ProtocolCode.GET_TOQUE_GRIPPER:
                 if res == [0]:
-                    self._write(self._flatten(real_command))
-                    data = self._read(genre)
+                    self._write(self._flatten(real_command), "socket")
+                    data = self._read(genre, method='socket')
                     res = self._process_received(data, genre)
                     if res == [0]:
                         return -1
@@ -223,8 +223,8 @@ class MyCobot320Socket(CommandGenerator):
                 return self._parse_high_low_bytes(res)
             elif genre in [ProtocolCode.GET_TOQUE_GRIPPER]:
                 if res[-1] == 255 and res[-2] == 255:
-                    self._write(self._flatten(real_command))
-                    data = self._read(genre)
+                    self._write(self._flatten(real_command), "socket")
+                    data = self._read(genre, method='socket')
                     res = self._process_received(data, genre)
                     if res[-1] == 255 and res[-2] == 255:
                         return -1

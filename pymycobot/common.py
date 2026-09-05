@@ -524,6 +524,14 @@ class ProtocolCode(object):
     GET_SYSTEM_VALUE = "M52"
     GET_SYSTEM_VERSION = "G6"
     GET_MODIFY_VERSION = "G7"
+    SET_GRIPPER_ZERO_P340 = "M24"
+    SET_GRIPPER_ANGLE_P340 = "M25"
+    SET_GRIPPER_RELEASE_P340 = "M26"
+    SET_GRIPPER_CLOSE_POSITION_P340 = "M29"
+    GET_GRIPPER_POSITION_P340 = "M30"
+    CALIBRATE_JOINT_P340 = "M31"
+    GET_CALIBRATE_STEP_P340 = "M32"
+    GET_GRIPPER_ANGLE_P340 = "M50"
 
     # ultraArm P1
     SET_COORDS = 'G1'
@@ -532,6 +540,7 @@ class ProtocolCode(object):
     MOVE_RESUME_P1 = 'M7'
     GET_JOINT_ACC_P1 = 'M8'
     SET_JOINT_ACC_P1 = 'M9'
+    GET_MOVE_PAUSE_STATUS_P1 = 'M10'
     SET_ANGLES_P1 = 'G1'
     SET_ANGLE_P1 = 'G1'
     GET_JOINT_ANGLES_COORDS = 'M12'
@@ -651,6 +660,8 @@ class MyagvPlusCommand(object):
     SET_PIN_OUTPUT = 0x40
     GET_PIN_INPUT = 0x41
     SET_FAN_STATE = 0x42
+    SET_PUMP_STATE = 0x43
+    SET_PUMP_IO = 0x44
 
 
 class DataProcessor(object):

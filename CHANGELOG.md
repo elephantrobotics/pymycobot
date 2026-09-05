@@ -1,5 +1,14 @@
 # ChangeLog for pymycobot
 
+## v4.0.7  (2026-9-5)
+
+- release v4.0.7
+- Fixed AGV Plus related issues
+- Fixed the issue of controlling the force-controlled gripper with the 320 socket
+- Added gripper-related and J1 zero-position calibration related function interfaces to P340
+- Added ultraArmP1 Python API interface
+- Added motor temperature reading interface to Pro450
+
 ## v4.0.6  (2026-7-7)
 
 - release v4.0.6

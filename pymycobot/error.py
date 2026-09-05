@@ -2116,13 +2116,15 @@ def calibration_parameters(**kwargs):
                 check_0_or_1(parameter, value, [4, 7], value_type, ultraArmP340DataException, int)
             elif parameter in ["system_mode", "gripper_type"]:
                 check_0_or_1(parameter, value, [1, 2], value_type, ultraArmP340DataException, int)
+            elif parameter == "gripper_mode":
+                check_0_or_1(parameter, value, [1, 2, 3], value_type, ultraArmP340DataException, int)
             elif parameter == "speed_mode":
                 check_0_or_1(parameter, value, [0, 2], value_type, ultraArmP340DataException, int)
             elif parameter in ['mode', 'state', 'direction']:
                 check_0_or_1(parameter, value, [0, 1], value_type, ultraArmP340DataException, int)
             elif parameter == 'joint_id':
-                if value not in [1, 2, 3]:
-                    check_id(value, [1, 2, 3], ultraArmP340DataException)
+                if value not in [1, 2, 3, 4]:
+                    check_id(value, [1, 2, 3, 4], ultraArmP340DataException)
             elif parameter == 'axis_id':
                 if value not in [1, 2, 3]:
                     raise ultraArmP340DataException(
@@ -2177,6 +2179,11 @@ def calibration_parameters(**kwargs):
                 if not 0 <= value <= 100:
                     raise ultraArmP340DataException(
                         "gripper value not right, should be 0 ~ 100, the error gripper_value is {}".format(value))
+            elif parameter == 'gripper_position':
+                check_value_type(parameter, value_type, ultraArmP340DataException, int)
+                if not 1 <= value <= 2047:
+                    raise ultraArmP340DataException(
+                        "gripper position not right, should be 1 ~ 2047, the error gripper_position is {}".format(value))
             elif parameter == 'gripper_speed':
                 gripper_type_value = kwargs.get('gripper_type', None)
                 check_value_type(parameter, value_type, ultraArmP340DataException, int)

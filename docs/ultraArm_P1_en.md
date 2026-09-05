@@ -944,7 +944,19 @@ ua.move_pause()
 ua.move_resume()
 ```
 
-### 78 `get_joint_acc()`
+### 78 `get_move_pause_status()`
+
+- **Function:** Reads the movement pause status.
+- **Return value:** `int`
+  - `1`: Paused
+  - `0`: Not paused
+
+```python
+status = ua.get_move_pause_status()
+print(status)
+```
+
+### 79 `get_joint_acc()`
 
 - **Function:** Gets all joint acceleration parameters.
 - **Return value:** `list[float]`, for example `[2000.0, 400.0, 400.0, 400.0]`
@@ -954,7 +966,7 @@ acc = ua.get_joint_acc()
 print(acc)
 ```
 
-### 79 `set_joint_acc(joint_id, acc)`
+### 80 `set_joint_acc(joint_id, acc)`
 
 - **Function:** Sets a single joint acceleration.
 - **Parameter description:**
@@ -966,7 +978,7 @@ print(acc)
 ua.set_joint_acc(1, 100)
 ```
 
-### 80 `get_default_sensor_initialize(sensor_type)`
+### 81 `get_default_sensor_initialize(sensor_type)`
 
 - **Function:** Gets default sensor initialization parameters.
 - **Parameter description:**

@@ -306,7 +306,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
     - 2 - Force-controlled gripper.
 - **Return value:** None
 
-**4.3** `set_gripper_state(gripper_value, gripper_speed, gripper_type=1):`
+**4.3** `set_gripper_state(gripper_value, gripper_speed, gripper_type=1, gripper_mode=1):`
 
 - **Function:** Setting the jaw open position
 - **Parameter Description:**
@@ -315,11 +315,51 @@ from pymycobot.ultraArmP340 import ultraArmP340
   - `gripper_type`: `int`, 1 ~ 2. Default: 1.
     - 1 - Non-force-controlled gripper;
     - 2 - Force-controlled gripper.
+  - `gripper_mode`: `int`, 1 ~ 3. Default: 1.
+    - 1 - Adaptive gripper;
+    - 2 - Flexible gripper;
+    - 3 - Parallel gripper.
 - **Return Value:** None
 
-**4.4** `get_gripper_angle():`
+**4.4** `set_gripper_close_position(gripper_mode, gripper_position)`
+
+- **Function:** Set the gripper close position
+- **Parameter Description:**
+  - `gripper_mode`: `int`, 1 ~ 3. 
+    - 1 - Adaptive gripper;
+    - 2 - Flexible gripper;
+    - 3 - Parallel gripper.
+  - `gripper_position`: `int`, 1 ~ 2047
+- **Return Value:** None
+
+**4.5** `get_gripper_position(gripper_mode=1)`
+
+- **Function:** Get the gripper position, including the current position and configured close minimum position
+- **Parameter Description:**
+  - `gripper_mode`: `int`, 1 ~ 3. Default: 1.
+    - 1 - Adaptive gripper;
+    - 2 - Flexible gripper;
+    - 3 - Parallel gripper.
+- **Return value:** `list`, format `[data, min_data]`, range 0 ~ 2048
+
+**4.6** `calibrate_joint()`
+
+- **Function:** Calibrate J1
+- **Return value:** `1` means success, `0` means calibration failed
+
+**4.7** `get_calibrate_step()`
+
+- **Function:** Get the calibration step
+- **Return value:** `int`, `0` means not calibrated
+
+**4.8** `get_gripper_angle(gripper_mode):`
 
 - **Function:** Get the gripper angle
+- **Parameter Description:**
+  - `gripper_mode`: `int`, 1 ~ 3.
+    - 1 - Adaptive gripper;
+    - 2 - Flexible gripper;
+    - 3 - Parallel gripper.
 - **Return value:** Gripper angle value
 
 ## 5 Functional interface
