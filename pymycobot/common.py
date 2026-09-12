@@ -1157,6 +1157,15 @@ class DataProcessor(object):
             return -1
 
 
+def _format_debug_bytes(data):
+    command_log = ""
+    for d in data:
+        if isinstance(d, str):
+            d = ord(d)
+        command_log += "{:02X} ".format(d)
+    return command_log
+
+
 def write(self, command, method=None):
     if len(command) > 3 and command[3] == 176 and len(command) > 5:
         command = "'" + command[4] + "'" + "(" + command[5] + ")"
@@ -1297,17 +1306,7 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                         datas += hex(ord(i))
             except:
                 data = b""
-        if DataProcessor.check_python_version() == 2:
-            command_log = ""
-            for d in data:
-                command_log += hex(ord(d))[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
-            # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-        else:
-            command_log = ""
-            for d in data:
-                command_log += hex(d)[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
+        self.log.debug("_read : {}".format(_format_debug_bytes(data)))
         return data
     else:
         if genre == ProtocolCode.GET_SSID_PWD:
@@ -1365,15 +1364,6 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                         pre = k
         else:
             datas = b''
-        if DataProcessor.check_python_version() == 2:
-            command_log = ""
-            for d in datas:
-                command_log += hex(ord(d))[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
-        else:
-            command_log = ""
-            for d in datas:
-                command_log += hex(d)[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
+        self.log.debug("_read : {}".format(_format_debug_bytes(datas)))
 
         return datas

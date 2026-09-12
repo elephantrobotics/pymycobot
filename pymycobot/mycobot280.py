@@ -166,7 +166,7 @@ class MyCobot280(CommandGenerator):
             self.log.error("_bridge_error: no response")
             return None
         resp = str(result).strip().split("|", 1)[0].strip().upper()
-        self.log.debug("_bridge_read: {}".format(self._format_bridge_hex(resp)))
+        self.log.debug("_bridge_read : {}".format(self._format_bridge_hex(resp)))
         error_frames = {
             "FEFE035B01FA": "timeout",
             "FEFE035B02FA": "partial frame",
