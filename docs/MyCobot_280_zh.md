@@ -20,6 +20,63 @@ print(angles)
 mc.send_angle(1, 40, 20)
 ```
 
+### Arduino UNO Q 连接方式
+
+myCobot 280 搭配 Arduino UNO Q 使用时，可以根据 Python 程序运行的位置选择实例化方式。
+
+| Python 运行位置 | 推荐类 | 通信路径 |
+| --- | --- | --- |
+| PC / 上位机 | `MyCobot280Socket` | PC TCP -> UNO Q socket 服务端 -> `XferBridgeMsg` -> 固件 |
+| UNO Q Debian / App Lab | `MyCobot280` | Python Bridge RPC -> `XferBridgeMsg` -> 固件 |
+
+UNO Q 固件侧不直接实例化 `pymycobot`。固件侧只需要实现 `XferBridgeMsg`，Python 程序运行在 PC 或 UNO Q Linux/App Lab 环境中。
+
+#### UNO Q Debian / App Lab 本机控制
+
+Python 程序运行在 UNO Q 的 Debian 或 App Lab 环境中时，可以使用 Bridge RPC 通信模式：
+
+```python
+from pymycobot import MyCobot280
+
+mc = MyCobot280(unoq_bridge=True)
+
+print(mc.get_system_version())
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+- `unoq_bridge=True` 时不打开、不检查 `/dev/mycobot` 串口设备。
+- `baudrate` 可以不传，默认使用 `1000000`。
+- `timeout` 的单位为秒，会转换成 Bridge RPC 的毫秒超时。
+- 该模式依赖 UNO Q 环境中的 `arduino.app_utils.Bridge`，普通 PC 环境未安装该模块时不能启用。
+- 固件侧需要提供 `XferBridgeMsg(frame_hex, timeout_ms, baudrate)` 方法，并透明透传 myCobot 协议帧。
+- 固件返回 `FE FE 03 5B 01 FA` 表示超时，返回 `FE FE 03 5B 02 FA` 表示残包。开启 `debug=True` 时会在日志中显示 `_bridge_error` 和原始帧。
+
+兼容旧参数写法：
+
+```python
+mc = MyCobot280("/dev/mycobot", 1000000, unoq_bridge=True)
+```
+
+在 Bridge 模式下，`port` 参数仅用于兼容旧代码，不会访问实际串口设备。
+
+#### PC 远程 TCP 控制 UNO Q
+
+Python 程序运行在 PC 上、机械臂连接到 UNO Q 时，建议在 UNO Q 上启动 socket 服务端，然后 PC 端使用 `MyCobot280Socket`：
+
+```python
+from pymycobot import MyCobot280Socket
+
+mc = MyCobot280Socket("192.168.1.218", 9000, timeout=1.0)
+
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+新版 UNO Q socket 服务端示例为 [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py)。服务端内部通过 `XferBridgeMsg` 与固件通信，PC 端仍然收发原始 myCobot 协议帧，因此上层 API 与普通 `MyCobot280Socket` 用法保持一致。
+
+TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `_bridge_error`，并保留原始错误帧，便于现场排查。
+
 ### 1. 系统状态
 
 #### `get_modify_version()`
@@ -984,7 +1041,7 @@ from pymycobot import utils
 # 示例
 from pymycobot import MyCobot280Socket
 # 默认使用端口 9000
-mc = MyCobot280Socket("192.168.10.10",9000)
+mc = MyCobot280Socket("192.168.10.10", 9000, timeout=1.0)
 
 res = mc.get_angles()
 print(res)
@@ -996,6 +1053,8 @@ mc.send_angles([0,0,0,0,0,0],20)
 ### 服务端
 
 服务端文件在`demo文件夹`中，具体请检查demo文件夹中的[Server_280.py](../demo/Server_280.py)文件
+
+Arduino UNO Q 使用 Bridge RPC 版本服务端时，请使用 [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py)。该服务端内部调用 `XferBridgeMsg`，不依赖 `/dev/mycobot` 串口设备。客户端仍然使用 `MyCobot280Socket(ip, 9000)`，必要时可通过 `timeout` 参数设置 socket 读取超时。
 
 ### socket 控制
 

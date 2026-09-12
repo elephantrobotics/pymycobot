@@ -20,6 +20,63 @@ print(angles)
 mc.send_angle(1, 40, 20)
 ```
 
+### Arduino UNO Q Connection Modes
+
+When using myCobot 280 with Arduino UNO Q, choose the initialization method according to where the Python program runs.
+
+| Python Runtime Location | Recommended Class | Communication Path |
+| --- | --- | --- |
+| PC / host computer | `MyCobot280Socket` | PC TCP -> UNO Q socket server -> `XferBridgeMsg` -> firmware |
+| UNO Q Debian / App Lab | `MyCobot280` | Python Bridge RPC -> `XferBridgeMsg` -> firmware |
+
+The UNO Q firmware side does not instantiate `pymycobot` directly. The firmware only needs to provide `XferBridgeMsg`; the Python program runs on either the PC or the UNO Q Linux/App Lab environment.
+
+#### Local Control on UNO Q Debian / App Lab
+
+When the Python program runs in the UNO Q Debian or App Lab environment, use Bridge RPC mode:
+
+```python
+from pymycobot import MyCobot280
+
+mc = MyCobot280(unoq_bridge=True)
+
+print(mc.get_system_version())
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+- When `unoq_bridge=True`, the library does not open or check the `/dev/mycobot` serial device.
+- `baudrate` is optional and defaults to `1000000`.
+- `timeout` is specified in seconds and is converted to milliseconds for Bridge RPC.
+- This mode requires `arduino.app_utils.Bridge` in the UNO Q environment. Do not enable it on a normal PC environment where this module is not installed.
+- The firmware must provide `XferBridgeMsg(frame_hex, timeout_ms, baudrate)` and transparently pass through myCobot protocol frames.
+- Firmware response `FE FE 03 5B 01 FA` means timeout, and `FE FE 03 5B 02 FA` means partial frame. When `debug=True` is enabled, `_bridge_error` and the raw frame are written to the log.
+
+The legacy argument style is still accepted:
+
+```python
+mc = MyCobot280("/dev/mycobot", 1000000, unoq_bridge=True)
+```
+
+In Bridge mode, the `port` argument is kept only for compatibility with existing code and is not used to access a serial device.
+
+#### Remote TCP Control from a PC
+
+When the Python program runs on a PC and the robot is connected to UNO Q, start the socket server on UNO Q and use `MyCobot280Socket` on the PC:
+
+```python
+from pymycobot import MyCobot280Socket
+
+mc = MyCobot280Socket("192.168.1.218", 9000, timeout=1.0)
+
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+The UNO Q socket server example is [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py). It uses `XferBridgeMsg` internally to communicate with the firmware. The PC client still sends and receives the original myCobot protocol frames, so the upper-level API remains the same as normal `MyCobot280Socket` usage.
+
+In TCP mode, firmware timeout or partial-frame responses are also logged by the UNO Q socket server as `_bridge_error` with the raw error frame for field diagnostics.
+
 ### 1. System Status
 
 #### `get_modify_version()`
@@ -1000,7 +1057,7 @@ Use TCP/IP to control the robotic arm
 # demo
 from pymycobot import MyCobot280Socket
 # Port 9000 is used by default
-mc = MyCobot280Socket("192.168.10.10",9000)
+mc = MyCobot280Socket("192.168.10.10", 9000, timeout=1.0)
 
 res = mc.get_angles()
 print(res)
@@ -1012,6 +1069,8 @@ mc.send_angles([0,0,0,0,0,0],20)
 ### Server
 
 Server file is in the `demo folder`,For details, please check the [Server_280.py](../demo/Server_280.py) file in the demo folder
+
+For Arduino UNO Q with the Bridge RPC socket server, use [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py). This server calls `XferBridgeMsg` internally and does not depend on the `/dev/mycobot` serial device. The client still uses `MyCobot280Socket(ip, 9000)`, and the socket read timeout can be configured with the `timeout` parameter when needed.
 
 ### socket control
 

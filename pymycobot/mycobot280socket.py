@@ -91,16 +91,18 @@ class MyCobot280Socket(CommandGenerator):
     _write = write
     _read = read
 
-    def __init__(self, ip, netport=9000, debug=False):
+    def __init__(self, ip, netport=9000, debug=False, timeout=1.0):
         """
         Args:
             ip: Server ip
             netport: Server port
+            timeout: Socket read timeout in seconds.
         """
         super(MyCobot280Socket, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.SERVER_IP = ip
         self.SERVER_PORT = netport
+        self.timeout = timeout
         self.sock = self.connect_socket()
         self.lock = threading.Lock()
         time.sleep(1.5)  # use to 280 AR
@@ -137,13 +139,13 @@ class MyCobot280Socket(CommandGenerator):
     def _res(self, real_command, has_reply, genre):
         if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
             self._write(self._flatten(real_command), "socket")
-            data = self._read(genre, method='socket')
+            data = self._read(genre, method='socket', timeout=self.timeout)
         else:
             try_count = 0
             expected_genre = genre
             while try_count < 3:
                 self._write(self._flatten(real_command), "socket")
-                data = self._read(genre, method='socket')
+                data = self._read(genre, method='socket', timeout=self.timeout)
                 if not data or len(data) < 4:
                     try_count += 1
                     continue

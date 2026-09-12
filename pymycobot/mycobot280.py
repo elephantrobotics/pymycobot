@@ -90,19 +90,45 @@ class MyCobot280(CommandGenerator):
             wait() *
     """
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=True):
+    def __init__(
+        self,
+        port=None,
+        baudrate=None,
+        timeout=0.1,
+        debug=False,
+        thread_lock=True,
+        unoq_bridge=False,
+    ):
         """
         Args:
             port     : port string
             baudrate : baud rate string, default '115200'
             timeout  : default 0.1
             debug    : whether show debug info
+            unoq_bridge: use Arduino UNO Q Bridge RPC instead of serial port
         """
         super(MyCobot280, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.thread_lock = thread_lock
+        self.unoq_bridge = unoq_bridge
+        self._serial_port = None
+        self._bridge = None
+        if baudrate is None:
+            baudrate = 1000000 if unoq_bridge else "115200"
+        self._bridge_baudrate = baudrate
+        self._bridge_timeout_ms = max(1, int(float(timeout) * 1000))
         if thread_lock:
             self.lock = threading.Lock()
+        if unoq_bridge:
+            try:
+                from arduino.app_utils import Bridge
+            except ImportError as exc:
+                raise RuntimeError(
+                    "unoq_bridge=True requires arduino.app_utils.Bridge "
+                    "on Arduino UNO Q Debian/App Lab"
+                ) from exc
+            self._bridge = Bridge
+            return
         import serial
         self._serial_port = serial.Serial()
         self._serial_port.port = port
@@ -115,57 +141,51 @@ class MyCobot280(CommandGenerator):
     _write = write
     _read = read
 
-    def _mesg(self, genre, *args, **kwargs):
-        """
+    def _format_bridge_hex(self, frame):
+        frame = "".join(str(frame).split()).upper()
+        return " ".join(frame[i:i + 2] for i in range(0, len(frame), 2))
 
-        Args:
-            genre: command type (Command)
-            *args: other data.
-                   It is converted to octal by default.
-                   If the data needs to be encapsulated into hexadecimal,
-                   the array is used to include them. (Data cannot be nested)
-            **kwargs: support `has_reply`
-                has_reply: Whether there is a return value to accept.
-        """
-        real_command, has_reply, _async = super(
-            MyCobot280, self)._mesg(genre, *args, **kwargs)
-        if _async:
-            if self.thread_lock:
-                with self.lock:
-                    self._write(self._flatten(real_command))
-            else:
-                self._write(self._flatten(real_command))
+    def _bridge_rpc_timeout(self):
+        return max(2.0, self._bridge_timeout_ms / 1000.0 + 1.0)
+
+    def _bridge_xfer(self, real_command):
+        frame = bytes(self._flatten(real_command)).hex().upper()
+        self.log.debug("_bridge_write: {}".format(self._format_bridge_hex(frame)))
+        try:
+            result = self._bridge.call(
+                "XferBridgeMsg",
+                frame,
+                self._bridge_timeout_ms,
+                int(self._bridge_baudrate),
+                timeout=self._bridge_rpc_timeout(),
+            )
+        except Exception as exc:
+            self.log.error("_bridge_error: {}".format(exc))
             return None
-        else:
-            if self.thread_lock:
-                with self.lock:
-                    result = self._res(real_command, has_reply, genre)
-            else:
-                result = self._res(real_command, has_reply, genre)
-            return result
+        if result is None:
+            self.log.error("_bridge_error: no response")
+            return None
+        resp = str(result).strip().split("|", 1)[0].strip().upper()
+        self.log.debug("_bridge_read: {}".format(self._format_bridge_hex(resp)))
+        error_frames = {
+            "FEFE035B01FA": "timeout",
+            "FEFE035B02FA": "partial frame",
+        }
+        if resp in error_frames:
+            self.log.error(
+                "_bridge_error: {} raw={}".format(
+                    error_frames[resp],
+                    self._format_bridge_hex(resp),
+                )
+            )
+            return None
+        try:
+            return bytes.fromhex(resp)
+        except ValueError:
+            self.log.error("_bridge_error: invalid hex response={}".format(resp))
+            return None
 
-    def _res(self, real_command, has_reply, genre):
-        if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
-            self._write(self._flatten(real_command))
-            data = self._read(genre)
-        else:
-            try_count = 0
-            expected_genre = genre
-            while try_count < 3:
-                self._serial_port.reset_input_buffer()
-                self._write(self._flatten(real_command))
-                data = self._read(genre)
-                if not data or len(data) < 4:
-                    try_count += 1
-                    continue
-                if data[3] != expected_genre:
-                    try_count += 1
-                    continue
-                break
-            else:
-                return -1
-        if genre == ProtocolCode.SET_SSID_PWD:
-            return 1
+    def _process_mycobot280_response(self, data, genre):
         res = self._process_received(data, genre)
         if res is None:
             return -1
@@ -247,6 +267,72 @@ class MyCobot280(CommandGenerator):
             return r
         else:
             return res
+
+    def _mesg(self, genre, *args, **kwargs):
+        """
+
+        Args:
+            genre: command type (Command)
+            *args: other data.
+                   It is converted to octal by default.
+                   If the data needs to be encapsulated into hexadecimal,
+                   the array is used to include them. (Data cannot be nested)
+            **kwargs: support `has_reply`
+                has_reply: Whether there is a return value to accept.
+        """
+        real_command, has_reply, _async = super(
+            MyCobot280, self)._mesg(genre, *args, **kwargs)
+        if _async:
+            if self.thread_lock:
+                with self.lock:
+                    if self.unoq_bridge:
+                        self._bridge_xfer(real_command)
+                    else:
+                        self._write(self._flatten(real_command))
+            else:
+                if self.unoq_bridge:
+                    self._bridge_xfer(real_command)
+                else:
+                    self._write(self._flatten(real_command))
+            return None
+        else:
+            if self.thread_lock:
+                with self.lock:
+                    result = self._res(real_command, has_reply, genre)
+            else:
+                result = self._res(real_command, has_reply, genre)
+            return result
+
+    def _res(self, real_command, has_reply, genre):
+        if self.unoq_bridge:
+            data = self._bridge_xfer(real_command)
+            if not has_reply:
+                return 1 if data is not None else -1
+            if not data or len(data) < 4 or data[3] != genre:
+                return -1
+            return self._process_mycobot280_response(data, genre)
+        if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
+            self._write(self._flatten(real_command))
+            data = self._read(genre)
+        else:
+            try_count = 0
+            expected_genre = genre
+            while try_count < 3:
+                self._serial_port.reset_input_buffer()
+                self._write(self._flatten(real_command))
+                data = self._read(genre)
+                if not data or len(data) < 4:
+                    try_count += 1
+                    continue
+                if data[3] != expected_genre:
+                    try_count += 1
+                    continue
+                break
+            else:
+                return -1
+        if genre == ProtocolCode.SET_SSID_PWD:
+            return 1
+        return self._process_mycobot280_response(data, genre)
 
     # System Status
     def get_error_information(self):
@@ -927,9 +1013,13 @@ class MyCobot280(CommandGenerator):
         return self
 
     def close(self):
+        if self.unoq_bridge:
+            return
         self._serial_port.close()
 
     def open(self):
+        if self.unoq_bridge:
+            return
         self._serial_port.open()
 
     def go_home(self):
