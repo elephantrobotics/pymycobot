@@ -835,11 +835,11 @@ class DataProcessor(object):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre, arm=6):
+        if not data:
+            return None
         if genre == 177:
             data = data.decode("utf-8").split(" ")
             return data[1], data[-1]
-        elif not data:
-            return None
         elif data == b'\xfe\xfe\x04[\x01\r\x87':
             # 水星到位反馈
             return 1
@@ -1286,26 +1286,26 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                     wait_time = 10
                 else:
                     wait_time = 0.3
-        if genre == 177:
-            while True:
-                data = self.sock.recv(1024)
-                if b"password" in data:
-                    break
-        elif genre == 192:
-            while True:
-                data += self.sock.recv(1024)
-                if len(data) == 6:
-                    break
-        else:
-            try:
-                self.sock.settimeout(wait_time)
+        try:
+            self.sock.settimeout(wait_time)
+            if genre == 177:
+                while True:
+                    data = self.sock.recv(1024)
+                    if b"password" in data:
+                        break
+            elif genre == 192:
+                while True:
+                    data += self.sock.recv(1024)
+                    if len(data) == 6:
+                        break
+            else:
                 data = self.sock.recv(1024)
                 if isinstance(data, str):
                     datas = bytearray()
                     for i in data:
                         datas += hex(ord(i))
-            except:
-                data = b""
+        except:
+            data = b""
         self.log.debug("_read : {}".format(_format_debug_bytes(data)))
         return data
     else:
