@@ -91,7 +91,7 @@ from pymycobot.ultraArmP340 import ultraArmP340
         </tr>
         <tr>
             <td text-align: center>1</td>
-            <td>-150 ~ 170</td>
+            <td>-145 ~ 165</td>
         </tr>
         <tr>
             <td>2</td>
