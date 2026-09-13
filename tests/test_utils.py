@@ -17,10 +17,13 @@ print(detect_result)
 
 
 class UltraArmP1(UltraArmP1Base):
-    def __init__(self):
+    def __init__(self, run_status_replies=None):
         super().__init__(debug=False)
         self.sent_commands = []
         self.recv_buffer = bytearray()
+        self.run_status_replies = list(run_status_replies or [])
+        self.STATUS_QUERY_INTERVAL = 0
+        self.STATUS_QUERY_GRACE_PERIOD = 0
 
     def _send_command(self, command, clear_input=True):
         self.sent_commands.append(command)
@@ -38,6 +41,9 @@ class UltraArmP1(UltraArmP1Base):
             self.recv_buffer.extend(b"M110 Data:85 8C D5 AB\n")
         elif command.startswith("M9"):
             self.recv_buffer.extend(b"M9 OK\n")
+        elif command == "M200" and self.run_status_replies:
+            status = self.run_status_replies.pop(0)
+            self.recv_buffer.extend(f"M200 mainmoving:{status}\n".encode())
 
     def _read_available_bytes(self):
         data = bytes(self.recv_buffer)
@@ -52,6 +58,9 @@ class UltraArmP1(UltraArmP1Base):
 
     def _send_raw_command(self, command):
         self.sent_commands.append(command)
+
+    def _query_error_information(self, timeout=0.3):
+        return "ok"
 
 
 def test_ultraarm_p1_move_pause_sends_m6_and_returns_ok():
@@ -101,6 +110,13 @@ def test_ultraarm_p1_get_default_sensor_initialize_parses_rfid_id():
 
     assert arm.get_default_sensor_initialize(6) == "858CD5AB"
     assert arm.sent_commands == ["M110 J6"]
+
+
+def test_ultraarm_p1_motion_wait_requires_three_consecutive_stop_statuses():
+    arm = UltraArmP1(run_status_replies=[1, 0, 0, 1, 0, 0, 0])
+
+    assert arm._response() == "ok"
+    assert arm.sent_commands.count("M200") == 7
 
 
 @pytest.mark.parametrize("joint_id", [0, 5])

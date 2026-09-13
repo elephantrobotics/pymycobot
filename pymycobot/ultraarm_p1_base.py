@@ -31,6 +31,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
     STATUS_TIMEOUT = 3
     STATUS_QUERY_INTERVAL = 0.2
     STATUS_QUERY_GRACE_PERIOD = 0.05
+    STATUS_STOP_CONFIRM_COUNT = 3
 
     END_COUNT = 2
     MOVE_PAUSE_PROMPT = "Robot is paused, please use move_resume() first."
@@ -501,6 +502,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         status_query_interval = self.STATUS_QUERY_INTERVAL
         last_status_time = start_time
         last_status_query_time = start_time - status_query_interval
+        stop_status_count = 0
 
         while time.time() - start_time < response_timeout:
             chunk = self._read_available_bytes()
@@ -583,17 +585,22 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                         if end_count >= self.END_COUNT:
                             return 'ok'
                     if movement_status_wait:
-                        # M200 returns mainmoving:0/1.  Treat 0 as the same
+                        # M200 returns mainmoving:0/1. Require consecutive 0
+                        # replies to avoid ending on a transient stale state.
                         run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
                         if run_status is not None:
                             last_status_time = time.time()
                             if run_status == 0:
-                                # If the robot was already in an error state before
-                                # this motion command, it may only report not moving.
-                                error_info = self._query_error_information()
-                                if error_info and error_info != "ok":
-                                    return error_info
-                                return 'ok'
+                                stop_status_count += 1
+                                if stop_status_count >= self.STATUS_STOP_CONFIRM_COUNT:
+                                    # If the robot was already in an error state before
+                                    # this motion command, it may only report not moving.
+                                    error_info = self._query_error_information()
+                                    if error_info and error_info != "ok":
+                                        return error_info
+                                    return 'ok'
+                            else:
+                                stop_status_count = 0
 
             if movement_status_wait:
                 now = time.time()
