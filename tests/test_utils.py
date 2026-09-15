@@ -39,6 +39,8 @@ class UltraArmP1(UltraArmP1Base):
             self.recv_buffer.extend(b"M110 Data:0.00,0.00\n")
         elif command == "M110 J6":
             self.recv_buffer.extend(b"M110 Data:85 8C D5 AB\n")
+        elif command == "M92":
+            self.recv_buffer.extend(b"M92 OK\n")
         elif command.startswith("M9"):
             self.recv_buffer.extend(b"M9 OK\n")
         elif command == "M200" and self.run_status_replies:
@@ -117,6 +119,13 @@ def test_ultraarm_p1_motion_wait_requires_three_consecutive_stop_statuses():
 
     assert arm._response() == "ok"
     assert arm.sent_commands.count("M200") == 7
+
+
+def test_ultraarm_p1_update_encoder_data_sends_m92_and_returns_ok():
+    arm = UltraArmP1()
+
+    assert arm.update_encoder_data() == "ok"
+    assert arm.sent_commands == ["M92"]
 
 
 @pytest.mark.parametrize("joint_id", [0, 5])

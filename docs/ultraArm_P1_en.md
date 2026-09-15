@@ -997,6 +997,15 @@ data = ua.get_default_sensor_initialize(1)
 print(data)
 ```
 
+### 82 `update_encoder_data()`
+
+- **Function:** Updates the current position using encoder data to eliminate error.
+- **Return value:** `ok`, or an error code on failure.
+
+```python
+ua.update_encoder_data()
+```
+
 ---
 
 ## TCP Socket Communication

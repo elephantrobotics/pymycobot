@@ -1425,6 +1425,12 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             self._send_command(command)
             return self._response(_async=True, is_set=True)
 
+    def update_encoder_data(self):
+        """Update encoder data with the current position."""
+        with self.lock:
+            self._send_command(ProtocolCode.UPDATE_ENCODER_DATA_P1)
+            return self._response(_async=True, is_set=True)
+
     def set_gripper_angle(self, gripper_angle, gripper_speed):
         """Set gripper angle.
 

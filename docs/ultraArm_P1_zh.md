@@ -833,6 +833,15 @@ data = ua.get_default_sensor_initialize(1)
 print(data)
 ```
 
+### 82 `update_encoder_data()`
+
+- **功能:** 使用编码器数据更新当前位置，用于消除误差。
+- **返回值:** `ok`，失败时返回错误码。
+
+```python
+ua.update_encoder_data()
+```
+
 ---
 
 ## TCP Socket 通信
