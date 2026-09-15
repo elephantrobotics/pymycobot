@@ -46,19 +46,13 @@ mc.send_angle(5, 0, 60)
 ```
 
 - When `unoq_bridge=True`, the library does not open or check the `/dev/mycobot` serial device.
-- `baudrate` is optional and defaults to `1000000`.
+- `baudrate` is optional and defaults to `1000000`; pass it explicitly only when overriding the default.
 - `timeout` is specified in seconds and is converted to milliseconds for Bridge RPC.
 - This mode requires `arduino.app_utils.Bridge` in the UNO Q environment. Do not enable it on a normal PC environment where this module is not installed.
 - The firmware must provide `XferBridgeMsg(frame_hex, timeout_ms, baudrate)` and transparently pass through myCobot protocol frames.
 - Firmware response `FE FE 03 5B 01 FA` means timeout, and `FE FE 03 5B 02 FA` means partial frame. When `debug=True` is enabled, `_bridge_error` and the raw frame are written to the log.
 
-The legacy argument style is still accepted:
-
-```python
-mc = MyCobot280("/dev/mycobot", 1000000, unoq_bridge=True)
-```
-
-In Bridge mode, the `port` argument is kept only for compatibility with existing code and is not used to access a serial device.
+Normally, only `unoq_bridge=True` is required for initialization. In Bridge mode, the `port` argument is kept only for compatibility with existing code and is not used to access a serial device.
 
 #### Remote TCP Control from a PC
 

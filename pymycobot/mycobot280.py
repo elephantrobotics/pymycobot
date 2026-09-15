@@ -102,7 +102,7 @@ class MyCobot280(CommandGenerator):
         """
         Args:
             port     : port string
-            baudrate : baud rate string, default '115200'
+            baudrate : baud rate string, default '115200'; UNO Q Bridge defaults to 1000000
             timeout  : default 0.1
             debug    : whether show debug info
             unoq_bridge: use Arduino UNO Q Bridge RPC instead of serial port

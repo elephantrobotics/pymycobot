@@ -17,7 +17,7 @@ class FakeBridge:
         cls.calls = []
 
     @classmethod
-    def call(cls, name, frame_hex, timeout_ms=None, baudrate=None):
+    def call(cls, name, frame_hex, timeout_ms=None, baudrate=None, **kwargs):
         cls.calls.append((name, frame_hex, timeout_ms, baudrate))
         return cls.responses.get(frame_hex)
 
@@ -102,7 +102,7 @@ def test_unoq_bridge_error_frames_return_minus_one(monkeypatch, response):
 def test_unoq_bridge_method_unavailable_returns_minus_one(monkeypatch):
     class UnavailableBridge:
         @classmethod
-        def call(cls, name, frame_hex, timeout_ms=None, baudrate=None):
+        def call(cls, name, frame_hex, timeout_ms=None, baudrate=None, **kwargs):
             raise ValueError(
                 "Request 'XferBridgeMsg' failed: "
                 "method XferBridgeMsg not available (2)"

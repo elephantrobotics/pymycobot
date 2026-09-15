@@ -46,19 +46,13 @@ mc.send_angle(5, 0, 60)
 ```
 
 - `unoq_bridge=True` 时不打开、不检查 `/dev/mycobot` 串口设备。
-- `baudrate` 可以不传，默认使用 `1000000`。
+- `baudrate` 可以不传，默认使用 `1000000`；需要覆盖默认值时再显式传入。
 - `timeout` 的单位为秒，会转换成 Bridge RPC 的毫秒超时。
 - 该模式依赖 UNO Q 环境中的 `arduino.app_utils.Bridge`，普通 PC 环境未安装该模块时不能启用。
 - 固件侧需要提供 `XferBridgeMsg(frame_hex, timeout_ms, baudrate)` 方法，并透明透传 myCobot 协议帧。
 - 固件返回 `FE FE 03 5B 01 FA` 表示超时，返回 `FE FE 03 5B 02 FA` 表示残包。开启 `debug=True` 时会在日志中显示 `_bridge_error` 和原始帧。
 
-兼容旧参数写法：
-
-```python
-mc = MyCobot280("/dev/mycobot", 1000000, unoq_bridge=True)
-```
-
-在 Bridge 模式下，`port` 参数仅用于兼容旧代码，不会访问实际串口设备。
+实例化时通常只需要传入 `unoq_bridge=True`。在 Bridge 模式下，`port` 参数仅用于兼容旧代码，不会访问实际串口设备。
 
 #### PC 远程 TCP 控制 UNO Q
 
