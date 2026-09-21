@@ -343,7 +343,7 @@ class MercuryCommandGenerator(CloseLoop):
             ProtocolCode.GET_FRESH_MODE,
             ProtocolCode.GET_GRIPPER_MODE,
             ProtocolCode.SET_SSID_PWD,
-            # ProtocolCode.GET_ERROR_DETECT_MODE,
+            ProtocolCode.GET_ERROR_DETECT_MODE,
             ProtocolCode.POWER_ON,
             ProtocolCode.POWER_OFF,
             ProtocolCode.RELEASE_ALL_SERVOS,
@@ -660,4 +660,26 @@ class MercuryCommandGenerator(CloseLoop):
             0 - interpolation mode, 1 - refresh mode
         """
         return self._mesg(ProtocolCode.GET_FRESH_MODE, has_reply=True)
+
+    def set_err_protect_status(self, status):
+        """Set the motor communication error protection switch.
+
+        Args:
+            status (int): ``1`` enables protection and ``0`` disables it.
+
+        Returns:
+            int: ``1`` when the controller accepts the setting, otherwise ``0``.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, flag=status
+        )
+        return self._mesg(ProtocolCode.SET_ERROR_DETECT_MODE, status)
+
+    def get_err_protect_status(self):
+        """Get the motor communication error protection switch status.
+
+        Returns:
+            int: ``1`` when protection is enabled, otherwise ``0``.
+        """
+        return self._mesg(ProtocolCode.GET_ERROR_DETECT_MODE, has_reply=True)
 

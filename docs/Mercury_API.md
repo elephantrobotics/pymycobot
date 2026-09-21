@@ -41,6 +41,21 @@ print(mc.get_angles())
 - **function:** Upper computer error security status
 - **Return value:** 0 - Normal. other - Robot triggered collision detection
 
+#### `get_err_protect_status()`
+
+- **Function:** Read the motor communication error protection switch.
+- **Return value:** `1` - enabled (default); `0` - disabled.
+
+#### `set_err_protect_status(status)`
+
+- **Function:** Set the motor communication error protection switch. The
+  setting is not saved after shutdown.
+- **Parameters:** `status` (`int`): `1` - enable; `0` - disable.
+- **Return value:** `1` - setting accepted; `0` - setting failed.
+- **Note:** When enabled, a motor communication disconnection, overcurrent,
+  or another monitored error interrupts the current task and activates
+  protection.
+
 ### 2. Overall Status
 
 #### `power_on()`
