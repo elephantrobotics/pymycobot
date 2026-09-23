@@ -1318,6 +1318,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
             wait_time = 1
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
+            if not data:
+                continue
             # self.log.debug("data: {}".format(data))
             k += 1
             if _class in DataProcessor.crc_robot_class:
