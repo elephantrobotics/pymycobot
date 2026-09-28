@@ -32,6 +32,7 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
     STATUS_QUERY_INTERVAL = 0.2
     STATUS_QUERY_GRACE_PERIOD = 0.05
     STATUS_STOP_CONFIRM_COUNT = 3
+    CALIBRATION_STATUS_QUERY_DELAY = 0.6
 
     END_COUNT = 2
     MOVE_PAUSE_PROMPT = "Robot is paused, please use move_resume() first."
@@ -462,7 +463,14 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         return " ".join(tokens)
 
     # ---------------------- Response waiting & parsing ----------------------
-    def _response(self, _async=True, _gcode=False, is_set=False, timeout=None):
+    def _response(
+        self,
+        _async=True,
+        _gcode=False,
+        is_set=False,
+        timeout=None,
+        status_query_start_delay=0,
+    ):
         """Wait for device response from the serial buffer.
 
         Returns 'ok' when keyword is found, False on timeout.
@@ -500,7 +508,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
 
         status_timeout = self.STATUS_TIMEOUT
         status_query_interval = self.STATUS_QUERY_INTERVAL
-        last_status_time = start_time
+        status_query_ready_at = start_time + status_query_start_delay
+        last_status_time = status_query_ready_at
         last_status_query_time = start_time - status_query_interval
         stop_status_count = 0
 
@@ -610,7 +619,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                         return error_info
                     break
                 if (
-                    now - start_time >= self.STATUS_QUERY_GRACE_PERIOD
+                    now >= status_query_ready_at
+                    and now - start_time >= self.STATUS_QUERY_GRACE_PERIOD
                     and now - last_status_query_time >= status_query_interval
                 ):
                     # Query run status without calling get_run_status(), since
@@ -1350,7 +1360,10 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             command = ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1
             command += " J" + str(joint_number)
             self._send_command(command)
-            return self._response(_async=True)
+            return self._response(
+                _async=True,
+                status_query_start_delay=self.CALIBRATION_STATUS_QUERY_DELAY,
+            )
 
     def get_zero_calibration_state(self):
         """Read zero-point calibration status.

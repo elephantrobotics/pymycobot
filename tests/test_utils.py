@@ -121,6 +121,24 @@ def test_ultraarm_p1_motion_wait_requires_three_consecutive_stop_statuses():
     assert arm.sent_commands.count("M200") == 7
 
 
+def test_ultraarm_p1_zero_calibration_delays_status_queries():
+    arm = UltraArmP1()
+    response_args = {}
+
+    def response(**kwargs):
+        response_args.update(kwargs)
+        return "ok"
+
+    arm._response = response
+
+    assert arm.set_zero_calibration(0) == "ok"
+    assert arm.sent_commands == ["M30 J0"]
+    assert response_args == {
+        "_async": True,
+        "status_query_start_delay": arm.CALIBRATION_STATUS_QUERY_DELAY,
+    }
+
+
 def test_ultraarm_p1_update_encoder_data_sends_m92_and_returns_ok():
     arm = UltraArmP1()
 
