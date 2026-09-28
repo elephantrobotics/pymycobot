@@ -121,6 +121,14 @@ def test_ultraarm_p1_motion_wait_requires_three_consecutive_stop_statuses():
     assert arm.sent_commands.count("M200") == 7
 
 
+def test_ultraarm_p1_reports_j4_collision_in_chinese():
+    arm = UltraArmP1()
+    arm.language = "zh_CN"
+    arm.recv_buffer.extend(b"CollisionDetectionError:4\n")
+
+    assert arm._response() == "J4关节碰撞,请使用collision_unlock()接口解锁"
+
+
 def test_ultraarm_p1_zero_calibration_delays_status_queries():
     arm = UltraArmP1()
     response_args = {}

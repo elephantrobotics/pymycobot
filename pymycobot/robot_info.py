@@ -197,6 +197,7 @@ class UltraArmP1RobotInfo(object):
         1: {"zh_CN": "J1关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J1 collision detected,please use the collision_unlock() interface to unlock."},
         2: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
         3: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
+        4: {"zh_CN": "J4关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J4 collision detected,please use the collision_unlock() interface to unlock."},
     }
     ERROR_NO_SOLUTION_MAP = {
         1: {"zh_CN": "目标坐标无解", "en_US": "No solution for target coordinates."},
