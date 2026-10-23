@@ -1280,6 +1280,16 @@ class MyCobot320Socket(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, gripper_id=gripper_id)
         return self._mesg(ProtocolCode.GET_TOQUE_GRIPPER, gripper_id, [MyHandGripper.GET_HAND_GRIPPER_ROBOT_MODEL])
 
+    def is_controller_connected(self):
+        """Wether connected with Atom.
+
+        Return:
+            1 - succeed
+            0 - failed
+            -1 - error data
+        """
+        return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
+
     # Other
     def wait(self, t):
         time.sleep(t)

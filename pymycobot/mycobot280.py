@@ -227,10 +227,13 @@ class MyCobot280(CommandGenerator):
             ProtocolCode.SET_FOUR_PIECES_ZERO
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS, ProtocolCode.GET_ANGLES_PLAN]:
+        elif genre in [ProtocolCode.SOLVE_INV_KINEMATICS]:
+            if res == [8241, 8241, 8241, 8241, 8241, 8241]:
+                return 'No solution for conversion'
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE,
-                       ProtocolCode.GET_COORDS_PLAN]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_ANGLES_PLAN]:
+            return [self._int2angle(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -240,6 +243,15 @@ class MyCobot280(CommandGenerator):
                 return r
             else:
                 return res
+        elif genre == ProtocolCode.GET_WORLD_REFERENCE:
+            if res:
+                r = []
+                for idx in range(3):
+                    r.append(self._int2coord(res[idx]))
+                for idx in range(3, 6):
+                    r.append(self._int3angle(res[idx]))  # radian，/1000
+                return r
+            return res
         elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
             return [self._int2coord(angle) for angle in res]
         elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
@@ -413,7 +425,7 @@ class MyCobot280(CommandGenerator):
             radians: a list of radian values( List[float]), length 6
             speed: (int )0 ~ 100
         """
-        calibration_parameters(len6=radians, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, radians=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed, _async=_async)
@@ -573,7 +585,7 @@ class MyCobot280(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, pin_mode=pin_mode)
         return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
 
-    def get_gripper_value(self, gripper_type=None):
+    def get_gripper_value(self, gripper_type=1):
         """Get the value of gripper.
 
         Args:
@@ -585,11 +597,8 @@ class MyCobot280(CommandGenerator):
         Return:
             gripper value (int)
         """
-        if gripper_type is None:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
-        else:
-            self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
+        return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
 
     def is_gripper_moving(self):
         """Judge whether the gripper is moving or not
@@ -704,7 +713,7 @@ class MyCobot280(CommandGenerator):
             coords: a list of coords value(List[float])
                     [x(mm), y, z, rx(angle), ry, rz]
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -723,12 +732,12 @@ class MyCobot280(CommandGenerator):
             coords: a list of coords value(List[float])
                     [x(mm), y, z, rx(angle), ry, rz]\n
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        self.calibration_parameters(class_name=self.__class__.__name__, world_coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
+            coord_list.append(self._angle3int(angle))
         return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
 
     def get_world_reference(self):
@@ -796,6 +805,7 @@ class MyCobot280(CommandGenerator):
         Return:
             list: A float list of all coordinates.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles)
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
 
@@ -809,6 +819,7 @@ class MyCobot280(CommandGenerator):
         Return:
             list: A float list of all angle.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=target_coords, angles=current_angles)
         angles = [self._angle2int(angle) for angle in current_angles]
         coord_list = []
         for idx in range(3):
@@ -851,7 +862,7 @@ class MyCobot280(CommandGenerator):
                 1: Force control
                 0: Non-force control
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, gripper_speed=speed, _type_1=_type_1,
+        self.calibration_parameters(class_name=self.__class__.__name__, flag_gripper=flag, gripper_speed=speed, _type_1=_type_1,
                                     is_torque=is_torque)
         args = [flag, speed]
         if _type_1 is not None:

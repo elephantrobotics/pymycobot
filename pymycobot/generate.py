@@ -128,16 +128,6 @@ class CommandGenerator(DataProcessor):
         else:
             return self._mesg(ProtocolCode.RELEASE_ALL_SERVOS, data)
 
-    def is_controller_connected(self):
-        """Wether connected with Atom.
-        
-        Return:
-            1 - succeed
-            0 - failed
-            -1 - error data
-        """
-        return self._mesg(ProtocolCode.IS_CONTROLLER_CONNECTED, has_reply=True)
-
     # MDI mode and operation
     def get_angles(self):
         """ Get the angle of all joints.
@@ -169,15 +159,22 @@ class CommandGenerator(DataProcessor):
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.SEND_ANGLES, angles, speed, has_reply=True, _async=_async)
 
-    def get_coords(self):
+    def get_coords(self, angles=None):
         """Get the coords from robot arm, coordinate system based on base.
+
+        Args:
+            angles (list): The angles of six joints. e.g. [0, 0, 0, 0, 0, 0]
 
         Return:
             list : A float list of coord .[x, y, z, rx, ry, rz]
-
         
         """
-        return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
+        if angles is None:
+            return self._mesg(ProtocolCode.GET_COORDS, has_reply=True)
+        self.calibration_parameters(
+            class_name=self.__class__.__name__, angles=angles)
+        angles = [self._angle2int(angle) for angle in angles]
+        return self._mesg(ProtocolCode.GET_COORDS, angles)
 
     def send_coord(self, id, coord, speed, _async=False):
         """Send one coord to robot arm. 
@@ -311,7 +308,7 @@ class CommandGenerator(DataProcessor):
             encoder: The value of the set encoder.
             speed : 1 - 100
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, encode_id=joint_id, encoder=encoder,
+        self.calibration_parameters(class_name=self.__class__.__name__, set_encode_id=joint_id, encoder=encoder,
                                     speed=speed)
         return self._mesg(ProtocolCode.SET_ENCODER, joint_id, [encoder], speed)
 
@@ -322,7 +319,7 @@ class CommandGenerator(DataProcessor):
             joint_id: (int) 1 - 6
                 for gripper: Joint id 7
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, encode_id=joint_id)
+        self.calibration_parameters(class_name=self.__class__.__name__, get_encode_id=joint_id)
         return self._mesg(ProtocolCode.GET_ENCODER, joint_id, has_reply=True)
 
     def set_encoders(self, encoders, sp):
@@ -343,7 +340,7 @@ class CommandGenerator(DataProcessor):
         """
         return self._mesg(ProtocolCode.GET_ENCODERS, has_reply=True)
 
-    def set_encoders_drag(self, encoders, speeds):  # TODO 22-5-19 need test
+    def set_encoders_drag(self, encoders, speeds):  #
         """Send all encoders and speeds
 
         Args:
@@ -485,8 +482,6 @@ class CommandGenerator(DataProcessor):
         self.calibration_parameters(class_name=self.__class__.__name__, id=servo_id)
         return self._mesg(ProtocolCode.FOCUS_SERVO, servo_id)
     
-    def focus_all_servos(self):
-        return self._mesg(ProtocolCode.FOCUS_SERVO, 0)
 
     def focus_all_servos(self):
         """Power on all servo
@@ -511,16 +506,19 @@ class CommandGenerator(DataProcessor):
         """Set the terminal atom io status
 
         Args:
-            pin_no     (int):
+            pin_no     (int): 23 / 33
             pin_signal (int): 0 / 1
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_no=pin_no, pin_signal=pin_signal)
+        self.calibration_parameters(class_name=self.__class__.__name__, set_pin_no=pin_no, pin_signal=pin_signal)
         return self._mesg(ProtocolCode.SET_DIGITAL_OUTPUT, pin_no, pin_signal)
 
     def get_digital_input(self, pin_no):
-        """singal value"""
-        # TODO pin_no范围未知
-        self.calibration_parameters(class_name=self.__class__.__name__, pin_no=pin_no)
+        """singal value
+
+        Args:
+            pin_no     (int): 19 / 22
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, get_pin_no=pin_no)
         return self._mesg(ProtocolCode.GET_DIGITAL_INPUT, pin_no, has_reply=True)
 
     def set_gripper_state(self, flag, speed, _type_1=None):

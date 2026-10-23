@@ -168,14 +168,6 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 - **Return value:**
   - `1`: complete
 
-#### `is_controller_connected()`
-
-- **function:** Wether connected with Atom
-
-- **Return value:**
-  - `1`: succeed
-  - `0`: failed
-  - `-1`: error data
 
 #### `read_next_error()`
 
@@ -284,9 +276,11 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 - **Return value:** 
   - `1`: complete
 
-#### `get_coords()`
+#### `get_coords(angles=None)`
 
-- **function:** Obtain robot arm coordinates from a base based coordinate system
+- **Function:** Retrieves the robotic arm's coordinates relative to a reference frame; supports calculating coordinates based on provided joint angle values.
+- **Parameters:**
+  - `angles`: A list of angles (`List[float]`) with a length of 6.
 - **Return value:** a float list of coord:[x, y, z, rx, ry, rz]
 
 #### `get_coords_plan()`
@@ -302,9 +296,9 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
   - `coord`: coord value(`float`)
     | Coord Id | range |
     | ---- | ---- |
-    | x | -281.45 ~ 281.45 |
-    | y | -281.45 ~ 281.45 |
-    | z | -70 ~ 412.67 |
+    | x | -293 ~ 293 |
+    | y | -293 ~ 293 |
+    | z | -128 ~ 434 |
     | rx | -180 ~ 180 |
     | ry | -180 ~ 180 |
     | rz | -180 ~ 180 |
@@ -932,8 +926,18 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 #### `set_tool_reference(coords)`
 
 - **function:** Set tool coordinate system.
-- **Parameters**：
-  - `coords`: (`list`) [x, y, z, rx, ry, rz].
+  - **Parameters**：
+    - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+    | Coord Id | range      |
+    | ---- |------------|
+    | x | -280 ~ 280 |
+    | y | -280 ~ 280 |
+    | z | -280 ~ 280 |
+    | rx | -180 ~ 180 |
+    | ry | -180 ~ 180 |
+    | rz | -180 ~ 180 |
+
 - **Return value:** 
   - `1`: complete
 
@@ -947,6 +951,16 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 - **function:** Set world coordinate system.
 - **Parameters**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+    | Coord Id | range        |
+    | ---- |--------------|
+    | x | -280 ~ 280   |
+    | y | -280 ~ 280   |
+    | z | -280 ~ 280   |
+    | rx | -3.14 ~ 3.14 |
+    | ry | -3.14 ~ 3.14 |
+    | rz | -3.14 ~ 3.14 |
+
 - **Return value:** 
   - `1`: complete
 

@@ -742,6 +742,9 @@ class DataProcessor(object):
     def _decode_int16(self, data):
         return struct.unpack(">h", data)[0]
 
+    def _angle3int(self, angle):
+        return int(angle * 1000)
+
     def _angle2int(self, angle):
         return int(angle * 100)
 
