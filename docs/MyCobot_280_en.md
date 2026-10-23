@@ -509,7 +509,7 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 
 - **Parameters**
 
-  - `joint_id`: (`int`) 1-6
+  - `joint_id`: (`int`) 1-6 or 7 - gripper
 
 - **Return value:** (`int`) Joint potential value
 
@@ -717,7 +717,7 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 
 - **function:** set IO statue
 - **Parameters**
-  - `pin_no` (int): Pin number
+  - `pin_no` (int): Pin number, 23 / 33
   - `pin_signal` (int): 0 / 1
 - **Return value**：
   - `1`: complete
@@ -725,7 +725,7 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 #### `get_digital_input(pin_no)`
 
 - **function:** read IO statue
-- **Parameters**: `pin_no` (int)
+- **Parameters**: `pin_no` (int) ，19 / 22
 - **Return value**: signal
 
 #### `set_pin_mode(pin_no, pin_mode)`

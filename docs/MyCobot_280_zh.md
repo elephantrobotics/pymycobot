@@ -494,7 +494,7 @@ TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `
 
 - **参数**
 
-  - `joint_id`: (`int`) 1-6
+  - `joint_id`: (`int`) 1-6 or 7 - gripper
 
 - **返回值:** (`int`) 关节电位值
 
@@ -701,7 +701,7 @@ TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `
 
 - **功能:** 设置IO状态
 - **参数**
-  - `pin_no` (int): 引脚号
+  - `pin_no` (int): 引脚号，23 / 33
   - `pin_signal` (int): 0 / 1
 - **返回值**：
   - `1`: 完成
@@ -709,7 +709,7 @@ TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `
 #### `get_digital_input(pin_no)`
 
 - **功能:** 获取IO状态
-- **参数**: `pin_no` (int)
+- **参数**: `pin_no` (int), 19 / 22
 - **返回值**: 0 或 1
 
 #### `set_pin_mode(pin_no, pin_mode)`
@@ -786,7 +786,7 @@ TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `
   - `1`: 正在运行
   - `-1`: 错误
 
-#### `get_gripper_value()`
+#### `get_gripper_value(gripper_type=1)`
 
 - **功能**: 获取夹爪的当前位置数据信息
 - **参数**:
