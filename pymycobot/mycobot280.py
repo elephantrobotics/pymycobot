@@ -317,12 +317,20 @@ class MyCobot280(CommandGenerator):
 
     def _res(self, real_command, has_reply, genre):
         if self.unoq_bridge:
-            data = self._bridge_xfer(real_command)
-            if not has_reply:
-                return 1 if data is not None else -1
-            if not data or len(data) < 4 or data[3] != genre:
-                return -1
-            return self._process_mycobot280_response(data, genre)
+            # Align with serial path: retry on Bridge timeout (5B) / bad frame.
+            try_count = 0
+            while try_count < 3:
+                data = self._bridge_xfer(real_command)
+                if not has_reply:
+                    if data is not None:
+                        return 1
+                    try_count += 1
+                    continue
+                if not data or len(data) < 4 or data[3] != genre:
+                    try_count += 1
+                    continue
+                return self._process_mycobot280_response(data, genre)
+            return -1
         if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
             self._write(self._flatten(real_command))
             data = self._read(genre)
