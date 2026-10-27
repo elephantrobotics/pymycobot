@@ -174,7 +174,7 @@ class CommandGenerator(DataProcessor):
         self.calibration_parameters(
             class_name=self.__class__.__name__, angles=angles)
         angles = [self._angle2int(angle) for angle in angles]
-        return self._mesg(ProtocolCode.GET_COORDS, angles)
+        return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
 
     def send_coord(self, id, coord, speed, _async=False):
         """Send one coord to robot arm. 

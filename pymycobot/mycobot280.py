@@ -317,15 +317,11 @@ class MyCobot280(CommandGenerator):
 
     def _res(self, real_command, has_reply, genre):
         if self.unoq_bridge:
-            # Align with serial path: retry on Bridge timeout (5B) / bad frame.
+            # Match socket path: ignore has_reply; parse any valid reply frame.
+            # Retry on Bridge timeout (5B) / bad frame (same budget as serial).
             try_count = 0
             while try_count < 3:
                 data = self._bridge_xfer(real_command)
-                if not has_reply:
-                    if data is not None:
-                        return 1
-                    try_count += 1
-                    continue
                 if not data or len(data) < 4 or data[3] != genre:
                     try_count += 1
                     continue
