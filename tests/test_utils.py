@@ -41,6 +41,10 @@ class UltraArmP1(UltraArmP1Base):
             self.recv_buffer.extend(b"M110 Data:85 8C D5 AB\n")
         elif command == "M92":
             self.recv_buffer.extend(b"M92 OK\n")
+        elif command == "M605":
+            self.recv_buffer.extend(b"M605 SN:\n")
+        elif command.startswith("M604 "):
+            self.recv_buffer.extend(b"M604 OK\n")
         elif command.startswith("M9"):
             self.recv_buffer.extend(b"M9 OK\n")
         elif command == "M200" and self.run_status_replies:
@@ -127,6 +131,44 @@ def test_ultraarm_p1_reports_j4_collision_in_chinese():
     arm.recv_buffer.extend(b"CollisionDetectionError:4\n")
 
     assert arm._response() == "J4关节碰撞,请使用collision_unlock()接口解锁"
+
+
+def test_ultraarm_p1_get_empty_sn_code_returns_empty_string():
+    arm = UltraArmP1()
+
+    assert arm._request_with_retry("M605", "get_sn_code") == ""
+    assert arm.sent_commands == ["M605"]
+
+
+def test_ultraarm_p1_accepts_eruap_sn_code_format():
+    arm = UltraArmP1()
+
+    arm.calibration_parameters(
+        class_name=arm.__class__.__name__,
+        sn_code="ERUAP12608000001",
+    )
+
+
+def test_ultraarm_p1_set_sn_code_normalizes_lowercase_prefix():
+    arm = UltraArmP1()
+    arm._internal_mode = True
+
+    assert arm._internal_set_sn_code("eruap12608000001") == "ok"
+    assert arm.sent_commands == ["M604 ERUAP12608000001"]
+
+
+@pytest.mark.parametrize(
+    "sn_code",
+    ["12608000001", "ERUAP1260800000", "ERUAP1260800000A", "ABCDF12608000001"],
+)
+def test_ultraarm_p1_rejects_invalid_sn_code_format(sn_code):
+    arm = UltraArmP1()
+
+    with pytest.raises(ultraArmP1DataException):
+        arm.calibration_parameters(
+            class_name=arm.__class__.__name__,
+            sn_code=sn_code,
+        )
 
 
 def test_ultraarm_p1_zero_calibration_delays_status_queries():

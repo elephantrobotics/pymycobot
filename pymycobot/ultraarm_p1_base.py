@@ -830,9 +830,15 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                                 data = line_data[data_idx + len("data:"):].strip()
                                 return data.split() if data else []
                         elif flag == 'get_sn_code':
-                            r = self._parse_colon_values(lower, "sn", int, single=True)
-                            if r is not None:
-                                return r
+                            match = re.search(
+                                r"(?:^|[^a-z0-9_])sn\s*:",
+                                line_data,
+                                re.IGNORECASE,
+                            )
+                            if match:
+                                # An empty field is a valid response after the
+                                # screen firmware clears the stored SN.
+                                return line_data[match.end():].strip()
                         elif flag == 'get_robot_id':
                             r = self._parse_colon_values(lower, "id", str, single=True)
                             if r is not None:

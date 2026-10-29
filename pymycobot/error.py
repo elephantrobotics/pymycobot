@@ -2607,13 +2607,10 @@ def calibration_parameters(**kwargs):
                 if not isinstance(value, str):
                     raise ultraArmP1DataException(
                         f"Parameter `sn_code` must be a string, but received {type(value)}")
-                if len(value) != 11:
+                if not re.fullmatch(r"ERUAP\d{11}", value):
                     raise ultraArmP1DataException(
-                        f"Parameter `sn_code` length must be 11 digits, but received '{len(value)}'")
-                # Must contain only numbers
-                if not value.isdigit():
-                    raise ultraArmP1DataException(
-                        f"Parameter `sn_code` must contain only digits, but received '{value}'")
+                        "Parameter `sn_code` must use the format "
+                        f"'ERUAP' followed by 11 digits, but received '{value}'")
             elif parameter == "robot_id":
                 if not isinstance(value, str):
                     raise ultraArmP1DataException(
