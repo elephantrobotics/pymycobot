@@ -844,7 +844,7 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 
   - 4: J4
 
-- `threshold` (float/int): Threshold value, range 0.5 ~ 100
+- `threshold` (float/int): Threshold value, range 0.5 ~ 30
 
 - **Return Value:**
 

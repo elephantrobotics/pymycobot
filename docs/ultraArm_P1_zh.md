@@ -699,7 +699,7 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
     - 2: J2
     - 3: J3
     - 4: J4
-  - `threshold` (float/int): 阈值，范围 0.5 ~ 100
+  - `threshold` (float/int): 阈值，范围 0.5 ~ 30
 - **返回值：** 
   - `ok`
 

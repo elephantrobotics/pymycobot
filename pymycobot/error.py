@@ -2634,9 +2634,9 @@ def calibration_parameters(**kwargs):
                     )
             elif parameter == 'threshold_value':
                 check_value_type(parameter, value_type, ultraArmP1DataException, (int,float))
-                if not (0.5 <= value <= 100):
+                if not (0.5 <= value <= 30):
                     raise ultraArmP1DataException(
-                        f"threshold_value out of range, should be 0.5 ~ 100, but received {value}")
+                        f"threshold_value out of range, should be 0.5 ~ 30, but received {value}")
             elif parameter == "sensor_type":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if not (1 <= value <= 7):
