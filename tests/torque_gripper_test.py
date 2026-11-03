@@ -29,6 +29,8 @@ def make_client(client_class, responses):
     (
         ((3, 9), 0),
         ((3, 10), 0),
+        ((3, 11), -1),
+        ((3, 39), -1),
         ((3, 40), 1),
         ((4, 40), -1),
         ((None, 40), -1),
@@ -53,12 +55,13 @@ def test_is_torque_gripper_classifies_known_gripper_versions(
 
 
 @pytest.mark.parametrize("client_class", CLIENT_CLASSES)
-def test_is_torque_gripper_logs_unknown_gripper_version(client_class):
-    client = make_client(client_class, [4, 40])
+@pytest.mark.parametrize("responses", ((4, 40), (3, 11), (3, 39)))
+def test_is_torque_gripper_logs_unknown_gripper_type(client_class, responses):
+    client = make_client(client_class, responses)
 
     assert client.is_torque_gripper() == -1
     client.log.warning.assert_called_once_with(
-        "Unknown gripper type: %s.%s", 4, 40
+        "Unknown gripper type: %s.%s", *responses
     )
 
 

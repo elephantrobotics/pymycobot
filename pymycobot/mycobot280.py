@@ -846,9 +846,9 @@ class MyCobot280(CommandGenerator):
         """Whether it is a force-controlled gripper
 
         Return:
-            1 - Force control (gripper version is greater than 3.10)
+            1 - Force control (gripper version is greater than or equal to 3.40)
             0 - Non-force control (gripper version is less than or equal to 3.10)
-            -1 - Unknown gripper model or failed to read the gripper version
+            -1 - Unknown gripper type or failed to read the gripper version
         """
         try:
             major_version = self.get_servo_data(7, 0)
@@ -861,14 +861,14 @@ class MyCobot280(CommandGenerator):
                 not isinstance(major_version, (int, float)) or
                 not isinstance(minor_version, (int, float)) or
                 not math.isfinite(major_version) or
-                not math.isfinite(minor_version) or minor_version == -1):
+                not math.isfinite(minor_version) or minor_version < 0):
             return -1
-        if major_version != 3:
+        if major_version != 3 or 10 < minor_version < 40:
             self.log.warning(
                 "Unknown gripper type: %s.%s", major_version, minor_version
             )
             return -1
-        return int(minor_version > 10)
+        return int(minor_version >= 40)
 
     def set_gripper_state(self, flag, speed, _type_1=None, is_torque=None):
         """Set gripper switch state
