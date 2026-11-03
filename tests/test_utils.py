@@ -17,10 +17,13 @@ print(detect_result)
 
 
 class UltraArmP1(UltraArmP1Base):
-    def __init__(self):
+    def __init__(self, run_status_replies=None):
         super().__init__(debug=False)
         self.sent_commands = []
         self.recv_buffer = bytearray()
+        self.run_status_replies = list(run_status_replies or [])
+        self.STATUS_QUERY_INTERVAL = 0
+        self.STATUS_QUERY_GRACE_PERIOD = 0
 
     def _send_command(self, command, clear_input=True):
         self.sent_commands.append(command)
@@ -36,8 +39,17 @@ class UltraArmP1(UltraArmP1Base):
             self.recv_buffer.extend(b"M110 Data:0.00,0.00\n")
         elif command == "M110 J6":
             self.recv_buffer.extend(b"M110 Data:85 8C D5 AB\n")
+        elif command == "M92":
+            self.recv_buffer.extend(b"M92 OK\n")
+        elif command == "M605":
+            self.recv_buffer.extend(b"M605 SN:\n")
+        elif command.startswith("M604 "):
+            self.recv_buffer.extend(b"M604 OK\n")
         elif command.startswith("M9"):
             self.recv_buffer.extend(b"M9 OK\n")
+        elif command == "M200" and self.run_status_replies:
+            status = self.run_status_replies.pop(0)
+            self.recv_buffer.extend(f"M200 mainmoving:{status}\n".encode())
 
     def _read_available_bytes(self):
         data = bytes(self.recv_buffer)
@@ -52,6 +64,9 @@ class UltraArmP1(UltraArmP1Base):
 
     def _send_raw_command(self, command):
         self.sent_commands.append(command)
+
+    def _query_error_information(self, timeout=0.3):
+        return "ok"
 
 
 def test_ultraarm_p1_move_pause_sends_m6_and_returns_ok():
@@ -101,6 +116,84 @@ def test_ultraarm_p1_get_default_sensor_initialize_parses_rfid_id():
 
     assert arm.get_default_sensor_initialize(6) == "858CD5AB"
     assert arm.sent_commands == ["M110 J6"]
+
+
+def test_ultraarm_p1_motion_wait_requires_three_consecutive_stop_statuses():
+    arm = UltraArmP1(run_status_replies=[1, 0, 0, 1, 0, 0, 0])
+
+    assert arm._response() == "ok"
+    assert arm.sent_commands.count("M200") == 7
+
+
+def test_ultraarm_p1_reports_j4_collision_in_chinese():
+    arm = UltraArmP1()
+    arm.language = "zh_CN"
+    arm.recv_buffer.extend(b"CollisionDetectionError:4\n")
+
+    assert arm._response() == "J4关节碰撞,请使用collision_unlock()接口解锁"
+
+
+def test_ultraarm_p1_get_empty_sn_code_returns_empty_string():
+    arm = UltraArmP1()
+
+    assert arm._request_with_retry("M605", "get_sn_code") == ""
+    assert arm.sent_commands == ["M605"]
+
+
+def test_ultraarm_p1_accepts_eruap_sn_code_format():
+    arm = UltraArmP1()
+
+    arm.calibration_parameters(
+        class_name=arm.__class__.__name__,
+        sn_code="ERUAP12608000001",
+    )
+
+
+def test_ultraarm_p1_set_sn_code_normalizes_lowercase_prefix():
+    arm = UltraArmP1()
+    arm._internal_mode = True
+
+    assert arm._internal_set_sn_code("eruap12608000001") == "ok"
+    assert arm.sent_commands == ["M604 ERUAP12608000001"]
+
+
+@pytest.mark.parametrize(
+    "sn_code",
+    ["12608000001", "ERUAP1260800000", "ERUAP1260800000A", "ABCDF12608000001"],
+)
+def test_ultraarm_p1_rejects_invalid_sn_code_format(sn_code):
+    arm = UltraArmP1()
+
+    with pytest.raises(ultraArmP1DataException):
+        arm.calibration_parameters(
+            class_name=arm.__class__.__name__,
+            sn_code=sn_code,
+        )
+
+
+def test_ultraarm_p1_zero_calibration_delays_status_queries():
+    arm = UltraArmP1()
+    response_args = {}
+
+    def response(**kwargs):
+        response_args.update(kwargs)
+        return "ok"
+
+    arm._response = response
+
+    assert arm.set_zero_calibration(0) == "ok"
+    assert arm.sent_commands == ["M30 J0"]
+    assert response_args == {
+        "_async": True,
+        "status_query_start_delay": arm.CALIBRATION_STATUS_QUERY_DELAY,
+    }
+
+
+def test_ultraarm_p1_update_encoder_data_sends_m92_and_returns_ok():
+    arm = UltraArmP1()
+
+    assert arm.update_encoder_data() == "ok"
+    assert arm.sent_commands == ["M92"]
 
 
 @pytest.mark.parametrize("joint_id", [0, 5])

@@ -2607,13 +2607,10 @@ def calibration_parameters(**kwargs):
                 if not isinstance(value, str):
                     raise ultraArmP1DataException(
                         f"Parameter `sn_code` must be a string, but received {type(value)}")
-                if len(value) != 11:
+                if not re.fullmatch(r"ERUAP\d{11}", value):
                     raise ultraArmP1DataException(
-                        f"Parameter `sn_code` length must be 11 digits, but received '{len(value)}'")
-                # Must contain only numbers
-                if not value.isdigit():
-                    raise ultraArmP1DataException(
-                        f"Parameter `sn_code` must contain only digits, but received '{value}'")
+                        "Parameter `sn_code` must use the format "
+                        f"'ERUAP' followed by 11 digits, but received '{value}'")
             elif parameter == "robot_id":
                 if not isinstance(value, str):
                     raise ultraArmP1DataException(
@@ -2637,9 +2634,9 @@ def calibration_parameters(**kwargs):
                     )
             elif parameter == 'threshold_value':
                 check_value_type(parameter, value_type, ultraArmP1DataException, (int,float))
-                if not (0.5 <= value <= 100):
+                if not (0.5 <= value <= 30):
                     raise ultraArmP1DataException(
-                        f"threshold_value out of range, should be 0.5 ~ 100, but received {value}")
+                        f"threshold_value out of range, should be 0.5 ~ 30, but received {value}")
             elif parameter == "sensor_type":
                 check_value_type(parameter, value_type, ultraArmP1DataException, int)
                 if not (1 <= value <= 7):

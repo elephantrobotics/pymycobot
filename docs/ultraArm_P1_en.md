@@ -844,7 +844,7 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
 
   - 4: J4
 
-- `threshold` (float/int): Threshold value, range 0.5 ~ 100
+- `threshold` (float/int): Threshold value, range 0.5 ~ 30
 
 - **Return Value:**
 
@@ -995,6 +995,15 @@ ua.set_joint_acc(1, 100)
 ```python
 data = ua.get_default_sensor_initialize(1)
 print(data)
+```
+
+### 82 `update_encoder_data()`
+
+- **Function:** Updates the current position using encoder data to eliminate error.
+- **Return value:** `ok`, or an error code on failure.
+
+```python
+ua.update_encoder_data()
 ```
 
 ---
