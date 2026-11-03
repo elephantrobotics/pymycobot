@@ -691,10 +691,25 @@ class MechArm270(CommandGenerator):
         """Whether it is a force-controlled gripper
 
         Return:
-            1 - Force control
-            0 - Non-force control
+            1 - Force control (gripper version is greater than 3.10)
+            0 - Non-force control (gripper version is less than or equal to 3.10)
+            -1 - Unknown gripper model or failed to read the gripper version
         """
-        return self.get_servo_data(7, 1)
+        try:
+            major_version = self.get_servo_data(7, 0)
+            minor_version = self.get_servo_data(7, 1)
+        except Exception:
+            return -1
+
+        if (isinstance(major_version, bool) or
+                isinstance(minor_version, bool) or
+                not isinstance(major_version, (int, float)) or
+                not isinstance(minor_version, (int, float)) or
+                not math.isfinite(major_version) or
+                not math.isfinite(minor_version) or
+                major_version != 3 or minor_version == -1):
+            return -1
+        return int(minor_version > 10)
 
     def set_gripper_state(self, flag, speed, _type_1=None, is_torque=None):
         """Set gripper switch state

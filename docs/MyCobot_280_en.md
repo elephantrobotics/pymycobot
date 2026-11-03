@@ -761,7 +761,7 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
 - **Return value**：
   - `1`: complete
 
-#### `set_gripper_value(gripper_value, speed, gripper_type=None)`
+#### `set_gripper_value(gripper_value, speed, gripper_type=None, is_torque=None)`
 
 - **function**: Set the gripper value
 
@@ -780,6 +780,9 @@ In TCP mode, firmware timeout or partial-frame responses are also logged by the 
     - `3` : Parallel gripper
 
     - `4` : Flexible gripper
+  - `is_torque (int)`: Indicates whether the gripper is of a force-controlled type. This parameter can be omitted if no type specification is provided. (**Note: This parameter is supported only when the end-effector Atom firmware version is ≥ 6.5**)
+    - `0`: Non-force-controlled gripper
+    - `1`: Force-controlled gripper
 - **Return value**：
   - `1`: complete
 

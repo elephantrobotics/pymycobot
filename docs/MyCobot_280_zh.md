@@ -744,7 +744,7 @@ TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `
 - **返回值**：
   - `1`: 完成
 
-#### `set_gripper_value(gripper_value, speed, gripper_type=None)`
+#### `set_gripper_value(gripper_value, speed, gripper_type=None, is_torque=None)`
 
 - **功能**: 让夹爪以指定的速度转动到指定的位置
 
@@ -763,6 +763,9 @@ TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `
     - `3` : 平行夹爪
 
     - `4` : 柔性夹爪
+  - `is_torque (int)`：夹爪是否是力控类型，如果没有类型参数，则可以省略此参数。（**注意：仅当末端 Atom 固件版本 ≥ 6.5 时才支持该参数**）
+    - `0`: 非力控夹爪
+    - `1`：力控夹爪
 - **返回值**：
   - `1`: 完成
 
