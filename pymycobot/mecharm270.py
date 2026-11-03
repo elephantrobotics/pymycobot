@@ -706,8 +706,12 @@ class MechArm270(CommandGenerator):
                 not isinstance(major_version, (int, float)) or
                 not isinstance(minor_version, (int, float)) or
                 not math.isfinite(major_version) or
-                not math.isfinite(minor_version) or
-                major_version != 3 or minor_version == -1):
+                not math.isfinite(minor_version) or minor_version == -1):
+            return -1
+        if major_version != 3:
+            self.log.warning(
+                "Unknown gripper type: %s.%s", major_version, minor_version
+            )
             return -1
         return int(minor_version > 10)
 

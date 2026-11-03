@@ -19,6 +19,7 @@ CLIENT_CLASSES = (
 def make_client(client_class, responses):
     client = object.__new__(client_class)
     client.get_servo_data = Mock(side_effect=responses)
+    client.log = Mock()
     return client
 
 
@@ -49,6 +50,16 @@ def test_is_torque_gripper_classifies_known_gripper_versions(
         ((7, 0),),
         ((7, 1),),
     ]
+
+
+@pytest.mark.parametrize("client_class", CLIENT_CLASSES)
+def test_is_torque_gripper_logs_unknown_gripper_version(client_class):
+    client = make_client(client_class, [4, 40])
+
+    assert client.is_torque_gripper() == -1
+    client.log.warning.assert_called_once_with(
+        "Unknown gripper type: %s.%s", 4, 40
+    )
 
 
 @pytest.mark.parametrize("client_class", CLIENT_CLASSES)
