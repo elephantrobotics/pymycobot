@@ -1962,7 +1962,7 @@ def calibration_parameters(**kwargs):
                 for color in value:
                     if not 0 <= color <= 255:
                         raise ValueError(f"The color not right, should be 0 ~ 255, but received {color}.")
-    elif class_name in ["Pro450Client"]:
+    elif class_name in ["Pro450Client", "Pro450ClientNew"]:
         for parameter in parameter_list[1:]:
             value = kwargs.get(parameter, None)
             value_type = type(value)

@@ -8,6 +8,7 @@ import socket
 import numpy as np
 
 from pymycobot.pro450_close_loop import Pro450CloseLoop
+from pymycobot.error import calibration_parameters
 from pymycobot.robot_info import _interpret_status_code, RobotStatusPro450Info
 from pymycobot.common import ProtocolCode,ProGripper
 
@@ -34,6 +35,30 @@ class Pro450Client(Pro450CloseLoop):
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
         self.max_joint, self.min_joint = 0, 0
+        self._pro450_limit_profile = "Pro450Client"
+        self.calibration_parameters = self._calibration_parameters
+        self._initialize_joint_limit_profile()
+
+    def _calibration_parameters(self, **kwargs):
+        """Validate Pro450 parameters against this instance's hardware profile."""
+        kwargs["class_name"] = self._pro450_limit_profile
+        return calibration_parameters(**kwargs)
+
+    def _initialize_joint_limit_profile(self):
+        """Select the J5 software limit profile from the controller firmware."""
+        for attempt in range(3):
+            try:
+                system_version = self.get_system_version()
+                if isinstance(system_version, (int, float)) and not isinstance(system_version, bool) and system_version >= 0:
+                    self._pro450_limit_profile = (
+                        "Pro450ClientNew" if system_version >= 1.4 else "Pro450Client"
+                    )
+                    return
+            except Exception:
+                pass
+
+            if attempt < 2:
+                time.sleep(0.1)
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

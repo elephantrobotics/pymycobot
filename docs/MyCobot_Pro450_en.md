@@ -309,10 +309,12 @@ print(mc.get_angles())
     | 2 | -125 ~ 125 |
     | 3 | -154 ~ 154 |
     | 4 | -162 ~ 162 |
-    | 5 | -162 ~ 162 |
+    | 5 | Legacy: -162 ~ 162; new structure: -252 ~ 72 |
     | 6 | -165 ~ 165 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100
+
+  > During `Pro450Client` initialization, the controller `get_system_version()` is read to identify the structure: versions below 1.4 use the legacy J5 range, while versions 1.4 and later use the new-structure J5 range. The read is retried up to three times; if all attempts fail, legacy validation is used.
 
 #### `send_angles(angles, speed)`
 
