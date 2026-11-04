@@ -38,6 +38,8 @@ class UltraArmP1InternalMixin:
 
         if not self._check_internal_mode():
             return -1
+        if isinstance(sn_code, str):
+            sn_code = sn_code.upper()
         self.calibration_parameters(class_name=self.__class__.__name__, sn_code=sn_code)
         with self.lock:
             command = ProtocolCode.SET_SN_CODE

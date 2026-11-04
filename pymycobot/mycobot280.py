@@ -90,19 +90,45 @@ class MyCobot280(CommandGenerator):
             wait() *
     """
 
-    def __init__(self, port, baudrate="115200", timeout=0.1, debug=False, thread_lock=True):
+    def __init__(
+        self,
+        port=None,
+        baudrate=None,
+        timeout=0.1,
+        debug=False,
+        thread_lock=True,
+        unoq_bridge=False,
+    ):
         """
         Args:
             port     : port string
-            baudrate : baud rate string, default '115200'
+            baudrate : baud rate string, default '115200'; UNO Q Bridge defaults to 1000000
             timeout  : default 0.1
             debug    : whether show debug info
+            unoq_bridge: use Arduino UNO Q Bridge RPC instead of serial port
         """
         super(MyCobot280, self).__init__(debug)
         self.calibration_parameters = calibration_parameters
         self.thread_lock = thread_lock
+        self.unoq_bridge = unoq_bridge
+        self._serial_port = None
+        self._bridge = None
+        if baudrate is None:
+            baudrate = 1000000 if unoq_bridge else "115200"
+        self._bridge_baudrate = baudrate
+        self._bridge_timeout_ms = max(1, int(float(timeout) * 1000))
         if thread_lock:
             self.lock = threading.Lock()
+        if unoq_bridge:
+            try:
+                from arduino.app_utils import Bridge
+            except ImportError as exc:
+                raise RuntimeError(
+                    "unoq_bridge=True requires arduino.app_utils.Bridge "
+                    "on Arduino UNO Q Debian/App Lab"
+                ) from exc
+            self._bridge = Bridge
+            return
         import serial
         self._serial_port = serial.Serial()
         self._serial_port.port = port
@@ -115,57 +141,51 @@ class MyCobot280(CommandGenerator):
     _write = write
     _read = read
 
-    def _mesg(self, genre, *args, **kwargs):
-        """
+    def _format_bridge_hex(self, frame):
+        frame = "".join(str(frame).split()).upper()
+        return " ".join(frame[i:i + 2] for i in range(0, len(frame), 2))
 
-        Args:
-            genre: command type (Command)
-            *args: other data.
-                   It is converted to octal by default.
-                   If the data needs to be encapsulated into hexadecimal,
-                   the array is used to include them. (Data cannot be nested)
-            **kwargs: support `has_reply`
-                has_reply: Whether there is a return value to accept.
-        """
-        real_command, has_reply, _async = super(
-            MyCobot280, self)._mesg(genre, *args, **kwargs)
-        if _async:
-            if self.thread_lock:
-                with self.lock:
-                    self._write(self._flatten(real_command))
-            else:
-                self._write(self._flatten(real_command))
+    def _bridge_rpc_timeout(self):
+        return max(2.0, self._bridge_timeout_ms / 1000.0 + 1.0)
+
+    def _bridge_xfer(self, real_command):
+        frame = bytes(self._flatten(real_command)).hex().upper()
+        self.log.debug("_bridge_write: {}".format(self._format_bridge_hex(frame)))
+        try:
+            result = self._bridge.call(
+                "XferBridgeMsg",
+                frame,
+                self._bridge_timeout_ms,
+                int(self._bridge_baudrate),
+                timeout=self._bridge_rpc_timeout(),
+            )
+        except Exception as exc:
+            self.log.error("_bridge_error: {}".format(exc))
             return None
-        else:
-            if self.thread_lock:
-                with self.lock:
-                    result = self._res(real_command, has_reply, genre)
-            else:
-                result = self._res(real_command, has_reply, genre)
-            return result
+        if result is None:
+            self.log.error("_bridge_error: no response")
+            return None
+        resp = str(result).strip().split("|", 1)[0].strip().upper()
+        self.log.debug("_bridge_read : {}".format(self._format_bridge_hex(resp)))
+        error_frames = {
+            "FEFE035B01FA": "timeout",
+            "FEFE035B02FA": "partial frame",
+        }
+        if resp in error_frames:
+            self.log.error(
+                "_bridge_error: {} raw={}".format(
+                    error_frames[resp],
+                    self._format_bridge_hex(resp),
+                )
+            )
+            return None
+        try:
+            return bytes.fromhex(resp)
+        except ValueError:
+            self.log.error("_bridge_error: invalid hex response={}".format(resp))
+            return None
 
-    def _res(self, real_command, has_reply, genre):
-        if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
-            self._write(self._flatten(real_command))
-            data = self._read(genre)
-        else:
-            try_count = 0
-            expected_genre = genre
-            while try_count < 3:
-                self._serial_port.reset_input_buffer()
-                self._write(self._flatten(real_command))
-                data = self._read(genre)
-                if not data or len(data) < 4:
-                    try_count += 1
-                    continue
-                if data[3] != expected_genre:
-                    try_count += 1
-                    continue
-                break
-            else:
-                return -1
-        if genre == ProtocolCode.SET_SSID_PWD:
-            return 1
+    def _process_mycobot280_response(self, data, genre):
         res = self._process_received(data, genre)
         if res is None:
             return -1
@@ -207,10 +227,13 @@ class MyCobot280(CommandGenerator):
             ProtocolCode.SET_FOUR_PIECES_ZERO
         ]:
             return self._process_single(res)
-        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.SOLVE_INV_KINEMATICS, ProtocolCode.GET_ANGLES_PLAN]:
+        elif genre in [ProtocolCode.SOLVE_INV_KINEMATICS]:
+            if res == [8241, 8241, 8241, 8241, 8241, 8241]:
+                return 'No solution for conversion'
             return [self._int2angle(angle) for angle in res]
-        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_WORLD_REFERENCE,
-                       ProtocolCode.GET_COORDS_PLAN]:
+        elif genre in [ProtocolCode.GET_ANGLES, ProtocolCode.GET_ANGLES_PLAN]:
+            return [self._int2angle(angle) for angle in res]
+        elif genre in [ProtocolCode.GET_COORDS, ProtocolCode.GET_TOOL_REFERENCE, ProtocolCode.GET_COORDS_PLAN]:
             if res:
                 r = []
                 for idx in range(3):
@@ -220,6 +243,15 @@ class MyCobot280(CommandGenerator):
                 return r
             else:
                 return res
+        elif genre == ProtocolCode.GET_WORLD_REFERENCE:
+            if res:
+                r = []
+                for idx in range(3):
+                    r.append(self._int2coord(res[idx]))
+                for idx in range(3, 6):
+                    r.append(self._int3angle(res[idx]))  # radian，/1000
+                return r
+            return res
         elif genre in [ProtocolCode.GET_SERVO_VOLTAGES]:
             return [self._int2coord(angle) for angle in res]
         elif genre in [ProtocolCode.GET_JOINT_MAX_ANGLE, ProtocolCode.GET_JOINT_MIN_ANGLE]:
@@ -247,6 +279,76 @@ class MyCobot280(CommandGenerator):
             return r
         else:
             return res
+
+    def _mesg(self, genre, *args, **kwargs):
+        """
+
+        Args:
+            genre: command type (Command)
+            *args: other data.
+                   It is converted to octal by default.
+                   If the data needs to be encapsulated into hexadecimal,
+                   the array is used to include them. (Data cannot be nested)
+            **kwargs: support `has_reply`
+                has_reply: Whether there is a return value to accept.
+        """
+        real_command, has_reply, _async = super(
+            MyCobot280, self)._mesg(genre, *args, **kwargs)
+        if _async:
+            if self.thread_lock:
+                with self.lock:
+                    if self.unoq_bridge:
+                        self._bridge_xfer(real_command)
+                    else:
+                        self._write(self._flatten(real_command))
+            else:
+                if self.unoq_bridge:
+                    self._bridge_xfer(real_command)
+                else:
+                    self._write(self._flatten(real_command))
+            return None
+        else:
+            if self.thread_lock:
+                with self.lock:
+                    result = self._res(real_command, has_reply, genre)
+            else:
+                result = self._res(real_command, has_reply, genre)
+            return result
+
+    def _res(self, real_command, has_reply, genre):
+        if self.unoq_bridge:
+            # Match socket path: ignore has_reply; parse any valid reply frame.
+            # Retry on Bridge timeout (5B) / bad frame (same budget as serial).
+            try_count = 0
+            while try_count < 3:
+                data = self._bridge_xfer(real_command)
+                if not data or len(data) < 4 or data[3] != genre:
+                    try_count += 1
+                    continue
+                return self._process_mycobot280_response(data, genre)
+            return -1
+        if genre == ProtocolCode.SET_SSID_PWD or genre == ProtocolCode.GET_SSID_PWD:
+            self._write(self._flatten(real_command))
+            data = self._read(genre)
+        else:
+            try_count = 0
+            expected_genre = genre
+            while try_count < 3:
+                self._serial_port.reset_input_buffer()
+                self._write(self._flatten(real_command))
+                data = self._read(genre)
+                if not data or len(data) < 4:
+                    try_count += 1
+                    continue
+                if data[3] != expected_genre:
+                    try_count += 1
+                    continue
+                break
+            else:
+                return -1
+        if genre == ProtocolCode.SET_SSID_PWD:
+            return 1
+        return self._process_mycobot280_response(data, genre)
 
     # System Status
     def get_error_information(self):
@@ -327,7 +429,7 @@ class MyCobot280(CommandGenerator):
             radians: a list of radian values( List[float]), length 6
             speed: (int )0 ~ 100
         """
-        calibration_parameters(len6=radians, speed=speed)
+        self.calibration_parameters(class_name=self.__class__.__name__, radians=radians, speed=speed)
         degrees = [self._angle2int(radian * (180 / math.pi))
                    for radian in radians]
         return self._mesg(ProtocolCode.SEND_ANGLES, degrees, speed, _async=_async)
@@ -487,7 +589,7 @@ class MyCobot280(CommandGenerator):
         self.calibration_parameters(class_name=self.__class__.__name__, pin_mode=pin_mode)
         return self._mesg(ProtocolCode.SET_PIN_MODE, pin_no, pin_mode)
 
-    def get_gripper_value(self, gripper_type=None):
+    def get_gripper_value(self, gripper_type=1):
         """Get the value of gripper.
 
         Args:
@@ -499,11 +601,8 @@ class MyCobot280(CommandGenerator):
         Return:
             gripper value (int)
         """
-        if gripper_type is None:
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, has_reply=True)
-        else:
-            self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
-            return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
+        self.calibration_parameters(class_name=self.__class__.__name__, gripper_type=gripper_type)
+        return self._mesg(ProtocolCode.GET_GRIPPER_VALUE, gripper_type, has_reply=True)
 
     def is_gripper_moving(self):
         """Judge whether the gripper is moving or not
@@ -618,7 +717,7 @@ class MyCobot280(CommandGenerator):
             coords: a list of coords value(List[float])
                     [x(mm), y, z, rx(angle), ry, rz]
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        self.calibration_parameters(class_name=self.__class__.__name__, tool_coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
@@ -637,12 +736,12 @@ class MyCobot280(CommandGenerator):
             coords: a list of coords value(List[float])
                     [x(mm), y, z, rx(angle), ry, rz]\n
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, coords=coords)
+        self.calibration_parameters(class_name=self.__class__.__name__, world_coords=coords)
         coord_list = []
         for idx in range(3):
             coord_list.append(self._coord2int(coords[idx]))
         for angle in coords[3:]:
-            coord_list.append(self._angle2int(angle))
+            coord_list.append(self._angle3int(angle))
         return self._mesg(ProtocolCode.SET_WORLD_REFERENCE, coord_list)
 
     def get_world_reference(self):
@@ -710,6 +809,7 @@ class MyCobot280(CommandGenerator):
         Return:
             list: A float list of all coordinates.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, angles=angles)
         angles = [self._angle2int(angle) for angle in angles]
         return self._mesg(ProtocolCode.GET_COORDS, angles, has_reply=True)
 
@@ -723,6 +823,7 @@ class MyCobot280(CommandGenerator):
         Return:
             list: A float list of all angle.
         """
+        self.calibration_parameters(class_name=self.__class__.__name__, coords=target_coords, angles=current_angles)
         angles = [self._angle2int(angle) for angle in current_angles]
         coord_list = []
         for idx in range(3):
@@ -745,10 +846,29 @@ class MyCobot280(CommandGenerator):
         """Whether it is a force-controlled gripper
 
         Return:
-            40 - Force control
-            9 - Non-force control
+            1 - Force control (gripper version is greater than or equal to 3.40)
+            0 - Non-force control (gripper version is less than or equal to 3.10)
+            -1 - Unknown gripper type or failed to read the gripper version
         """
-        return self.get_servo_data(7, 1)
+        try:
+            major_version = self.get_servo_data(7, 0)
+            minor_version = self.get_servo_data(7, 1)
+        except Exception:
+            return -1
+
+        if (isinstance(major_version, bool) or
+                isinstance(minor_version, bool) or
+                not isinstance(major_version, (int, float)) or
+                not isinstance(minor_version, (int, float)) or
+                not math.isfinite(major_version) or
+                not math.isfinite(minor_version) or minor_version < 0):
+            return -1
+        if major_version != 3 or 10 < minor_version < 40:
+            self.log.warning(
+                "Unknown gripper type: %s.%s", major_version, minor_version
+            )
+            return -1
+        return int(minor_version >= 40)
 
     def set_gripper_state(self, flag, speed, _type_1=None, is_torque=None):
         """Set gripper switch state
@@ -765,7 +885,7 @@ class MyCobot280(CommandGenerator):
                 1: Force control
                 0: Non-force control
         """
-        self.calibration_parameters(class_name=self.__class__.__name__, flag=flag, gripper_speed=speed, _type_1=_type_1,
+        self.calibration_parameters(class_name=self.__class__.__name__, flag_gripper=flag, gripper_speed=speed, _type_1=_type_1,
                                     is_torque=is_torque)
         args = [flag, speed]
         if _type_1 is not None:
@@ -927,9 +1047,13 @@ class MyCobot280(CommandGenerator):
         return self
 
     def close(self):
+        if self.unoq_bridge:
+            return
         self._serial_port.close()
 
     def open(self):
+        if self.unoq_bridge:
+            return
         self._serial_port.open()
 
     def go_home(self):

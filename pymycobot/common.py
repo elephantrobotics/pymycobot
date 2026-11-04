@@ -524,6 +524,14 @@ class ProtocolCode(object):
     GET_SYSTEM_VALUE = "M52"
     GET_SYSTEM_VERSION = "G6"
     GET_MODIFY_VERSION = "G7"
+    SET_GRIPPER_ZERO_P340 = "M24"
+    SET_GRIPPER_ANGLE_P340 = "M25"
+    SET_GRIPPER_RELEASE_P340 = "M26"
+    SET_GRIPPER_CLOSE_POSITION_P340 = "M29"
+    GET_GRIPPER_POSITION_P340 = "M30"
+    CALIBRATE_JOINT_P340 = "M31"
+    GET_CALIBRATE_STEP_P340 = "M32"
+    GET_GRIPPER_ANGLE_P340 = "M50"
 
     # ultraArm P1
     SET_COORDS = 'G1'
@@ -532,6 +540,7 @@ class ProtocolCode(object):
     MOVE_RESUME_P1 = 'M7'
     GET_JOINT_ACC_P1 = 'M8'
     SET_JOINT_ACC_P1 = 'M9'
+    GET_MOVE_PAUSE_STATUS_P1 = 'M10'
     SET_ANGLES_P1 = 'G1'
     SET_ANGLE_P1 = 'G1'
     GET_JOINT_ANGLES_COORDS = 'M12'
@@ -563,6 +572,7 @@ class ProtocolCode(object):
     SET_PWM_LASER = 'M81'
     SET_PWM_CUSTOM_MODE = 'M82'
     SET_PWM_CUSTOM = 'M83'
+    UPDATE_ENCODER_DATA_P1 = 'M92'
     GET_BACK_ZERO_STATUS_P1 = "M119"
     GET_RUNNING_STATUS_P1 = "M200"
     SET_I2C_P1 = "M300"
@@ -651,6 +661,8 @@ class MyagvPlusCommand(object):
     SET_PIN_OUTPUT = 0x40
     GET_PIN_INPUT = 0x41
     SET_FAN_STATE = 0x42
+    SET_PUMP_STATE = 0x43
+    SET_PUMP_IO = 0x44
 
 
 class DataProcessor(object):
@@ -730,6 +742,9 @@ class DataProcessor(object):
 
     def _decode_int16(self, data):
         return struct.unpack(">h", data)[0]
+
+    def _angle3int(self, angle):
+        return int(angle * 1000)
 
     def _angle2int(self, angle):
         return int(angle * 100)
@@ -824,11 +839,11 @@ class DataProcessor(object):
         return data[pos1] == ProtocolCode.HEADER and data[pos2] == ProtocolCode.HEADER
 
     def _process_received(self, data, genre, arm=6):
+        if not data:
+            return None
         if genre == 177:
             data = data.decode("utf-8").split(" ")
             return data[1], data[-1]
-        elif not data:
-            return None
         elif data == b'\xfe\xfe\x04[\x01\r\x87':
             # 水星到位反馈
             return 1
@@ -1146,6 +1161,15 @@ class DataProcessor(object):
             return -1
 
 
+def _format_debug_bytes(data):
+    command_log = ""
+    for d in data:
+        if isinstance(d, str):
+            d = ord(d)
+        command_log += "{:02X} ".format(d)
+    return command_log
+
+
 def write(self, command, method=None):
     if len(command) > 3 and command[3] == 176 and len(command) > 5:
         command = "'" + command[4] + "'" + "(" + command[5] + ")"
@@ -1266,37 +1290,27 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                     wait_time = 10
                 else:
                     wait_time = 0.3
-        if genre == 177:
-            while True:
-                data = self.sock.recv(1024)
-                if b"password" in data:
-                    break
-        elif genre == 192:
-            while True:
-                data += self.sock.recv(1024)
-                if len(data) == 6:
-                    break
-        else:
-            try:
-                self.sock.settimeout(wait_time)
+        try:
+            self.sock.settimeout(wait_time)
+            if genre == 177:
+                while True:
+                    data = self.sock.recv(1024)
+                    if b"password" in data:
+                        break
+            elif genre == 192:
+                while True:
+                    data += self.sock.recv(1024)
+                    if len(data) == 6:
+                        break
+            else:
                 data = self.sock.recv(1024)
                 if isinstance(data, str):
                     datas = bytearray()
                     for i in data:
                         datas += hex(ord(i))
-            except:
-                data = b""
-        if DataProcessor.check_python_version() == 2:
-            command_log = ""
-            for d in data:
-                command_log += hex(ord(d))[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
-            # self.log.debug("_read: {}".format([hex(ord(d)) for d in data]))
-        else:
-            command_log = ""
-            for d in data:
-                command_log += hex(d)[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
+        except:
+            data = b""
+        self.log.debug("_read : {}".format(_format_debug_bytes(data)))
         return data
     else:
         if genre == ProtocolCode.GET_SSID_PWD:
@@ -1308,6 +1322,8 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
             wait_time = 1
         while True and time.time() - t < wait_time:
             data = self._serial_port.read()
+            if not data:
+                continue
             # self.log.debug("data: {}".format(data))
             k += 1
             if _class in DataProcessor.crc_robot_class:
@@ -1354,15 +1370,6 @@ def read(self, genre, method=None, command=None, _class=None, timeout=None, real
                         pre = k
         else:
             datas = b''
-        if DataProcessor.check_python_version() == 2:
-            command_log = ""
-            for d in datas:
-                command_log += hex(ord(d))[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
-        else:
-            command_log = ""
-            for d in datas:
-                command_log += hex(d)[2:] + " "
-            self.log.debug("_read : {}".format(command_log))
+        self.log.debug("_read : {}".format(_format_debug_bytes(datas)))
 
         return datas

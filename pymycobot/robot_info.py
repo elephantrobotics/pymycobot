@@ -197,6 +197,7 @@ class UltraArmP1RobotInfo(object):
         1: {"zh_CN": "J1关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J1 collision detected,please use the collision_unlock() interface to unlock."},
         2: {"zh_CN": "J2关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J2 collision detected,please use the collision_unlock() interface to unlock."},
         3: {"zh_CN": "J3关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J3 collision detected,please use the collision_unlock() interface to unlock."},
+        4: {"zh_CN": "J4关节碰撞,请使用collision_unlock()接口解锁", "en_US": "J4 collision detected,please use the collision_unlock() interface to unlock."},
     }
     ERROR_NO_SOLUTION_MAP = {
         1: {"zh_CN": "目标坐标无解", "en_US": "No solution for target coordinates."},
@@ -442,8 +443,12 @@ class RobotLimit:
             "coord_id": [1, 2, 3, 4, 5, 6],
             "angles_min": [-168, -140, -150, -150, -155, -180],
             "angles_max": [168, 140, 150, 150, 160, 180],
-            "coords_min": [-281.45, -281.45, -70, -180, -180, -180],
-            "coords_max": [281.45, 281.45, 412.67, 180, 180, 180]
+            "coords_min": [-293, -293, -128, -180, -180, -180],
+            "coords_max": [293, 293, 434, 180, 180, 180],
+            "tool_coords_min": [-280, -280, -280, -180, -180, -180],
+            "tool_coords_max": [280, 280, 280, 180, 180, 180],
+            "world_coords_min": [-280, -280, -280, -3.14, -3.14, -3.14],
+            "world_coords_max": [280, 280, 280, 3.14, 3.14, 3.14]
         },
         "MyCobot280RDK-X5": {
             "joint_id": [1, 2, 3, 4, 5, 6],
@@ -451,16 +456,20 @@ class RobotLimit:
             "servo_id": [1, 2, 3, 4, 5, 6, 7],
             "angles_min": [-168, -135, -150, -145, -155, -180],
             "angles_max": [168, 135, 150, 145, 160, 180],
-            "coords_min": [-281.45, -281.45, -70, -180, -180, -180],
-            "coords_max": [281.45, 281.45, 412.67, 180, 180, 180]
+            "coords_min": [-293, -293, -128, -180, -180, -180],
+            "coords_max": [293, 293, 434, 180, 180, 180]
         },
         "MyCobot280Socket": {
             "id": [1, 2, 3, 4, 5, 6],
             "coord_id": [1, 2, 3, 4, 5, 6],
             "angles_min": [-168, -140, -150, -150, -155, -180],
             "angles_max": [168, 140, 150, 150, 160, 180],
-            "coords_min": [-281.45, -281.45, -70, -180, -180, -180],
-            "coords_max": [281.45, 281.45, 412.67, 180, 180, 180]
+            "coords_min": [-293, -293, -128, -180, -180, -180],
+            "coords_max": [293, 293, 434, 180, 180, 180],
+            "tool_coords_min": [-280, -280, -280, -180, -180, -180],
+            "tool_coords_max": [280, 280, 280, 180, 180, 180],
+            "world_coords_min": [-280, -280, -280, -3.14, -3.14, -3.14],
+            "world_coords_max": [280, 280, 280, 3.14, 3.14, 3.14]
         },
         "MyCobot320": {
             "id": [1, 2, 3, 4, 5, 6],
@@ -612,8 +621,8 @@ class RobotLimit:
             "joint_id": [1, 2, 3, 4],
             "servo_id": [1, 2, 3, 4],
             "coord_id": ['X', 'Y', 'Z', 'E'],
-            "angles_min": [-150, -20, -5, -179],
-            "angles_max": [170, 90, 110, 179],
+            "angles_min": [-145, -20, -5, -179],
+            "angles_max": [165, 90, 110, 179],
             "coords_min": [-360, -365.55, -140, -180],
             "coords_max": [366.55, 365.55, 130, 180]
         },

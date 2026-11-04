@@ -20,6 +20,57 @@ print(angles)
 mc.send_angle(1, 40, 20)
 ```
 
+### Arduino UNO Q Connection Modes
+
+When using myCobot 280 with Arduino UNO Q, choose the initialization method according to where the Python program runs.
+
+| Python Runtime Location | Recommended Class | Communication Path |
+| --- | --- | --- |
+| PC / host computer | `MyCobot280Socket` | PC TCP -> UNO Q socket server -> `XferBridgeMsg` -> firmware |
+| UNO Q Debian / App Lab | `MyCobot280` | Python Bridge RPC -> `XferBridgeMsg` -> firmware |
+
+The UNO Q firmware side does not instantiate `pymycobot` directly. The firmware only needs to provide `XferBridgeMsg`; the Python program runs on either the PC or the UNO Q Linux/App Lab environment.
+
+#### Local Control on UNO Q Debian / App Lab
+
+When the Python program runs in the UNO Q Debian or App Lab environment, use Bridge RPC mode:
+
+```python
+from pymycobot import MyCobot280
+
+mc = MyCobot280(unoq_bridge=True)
+
+print(mc.get_system_version())
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+- When `unoq_bridge=True`, the library does not open or check the `/dev/mycobot` serial device.
+- `baudrate` is optional and defaults to `1000000`; pass it explicitly only when overriding the default.
+- `timeout` is specified in seconds and is converted to milliseconds for Bridge RPC.
+- This mode requires `arduino.app_utils.Bridge` in the UNO Q environment. Do not enable it on a normal PC environment where this module is not installed.
+- The firmware must provide `XferBridgeMsg(frame_hex, timeout_ms, baudrate)` and transparently pass through myCobot protocol frames.
+- Firmware response `FE FE 03 5B 01 FA` means timeout, and `FE FE 03 5B 02 FA` means partial frame. When `debug=True` is enabled, `_bridge_error` and the raw frame are written to the log.
+
+Normally, only `unoq_bridge=True` is required for initialization. In Bridge mode, the `port` argument is kept only for compatibility with existing code and is not used to access a serial device.
+
+#### Remote TCP Control from a PC
+
+When the Python program runs on a PC and the robot is connected to UNO Q, start the socket server on UNO Q and use `MyCobot280Socket` on the PC:
+
+```python
+from pymycobot import MyCobot280Socket
+
+mc = MyCobot280Socket("192.168.1.218", 9000, timeout=1.0)
+
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+The UNO Q socket server example is [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py). It uses `XferBridgeMsg` internally to communicate with the firmware. The PC client still sends and receives the original myCobot protocol frames, so the upper-level API remains the same as normal `MyCobot280Socket` usage.
+
+In TCP mode, firmware timeout or partial-frame responses are also logged by the UNO Q socket server as `_bridge_error` with the raw error frame for field diagnostics.
+
 ### 1. System Status
 
 #### `get_modify_version()`
@@ -117,14 +168,6 @@ mc.send_angle(1, 40, 20)
 - **Return value:**
   - `1`: complete
 
-#### `is_controller_connected()`
-
-- **function:** Wether connected with Atom
-
-- **Return value:**
-  - `1`: succeed
-  - `0`: failed
-  - `-1`: error data
 
 #### `read_next_error()`
 
@@ -233,9 +276,11 @@ mc.send_angle(1, 40, 20)
 - **Return value:** 
   - `1`: complete
 
-#### `get_coords()`
+#### `get_coords(angles=None)`
 
-- **function:** Obtain robot arm coordinates from a base based coordinate system
+- **Function:** Retrieves the robotic arm's coordinates relative to a reference frame; supports calculating coordinates based on provided joint angle values.
+- **Parameters:**
+  - `angles`: A list of angles (`List[float]`) with a length of 6.
 - **Return value:** a float list of coord:[x, y, z, rx, ry, rz]
 
 #### `get_coords_plan()`
@@ -251,9 +296,9 @@ mc.send_angle(1, 40, 20)
   - `coord`: coord value(`float`)
     | Coord Id | range |
     | ---- | ---- |
-    | x | -281.45 ~ 281.45 |
-    | y | -281.45 ~ 281.45 |
-    | z | -70 ~ 412.67 |
+    | x | -293 ~ 293 |
+    | y | -293 ~ 293 |
+    | z | -128 ~ 434 |
     | rx | -180 ~ 180 |
     | ry | -180 ~ 180 |
     | rz | -180 ~ 180 |
@@ -464,7 +509,7 @@ mc.send_angle(1, 40, 20)
 
 - **Parameters**
 
-  - `joint_id`: (`int`) 1-6
+  - `joint_id`: (`int`) 1-6 or 7 - gripper
 
 - **Return value:** (`int`) Joint potential value
 
@@ -672,7 +717,7 @@ mc.send_angle(1, 40, 20)
 
 - **function:** set IO statue
 - **Parameters**
-  - `pin_no` (int): Pin number
+  - `pin_no` (int): Pin number, 23 / 33
   - `pin_signal` (int): 0 / 1
 - **Return value**：
   - `1`: complete
@@ -680,7 +725,7 @@ mc.send_angle(1, 40, 20)
 #### `get_digital_input(pin_no)`
 
 - **function:** read IO statue
-- **Parameters**: `pin_no` (int)
+- **Parameters**: `pin_no` (int) ，19 / 22
 - **Return value**: signal
 
 #### `set_pin_mode(pin_no, pin_mode)`
@@ -716,7 +761,7 @@ mc.send_angle(1, 40, 20)
 - **Return value**：
   - `1`: complete
 
-#### `set_gripper_value(gripper_value, speed, gripper_type=None)`
+#### `set_gripper_value(gripper_value, speed, gripper_type=None, is_torque=None)`
 
 - **function**: Set the gripper value
 
@@ -735,6 +780,9 @@ mc.send_angle(1, 40, 20)
     - `3` : Parallel gripper
 
     - `4` : Flexible gripper
+  - `is_torque (int)`: Indicates whether the gripper is of a force-controlled type. This parameter can be omitted if no type specification is provided. (**Note: This parameter is supported only when the end-effector Atom firmware version is ≥ 6.5**)
+    - `0`: Non-force-controlled gripper
+    - `1`: Force-controlled gripper
 - **Return value**：
   - `1`: complete
 
@@ -881,8 +929,18 @@ mc.send_angle(1, 40, 20)
 #### `set_tool_reference(coords)`
 
 - **function:** Set tool coordinate system.
-- **Parameters**：
-  - `coords`: (`list`) [x, y, z, rx, ry, rz].
+  - **Parameters**：
+    - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+    | Coord Id | range      |
+    | ---- |------------|
+    | x | -280 ~ 280 |
+    | y | -280 ~ 280 |
+    | z | -280 ~ 280 |
+    | rx | -180 ~ 180 |
+    | ry | -180 ~ 180 |
+    | rz | -180 ~ 180 |
+
 - **Return value:** 
   - `1`: complete
 
@@ -896,6 +954,16 @@ mc.send_angle(1, 40, 20)
 - **function:** Set world coordinate system.
 - **Parameters**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+    | Coord Id | range        |
+    | ---- |--------------|
+    | x | -280 ~ 280   |
+    | y | -280 ~ 280   |
+    | z | -280 ~ 280   |
+    | rx | -3.14 ~ 3.14 |
+    | ry | -3.14 ~ 3.14 |
+    | rz | -3.14 ~ 3.14 |
+
 - **Return value:** 
   - `1`: complete
 
@@ -1000,7 +1068,7 @@ Use TCP/IP to control the robotic arm
 # demo
 from pymycobot import MyCobot280Socket
 # Port 9000 is used by default
-mc = MyCobot280Socket("192.168.10.10",9000)
+mc = MyCobot280Socket("192.168.10.10", 9000, timeout=1.0)
 
 res = mc.get_angles()
 print(res)
@@ -1012,6 +1080,8 @@ mc.send_angles([0,0,0,0,0,0],20)
 ### Server
 
 Server file is in the `demo folder`,For details, please check the [Server_280.py](../demo/Server_280.py) file in the demo folder
+
+For Arduino UNO Q with the Bridge RPC socket server, use [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py). This server calls `XferBridgeMsg` internally and does not depend on the `/dev/mycobot` serial device. The client still uses `MyCobot280Socket(ip, 9000)`, and the socket read timeout can be configured with the `timeout` parameter when needed.
 
 ### socket control
 
