@@ -20,6 +20,57 @@ print(angles)
 mc.send_angle(1, 40, 20)
 ```
 
+### Arduino UNO Q 连接方式
+
+myCobot 280 搭配 Arduino UNO Q 使用时，可以根据 Python 程序运行的位置选择实例化方式。
+
+| Python 运行位置 | 推荐类 | 通信路径 |
+| --- | --- | --- |
+| PC / 上位机 | `MyCobot280Socket` | PC TCP -> UNO Q socket 服务端 -> `XferBridgeMsg` -> 固件 |
+| UNO Q Debian / App Lab | `MyCobot280` | Python Bridge RPC -> `XferBridgeMsg` -> 固件 |
+
+UNO Q 固件侧不直接实例化 `pymycobot`。固件侧只需要实现 `XferBridgeMsg`，Python 程序运行在 PC 或 UNO Q Linux/App Lab 环境中。
+
+#### UNO Q Debian / App Lab 本机控制
+
+Python 程序运行在 UNO Q 的 Debian 或 App Lab 环境中时，可以使用 Bridge RPC 通信模式：
+
+```python
+from pymycobot import MyCobot280
+
+mc = MyCobot280(unoq_bridge=True)
+
+print(mc.get_system_version())
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+- `unoq_bridge=True` 时不打开、不检查 `/dev/mycobot` 串口设备。
+- `baudrate` 可以不传，默认使用 `1000000`；需要覆盖默认值时再显式传入。
+- `timeout` 的单位为秒，会转换成 Bridge RPC 的毫秒超时。
+- 该模式依赖 UNO Q 环境中的 `arduino.app_utils.Bridge`，普通 PC 环境未安装该模块时不能启用。
+- 固件侧需要提供 `XferBridgeMsg(frame_hex, timeout_ms, baudrate)` 方法，并透明透传 myCobot 协议帧。
+- 固件返回 `FE FE 03 5B 01 FA` 表示超时，返回 `FE FE 03 5B 02 FA` 表示残包。开启 `debug=True` 时会在日志中显示 `_bridge_error` 和原始帧。
+
+实例化时通常只需要传入 `unoq_bridge=True`。在 Bridge 模式下，`port` 参数仅用于兼容旧代码，不会访问实际串口设备。
+
+#### PC 远程 TCP 控制 UNO Q
+
+Python 程序运行在 PC 上、机械臂连接到 UNO Q 时，建议在 UNO Q 上启动 socket 服务端，然后 PC 端使用 `MyCobot280Socket`：
+
+```python
+from pymycobot import MyCobot280Socket
+
+mc = MyCobot280Socket("192.168.1.218", 9000, timeout=1.0)
+
+print(mc.get_angles())
+mc.send_angle(5, 0, 60)
+```
+
+新版 UNO Q socket 服务端示例为 [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py)。服务端内部通过 `XferBridgeMsg` 与固件通信，PC 端仍然收发原始 myCobot 协议帧，因此上层 API 与普通 `MyCobot280Socket` 用法保持一致。
+
+TCP 模式下，固件超时或残包也会由 UNO Q socket 服务端记录为 `_bridge_error`，并保留原始错误帧，便于现场排查。
+
 ### 1. 系统状态
 
 #### `get_modify_version()`
@@ -109,15 +160,6 @@ mc.send_angle(1, 40, 20)
 
 - **返回值:**
 - `1`: complete
-
-#### `is_controller_connected()`
-
-- **功能:** Atom通信是否连接
-
-- **返回值:**
-  - `1`: 连接
-  - `0`: 未连接
-  - `-1`: 错误数据
 
 #### `read_next_error()`
 
@@ -225,9 +267,11 @@ mc.send_angle(1, 40, 20)
 - **Return value:** 
   - `1`: 完成
 
-#### `get_coords()`
+#### `get_coords(angles=None)`
 
-- **功能：** 从基于基准的坐标系获取机械臂坐标
+- **功能：** 从基于基准的坐标系获取机械臂坐标，支持输入关节角度值求取对应坐标值。
+- **参数：**
+  - `angles`：角度列表（`List[float]`），长度 6
 - **返回值：** 坐标浮点列表：[x, y, z, rx, ry, rz]
 
 #### `get_coords_plan()`
@@ -243,9 +287,9 @@ mc.send_angle(1, 40, 20)
   - `coord`：坐标值（`float`）
       | 坐标 ID | 范围 |
       | ---- | ---- |
-      | x | -281.45 ~ 281.45 |
-      | y | -281.45 ~ 281.45 |
-      | z | -70 ~ 412.67 |
+      | x | -293 ~ 293 |
+      | y | -293 ~ 293 |
+      | z | -128 ~ 434 |
       | rx | -180 ~ 180 |
       | ry | -180 ~ 180 |
       | rz | -180 ~ 180 |
@@ -450,7 +494,7 @@ mc.send_angle(1, 40, 20)
 
 - **参数**
 
-  - `joint_id`: (`int`) 1-6
+  - `joint_id`: (`int`) 1-6 or 7 - gripper
 
 - **返回值:** (`int`) 关节电位值
 
@@ -657,7 +701,7 @@ mc.send_angle(1, 40, 20)
 
 - **功能:** 设置IO状态
 - **参数**
-  - `pin_no` (int): 引脚号
+  - `pin_no` (int): 引脚号，23 / 33
   - `pin_signal` (int): 0 / 1
 - **返回值**：
   - `1`: 完成
@@ -665,7 +709,7 @@ mc.send_angle(1, 40, 20)
 #### `get_digital_input(pin_no)`
 
 - **功能:** 获取IO状态
-- **参数**: `pin_no` (int)
+- **参数**: `pin_no` (int), 19 / 22
 - **返回值**: 0 或 1
 
 #### `set_pin_mode(pin_no, pin_mode)`
@@ -700,7 +744,7 @@ mc.send_angle(1, 40, 20)
 - **返回值**：
   - `1`: 完成
 
-#### `set_gripper_value(gripper_value, speed, gripper_type=None)`
+#### `set_gripper_value(gripper_value, speed, gripper_type=None, is_torque=None)`
 
 - **功能**: 让夹爪以指定的速度转动到指定的位置
 
@@ -719,6 +763,9 @@ mc.send_angle(1, 40, 20)
     - `3` : 平行夹爪
 
     - `4` : 柔性夹爪
+  - `is_torque (int)`：夹爪是否是力控类型，如果没有类型参数，则可以省略此参数。（**注意：仅当末端 Atom 固件版本 ≥ 6.5 时才支持该参数**）
+    - `0`: 非力控夹爪
+    - `1`：力控夹爪
 - **返回值**：
   - `1`: 完成
 
@@ -742,7 +789,7 @@ mc.send_angle(1, 40, 20)
   - `1`: 正在运行
   - `-1`: 错误
 
-#### `get_gripper_value()`
+#### `get_gripper_value(gripper_type=1)`
 
 - **功能**: 获取夹爪的当前位置数据信息
 - **参数**:
@@ -866,6 +913,16 @@ mc.send_angle(1, 40, 20)
 - **功能:** 设置工具坐标系
 - **参数**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+    
+  | Coord Id | range      |
+  | ---- |------------|
+  | x | -280 ~ 280 |
+  | y | -280 ~ 280 |
+  | z | -280 ~ 280 |
+  | rx | -180 ~ 180 |
+  | ry | -180 ~ 180 |
+  | rz | -180 ~ 180 |
+
 - **返回值:** 
   - `1`: 完成
 
@@ -879,6 +936,16 @@ mc.send_angle(1, 40, 20)
 - **功能:** 设置世界坐标系
 - **参数**：
   - `coords`: (`list`) [x, y, z, rx, ry, rz].
+
+  | Coord Id | range        |
+  | ---- |--------------|
+  | x | -280 ~ 280   |
+  | y | -280 ~ 280   |
+  | z | -280 ~ 280   |
+  | rx | -3.14 ~ 3.14 |
+  | ry | -3.14 ~ 3.14 |
+  | rz | -3.14 ~ 3.14 |
+
 - **返回值:** 
   - `1`: 完成
 
@@ -984,7 +1051,7 @@ from pymycobot import utils
 # 示例
 from pymycobot import MyCobot280Socket
 # 默认使用端口 9000
-mc = MyCobot280Socket("192.168.10.10",9000)
+mc = MyCobot280Socket("192.168.10.10", 9000, timeout=1.0)
 
 res = mc.get_angles()
 print(res)
@@ -996,6 +1063,8 @@ mc.send_angles([0,0,0,0,0,0],20)
 ### 服务端
 
 服务端文件在`demo文件夹`中，具体请检查demo文件夹中的[Server_280.py](../demo/Server_280.py)文件
+
+Arduino UNO Q 使用 Bridge RPC 版本服务端时，请使用 [Server_280_UNOQ.py](../demo/Server_280_UNOQ.py)。该服务端内部调用 `XferBridgeMsg`，不依赖 `/dev/mycobot` 串口设备。客户端仍然使用 `MyCobot280Socket(ip, 9000)`，必要时可通过 `timeout` 参数设置 socket 读取超时。
 
 ### socket 控制
 
