@@ -72,22 +72,6 @@ PLAINTEXT_REPLY_PROTOCOL_CODE = (
 )
 
 
-parse_auto_message_slices = [
-    slice(0, 3),  # 线速度
-    slice(3, 4),  # 整机状态
-    slice(4, 5),  # 电机报错
-    slice(5, 6),  # 电池电压
-    slice(6, 7),  # 使能状态
-    slice(7, 13),  # 加速度
-    slice(13, 19),  # 角速度
-    slice(19, 25),  # 角度
-    slice(25, 27),  # 手柄按钮状态
-    slice(27, 28),  # 手柄摇杆状态 X
-    slice(28, 29),  # 手柄摇杆状态 Y
-    slice(29, 0)
-]
-
-
 class MyAGVProCommandProtocolApi(CommunicationProtocol):
     genre_timeout_table = {
         ProtocolCode.POWER_ON: 2.1
