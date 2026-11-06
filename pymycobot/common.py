@@ -541,7 +541,7 @@ class ProtocolCode(object):
 
 
 class DataProcessor(object):
-    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client", "MercuryE1"]
+    crc_robot_class = ["Mercury", "MercurySocket", "Pro630", "Pro630Client", "Pro400Client", "Pro400", "MercuryTest", "Pro450Client", "MercuryE1", "MercuryE1Client"]
 
     def __init__(self, debug=False):
         """

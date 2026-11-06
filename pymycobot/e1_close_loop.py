@@ -2,6 +2,7 @@
 import threading
 import time
 import struct
+import socket
 from datetime import datetime
 import re
 
@@ -55,6 +56,11 @@ class E1CloseLoop(DataProcessor, E1EndControl):
         with self.lock:
 
             self._send_command(genre, real_command)
+        if getattr(self, "_socket_disconnected", False):
+            with self.lock:
+                if genre in self.write_command:
+                    self.write_command.remove(genre)
+            return -1
         if _async:
             with self.lock:
                 if genre in self.write_command:
@@ -142,6 +148,11 @@ class E1CloseLoop(DataProcessor, E1EndControl):
 
         is_moving_fail_count = 0
         while True and time.time() - t < wait_time:
+            if getattr(self, "_socket_disconnected", False):
+                with self.lock:
+                    if genre in self.write_command:
+                        self.write_command.remove(genre)
+                return -1
             self.event.wait(0.1)
             self.event.clear()
             with self.lock_out:
@@ -270,6 +281,7 @@ class E1CloseLoop(DataProcessor, E1EndControl):
 
     def read_thread(self, method=None):
         all_data = b''
+        socket_buffer = bytearray()
         while True:
             try:
                 datas = b""
@@ -282,25 +294,48 @@ class E1CloseLoop(DataProcessor, E1EndControl):
                     try:
                         self.sock.settimeout(wait_time)
                         data = self.sock.recv(1024)
-                        if isinstance(data, str):
-                            datas = bytearray()
-                            for i in data:
-                                datas += hex(ord(i))
-                            data = datas
-                        elif isinstance(data, bytes):
-                            hex_string = ''.join(f'{b:02X}' for b in data)
-                            # print(hex_string)
-                    except:
-                        data = b""
-                    if data != b"":
-                        command_log = " ".join("{:02X}".format(b) for b in data)
-                        self.log.debug("_read : {}".format(command_log))
-                        res = self._process_received(data)
-                        if res != []:
-                            with self.lock:
-                                self.read_command.append(
-                                    [res, time.time()])
-                            self.event.set()
+                    except (socket.timeout, BlockingIOError):
+                        data = None
+                    except OSError:
+                        self._socket_disconnected = True
+                        self.event.set()
+                        return
+
+                    if data == b"":
+                        self._socket_disconnected = True
+                        self.event.set()
+                        return
+                    if data:
+                        socket_buffer.extend(data)
+                        while True:
+                            header_index = socket_buffer.find(b"\xfe\xfe")
+                            if header_index < 0:
+                                socket_buffer[:] = socket_buffer[-1:]
+                                break
+                            if header_index:
+                                del socket_buffer[:header_index]
+                            if len(socket_buffer) < 3:
+                                break
+
+                            frame_size = socket_buffer[2] + 3
+                            if frame_size < 6:
+                                del socket_buffer[0]
+                                continue
+                            if len(socket_buffer) < frame_size:
+                                break
+
+                            frame = bytearray(socket_buffer[:frame_size])
+                            del socket_buffer[:frame_size]
+                            if self.crc_check(frame[:-2]) != list(frame[-2:]):
+                                continue
+
+                            command_log = " ".join("{:02X}".format(b) for b in frame)
+                            self.log.debug("_read : {}".format(command_log))
+                            res = self._process_received(frame)
+                            if res != []:
+                                with self.lock:
+                                    self.read_command.append([res, time.time()])
+                                self.event.set()
                 else:
                     start = time.time()
                     while True and time.time() - t < wait_time:
