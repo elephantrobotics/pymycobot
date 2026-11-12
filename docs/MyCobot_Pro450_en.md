@@ -780,6 +780,14 @@ print(mc.get_angles())
   - `main_version (str)`: Major and minor version numbers, e.g. `1.1`
   - `modified_version (int)`: Modified version number, range 0 to 255, default is 0
 
+#### `update_screen_firmware(firmware_path, timeout=75)`
+
+- **Function:** Uploads and flashes 450 screen firmware through the RK system backend.
+- **Parameters:**
+  - `firmware_path (str)`: Firmware file path. The filename must use the `450_Screen_Vx.y.z.bin` format, for example `450_Screen_V2.0.4.bin`. The version is parsed automatically from the filename.
+  - `timeout (int | float)`: HTTP request timeout in seconds; defaults to 75.
+- **Return Value:** The flashed screen firmware version returned by the backend.
+
 #### `set_tool_serial_baud_rate(baud_rate=115200)`
 
 - **Function:** Sets the terminal 485 baud rate, default 115200

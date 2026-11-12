@@ -2146,6 +2146,29 @@ def calibration_parameters(**kwargs):
                 if float(value) < 1.0:
                     raise MyCobotPro450DataException(
                         f"Version must be >= 1.0, but received '{value}'")
+            elif parameter == "screen_firmware_path":
+                check_value_type(parameter, value_type, MyCobotPro450DataException, str)
+                if not os.path.isfile(value):
+                    raise MyCobotPro450DataException(
+                        "Screen firmware file does not exist: {}".format(value)
+                    )
+                filename = os.path.basename(value)
+                if not re.fullmatch(r"450_Screen_V\d+\.\d+\.\d+\.bin", filename):
+                    raise MyCobotPro450DataException(
+                        "Screen firmware filename must match "
+                        "'450_Screen_Vx.y.z.bin', but received '{}'".format(
+                            filename
+                        )
+                    )
+            elif parameter == "screen_firmware_timeout":
+                check_value_type(
+                    parameter, value_type, MyCobotPro450DataException, (int, float)
+                )
+                if value <= 0:
+                    raise MyCobotPro450DataException(
+                        "Screen firmware timeout must be greater than 0, but "
+                        "received {}".format(value)
+                    )
             elif parameter in ["tool_modified_version"]:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 0 or value > 255:

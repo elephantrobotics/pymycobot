@@ -1,5 +1,6 @@
 # coding=utf-8
 import locale
+import os
 import struct
 import time
 import threading
@@ -757,6 +758,71 @@ class Pro450Client(Pro450CloseLoop):
 
             print("⚠️ Burning complete, but failed to read the end version number")
             return -1
+
+    def update_screen_firmware(self, firmware_path, timeout=75):
+        """Upload and flash a screen firmware package through the RK backend.
+
+        The firmware filename must follow ``450_Screen_Vx.y.z.bin``. The
+        version sent to the backend is extracted from that filename.
+
+        Args:
+            firmware_path (str): Path to the screen firmware package.
+            timeout (int or float): HTTP request timeout in seconds.
+
+        Returns:
+            str: The screen firmware version returned by the backend.
+
+        Raises:
+            MyCobotPro450DataException: A parameter is invalid.
+            RuntimeError: The backend response is invalid or reports failure.
+        """
+        self.calibration_parameters(
+            class_name=self.__class__.__name__,
+            screen_firmware_path=firmware_path,
+            screen_firmware_timeout=timeout,
+        )
+        filename = os.path.basename(firmware_path)
+        version = filename[len("450_Screen_V"):-len(".bin")]
+
+        try:
+            import requests
+        except ImportError:
+            raise RuntimeError(
+                "Screen firmware update requires the 'requests' package."
+            )
+
+        url = "http://{}:5890/testtool/firmware".format(self.SERVER_IP)
+        try:
+            with open(firmware_path, "rb") as firmware_file:
+                response = requests.post(
+                    url,
+                    data={"genre": "screen", "version": version},
+                    files={
+                        "content": (
+                            filename,
+                            firmware_file,
+                            "application/octet-stream",
+                        )
+                    },
+                    timeout=timeout,
+                )
+        except requests.exceptions.RequestException as exc:
+            raise RuntimeError(
+                "Screen firmware update request failed: {}".format(exc)
+            )
+
+        try:
+            result = response.json()
+        except (TypeError, ValueError):
+            raise RuntimeError("Screen firmware update returned a non-JSON response.")
+
+        if not isinstance(result, dict):
+            raise RuntimeError("Screen firmware update returned an invalid response.")
+        if result.get("code") != 200:
+            raise RuntimeError(
+                "Screen firmware update failed: {}".format(result)
+            )
+        return result.get("data")
 
     def get_comm_error_counts(self, joint_id):
         """Read the number of communication exceptions

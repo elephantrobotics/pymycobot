@@ -1,4 +1,5 @@
 pyserial
+requests
 python-can
 pytest
 flake8

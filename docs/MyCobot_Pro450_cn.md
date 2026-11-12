@@ -758,6 +758,14 @@ print(mc.get_angles())
   - `main_version (str)`: 主次版本号，比如 `'1.1'`
   - `modified_version (int)`: 更正版本号，范围 0 ~ 255，默认是 0 
 
+#### `update_screen_firmware(firmware_path, timeout=75)`
+
+- **功能：** 通过 RK 系统的后端接口上传并烧录 450 屏幕固件。
+- **参数:**
+  - `firmware_path (str)`: 固件文件路径，文件名必须为 `450_Screen_Vx.y.z.bin`，例如 `450_Screen_V2.0.4.bin`。版本号会自动从文件名解析。
+  - `timeout (int | float)`: HTTP 请求超时时间（秒），默认 75。
+- **返回值:** 后端返回的已烧录屏幕固件版本号。
+
 #### `set_tool_serial_baud_rate(baud_rate=115200)`
 
 - **功能：** 设置末端485波特率，默认115200

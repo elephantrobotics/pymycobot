@@ -1,5 +1,6 @@
 import os
 import sys
+import types
 import pytest
 
 # Add relevant ranger module to PATH... there surely is a better way to do this...
@@ -118,6 +119,68 @@ def test_pro450_version_detection_falls_back_to_legacy_after_three_failures(monk
 
     assert client._pro450_limit_profile == "Pro450Client"
     client._calibration_parameters(class_name="Pro450Client", joint_id=5, angle=100)
+
+
+def _pro450_screen_client():
+    client = object.__new__(Pro450Client)
+    client.SERVER_IP = "192.168.0.232"
+    client._pro450_limit_profile = "Pro450Client"
+    client.calibration_parameters = client._calibration_parameters
+    return client
+
+
+def test_pro450_screen_firmware_upload_uses_filename_version(monkeypatch, tmpdir):
+    firmware = tmpdir.join("450_Screen_V2.0.4.bin")
+    firmware.write_binary(b"firmware")
+    captured = {}
+
+    class Response(object):
+        def json(self):
+            return {"code": 200, "message": "ok", "data": "2.0.4"}
+
+    def post(url, data, files, timeout):
+        captured.update({
+            "url": url,
+            "data": data,
+            "filename": files["content"][0],
+            "content_type": files["content"][2],
+            "timeout": timeout,
+        })
+        return Response()
+
+    requests = types.SimpleNamespace(
+        post=post,
+        exceptions=types.SimpleNamespace(RequestException=Exception),
+    )
+    monkeypatch.setitem(sys.modules, "requests", requests)
+
+    assert _pro450_screen_client().update_screen_firmware(
+        str(firmware), timeout=30
+    ) == "2.0.4"
+    assert captured == {
+        "url": "http://192.168.0.232:5890/testtool/firmware",
+        "data": {"genre": "screen", "version": "2.0.4"},
+        "filename": "450_Screen_V2.0.4.bin",
+        "content_type": "application/octet-stream",
+        "timeout": 30,
+    }
+
+
+def test_pro450_screen_firmware_rejects_nonstandard_filename(tmpdir):
+    firmware = tmpdir.join("firmware-2.0.4.bin")
+    firmware.write_binary(b"firmware")
+
+    with pytest.raises(
+        MyCobotPro450DataException, match="450_Screen_Vx.y.z.bin"
+    ):
+        _pro450_screen_client().update_screen_firmware(str(firmware))
+
+
+def test_pro450_screen_firmware_rejects_missing_file():
+    with pytest.raises(MyCobotPro450DataException, match="does not exist"):
+        _pro450_screen_client().update_screen_firmware(
+            "450_Screen_V2.0.4.bin"
+        )
 
 
 def test_ultraarm_p1_move_pause_sends_m6_and_returns_ok():
