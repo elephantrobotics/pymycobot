@@ -148,7 +148,7 @@ print(mc.get_angles())
 - **Function:** Set the debug logging mode for the current robot.
 
 - **Parameters:**
-  - `log_state`: `int`, debug log state (0 to 7)
+  - `log_state`: `int`, Range 0 ~ 255.
     - `0`: Do not log any debug logs
     - `1`: General debug log only (_debug.log)
     - `2`: Motion-related log only (_move.log)

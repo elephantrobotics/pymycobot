@@ -1335,7 +1335,7 @@ class Pro450Client(Pro450CloseLoop):
         Set the debug log mode of the robot.
 
         Args:
-            log_state (int): Debug state as bitmask (0~7)
+            log_state (int): range 0 ~ 255. Debug state as bitmask (0~7)
                 0: No debug logs
                 1: Only common debug log (_debug.log)
                 2: Only motion-related log (_move.log)
