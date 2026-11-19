@@ -255,6 +255,32 @@ print(mc.get_angles())
 
 ### 4. 机器人运动控制
 
+运动类接口（如 `send_angles` / `send_coords` / `go_home` 等）支持三种等待档位，由 `_async` 与 `set_limit_switch(2, state)` 共同决定：
+
+| 档位 | 设置方式 | 行为 | 返回时机 |
+| ---- | -------- | ---- | -------- |
+| 完全开环 | `_async=True` | 只下发运动指令，不等待任何回包 | 立刻返回 `1` |
+| 第一层闭环 | `set_limit_switch(2, 0)` + 同步调用（`_async=False`） | 等待通信握手（同指令 `FF 01`） | 握手后返回（多为 `1`） |
+| 完整闭环 | 默认，或 `set_limit_switch(2, 1)` + 同步调用 | 握手后再等到位反馈（`0x5B`） | 到位后返回 |
+
+说明：
+
+- 默认 `sync_mode=True`，同步调用走完整闭环。
+- `_async=True` 时一律按完全开环处理，不受 `set_limit_switch(2, …)` 影响。
+- `set_limit_switch(2, 0/1)` 只影响同步调用是否等到位；debug 日志里仍可能随后看到到位帧，不代表接口还在阻塞等待。
+
+#### `set_limit_switch(limit_mode, state)`
+
+- **功能**：设置运动同步等待开关（Python 侧 `sync_mode`）
+- **参数**：
+  - `limit_mode` (`int`)：`2` 表示同步控制开关（本表仅说明该用法）
+  - `state` (`int`)：
+    - `0`：关闭完整同步等待 → 同步运动仅等第一层闭环（通信握手）
+    - `1`：打开完整同步等待 → 同步运动等到位（完整闭环）
+- **示例**：
+  - `set_limit_switch(2, 0)`：第一层闭环
+  - `set_limit_switch(2, 1)`：完整闭环（与默认一致）
+
 #### `set_control_mode(mode)`
 
 - **功能**：设置机器人运动模式
@@ -282,7 +308,7 @@ print(mc.get_angles())
   - `joint_id`: `int`，关节ID， 范围1 ~ 6
 - **返回值**：`float` 单关节角度
 
-#### `send_angle(id, degree, speed)`
+#### `send_angle(id, degree, speed, _async=False)`
 
 - **功能：** 向机械臂发送一个关节角度
 - **参数：**
@@ -298,22 +324,24 @@ print(mc.get_angles())
       | 6 | -165 ~ 165 |
 
     - `speed`：机械臂运动速度及范围 1~100
+    - `_async`：（`bool`）是否异步执行，默认 `False`。见本节开头三档说明。
 
     > `Pro450Client` 实例化时会读取主控 `get_system_version()` 以识别结构：版本低于 1.4 使用旧结构 J5 范围，版本大于等于 1.4 使用新结构 J5 范围。读取最多重试 3 次；均失败时按旧结构范围校验。
 
-#### `send_angles(angles, speed)`
+#### `send_angles(angles, speed, _async=False)`
 
 - **功能：** 将所有角度发送到机械臂的所有关节
 - **参数：**
   - `angles`：度数列表（`List[float]`），长度 6
   - `speed`：（`int`）1 ~ 100
+  - `_async`：（`bool`）是否异步执行，默认 `False`。见本节开头三档说明。
 
 #### `get_coords()`
 
 - **功能：** 从基于基准的坐标系获取机械臂坐标
 - **返回值：** 坐标浮点列表：[x, y, z, rx, ry, rz]
 
-#### `send_coord(id, coord, speed)`
+#### `send_coord(id, coord, speed, _async=False)`
 
 - **功能：** 向机械臂发送一个坐标
 - **参数：**
@@ -328,13 +356,22 @@ print(mc.get_angles())
       | ry | -180 ~ 180 |
       | rz | -180 ~ 180 |
   - `speed`：（`int`）1-100
+  - `_async`：（`bool`）是否异步执行，默认 `False`。见本节开头三档说明。
 
-#### `send_coords(coords, speed)`
+#### `send_coords(coords, speed, _async=False)`
 
 - **功能：**：发送整体坐标和姿态，将机械臂头部从原点移动到您指定的点
 - **参数：**
   - `coords`: 坐标列表，值`[x,y,z,rx,ry,rz]`，长度6
   - `speed` (`int`)：1 ~ 100
+  - `_async`：（`bool`）是否异步执行，默认 `False`。见本节开头三档说明。
+
+#### `go_home(speed=20, _async=False)`
+
+- **功能：** 控制机械臂回到零位（等价于 `send_angles([0,0,0,0,0,0], speed, _async)`）
+- **参数：**
+  - `speed`：（`int`）1 ~ 100，默认 20
+  - `_async`：（`bool`）是否异步执行，默认 `False`。见本节开头三档说明。
 
 #### `pause(deceleration=0)`
 

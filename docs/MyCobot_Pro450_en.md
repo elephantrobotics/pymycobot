@@ -271,6 +271,32 @@ print(mc.get_angles())
 
 ### 4.MDI Mode And Operation
 
+Motion APIs (such as `send_angles` / `send_coords` / `go_home`) support three wait modes, controlled by `_async` and `set_limit_switch(2, state)`:
+
+| Mode | How to enable | Behavior | When it returns |
+| ---- | ------------- | -------- | --------------- |
+| Fully open-loop | `_async=True` | Send the motion command only; wait for no reply | Returns `1` immediately |
+| First-level closed-loop | `set_limit_switch(2, 0)` + sync call (`_async=False`) | Wait for the communication handshake (`FF 01` on the same command) | Returns after handshake (usually `1`) |
+| Full closed-loop | Default, or `set_limit_switch(2, 1)` + sync call | After handshake, wait for in-position feedback (`0x5B`) | Returns after in-position |
+
+Notes:
+
+- Default `sync_mode=True`, so sync calls use full closed-loop.
+- `_async=True` is always fully open-loop and ignores `set_limit_switch(2, …)`.
+- `set_limit_switch(2, 0/1)` only affects whether sync calls wait for in-position. Debug logs may still show a later `0x5B` frame; that does not mean the API is still blocking.
+
+#### `set_limit_switch(limit_mode, state)`
+
+- **Function**: Set the motion sync-wait switch (Python-side `sync_mode`)
+- **Parameters**:
+  - `limit_mode` (`int`): `2` means the sync-control switch (this section covers that usage)
+  - `state` (`int`):
+    - `0`: Disable full sync wait → sync motion waits only for first-level closed-loop (handshake)
+    - `1`: Enable full sync wait → sync motion waits for in-position (full closed-loop)
+- **Examples**:
+  - `set_limit_switch(2, 0)`: first-level closed-loop
+  - `set_limit_switch(2, 1)`: full closed-loop (same as default)
+
 #### `set_control_mode(mode)`
 
 - **Function**: Set the robot motion mode
@@ -297,7 +323,7 @@ print(mc.get_angles())
 - **Parameters**： `joint_id` (int): 1 ~ 6
 - **Return value:** `float`, single joint angle
 
-#### `send_angle(id, degree, speed)`
+#### `send_angle(id, degree, speed, _async=False)`
 
 - **function:** send one degree of joint to robot arm
 - **Parameters:**
@@ -313,22 +339,24 @@ print(mc.get_angles())
     | 6 | -165 ~ 165 |
 
   - `speed`：the speed and range of the robotic arm's movement 1~100
+  - `_async` (`bool`): whether to run asynchronously, default `False`. See the three wait modes at the start of this section.
 
   > During `Pro450Client` initialization, the controller `get_system_version()` is read to identify the structure: versions below 1.4 use the legacy J5 range, while versions 1.4 and later use the new-structure J5 range. The read is retried up to three times; if all attempts fail, legacy validation is used.
 
-#### `send_angles(angles, speed)`
+#### `send_angles(angles, speed, _async=False)`
 
 - **function：** Send all angles to all joints of the robotic arm
 - **Parameters:**
   - `angles`: a list of degree value(`List[float]`), length 6
   - `speed`: (`int`) 1 ~ 100
+  - `_async` (`bool`): whether to run asynchronously, default `False`. See the three wait modes at the start of this section.
 
 #### `get_coords()`
 
 - **function:** Obtain robot arm coordinates from a base based coordinate system
 - **Return value:** a float list of coord:[x, y, z, rx, ry, rz]
 
-#### `send_coord(id, coord, speed)`
+#### `send_coord(id, coord, speed, _async=False)`
 
 - **function:** send one coord to robot arm
 - **Parameters:**
@@ -343,13 +371,22 @@ print(mc.get_angles())
     | ry | -180 ~ 180 |
     | rz | -180 ~ 180 |
   - `speed`: (`int`) 1-100
+  - `_async` (`bool`): whether to run asynchronously, default `False`. See the three wait modes at the start of this section.
 
-#### `send_coords(coords, speed, mode)`
+#### `send_coords(coords, speed, _async=False)`
 
 - **function:**: Send overall coordinates and posture to move the head of the robotic arm from its original point to your specified point
 - **Parameters:**
   - coords: ： a list of coords value `[x,y,z,rx,ry,rz]`,length6
   - speed`(int)`: 1 ~ 100
+  - `_async` (`bool`): whether to run asynchronously, default `False`. See the three wait modes at the start of this section.
+
+#### `go_home(speed=20, _async=False)`
+
+- **Function:** Move the arm to the zero position (equivalent to `send_angles([0,0,0,0,0,0], speed, _async)`)
+- **Parameters:**
+  - `speed` (`int`): 1 ~ 100, default 20
+  - `_async` (`bool`): whether to run asynchronously, default `False`. See the three wait modes at the start of this section.
 
 #### `pause(deceleration=0)`
 

@@ -59,6 +59,9 @@ class Pro450CloseLoop(DataProcessor):
         t = time.time()
         wait_time = 0.15
         big_wait_time = False
+        timeout = 3
+
+        # Pro450-only wait/timeout table (this module is not shared with other arms).
         if genre == ProtocolCode.POWER_ON:
             wait_time = 8
             big_wait_time = True
@@ -90,41 +93,36 @@ class Pro450CloseLoop(DataProcessor):
             wait_time = 300
             is_in_position = True
             big_wait_time = True
-        elif genre in [ProtocolCode.SERVO_RESTORE]:
+        elif genre == ProtocolCode.SERVO_RESTORE:
             wait_time = 0.3
             big_wait_time = True
-
         elif genre in (ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, ProtocolCode.MERCURY_GET_TOQUE_GRIPPER):
+            # Force / three-finger gripper protocol path
             wait_time = 0.3
             if real_command[3] == FingerGripper.SET_HAND_GRIPPER_CALIBRATION:
                 wait_time = 10
         elif genre == ProtocolCode.SET_FRESH_MODE:
             wait_time = 4
+            timeout = 4
+        elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
+            wait_time = 4
+            timeout = 5
+        elif genre == ProtocolCode.MERCURY_DRAG_TECH_PAUSE:
+            wait_time = 6
+            timeout = 6
+        elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
+            # Tool-485 passthrough; long wait for abs-angle(36) / calibration(13)
+            if real_command[7] in [36, 13]:
+                wait_time = 10
+            else:
+                wait_time = 0.25
 
         need_break = False
         data = None
-        timeout = 3
-
-        if self.__class__.__name__ == "Pro450Client":
-            if genre == ProtocolCode.SET_FRESH_MODE:
-                timeout = 4
-            elif genre == ProtocolCode.SET_BASE_EXTERNAL_CONTROL:
-                timeout = 5
-                wait_time = 4
-            elif genre == ProtocolCode.MERCURY_DRAG_TECH_PAUSE:
-                wait_time = 6
-                timeout = 6
-            elif genre == ProtocolCode.TOOL_SERIAL_WRITE_DATA:
-                if real_command[7] in [36, 13]:
-                    timeout = 3
-                    wait_time = 10
-                else:
-                    wait_time = 0.25
-            else:
-                timeout = 3
         interval_time = time.time()
         is_moving = 0
         check_is_moving_t = 1
+        moving_error_times = 0
 
         while True and time.time() - t < wait_time:
             self.event.wait(0.1)
@@ -184,6 +182,16 @@ class Pro450CloseLoop(DataProcessor):
                 t = time.time()
                 moving = self.is_moving()
                 if isinstance(moving, int):
+                    if moving < 0:
+                        # -1 means is_moving failed (powered off / no reply), not "still moving"
+                        moving_error_times += 1
+                        if moving_error_times > 2:
+                            with self.lock:
+                                if genre in self.write_command:
+                                    self.write_command.remove(genre)
+                            return -1
+                        continue
+                    moving_error_times = 0
                     if moving != 0:
                         continue
                 # 运动指令丢失，重发
@@ -206,8 +214,17 @@ class Pro450CloseLoop(DataProcessor):
             if is_in_position and time.time() - interval_time > check_is_moving_t and wait_time == 300:
                 interval_time = time.time()
                 moving = self.is_moving()
-                if isinstance(moving, int) and moving == 0:
+                if isinstance(moving, int) and moving < 0:
+                    # Do not treat communication error as motion-still-running
+                    moving_error_times += 1
+                    if moving_error_times > 2:
+                        with self.lock:
+                            if genre in self.write_command:
+                                self.write_command.remove(genre)
+                        return -1
+                elif isinstance(moving, int) and moving == 0:
                     # print("停止运动，退出")
+                    moving_error_times = 0
                     is_moving += 1
                     if is_moving == 1:
                         # 第一次检测到停止，只是标记，不退出
@@ -219,6 +236,8 @@ class Pro450CloseLoop(DataProcessor):
                             if genre in self.write_command:
                                 self.write_command.remove(genre)
                         return -2
+                elif isinstance(moving, int):
+                    moving_error_times = 0
             # time.sleep(0.0001)
         else:
             # print("ERROR: ---超时---")

@@ -4,6 +4,22 @@
 
 ## 未发布
 
+### 2026-11-19
+
+#### 变更
+
+- 整理 `pro450_close_loop.py` 中 `_mesg` 的 `wait_time` / `timeout` / `big_wait_time` 配置：去掉 `Pro450Client` 类名判断与重复赋值，合并为单层 450 超时表；保留 Mercury 力控/三指夹爪等待及 `B5` 寄存器 `13/36` 长等待，行为不变。
+- 更新 Pro450 中英文使用文档：补充运动三档（完全开环 / 第一层闭环 / 完整闭环）、`set_limit_switch(2, state)`、`go_home`，以及 `send_angle(s)` / `send_coord(s)` 的 `_async` 说明。
+
+#### 修复
+
+- 闭环运动等待中，`is_moving()` 返回 `-1`（无回包/通信失败）时不再当作“仍在运动”继续等待；连续三次失败后结束等待并返回 `-1`，避免下电后发运动指令长时间刷 `0x2B`。
+
+#### 验证
+
+- `python -m py_compile pymycobot/pro450_close_loop.py` 通过；对照确认各 genre 的等待参数与重构前一致。
+- 对照确认中英文文档三档表与 `set_limit_switch` / `_async` 行为一致。
+
 ### 2026-11-18
 
 #### 修复
