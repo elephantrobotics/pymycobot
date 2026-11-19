@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 import asyncio
-from .myagvpro import MyAGVProCommandProtocolApi, ProtocolCode, PLAINTEXT_REPLY_PROTOCOL_CODE
+
+from pymycobot.myagvpro import MyAGVProCommandProtocolApi, ProtocolCode, PLAINTEXT_REPLY_PROTOCOL_CODE
+
+try:
+    from bleak import BleakClient, BleakScanner
+except ImportError:
+    pass
 
 
 class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
@@ -156,7 +162,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
+        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * 1)])
 
     async def move_right_lateral(self, speed):
         """Pan the robot right
@@ -172,7 +178,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
 
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
+        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, int(speed * 100 * -1)])
 
     async def turn_left(self, speed):
         """Rotate to the left
@@ -185,7 +191,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * -1), 0x00])
+        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * 1), 0x00])
 
     async def turn_right(self, speed):
         """Rotate to the right
@@ -198,7 +204,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * 1), 0x00])
+        return await self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * -1), 0x00])
 
     async def stop(self):
         """Stop moving
@@ -367,14 +373,14 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         if not 0 <= brightness <= 255:
             raise ValueError("Brightness must be between 0 and 255")
 
+        if not isinstance(color, tuple):
+            raise ValueError("The parameter 'color' must be of tuple")
+
         if len(color) != 3:
             raise ValueError("Color must be a tuple of 3 values")
 
         if any(map(lambda c: not 0 <= c <= 255, color)):
             raise ValueError("Color must be between 0 and 255")
-
-        if not isinstance(color, tuple):
-            raise ValueError("color must be a tuple")
 
         return await self._merge(ProtocolCode.SET_LED_COLOR, position, brightness, *color)
 
@@ -424,13 +430,13 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
             raise ValueError("Pin must be between 1 and 6")
         return await self._merge(ProtocolCode.GET_INPUT_IO, pin)
 
-    def get_estop_state(self):
+    async def get_estop_state(self):
         """Get the emergency stop state
 
         Returns:
             int: 0: Release, 1: Press
         """
-        return self._merge(ProtocolCode.GET_INPUT_IO, 254)
+        return await self._merge(ProtocolCode.GET_INPUT_IO, 254)
 
     async def get_wifi_account(self):
         """Get the wi-fi account
@@ -485,15 +491,35 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         return await self._merge(ProtocolCode.GET_HANDLE_CONTROL_STATE)
 
+    async def get_handle_control_button_states(self):
+        """Get the real-time status of the handle button
+
+        Returns:
+            list[int]:
+                 0：start
+                 1：trian
+                 2：Cir
+                 3：cross
+                 4：squad
+                 5：up
+                 6：down
+                 7：left
+                 8：right
+                 9: x (0-255)
+                10: y (0-255)
+        """
+        return await self._merge(ProtocolCode.GET_HANDLE_CONTROL_BUTTON_STATES)
+
 
 class MyAGVProBluetooth(MyAGVProCommandApi):
-    def __init__(self, address, service_uuid, char_uuid, debug=False, save_serial_log=False):
+    allow_properties = ['notify', 'read', 'write']
+
+    def __init__(self, address, characteristic=None, debug=False, save_serial_log=False):
         super().__init__(debug=debug, save_serial_log=save_serial_log)
-        from bleak import BleakClient
         self._bluetooth = BleakClient(address, timeout=10)
         self._address = address
-        self._char_uuid = char_uuid
-        self._service_uuid = service_uuid
+        self._characteristic = characteristic
+        self._access_handle_code = None
         self._serial_filename = 'agvpro_bluetooth_serial.log'
         self._communication_mode = 2
         self._queue = asyncio.Queue()
@@ -509,36 +535,50 @@ class MyAGVProBluetooth(MyAGVProCommandApi):
     async def read(self, size=1):
         if not self._queue.empty():
             return self._queue.get_nowait()
-        return await self._bluetooth.read_gatt_char(self._char_uuid, size=size)
+        return await self._bluetooth.read_gatt_char(self._access_handle_code, size=size)
 
     async def write(self, data):
-        return await self._bluetooth.write_gatt_char(self._char_uuid, data)
+        return await self._bluetooth.write_gatt_char(self._access_handle_code, data)
 
     async def connect(self):
+        compliant_handle_codes = []
+
         await self._bluetooth.connect()
-        await self._bluetooth.start_notify(self._char_uuid, self._handle_notification)
+        for handle_code, characteristic in self._bluetooth.services.characteristics.items():
+            if all(map(lambda attr: attr in characteristic.properties, self.allow_properties)):
+                compliant_handle_codes.append(handle_code)
+                if self._characteristic != characteristic.uuid:
+                    continue
+
+                self._access_handle_code = handle_code
+
+        if len(compliant_handle_codes) > 0 and not self._access_handle_code:
+            self._access_handle_code = compliant_handle_codes[0]
+
+        if not self._access_handle_code:
+            raise ConnectionError("No characteristic found")
+
+        await self._bluetooth.start_notify(char_specifier=self._access_handle_code, callback=self._handle_notification)
 
     async def _handle_notification(self, _, data):
         await self._queue.put(data)
 
     async def disconnect(self):
-        await self._bluetooth.stop_notify(self._char_uuid)
+        await self._bluetooth.stop_notify(self._access_handle_code)
         await self._bluetooth.disconnect()
 
     async def is_connected(self):
         return self._bluetooth.is_connected
 
     @classmethod
-    async def connect_by_name(cls, name, service_uuid, char_uuid, debug=False, save_serial_log=False):
-        from bleak import BleakScanner
+    async def connect_by_name(cls, name, debug=False, characteristic=None, save_serial_log=False):
         device = await BleakScanner.find_device_by_name(name=name)
         if device is None:
             return None
 
         return cls(
             address=device,
-            service_uuid=service_uuid,
-            char_uuid=char_uuid,
-            debug=debug,
-            save_serial_log=save_serial_log
+            characteristic=characteristic,
+            save_serial_log=save_serial_log,
+            debug=debug
         )
