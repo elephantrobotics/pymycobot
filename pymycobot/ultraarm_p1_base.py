@@ -31,6 +31,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
     STATUS_TIMEOUT = 3
     STATUS_QUERY_INTERVAL = 0.2
     STATUS_QUERY_GRACE_PERIOD = 0.05
+    STATUS_STOP_CONFIRM_COUNT = 3
+    CALIBRATION_STATUS_QUERY_DELAY = 0.6
 
     END_COUNT = 2
     MOVE_PAUSE_PROMPT = "Robot is paused, please use move_resume() first."
@@ -461,7 +463,14 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
         return " ".join(tokens)
 
     # ---------------------- Response waiting & parsing ----------------------
-    def _response(self, _async=True, _gcode=False, is_set=False, timeout=None):
+    def _response(
+        self,
+        _async=True,
+        _gcode=False,
+        is_set=False,
+        timeout=None,
+        status_query_start_delay=0,
+    ):
         """Wait for device response from the serial buffer.
 
         Returns 'ok' when keyword is found, False on timeout.
@@ -499,8 +508,10 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
 
         status_timeout = self.STATUS_TIMEOUT
         status_query_interval = self.STATUS_QUERY_INTERVAL
-        last_status_time = start_time
+        status_query_ready_at = start_time + status_query_start_delay
+        last_status_time = status_query_ready_at
         last_status_query_time = start_time - status_query_interval
+        stop_status_count = 0
 
         while time.time() - start_time < response_timeout:
             chunk = self._read_available_bytes()
@@ -583,17 +594,22 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                         if end_count >= self.END_COUNT:
                             return 'ok'
                     if movement_status_wait:
-                        # M200 returns mainmoving:0/1.  Treat 0 as the same
+                        # M200 returns mainmoving:0/1. Require consecutive 0
+                        # replies to avoid ending on a transient stale state.
                         run_status = self._parse_colon_values(text_lower, "mainmoving", int, single=True)
                         if run_status is not None:
                             last_status_time = time.time()
                             if run_status == 0:
-                                # If the robot was already in an error state before
-                                # this motion command, it may only report not moving.
-                                error_info = self._query_error_information()
-                                if error_info and error_info != "ok":
-                                    return error_info
-                                return 'ok'
+                                stop_status_count += 1
+                                if stop_status_count >= self.STATUS_STOP_CONFIRM_COUNT:
+                                    # If the robot was already in an error state before
+                                    # this motion command, it may only report not moving.
+                                    error_info = self._query_error_information()
+                                    if error_info and error_info != "ok":
+                                        return error_info
+                                    return 'ok'
+                            else:
+                                stop_status_count = 0
 
             if movement_status_wait:
                 now = time.time()
@@ -603,7 +619,8 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                         return error_info
                     break
                 if (
-                    now - start_time >= self.STATUS_QUERY_GRACE_PERIOD
+                    now >= status_query_ready_at
+                    and now - start_time >= self.STATUS_QUERY_GRACE_PERIOD
                     and now - last_status_query_time >= status_query_interval
                 ):
                     # Query run status without calling get_run_status(), since
@@ -813,9 +830,15 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
                                 data = line_data[data_idx + len("data:"):].strip()
                                 return data.split() if data else []
                         elif flag == 'get_sn_code':
-                            r = self._parse_colon_values(lower, "sn", int, single=True)
-                            if r is not None:
-                                return r
+                            match = re.search(
+                                r"(?:^|[^a-z0-9_])sn\s*:",
+                                line_data,
+                                re.IGNORECASE,
+                            )
+                            if match:
+                                # An empty field is a valid response after the
+                                # screen firmware clears the stored SN.
+                                return line_data[match.end():].strip()
                         elif flag == 'get_robot_id':
                             r = self._parse_colon_values(lower, "id", str, single=True)
                             if r is not None:
@@ -1343,7 +1366,10 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             command = ProtocolCode.SET_JOINT_ZERO_CALIBRATION_P1
             command += " J" + str(joint_number)
             self._send_command(command)
-            return self._response(_async=True)
+            return self._response(
+                _async=True,
+                status_query_start_delay=self.CALIBRATION_STATUS_QUERY_DELAY,
+            )
 
     def get_zero_calibration_state(self):
         """Read zero-point calibration status.
@@ -1416,6 +1442,12 @@ class UltraArmP1Base(UltraArmP1InternalMixin):
             command = ProtocolCode.SET_PWM_CUSTOM
             command += " S" + str(p_value)
             self._send_command(command)
+            return self._response(_async=True, is_set=True)
+
+    def update_encoder_data(self):
+        """Update encoder data with the current position."""
+        with self.lock:
+            self._send_command(ProtocolCode.UPDATE_ENCODER_DATA_P1)
             return self._response(_async=True, is_set=True)
 
     def set_gripper_angle(self, gripper_angle, gripper_speed):

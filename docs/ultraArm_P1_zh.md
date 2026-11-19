@@ -699,7 +699,7 @@ ua.set_i2c_data(1, 12, 1, 29, "14", "0C", "000C")
     - 2: J2
     - 3: J3
     - 4: J4
-  - `threshold` (float/int): 阈值，范围 0.5 ~ 100
+  - `threshold` (float/int): 阈值，范围 0.5 ~ 30
 - **返回值：** 
   - `ok`
 
@@ -831,6 +831,15 @@ ua.set_joint_acc(1, 100)
 ```python
 data = ua.get_default_sensor_initialize(1)
 print(data)
+```
+
+### 82 `update_encoder_data()`
+
+- **功能:** 使用编码器数据更新当前位置，用于消除误差。
+- **返回值:** `ok`，失败时返回错误码。
+
+```python
+ua.update_encoder_data()
 ```
 
 ---

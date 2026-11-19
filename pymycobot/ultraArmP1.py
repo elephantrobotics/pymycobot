@@ -205,8 +205,8 @@ class UltraArmP1(UltraArmP1Base):
         self._send_command(command)
         res = self._response(_async=True, is_set=True)
         if res == "ok":
-            self.log.debug("Waiting 7 seconds for controller restart...")
-            time.sleep(7)
+            self.log.debug("Waiting 0.03 seconds for controller restart...")
+            time.sleep(0.03)
         return res
 
     def download_firmware_sd(self, filename, show_progress=True):
