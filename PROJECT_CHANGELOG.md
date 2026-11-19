@@ -4,6 +4,21 @@
 
 ## 未发布
 
+### 2026-11-19
+
+#### 修复
+
+- Mercury A1 仅保留 `server_A1_close_loop.py` 作为 Socket 服务端入口，删除旧的 `Server_A1.py` 与 `Server_A1_2.py`，避免误用。
+- `server_A1_close_loop.py` 补齐 `GET_LIMIT_SWITCH (0x0F)` 回包转发，避免 `MercurySocket` 初始化查询的串口响应滞留并错位到后续读取接口。
+- `server_A1_close_loop.py` 的 `/dev/ttyAMA1` 初始化与 `Mercury` 串口客户端保持一致，在打开端口前设置 `RTS=False`，并使用单一常驻读线程逐字节组装、CRC 校验后转发完整响应帧，避免空包或半帧造成查询和关节角度错位。
+- `server_A1_close_loop.py` 在 CRC 校验失败时输出异常帧日志，便于定位协议帧错误。
+- 修复 Mercury 力控夹爪零位校准的等待判断：正确识别 `0xD8` 帧中的校准子命令 `0x0D`，最多等待 10 秒获取 `FF 01` 确认，避免串口和 Socket 接口在设备完成校准前提前返回。
+
+#### 验证
+
+- `server_A1_close_loop.py` 及 `pymycobot/close_loop.py` 通过语法编译检查。
+- 模拟串口分段到达 `0x0F` 与 `0x02` 回包，确认常驻读线程仅转发 CRC 校验通过的完整帧。
+
 ### 2026-10-29
 
 #### 修复

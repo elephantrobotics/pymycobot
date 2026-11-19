@@ -22,6 +22,8 @@ Please change the parameters passed in the last line of the Server.py file, Merc
 
 
 """
+
+
 class ProtocolCode(object):
     # BASIC
     HEADER = 0xFE
@@ -33,22 +35,18 @@ class ProtocolCode(object):
     GET_ROBOT_ID = 0x03
     OVER_LIMIT_RETURN_ZERO = 0x04
     SET_ROBOT_ID = 0x04
-    
+
     GET_ERROR_INFO = 0x07
     CLEAR_ERROR_INFO = 0x08
     GET_ATOM_VERSION = 0x09
-    
-    CLEAR_ZERO_POS = 0x0A
-    SET_SERVO_CW = 0x0B
-    GET_SERVO_CW = 0x0C
+
+    SET_CW = 0x0B
+    GET_CW = 0x0C
     CLEAR_WAIST_QUEUE = 0x0D
-    SET_LIMIT_SWITCH = 0x0E
-    GET_LIMIT_SWITCH = 0x0F
-    
+
     SetHTSGripperTorque = 0x35
     GetHTSGripperTorque = 0x36
     GetGripperProtectCurrent = 0x37
-    JOG_INCREMENT_BASE_COORD = 0x37
     InitGripper = 0x38
     SetGripperProtectCurrent = 0x39
 
@@ -95,15 +93,12 @@ class ProtocolCode(object):
     JOG_ABSOLUTE = 0x31
     JOG_COORD = 0x32
     JOG_INCREMENT = 0x33
-    JOG_INCREMENT_COORD = 0x34
-    
     JOG_STOP = 0x34
     JOG_INCREMENT_COORD = 0x34
-    
+
     COBOTX_GET_SOLUTION_ANGLES = 0x35
     COBOTX_SET_SOLUTION_ANGLES = 0x36
-    JOG_BASE_INCREMENT_COORD = 0x37
-    
+
     SET_ENCODER = 0x3A
     GET_ENCODER = 0x3B
     SET_ENCODERS = 0x3C
@@ -114,13 +109,8 @@ class ProtocolCode(object):
     GET_SPEED = 0x40
     SET_SPEED = 0x41
     GET_FEED_OVERRIDE = 0x42
-    GET_MAX_ACC = 0x42
-    SET_MAX_ACC = 0x43
     GET_ACCELERATION = 0x44
-    GET_DRAG_FIFO = 0x44
-    SET_DRAG_FIFO = 0x45
     SET_ACCELERATION = 0x45
-    GET_DRAG_FIFO_LEN = 0x46
     GET_JOINT_MIN_ANGLE = 0x4A
     GET_JOINT_MAX_ANGLE = 0x4B
     SET_JOINT_MIN = 0x4C
@@ -138,8 +128,7 @@ class ProtocolCode(object):
     SET_GRIPPER_ENABLED = 0x58
     GET_ZERO_POS = 0x59
     IS_INIT_CALIBRATION = 0x5A
-    
-    
+
     # ATOM IO
     SET_PIN_MODE = 0x60
     SET_DIGITAL_OUTPUT = 0x61
@@ -162,7 +151,6 @@ class ProtocolCode(object):
 
     GET_ACCEI_DATA = 0x73
     SET_COLLISION_MODE = 0x74
-    GET_COLLISION_MODE = 0xFD
     SET_COLLISION_THRESHOLD = 0x75
     GET_COLLISION_THRESHOLD = 0x76
     SET_TORQUE_COMP = 0x77
@@ -173,7 +161,6 @@ class ProtocolCode(object):
     SET_MODEL_DIRECTION = 0x7D
     GET_FILTER_LEN = 0x7E
     SET_FILTER_LEN = 0x7F
-    
 
     # Basic
     SET_BASIC_OUTPUT = 0xA0
@@ -230,7 +217,7 @@ class ProtocolCode(object):
     GET_JOINT_CURRENT = 0x91
     SET_CURRENT_STATE = 0x92
     GET_POS_OVER = 0x94
-    CLEAR_ENCODERS_ERROR = 0xEA
+    CLEAR_ENCODERS_ERROR = 0x95
     GET_DOWN_ENCODERS = 0x96
 
     # planning speed
@@ -252,18 +239,14 @@ class ProtocolCode(object):
     GET_SERVO_LASTPDI = 0xE6
     SERVO_RESTORE = 0xE7
     SET_VOID_COMPENSATE = 0xE7
-    # SET_ERROR_DETECT_MODE = 0xE8
-    # GET_ERROR_DETECT_MODE = 0xE9
-    
+    SET_ERROR_DETECT_MODE = 0xE8
+    GET_ERROR_DETECT_MODE = 0xE9
+
     MERCURY_GET_BASE_COORDS = 0xF0
     MERCURY_SET_BASE_COORD = 0xF1
     MERCURY_SET_BASE_COORDS = 0xF2
     MERCURY_JOG_BASE_COORD = 0xF3
-    JOG_RPY = 0xF5
-    
-    GET_MONITOR_MODE = 0xFB
-    SET_MONITOR_MODE = 0xFC
-    
+
     MERCURY_DRAG_TECH_SAVE = 0x70
     MERCURY_DRAG_TECH_EXECUTE = 0x71
     MERCURY_DRAG_TECH_PAUSE = 0x72
@@ -307,8 +290,12 @@ class ProtocolCode(object):
     CLEAR_ROBOT_ERROR = 0x16
     GET_RECV_QUEUE_SIZE = 0x17
     SET_RECV_QUEUE_SIZE = 0x18
-has_return = [0x02, 0x03, 0x04, 0x09, 0x10, 0x11, 0x12, 0x13, 0x1c, 0x18, 0x19, 0x20, 0x23, 0x27, 0x29, 0x2A, 0x2B, 0x35, 0x4A, 0x4B,0x4C, 0x4D,
-              0x50, 0x51, 0x56,0x57, 0x59,0x5A,0x62, 0x82, 0x84, 0x86, 0x88, 0x8A, 0xA1, 0xA2, 0xB2, 0xB3, 0xB4, 0xB5, 0xB7, 0xD6, 0xe1, 0xe2, 0xe4]
+
+
+has_return = [0x02, 0x03, 0x04, 0x09, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x1c, 0x18, 0x19, 0x20, 0x23, 0x27, 0x29, 0x2A,
+              0x2B, 0x35, 0x4A, 0x4B, 0x4C, 0x4D,
+              0x50, 0x51, 0x56, 0x57, 0x59, 0x5A, 0x62, 0x82, 0x84, 0x86, 0x88, 0x8A, 0xA1, 0xA2, 0xB2, 0xB3, 0xB4,
+              0xB5, 0xB7, 0xD6, 0xe1, 0xe2, 0xe4]
 
 
 def get_logger(name):
@@ -349,51 +336,55 @@ class MercuryServer(object):
         self.baud = baud
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.lock = threading.Lock()
         self.s.bind((host, port))
         print("Binding succeeded!")
         self.s.listen(1)
         self.conn = None
         self.stop = False
-        self.sync_mode = True
-        self.connected_event = threading.Event()
-        self.read_thread = threading.Thread(target=self.read)
-        self.read_thread.daemon = True
+        self.connected = False
+        # Keep the serial line state consistent with Mercury.  The A1
+        # controller uses /dev/ttyAMA1 and does not return data reliably
+        # while RTS is asserted by pyserial's default open sequence.
+        self.mc = serial.Serial()
+        self.mc.port = self.serial_num
+        self.mc.baudrate = self.baud
+        self.mc.timeout = 0.1
+        self.mc.rts = False
+        self.mc.open()
+        self.read_thread = threading.Thread(target=self.read, daemon=True)
         self.read_thread.start()
-        self.mc = serial.Serial(self.serial_num, self.baud, timeout=0.1)
         self.connect()
-        
 
     def connect(self):
         while True:
             try:
                 print("waiting connect!------------------")
-                self.connected_event.clear()
-                time.sleep(0.1)
                 self.conn, addr = self.s.accept()
                 self.mc.reset_input_buffer()
+                self.connected = True
                 while True:
                     try:
                         print("waiting data--------")
                         data = self.conn.recv(1024)
-                        self.connected_event.set()
+                        self.connected = True
                         command = []
                         for v in data:
                             command.append(v)
                         if command == []:
                             print("close disconnect!")
+                            self.connected = False
                             break
                         if self.mc.isOpen() == False:
                             self.mc.open()
                         else:
                             self.logger.info("get command: {}".format(
                                 [hex(v) for v in command]))
+                            # command = self.re_data_2(command)
+
                             self.write(command)
                     except ConnectionResetError:
-                        print("close disconnect!")
-                        self.connected_event.clear()
-                        time.sleep(0.1)
-                        break
+                        self.connected = False
+                        pass
                     except Exception as e:
                         self.logger.error(traceback.format_exc())
                         break
@@ -401,7 +392,7 @@ class MercuryServer(object):
                 self.logger.error(traceback.format_exc())
                 self.conn.close()
                 self.mc.close()
-                
+
     def _encode_int16(self, data):
         if isinstance(data, int):
             return [
@@ -414,15 +405,15 @@ class MercuryServer(object):
                 t = self._encode_int16(v)
                 res.extend(t)
         return res
-              
-    @classmethod  
+
+    @classmethod
     def crc_check(cls, command):
         crc = 0xffff
         for index in range(len(command)):
             crc ^= command[index]
             for _ in range(8):
                 if crc & 1 == 1:
-                    crc >>=  1
+                    crc >>= 1
                     crc ^= 0xA001
                 else:
                     crc >>= 1
@@ -435,64 +426,49 @@ class MercuryServer(object):
         self.mc.flush()
 
     def read(self):
-        while 1:
-            if not self.connected_event.is_set():
-                time.sleep(0.1)
+        """Forward complete CRC frames from the A1 serial port to TCP."""
+        buffer = bytearray()
+        while True:
+            if not self.connected:
+                buffer.clear()
+                time.sleep(0.01)
                 continue
-            datas = b""
-            data_len = -1
-            k = 0
-            pre = 0
-            t = time.time()
-            wait_time = 0.1
-            data = None
-            while True and time.time() - t < wait_time:
-                try:
-                    if self.mc.inWaiting() > 0:
-                            data = self.mc.read()
-                            k += 1
-                            # print(datas, flush=True)
-                            if data_len == 3:
-                                datas += data
-                                crc = self.mc.read(2)
-                                if self.crc_check(datas) == [v for v in crc]:
-                                    datas += crc
-                                    if self.conn is not None:
-                                        self.logger.info("return datas: {}".format([hex(v) for v in datas]))
-                                        datas = b'###'+datas+b'###'
-                                        self.conn.sendall(datas)
-                                    break
-                            if data_len == 1 and data == b"\xfa":
-                                datas += data
-                                # if [i for i in datas] == command:
-                                #     datas = b''
-                                #     data_len = -1
-                                #     k = 0
-                                #     pre = 0
-                                #     continue
-                                # break
-                            elif len(datas) == 2:
-                                data_len = struct.unpack("b", data)[0]
-                                datas += data
-                            elif len(datas) > 2 and data_len > 0:
-                                datas += data
-                                data_len -= 1
-                            elif data == b"\xfe":
-                                if datas == b"":
-                                    datas += data
-                                    pre = k
-                                else:
-                                    if k - 1 == pre:
-                                        datas += data
-                                    else:
-                                        datas = b"\xfe"
-                                        pre = k
-                    else:
-                        # print(".",end="",flush=True)    
-                        time.sleep(0.001)
-                except Exception as e:
-                    self.logger.error(traceback.format_exc())
-                    # break
+            try:
+                # Do not rely on inWaiting(): on some A1 UART drivers it can
+                # remain zero even when a subsequent controller reply arrives.
+                # Serial.read(1) waits at most self.mc.timeout and returns as
+                # soon as one byte is available.
+                chunk = self.mc.read(1)
+                if not chunk:
+                    continue
+                buffer.extend(chunk)
+                while True:
+                    start = buffer.find(b"\xfe\xfe")
+                    if start < 0:
+                        buffer[:] = b"\xfe" if buffer[-1:] == b"\xfe" else b""
+                        break
+                    if start:
+                        del buffer[:start]
+                    if len(buffer) < 3:
+                        break
+                    frame_size = buffer[2] + 3
+                    if len(buffer) < frame_size:
+                        break
+                    frame = bytes(buffer[:frame_size])
+                    if self.crc_check(frame[:-2]) != list(frame[-2:]):
+                        self.logger.warning(
+                            "invalid serial frame: {}".format([hex(v) for v in frame])
+                        )
+                        del buffer[0]
+                        continue
+                    del buffer[:frame_size]
+                    self.logger.info("return datas: {}".format([hex(v) for v in frame]))
+                    if self.conn is not None and self.connected:
+                        self.conn.sendall(frame)
+            except Exception:
+                self.logger.error(traceback.format_exc())
+                buffer.clear()
+                time.sleep(0.01)
 
     def re_data_2(self, command):
         r2 = re.compile(r'[[](.*?)[]]')
@@ -501,19 +477,12 @@ class MercuryServer(object):
         data_list = [int(i) for i in data_list]
         return data_list
 
+
 if __name__ == "__main__":
-    ifname = ["eth0", "wlan0"]
-    for i in ifname:
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', bytes(i, encoding="utf8")))[20:24])
-            PORT = 9000
-            if i == "wlan0":
-                print("***------ wireless connection ------***")
-            else:
-                print("***------ wired connection ------***")
-            break
-        except:
-            pass
+    ifname = "wlan0"
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    HOST = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack(
+        '256s', bytes(ifname, encoding="utf8")))[20:24])
+    PORT = 9000
     print("ip: {} port: {}".format(HOST, PORT))
     MercuryServer(HOST, PORT, "/dev/ttyAMA1", 115200)
