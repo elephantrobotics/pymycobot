@@ -173,7 +173,7 @@ class MyArmMProcessor(DataProcessor):
 
 class MyArmMControl(MyArmMProcessor):
 
-    def __init__(self, port, baudrate=115200, timeout=0.1, debug=False):
+    def __init__(self, port, baudrate=1000000, timeout=0.1, debug=False):
         super(MyArmMControl, self).__init__(port=port, baudrate=baudrate, timeout=timeout, debug=debug)
 
     # System status

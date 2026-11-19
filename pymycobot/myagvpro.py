@@ -3,6 +3,7 @@
 import decimal
 import locale
 import re
+import struct
 import threading
 import time
 import enum
@@ -54,6 +55,7 @@ class ProtocolCode(enum.Enum):
 
     SET_HANDLE_CONTROL_STATE = 0x3D
     GET_HANDLE_CONTROL_STATE = 0x3E
+    GET_HANDLE_CONTROL_BUTTON_STATES = 0x26
 
     def equal(self, other):
         if isinstance(other, ProtocolCode):
@@ -104,12 +106,12 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
         self.log = setup_logging(name=f"{__name__}.{self.__class__.__name__}", debug=debug)
 
     def _save_buffer_data(self, data, to_local=False):
-        if self._save_serial_log is False:
+        if not self._save_serial_log:
             return
 
         self._data_buffer.append(data)
 
-        if to_local is True:
+        if to_local:
             self._save_file(self._serial_filename, " ".join(map(str, self._data_buffer)) + "\n")
             self._data_buffer.clear()
 
@@ -124,7 +126,7 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
         if tips is None:
             return
 
-        print(tips)
+        self.log.warning(tips)
 
     @staticmethod
     def get_significant_bit(number):
@@ -143,12 +145,12 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
                 if len(data) == 0:
                     continue
 
-                if is_save_mac_addr is False:
+                if not is_save_mac_addr:
                     mac_addr = self._parsing_data(ProtocolCode.GET_BLUETOOTH_ADDRESS, data.decode('utf-8'))
                     info = f"MyAGVPro Bluetooth MAC Address: {mac_addr}"
                     self._save_file("AGVPro_BLUETOOTH_MAC_ADDR", info)
                     is_save_mac_addr = True
-                    print(info)
+                    self.log.info(info)
 
                 reply_data = self._read_protocol_data(timeout=timeout)
                 if len(reply_data) == 0:
@@ -282,41 +284,39 @@ class MyAGVProCommandProtocolApi(CommunicationProtocol):
             return respond
 
         if ProtocolCode.GET_ROBOT_STATUS.equal(genre):
-            machine_states = [0] * 8
-            machine_status = reply_data[0]
-            if machine_status != 0:
-                for index in Utils.get_bits(machine_status):
-                    machine_states[index] = 1
-
+            machine_states = Utils.get_bits(reply_data[0], width=8)
             battery_voltage = round(reply_data[1] / 10, 2)
 
             return machine_states, battery_voltage
 
         if ProtocolCode.GET_AUTO_REPORT_MESSAGE.equal(genre):
-            respond = []
-            for index, data in enumerate(reply_data):
+            response = []
+            values = struct.Struct("<7B9hH2B35x").unpack(reply_data)
+            for index, value in enumerate(values):
                 if index < 3:
-                    respond.append(round(data / 100, 2))
-
-                elif index in (3, 4):
-                    if data == 0:
-                        rank = data
-                    else:
-                        rank = Utils.get_bits(data)
-                    respond.append(rank)
-
+                    response.append(round(value / 100, 2))
+                elif index < 5:
+                    value = Utils.get_bits(value, width=4)
+                    response.append(value)
                 elif index == 5:
-                    respond.append(round(data / 10, 1))
-
+                    response.append(round(value / 10, 1))
                 elif index == 6:
-                    respond.append(data)
+                    response.append(value)
+                elif index < 16:
+                    response.append(round(value / 100, 2))
+                elif index == 16:
+                    value = Utils.get_bits(value, width=8)
+                    response.append(value)
+                else:
+                    response.append(value)
+            return response
 
-                elif index > 7 and index % 2 == 0:
-                    piece = reply_data[index - 1:index + 1]
-                    int16 = Utils.decode_int16(piece)
-                    respond.append(round(int16 / 100, 2))
-
-            return respond
+        if ProtocolCode.GET_HANDLE_CONTROL_BUTTON_STATES.equal(genre):
+            size = Utils.decode_int16(reply_data[:2])
+            bits = list(map(int, bin(size)[2:]))
+            bits.append(reply_data[2])
+            bits.append(reply_data[3])
+            return bits
 
         if ProtocolCode.GET_MOTOR_ENABLE_STATUS.equal(genre):
             return list(reply_data[:4])
@@ -545,7 +545,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * -1), 0x00])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * 1), 0x00])
 
     def turn_right(self, speed):
         """Rotate to the right
@@ -558,7 +558,7 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         if self.get_significant_bit(speed) > 2:
             raise ValueError(f"speed must be a number with 2 significant bits, but got {speed}")
-        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * 1)])
+        return self._merge(ProtocolCode.AGV_MOTION_CONTROL, [0x00, 0x00, int(speed * 100 * -1)])
 
     def stop(self):
         """Stop moving
@@ -732,14 +732,14 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         if not 0 <= brightness <= 255:
             raise ValueError("Brightness must be between 0 and 255")
 
+        if not isinstance(color, tuple):
+            raise ValueError("The parameter 'color' must be of tuple")
+
         if len(color) != 3:
             raise ValueError("Color must be a tuple of 3 values")
 
         if any(map(lambda c: not 0 <= c <= 255, color)):
             raise ValueError("Color must be between 0 and 255")
-
-        if not isinstance(color, tuple):
-            raise ValueError("color must be a tuple")
 
         return self._merge(ProtocolCode.SET_LED_COLOR, position, brightness, *color)
 
@@ -850,13 +850,36 @@ class MyAGVProCommandApi(MyAGVProCommandProtocolApi):
         """
         return self._merge(ProtocolCode.GET_HANDLE_CONTROL_STATE)
 
+    def get_handle_control_button_states(self):
+        """Get the real-time status of the handle button
+
+        Returns:
+            list[int]:
+                 0：start
+                 1：trian
+                 2：Cir
+                 3：cross
+                 4：squad
+                 5：up
+                 6：down
+                 7：left
+                 8：right
+                 9: x (0-255)
+                10: y (0-255)
+        """
+        return self._merge(ProtocolCode.GET_HANDLE_CONTROL_BUTTON_STATES)
+
 
 class MyAGVPro(MyAGVProCommandApi):
+    SERIAL_INIT_DELAY = 5.0
 
     def __init__(self, port, baudrate=1000000, timeout=0.1, debug=False, save_serial_log=False):
         super().__init__(debug=debug, save_serial_log=save_serial_log)
         self._serial = setup_serial_connect(port=port, baudrate=baudrate, timeout=timeout)
         self._serial_filename = 'agvpro_serial_serial.log'
+        self.log.info(f"waiting for the serial port to finish initializing ...")
+        time.sleep(self.SERIAL_INIT_DELAY)
+        self.log.info(f"initialization complete.")
 
     def write(self, command):
         return self._serial.write(command)

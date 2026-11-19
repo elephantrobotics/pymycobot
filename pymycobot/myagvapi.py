@@ -135,7 +135,13 @@ class Utils:
         return bytes(bytearray(data))
 
     @classmethod
-    def get_bits(cls, data):
-        reverse_bins = reversed(bin(data)[2:])
-        rank = [i for i, e in enumerate(reverse_bins) if e != '0']
-        return rank
+    def int8(cls, data):
+        return struct.unpack("B", data)[0]
+
+    @classmethod
+    def get_bits(cls, data, width: int = 0):
+        bits = bin(data)[2:]
+        if width > 0:
+            bits = bits.zfill(width)
+        bits = reversed(bits)
+        return list(map(int, bits))
