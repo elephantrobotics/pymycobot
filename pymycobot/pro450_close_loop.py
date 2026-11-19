@@ -172,8 +172,15 @@ class Pro450CloseLoop(DataProcessor):
                             if genre in self.write_command:
                                 self.write_command.remove(genre)
                         break
-            if (not big_wait_time or is_in_position) and not is_get_return and time.time() - t > timeout:
-                # 发送指令以后，超时0.5S没有收到第一次反馈，并且是运动指令，并且超时时间是正常指令
+            # TOOL_SERIAL_WRITE_DATA is tool-485 passthrough (gripper/sensor/etc.),
+            # not arm motion: do not probe is_moving(0x2B) or retransmit on arm idle.
+            if (
+                genre != ProtocolCode.TOOL_SERIAL_WRITE_DATA
+                and (not big_wait_time or is_in_position)
+                and not is_get_return
+                and time.time() - t > timeout
+            ):
+                # 发送指令以后，超时没有收到第一次反馈，并且是运动指令，并且超时时间是正常指令
                 t = time.time()
                 moving = self.is_moving()
                 if isinstance(moving, int):
