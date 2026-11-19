@@ -6,7 +6,7 @@ from datetime import datetime
 import re
 
 from pymycobot.error import calibration_parameters
-from pymycobot.common import ProtocolCode, write, read, DataProcessor, FingerGripper
+from pymycobot.common import ProtocolCode, write, read, DataProcessor, FingerGripper, ProGripper
 from pymycobot.end_control import ForceGripper, ThreeHand
 
 
@@ -99,8 +99,13 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
         elif genre in (ProtocolCode.MERCURY_SET_TOQUE_GRIPPER, ProtocolCode.MERCURY_GET_TOQUE_GRIPPER):
             wait_time = 0.3
-            if real_command[3] == FingerGripper.SET_HAND_GRIPPER_CALIBRATION:
+            if (genre == ProtocolCode.MERCURY_SET_TOQUE_GRIPPER
+                    and real_command[6] in [
+                        ProGripper.SET_GRIPPER_CALIBRATION,
+                        ProGripper.SET_GRIPPER_ABS_ANGLE,
+                    ]):
                 wait_time = 10
+                big_wait_time = True
         if genre == ProtocolCode.SET_FRESH_MODE and self.__class__.__name__ == 'Pro450Client':
             wait_time = 4
 
@@ -110,11 +115,6 @@ class CloseLoop(DataProcessor, ForceGripper, ThreeHand):
 
         if self.__class__.__name__ == "MercurySocket":
             timeout = 1
-        elif self.__class__.__name__ == "Mercury":
-            if genre == ProtocolCode.MERCURY_SET_TOQUE_GRIPPER:
-                if real_command[6] in [13, 36]:
-                    timeout = 3
-                    wait_time = 10
         elif self.__class__.__name__ == "MercuryArmsSocket":
             timeout = 1
         else:
