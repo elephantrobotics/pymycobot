@@ -1,6 +1,8 @@
 import os
 import sys
+import time
 import types
+import logging
 import pytest
 
 # Add relevant ranger module to PATH... there surely is a better way to do this...
@@ -119,6 +121,127 @@ def test_pro450_version_detection_falls_back_to_legacy_after_three_failures(monk
 
     assert client._pro450_limit_profile == "Pro450Client"
     client._calibration_parameters(class_name="Pro450Client", joint_id=5, angle=100)
+
+
+@pytest.fixture
+def pro450_transport(monkeypatch):
+    from pymycobot.common import DataProcessor
+
+    monkeypatch.setattr(Pro450Client, "connect_socket", lambda self: None)
+    monkeypatch.setattr(Pro450Client, "read_thread", lambda self, method: None)
+    monkeypatch.setattr(Pro450Client, "is_moving", lambda self: pytest.fail("Unexpected status query"))
+    monkeypatch.setattr("pymycobot.pro450client.time.sleep", lambda _: None)
+
+    def connect(system_version, replies):
+        sent = []
+        replies = iter(replies)
+        payload = bytes([system_version])
+
+        def frame(opcode, payload):
+            data = bytes([0xFE, 0xFE, len(payload) + 3, opcode]) + payload
+            return data + bytes(DataProcessor.crc_check(data))
+
+        def write(client, command, method=None):
+            sent.append(bytes(command))
+            opcode = command[3]
+            if opcode == 0x02:
+                incoming = frame(opcode, payload)
+            else:
+                assert opcode in (0x38, 0x39)
+                response = next(replies)
+                if isinstance(response, OSError):
+                    raise response
+                if response is None:
+                    return
+                incoming = frame(opcode, bytes([response]))
+            frames, remaining = client._process_received(incoming)
+            assert not remaining
+            client.read_command.extend((reply, time.time()) for reply in frames)
+            client.event.set()
+
+        monkeypatch.setattr(Pro450Client, "_write", write)
+        return Pro450Client(), sent
+
+    return connect
+
+
+@pytest.mark.parametrize("firmware,replies,j5_allowed", [
+    (13, [], True), (14, [], False), (20, [1], True), (20, [2], False),
+    (20, [None, 3, 2], False), (20, [None, 0, OSError()], True),
+])
+def test_pro450_machine_version_initialization(pro450_transport, firmware, replies, j5_allowed):
+    client, sent = pro450_transport(firmware, replies)
+    assert [frame[3] for frame in sent] == [0x02] + [0x39] * len(replies)
+    assert all(frame == bytes.fromhex("FE FE 03 39 DE 90") for frame in sent[1:])
+
+    def validate(angle):
+        client.calibration_parameters(class_name="Pro450Client", joint_id=5, angle=angle)
+
+    if j5_allowed:
+        validate(100)
+    else:
+        with pytest.raises(MyCobotPro450DataException):
+            validate(100)
+        validate(-252)
+        validate(72)
+
+
+def test_pro450_machine_version_set_and_read_refresh_limits(pro450_transport, caplog, capsys):
+    client, sent = pro450_transport(20, [1, 2, 0, 1, 0])
+    client.sync_mode = False
+    client.language = "zh_CN"
+    assert client.set_machine_version(2) == 2
+    assert sent[-1] == bytes.fromhex("FE FE 04 38 02 FC EF")
+    assert client._pro450_limit_profile == "Pro450ClientNew"
+    assert "结构版本已切换，请重新辨识机器" in caplog.text
+    assert "⚠️ 结构版本已切换，请重新辨识机器" in capsys.readouterr().out
+    assert all("⚠️" not in record.message for record in caplog.records)
+    caplog.clear()
+    assert client.set_machine_version(2) == 0
+    assert client._pro450_limit_profile == "Pro450ClientNew"
+    assert not caplog.records
+    assert capsys.readouterr().out == ""
+    assert client.get_machine_version() == 1
+    assert client.get_machine_version() == -1
+    assert client._pro450_limit_profile == "Pro450Client"
+    for invalid in (0, 3, 1.0, True):
+        with pytest.raises(MyCobotPro450DataException):
+            client.set_machine_version(invalid)
+    assert [frame[3] for frame in sent] == [2, 0x39, 0x38, 0x38, 0x39, 0x39]
+
+
+def test_pro450_machine_version_commands_require_firmware_2(pro450_transport, caplog, capsys):
+    client, sent = pro450_transport(14, [])
+    client.language = "zh_CN"
+
+    assert client.get_machine_version() == -1
+    assert client.set_machine_version(1) == -1
+    assert [frame[3] for frame in sent] == [0x02]
+    assert caplog.text.count("需要 2.0 或更高版本") == 2
+    assert capsys.readouterr().out.count("需要 2.0 或更高版本") == 2
+
+
+def test_pro450_machine_version_commands_require_known_firmware(monkeypatch, caplog, capsys):
+    client = object.__new__(Pro450Client)
+    client._system_version = None
+    client.language = "zh_CN"
+    client.log = logging.getLogger(__name__)
+    monkeypatch.setattr(client, "_mesg", lambda *args, **kwargs: pytest.fail("Unexpected protocol send"))
+
+    assert client.get_machine_version() == -1
+    assert "无法确认主控固件版本" in caplog.text
+    assert "无法确认主控固件版本" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("readback,profile", [
+    ([2], "Pro450ClientNew"),
+    ([None, None, None], "Pro450Client"),
+])
+def test_pro450_machine_version_lost_set_reply(pro450_transport, readback, profile):
+    client, sent = pro450_transport(20, [2, None] + readback)
+    assert client.set_machine_version(1) == -1
+    assert client._pro450_limit_profile == profile
+    assert [frame[3] for frame in sent] == [2, 0x39, 0x38] + [0x39] * len(readback)
 
 
 def _pro450_screen_client():

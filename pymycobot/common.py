@@ -165,6 +165,8 @@ class ProtocolCode(object):
     JOG_INCREMENT_BASE_COORD = 0x37
     InitGripper = 0x38
     SetGripperProtectCurrent = 0x39
+    PRO450_SET_MACHINE_VERSION = 0x38
+    PRO450_GET_MACHINE_VERSION = 0x39
     GET_FUSION_PARAMETERS = 0x4e
     SET_FUSION_PARAMETERS = 0x4f
 

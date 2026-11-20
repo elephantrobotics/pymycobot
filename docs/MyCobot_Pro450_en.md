@@ -60,6 +60,19 @@ print(mc.get_angles())
 - **function：** get system version
 - **Return value：** system version
 
+#### `get_machine_version()`
+
+- **Firmware requirement**: Main controller firmware 2.0 or later.
+- **Function**: Read the machine structure version directly. The command remains available when the controller reports a communication or machine fault and can still respond.
+- **Return value**: `1` for legacy structure 1.0 (the firmware default when unconfigured), `2` for new structure 2.0, or `-1` when controller firmware is below 2.0, firmware version is unknown, or the response is missing or invalid. A successful read updates the instance's J5 limits.
+
+#### `set_machine_version(version)`
+
+- **Firmware requirement**: Main controller firmware 2.0 or later.
+- **Parameter**: Integer `1` or `2`, matching the machine's physical structure.
+- **Return value**: Setting a different structure returns `1` or `2` and updates the instance's J5 limits. Setting the current structure again returns `0` and keeps the instance limits unchanged. Firmware below 2.0, an unknown firmware version, or a missing or invalid response returns `-1`. The SDK does not send a machine version command when firmware is unsupported or unknown. For a missing or invalid response, it attempts to read back the structure up to three times and falls back to legacy limits if all attempts fail.
+- **Persistence**: The firmware stores the structure in `machine_model.bin` across power cycles. After successfully switching to a different structure, the SDK prints and records a warning that the machine must be identified again. Repeat the firmware's identification procedure after a system update as well.
+
 #### `get_modified_version()`
 
 - **function：** Read the revision number, for internal use only
@@ -341,7 +354,7 @@ Notes:
   - `speed`：the speed and range of the robotic arm's movement 1~100
   - `_async` (`bool`): whether to run asynchronously, default `False`. See the three wait modes at the start of this section.
 
-  > During `Pro450Client` initialization, the controller `get_system_version()` is read to identify the structure: versions below 1.4 use the legacy J5 range, while versions 1.4 and later use the new-structure J5 range. The read is retried up to three times; if all attempts fail, legacy validation is used.
+  > During `Pro450Client` initialization, firmware below 1.4 uses the legacy J5 range. Firmware at least 1.4 but below 2.0 uses the new range. Firmware 2.0 and later uses the result of `get_machine_version()`. Each required query is attempted up to three times. If it yields no valid version, the SDK uses the legacy J5 range.
 
 #### `send_angles(angles, speed, _async=False)`
 

@@ -1,5 +1,6 @@
 # coding=utf-8
 import locale
+import math
 import os
 import struct
 import time
@@ -36,6 +37,7 @@ class Pro450Client(Pro450CloseLoop):
         if self.language not in ["zh_CN", "en_US"]:
             self.language = "en_US"
         self.max_joint, self.min_joint = 0, 0
+        self._system_version = None
         self._pro450_limit_profile = "Pro450Client"
         self.calibration_parameters = self._calibration_parameters
         self._initialize_joint_limit_profile()
@@ -46,20 +48,60 @@ class Pro450Client(Pro450CloseLoop):
         return calibration_parameters(**kwargs)
 
     def _initialize_joint_limit_profile(self):
-        """Select the J5 software limit profile from the controller firmware."""
+        """Select the J5 limit profile from firmware and, on 2.0+, structure."""
         for attempt in range(3):
             try:
                 system_version = self.get_system_version()
-                if isinstance(system_version, (int, float)) and not isinstance(system_version, bool) and system_version >= 0:
-                    self._pro450_limit_profile = (
-                        "Pro450ClientNew" if system_version >= 1.4 else "Pro450Client"
-                    )
-                    return
-            except Exception:
-                pass
+            except (OSError, ValueError, TypeError, struct.error):
+                system_version = -1
+            if (type(system_version) in (int, float)
+                    and math.isfinite(system_version) and system_version >= 0):
+                self._system_version = system_version
+                if system_version >= 2.0:
+                    self._refresh_machine_version()
+                else:
+                    self._apply_machine_version(2 if system_version >= 1.4 else 1)
+                return
 
             if attempt < 2:
                 time.sleep(0.1)
+
+    def _apply_machine_version(self, version):
+        self._pro450_limit_profile = "Pro450ClientNew" if version == 2 else "Pro450Client"
+
+    def _machine_version_supported(self):
+        if self._system_version is not None and self._system_version >= 2.0:
+            return True
+
+        if self.language == "zh_CN":
+            if self._system_version is None:
+                message = "无法确认主控固件版本，无法调用结构版本接口。"
+            else:
+                message = "当前主控固件版本 {} 不支持结构版本接口，需要 2.0 或更高版本。".format(
+                    self._system_version
+                )
+        else:
+            if self._system_version is None:
+                message = "Unable to confirm the controller firmware version. Machine version commands are unavailable."
+            else:
+                message = "Controller firmware version {} does not support machine version commands. Firmware 2.0 or later is required.".format(
+                    self._system_version
+                )
+        print("⚠️ {}".format(message))
+        self.log.warning(message)
+        return False
+
+    def _refresh_machine_version(self):
+        for attempt in range(3):
+            try:
+                version = self.get_machine_version()
+            except OSError:
+                version = -1
+            if version in (1, 2):
+                return
+            if attempt < 2:
+                time.sleep(0.1)
+        self._apply_machine_version(1)
 
     def connect_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -271,6 +313,8 @@ class Pro450Client(Pro450CloseLoop):
             ProtocolCode.IS_MOTOR_PAUSE,
             ProtocolCode.IS_FREE_MODE,
             ProtocolCode.GET_PRO_GRIPPER_OFFSET,
+            ProtocolCode.PRO450_GET_MACHINE_VERSION,
+            ProtocolCode.PRO450_SET_MACHINE_VERSION,
         ]:
             return self._process_single(res)
         elif genre in [ProtocolCode.GET_ANGLES]:
@@ -1976,3 +2020,47 @@ class Pro450Client(Pro450CloseLoop):
         """Get the force sensor data.(External force sensor required)"""
         command = [0x01, 0x04, 0x00, 0x00, 0x00, 0x0C, 0xF0, 0x0F]
         return self.tool_serial_write_data(command)
+
+    def get_machine_version(self):
+        """Read the structure on firmware >= 2.0
+
+         Returns:
+            version: 1 (old), 2 (new), or -1.
+        """
+        if not self._machine_version_supported():
+            return -1
+        version = self._mesg(ProtocolCode.PRO450_GET_MACHINE_VERSION, has_reply=True)
+        if version in (1, 2):
+            self._apply_machine_version(version)
+            return version
+        return -1
+
+    def set_machine_version(self, version):
+        """Set the structure on firmware >= 2.0.
+
+        Args:
+            version (int): version, 1 ~ 2
+        Return:
+             version: 1/2, 0 if refused, or -1.
+        """
+        self.calibration_parameters(class_name=self.__class__.__name__, machine_version=version)
+        if not self._machine_version_supported():
+            return -1
+
+        previous_version = 2 if self._pro450_limit_profile == "Pro450ClientNew" else 1
+        result = self._mesg(ProtocolCode.PRO450_SET_MACHINE_VERSION, version, has_reply=True)
+        if result in (1, 2):
+            self._apply_machine_version(result)
+            if result != previous_version:
+                if self.language == "zh_CN":
+                    message = "结构版本已切换，请重新辨识机器。"
+                else:
+                    message = "Machine structure changed. Please identify the machine again."
+                print("⚠️ {}".format(message))
+                self.log.warning(message)
+            return result
+        if result == 0:
+            return 0
+
+        self._refresh_machine_version()
+        return -1

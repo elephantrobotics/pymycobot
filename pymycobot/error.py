@@ -1977,6 +1977,8 @@ def calibration_parameters(**kwargs):
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value not in [0, 1, 2, 3, 4]:
                     raise MyCobotPro450DataException("The parameter {} only supports 0 ~ 4, but received {}".format(parameter, value))
+            elif parameter == "machine_version":
+                check_0_or_1(parameter, value, [1, 2], value_type, MyCobotPro450DataException, int)
             elif parameter in ['log_state']:
                 check_value_type(parameter, value_type, MyCobotPro450DataException, int)
                 if value < 0 or value > 255:
